@@ -7,15 +7,19 @@ Debug = True
 Instance = MRPInstance()
 M = cplex.infinity
 
+#This function returns the name of the quantity variable for product p and time t
 def GetNameQuanityVariable(p, t):
     return "quantity_prod_time_%d_%d" % (p, t)
 
+#This function returns the name of the inventory variable for product p and time t
 def GetNameInventoryVariable(p, t):
     return "inventory_prod_time_%d_%d" % (p, t)
 
+#This function returns the name of the production variable for product p and time t
 def GetNameProductionVariable(p, t):
     return "production_prod_time_%d_%d" % (p, t)
 
+#This function returns the name of the backorder variable for product p and time t
 def GetNameBackOrderQuantity(p, t):
     return "backorder_prod_time_%d_%d" % (p, t)
 
@@ -88,8 +92,8 @@ def PrintConstraint( vars, coeff, righthandside ) :
 def CreateConstraints(c):
     # Demand and materials requirement: set the value of the invetory level and backorder quantity according to
     #  the quantities produced and the demand
-     for t in range( Instance.NrTimeBucket ):
-        for p in range( Instance.NrProduct ):
+     for t in Instance.TimeBucketSet:
+        for p in Instance.ProductSet:
             righthandside = [ -1 * Instance.StartingInventories[ p ] ]
 
             backordervar = [];
@@ -100,7 +104,7 @@ def CreateConstraints(c):
 
             quantityvar = [ GetIndexQuantityVariable( p, tau ) for tau in range( t - Instance.Leadtimes[ p ] + 1 ) ]
 
-            dependentdemandvar = [ GetIndexQuantityVariable( q, tau ) for q in range( Instance.NrProduct )
+            dependentdemandvar = [ GetIndexQuantityVariable( q, tau ) for q in Instance.ProductSet
                                                                       for tau in range( t + 1 )
                                                                       if Instance.Requirements[ q ][ p ] > 0.0 ]
 
@@ -110,7 +114,7 @@ def CreateConstraints(c):
             coeff = [ -1 ] * len( inventoryvar ) \
                     + [ 1 ] * len( backordervar ) \
                     + [ 1 ] * len( quantityvar ) \
-                    + [-1* Instance.Requirements[ q ][ p ] for q in range( Instance.NrProduct )
+                    + [-1* Instance.Requirements[ q ][ p ] for q in Instance.ProductSet
                                                   for tau in range( t + 1 )
                                                   if Instance.Requirements[ q ][ p ] > 0.0  ]
 
@@ -133,9 +137,9 @@ def CreateConstraints(c):
      #Capacity constraint
      if Instance.NrResource > 0:
         for k in range( Instance.NrResource ) :
-            for t in range( Instance.NrTimeBucket ) :
-                vars = [ GetIndexQuantityVariable( p, t ) for p in range( Instance.NrProduct ) ]
-                coeff = [ Instance.CapacityConsumptions[ p ][ k ] for p in range( Instance.NrProduct ) ]
+            for t in Instance.TimeBucketSet :
+                vars = [ GetIndexQuantityVariable( p, t ) for p in Instance.ProductSet ]
+                coeff = [ Instance.CapacityConsumptions[ p ][ k ] for p in Instance.ProductSet ]
                 righthandside = [ 1.0 ]
                 # PrintConstraint( vars, coeff, righthandside )
                 c.linear_constraints.add( lin_expr = [ cplex.SparsePair( vars, coeff )],
@@ -143,20 +147,19 @@ def CreateConstraints(c):
                                               rhs = righthandside )
 
 
-
+#This function creates the CPLEX model and solves it.
 def MRP():
     Instance.PrintInstance()
 
     print "Start to model in Cplex";
     c = cplex.Cplex()
 
-    Instance.ComputeIndices()
-
     print "The indexes of the variables are:"
     print "quantity: %d - %d, inventory: %d - %d, prodution: %d - %d,  backorder: %d - %d" % (
         Instance.StartQuantityVariable, Instance.NrQuantiyVariables, Instance.StartInventoryVariable, Instance.NrInventoryVariable,
         Instance.StartProdustionVariable, Instance.NrProductionVariable, Instance.StartBackorderVariable, Instance.NrBackorderVariable)
 
+    #Create the variabbles and constraints
     CreateVariable(c)
     CreateConstraints(c)
 
@@ -164,6 +167,7 @@ def MRP():
     c.objective.set_sense( c.objective.sense.minimize )
     if Debug:
         c.write("mrp.lp")
+    #Redircet the log files
     c.set_log_stream("mrp_log.txt")
     c.set_log_stream("mrp_log.txt")
     c.set_log_stream("mrp_log.txt")
@@ -176,22 +180,22 @@ def MRP():
     print("Solution status = ", sol.get_status() )
     print(sol.status[sol.get_status()])
 
-
+    #Handle the results
     if sol.is_primal_feasible():
         print("Solution value  = %r" % sol.get_objective_value())
-        array =  [  GetIndexQuantityVariable( p, t ) for p in range( Instance.NrProduct ) for t in range( Instance.NrTimeBucket )    ];
+        array =  [  GetIndexQuantityVariable( p, t ) for p in Instance.ProductSet for t in Instance.TimeBucketSet ];
         solquantity =   sol.get_values( array )
         solquantity =  zip(*[iter(solquantity)] * Instance.NrTimeBucket )
 
-        array = [ GetIndexProductionVariable( p, t ) for p in range(Instance.NrProduct ) for t in range( Instance.NrTimeBucket ) ]
+        array = [ GetIndexProductionVariable( p, t ) for p in Instance.ProductSet for t in Instance.TimeBucketSet ]
         solproduction = sol.get_values( array )
         solproduction = zip( *[ iter(solproduction) ] * Instance.NrTimeBucket )
 
-        array = [ GetIndexInventoryVariable( p, t )  for p in range(Instance.NrProduct) for t in range( Instance.NrTimeBucket )  ]
+        array = [ GetIndexInventoryVariable( p, t )  for p in Instance.ProductSet for t in Instance.TimeBucketSet  ]
         solinventory = sol.get_values( array )
         solinventory = zip(*[iter(solinventory)] * Instance.NrTimeBucket )
 
-        array = [ GetIndexBackorderVariable( p, t ) for p in range(Instance.NrProduct) for t in range( Instance.NrTimeBucket ) ]
+        array = [ GetIndexBackorderVariable( p, t ) for p in Instance.ProductSet for t in Instance.TimeBucketSet ]
         solbackorder = sol.get_values( array )
         solbackorder = zip(*[iter(solbackorder)] * Instance.NrTimeBucket )
 
@@ -202,12 +206,13 @@ def MRP():
         print("No solution available.")
 
 if __name__ == "__main__":
-    instancename = raw_input( "Enter the number (in [0;38]) of the instance to solve:" )
-    Instance.ReadFromFile( instancename )
+    instancename = raw_input( "Enter the number (in [01;38]) of the instance to solve:" )
+    try:
+        Instance.ReadFromFile( instancename )
+        MRP();
+    except KeyError:
+        print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
    # Instance.DefineAsSmallIntance()
    # Instance.DefineAsSuperSmallIntance()
    # Instance.PrintInstance()
-    if Instance.NrProduct > 0 :
-        MRP();
-    else :
-        print "Problem during instance reading";
+

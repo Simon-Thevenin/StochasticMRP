@@ -45,6 +45,7 @@ class MRPInstance:
                                       [0.0, 0.0, 0.01, 0.0, 0.0],
                                       [0.0, 0.0, 0.0, 0.01, 0.0],
                                       [0.0, 0.0, 0.0, 0.0, 0.04] ]
+        self.ComputeIndices()
 
      # This function defines a very small instance, this is usefull for debugging.
     def DefineAsSuperSmallIntance(self ):
@@ -66,6 +67,7 @@ class MRPInstance:
         self.BackorderCosts = [ 100.0, 0.0 ]  # for now assume no external demand for components
         self.CapacityConsumptions = [ [ 0.1, 0.0 ],
                                       [ 0.0, 0.2 ] ]
+        self.ComputeIndices()
 
     #Constructor
     def __init__( self ):
@@ -73,6 +75,8 @@ class MRPInstance:
         self.NrProduct = -1
         self.NrTimeBucket = -1
         self.NrResource = -1
+        self.ProductSet = []
+        self.TimeBucketSet = []
         self.Demands = []
         self.Requirements = []
         self.Leadtimes = []
@@ -107,6 +111,8 @@ class MRPInstance:
         self.StartInventoryVariable =  self.NrQuantiyVariables
         self.StartProdustionVariable =  self.StartInventoryVariable +  self.NrInventoryVariable
         self.StartBackorderVariable =   self.StartProdustionVariable +  self.NrProductionVariable
+        self.ProductSet = range( self.NrProduct )
+        self.TimeBucketSet = range( self.NrTimeBucket )
 
     #This function transform the sheet given in arguments into a dataframe
     def ReadDataFrame( self, wb2, framename ):
@@ -134,28 +140,29 @@ class MRPInstance:
         self.NrProduct = len( self.ProductName )
         #Consider a time horizon of 200 days (The instance do not have a starting inventory)
         self.NrTimeBucket = 200
+        self.ComputeIndices()
         #This set of instances assume no setup
         self.SetupCosts = [ 0 ] *  self.NrProduct
         datasheetdf = datasheetdf.fillna( 0 )
         #Get the average demand, lead time
-        self.Demands = [ [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand' ) ] * self.NrTimeBucket   for p in range( self.NrProduct )  ]
-        self.Leadtimes =  [  int ( math.ceil( datasheetdf.get_value( self.ProductName[ p ], 'stageTime' )  ) ) for p in range( self.NrProduct )  ]
+        self.Demands = [ [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand' ) ] * self.NrTimeBucket   for p in self.ProductSet ]
+        self.Leadtimes =  [  int ( math.ceil( datasheetdf.get_value( self.ProductName[ p ], 'stageTime' )  ) ) for p in self.ProductSet   ]
         #Compute the requireement from the supply chain. This set of instances assume the requirement of each arc is 1.
-        self.Requirements = [[0] * self.NrProduct for _ in range(self.NrProduct)]
+        self.Requirements = [[0] * self.NrProduct for _ in self.ProductSet ]
         for i, row in supplychaindf.iterrows():
             self.Requirements[self.ProductName.index(row.get_value('destinationStage'))][self.ProductName.index(i)] = 1
         #Assume an inventory holding cost of 0.1 per day for now
         holdingcost = 0.1
         self.InventoryCosts = [0.0] * self.NrProduct
         #The cost of the product is given by  added value per stage. The cost of the product at each stage must be computed
-        addedvalueatstage = [ datasheetdf.get_value( self.ProductName[ p ], 'stageCost' ) for p in range( self.NrProduct )  ]
-        level = [ datasheetdf.get_value( self.ProductName[ p ], 'relDepth' ) for p in range( self.NrProduct )  ]
+        addedvalueatstage = [ datasheetdf.get_value( self.ProductName[ p ], 'stageCost' ) for p in self.ProductSet   ]
+        level = [ datasheetdf.get_value( self.ProductName[ p ], 'relDepth' ) for p in self.ProductSet    ]
         levelset = sorted( set( level ), reverse=True )
         for l in levelset:
-            prodinlevel =  [ p for p in range( self.NrProduct ) if level[p] == l ]
+            prodinlevel =  [ p for p in self.ProductSet  if level[p] == l ]
             for p in prodinlevel:
                 print "product: %r" % p
-                addedvalueatstage[p] = sum(addedvalueatstage[ q ] * self.Requirements[p][q] for q in range( self.NrProduct ) ) + \
+                addedvalueatstage[p] = sum(addedvalueatstage[ q ] * self.Requirements[p][q] for q in self.ProductSet  ) + \
                                             addedvalueatstage[ p ]
                 self.InventoryCosts[p] = holdingcost *  addedvalueatstage[ p ]
         #Assume a starting inventory of 0

@@ -7,7 +7,7 @@ from MRPInstance import MRPInstance
 
 class MRPSolution:
 
-
+    #This function print the solution in an Excel file in the folde "Solutions"
     def PrintToExcel(self):
         workbook = opxl.Workbook();
         ws = workbook.create_sheet( 'Production' )
