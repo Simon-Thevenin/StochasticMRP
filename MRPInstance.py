@@ -5,8 +5,7 @@ import math
 
 class MRPInstance:
 
-    FileName = "../Instance/MSOM-06-038-R2.xls"
-
+    FileName = "./Instances/MSOM-06-038-R2.xls"
 
     def PrintInstance( self ):
         print "instance: %s" %self.InstanceName
@@ -14,14 +13,13 @@ class MRPInstance:
         print "demand: \n %r" % ( pd.DataFrame( self.Demands, index = self.ProductName ) );
         print "requirements: \n %r" % (pd.DataFrame( self.Requirements, index = self.ProductName, columns = self.ProductName ) );
         print "CapacityConsumptions: \n %r" % (pd.DataFrame( self.CapacityConsumptions, index = self.ProductName ) );
-
         aggregated = [ self.Leadtimes, self.StartingInventories, self.InventoryCosts,
                        self.SetupCosts, self.BackorderCosts]
         col = [ "Leadtimes", "StartingInventories", "InventoryCosts", "SetupCosts", "BackorderCosts" ]
         print "Per product data: \n %r" % ( pd.DataFrame( aggregated, columns = self.ProductName, index = col ).transpose() );
 
+     # This function defines a small instance, this is usefull for debugging.
     def DefineAsSmallIntance(self ):
-        # data of a small instance to implement.
         self.InstanceName = "SmallIntance"
         self.ProductName = [ "P1", "P2", "P3", "P4", "P5" ]
         self.NrProduct = 5
@@ -38,7 +36,6 @@ class MRPInstance:
                          [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] ]
-
         self.StartingInventories = [10.0, 100.0, 100.0, 100.0, 100.0]
         self.InventoryCosts = [5.0, 4.0, 3.0, 2.0, 1.0]
         self.SetupCosts = [10000.0, 0.0, 0.0, 0.0, 0.0]
@@ -49,6 +46,7 @@ class MRPInstance:
                                       [0.0, 0.0, 0.0, 0.01, 0.0],
                                       [0.0, 0.0, 0.0, 0.0, 0.04] ]
 
+     # This function defines a very small instance, this is usefull for debugging.
     def DefineAsSuperSmallIntance(self ):
         # data of a small instance to implement.
         self.InstanceName = "SuperSmallIntance"
@@ -69,6 +67,7 @@ class MRPInstance:
         self.CapacityConsumptions = [ [ 0.1, 0.0 ],
                                       [ 0.0, 0.2 ] ]
 
+    #Constructor
     def __init__( self ):
         self.InstanceName = ""
         self.NrProduct = -1
@@ -109,7 +108,7 @@ class MRPInstance:
         self.StartProdustionVariable =  self.StartInventoryVariable +  self.NrInventoryVariable
         self.StartBackorderVariable =   self.StartProdustionVariable +  self.NrProductionVariable
 
-
+    #This function transform the sheet given in arguments into a dataframe
     def ReadDataFrame( self, wb2, framename ):
         sheet = wb2[framename];
         data =  sheet.values
@@ -120,37 +119,38 @@ class MRPInstance:
         df = pd.DataFrame( data, index=idx, columns=cols )
         return df;
 
-    #Compute the start of index and the number of variables for the considered instance
+    #This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
     def ReadFromFile( self, instancename ):
-        wb2 = opxl.load_workbook( "../Instances/MSOM-06-038-R2.xlsx" )
-
+        wb2 = opxl.load_workbook( "./Instances/MSOM-06-038-R2.xlsx" )
+        #The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
         supplychaindf = self.ReadDataFrame( wb2, instancename + "_LL" )
         datasheetdf = self.ReadDataFrame( wb2, instancename + "_SD" )
-
+        #read the data
         self.ProductName = list( datasheetdf.index.values )
-
         self.InstanceName = instancename
+        #This set of instances assume no capacity
         self.NrResource = 0
         self.CapacityConsumptions =  [  ]
         self.NrProduct = len( self.ProductName )
+        #Consider a time horizon of 200 days (The instance do not have a starting inventory)
         self.NrTimeBucket = 200
+        #This set of instances assume no setup
         self.SetupCosts = [ 0 ] *  self.NrProduct
         datasheetdf = datasheetdf.fillna( 0 )
-
+        #Get the average demand, lead time
         self.Demands = [ [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand' ) ] * self.NrTimeBucket   for p in range( self.NrProduct )  ]
         self.Leadtimes =  [  int ( math.ceil( datasheetdf.get_value( self.ProductName[ p ], 'stageTime' )  ) ) for p in range( self.NrProduct )  ]
+        #Compute the requireement from the supply chain. This set of instances assume the requirement of each arc is 1.
+        self.Requirements = [[0] * self.NrProduct for _ in range(self.NrProduct)]
+        for i, row in supplychaindf.iterrows():
+            self.Requirements[self.ProductName.index(row.get_value('destinationStage'))][self.ProductName.index(i)] = 1
+        #Assume an inventory holding cost of 0.1 per day for now
         holdingcost = 0.1
+        self.InventoryCosts = [0.0] * self.NrProduct
+        #The cost of the product is given by  added value per stage. The cost of the product at each stage must be computed
         addedvalueatstage = [ datasheetdf.get_value( self.ProductName[ p ], 'stageCost' ) for p in range( self.NrProduct )  ]
-
         level = [ datasheetdf.get_value( self.ProductName[ p ], 'relDepth' ) for p in range( self.NrProduct )  ]
         levelset = sorted( set( level ), reverse=True )
-
-        self.Requirements = [ [ 0 ] * self.NrProduct  for _ in range( self.NrProduct ) ]
-        self.InventoryCosts = [ 0.0 ] * self.NrProduct
-        for i, row in supplychaindf.iterrows() :
-            self.Requirements[ self.ProductName.index( row.get_value('destinationStage') ) ][ self.ProductName.index( i ) ]  = 1
-
-
         for l in levelset:
             prodinlevel =  [ p for p in range( self.NrProduct ) if level[p] == l ]
             for p in prodinlevel:
@@ -158,6 +158,7 @@ class MRPInstance:
                 addedvalueatstage[p] = sum(addedvalueatstage[ q ] * self.Requirements[p][q] for q in range( self.NrProduct ) ) + \
                                             addedvalueatstage[ p ]
                 self.InventoryCosts[p] = holdingcost *  addedvalueatstage[ p ]
-
+        #Assume a starting inventory of 0
         self.StartingInventories = [ 0 ] * self.NrProduct
+        #The instances provide a level of service and no back order cost. Assume a backorder cost of 0.1.
         self.BackorderCosts = [ 0.1 ] * self.NrProduct

@@ -3,6 +3,7 @@ import pandas as pd
 from MRPInstance import MRPInstance
 from MRPSolution import MRPSolution
 
+Debug = True
 Instance = MRPInstance()
 M = cplex.infinity
 
@@ -58,8 +59,7 @@ def CreateVariable(c):
 
     #Define the variable name.
     #Usefull for debuging purpose. Otherwise, disable it, it is time consuming.
-    usevariablenames = True
-    if usevariablenames:
+    if Debug:
         quantityvars = []
         inventoryvars = []
         productionvars = []
@@ -131,8 +131,6 @@ def CreateConstraints(c):
             c.indicator_constraints.add(**ic_dict )
 
      #Capacity constraint
-
-
      if Instance.NrResource > 0:
         for k in range( Instance.NrResource ) :
             for t in range( Instance.NrTimeBucket ) :
@@ -164,8 +162,8 @@ def MRP():
 
     # Our aim is to minimize cost.
     c.objective.set_sense( c.objective.sense.minimize )
-
-    c.write("mrp.lp")
+    if Debug:
+        c.write("mrp.lp")
     c.set_log_stream("mrp_log.txt")
     c.set_log_stream("mrp_log.txt")
     c.set_log_stream("mrp_log.txt")
@@ -175,9 +173,7 @@ def MRP():
     c.solve()
 
     sol = c.solution
-    # solution.get_status() returns an integer code
     print("Solution status = ", sol.get_status() )
-    # the following line prints the corresponding string
     print(sol.status[sol.get_status()])
 
 
@@ -206,7 +202,8 @@ def MRP():
         print("No solution available.")
 
 if __name__ == "__main__":
-    Instance.ReadFromFile( "20" )
+    instancename = raw_input( "Enter the number (in [0;38]) of the instance to solve:" )
+    Instance.ReadFromFile( instancename )
    # Instance.DefineAsSmallIntance()
    # Instance.DefineAsSuperSmallIntance()
    # Instance.PrintInstance()

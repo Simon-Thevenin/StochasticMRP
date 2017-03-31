@@ -26,7 +26,7 @@ class MRPSolution:
         for r in dataframe_to_rows( self.BackOrder, index=True, header=True):
             ws.append(r)
 
-        workbook.save( self.MRPInstance.InstanceName + "_Solution.xlsx" )
+        workbook.save( "./Solutions/"+self.MRPInstance.InstanceName + "_Solution.xlsx" )
 
     #This function prints a solution
     def Print(self):
