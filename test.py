@@ -2,6 +2,7 @@ import cplex
 import pandas as pd
 from MRPInstance import MRPInstance
 from MRPSolution import MRPSolution
+import sys
 
 Debug = True
 Instance = MRPInstance()
@@ -173,6 +174,10 @@ def MRP():
     c.set_log_stream("mrp_log.txt")
     c.set_log_stream("mrp_log.txt")
 
+    #tune the paramters
+    c.parameters.timelimit.set( 1800.0 )
+    c.parameters.threads.set( 1 )
+
     print "Start to solve with Cplex";
     c.solve()
 
@@ -206,9 +211,14 @@ def MRP():
         print("No solution available.")
 
 if __name__ == "__main__":
-    instancename = raw_input( "Enter the number (in [01;38]) of the instance to solve:" )
+    instancename = ""
     try:
-        Instance.ReadFromFile( instancename )
+        if len(sys.argv) == 1:
+            instancename = raw_input("Enter the number (in [01;38]) of the instance to solve:")
+        else:
+            script, instancename = sys.argv
+
+        Instance.ReadFromFile(instancename)
         MRP();
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
