@@ -9,37 +9,37 @@ Instance = MRPInstance()
 M = cplex.infinity
 
 #This function returns the name of the quantity variable for product p and time t
-def GetNameQuanityVariable(p, t):
-    return "quantity_prod_time_%d_%d" % (p, t)
+def GetNameQuanityVariable( p, t ):
+    return "quantity_prod_time_%d_%d" % ( p, t )
 
 #This function returns the name of the inventory variable for product p and time t
-def GetNameInventoryVariable(p, t):
-    return "inventory_prod_time_%d_%d" % (p, t)
+def GetNameInventoryVariable( p, t, w ):
+    return "inventory_prod_time_scenar_%d_%d_%d" % ( p, t, w )
 
 #This function returns the name of the production variable for product p and time t
-def GetNameProductionVariable(p, t):
-    return "production_prod_time_%d_%d" % (p, t)
+def GetNameProductionVariable( p, t, w ):
+    return "production_prod_time_scenar_%d_%d_%d" % ( p, t, w )
 
 #This function returns the name of the backorder variable for product p and time t
-def GetNameBackOrderQuantity(p, t):
-    return "backorder_prod_time_%d_%d" % (p, t)
+def GetNameBackOrderQuantity( p, t, w ):
+    return "backorder_prod_time_scenar_%d_%d_%d" % ( p, t, w )
 
 #the function GetIndexQuantityVariable returns the index of the variable Q_{p, t}. Quantity of product p produced at time t
 def GetIndexQuantityVariable( p, t ):
-    return Instance.StartQuantityVariable + t* Instance.NrProduct + p;
+    return Instance.StartQuantityVariable + t * Instance.NrProduct + p;
 
 #the function GetIndexInventoryVariable returns the index of the variable I_{p, t}. Inventory of product p produced at time t
-def GetIndexInventoryVariable( p, t ):
-    return Instance.StartInventoryVariable + t *  Instance.NrProduct  + p;
+def GetIndexInventoryVariable( p, t, w ):
+    return Instance.StartInventoryVariable + t *  Instance.NrProduct * Instance.NrScenario  + p * Instance.NrScenario + w;
 
 #the function GetIndexProductionVariable returns the index of the variable Y_{p, t}.
 # This variable equal to one is product p is produced at time t, 0 otherwise
-def GetIndexProductionVariable( p, t ):
-    return Instance.StartProdustionVariable + t * Instance.NrProduct + p;
+def GetIndexProductionVariable( p, t, w ):
+    return Instance.StartProdustionVariable + t * Instance.NrProduct * Instance.NrScenario + p * Instance.NrScenario + w;
 
 #the function GetIndexBackorderVariable returns the index of the variable B_{p, t}. Quantity of product p produced backordered at time t
-def GetIndexBackorderVariable( p, t ):
-    return Instance.StartBackorderVariable + t * Instance.NrProduct  + p;
+def GetIndexBackorderVariable( p, t, w ):
+    return Instance.StartBackorderVariable + t * Instance.NrProduct * Instance.NrScenario  + p * Instance.NrScenario + w;
 
 #This function define the variables
 def CreateVariable(c):
@@ -49,16 +49,16 @@ def CreateVariable(c):
                      ub = [ M ] * Instance.NrQuantiyVariables )
 
     # the variable inventory_prod_time_p_t indicated the inventory level of product p at time t
-    c.variables.add( obj = Instance.InventoryCosts * Instance.NrTimeBucket ,
+    c.variables.add( obj = Instance.InventoryCosts * ( Instance.NrTimeBucket * Instance.NrScenario ),
                      lb = [ 0.0 ] * Instance.NrInventoryVariable,
                      ub = [ M ] * Instance.NrInventoryVariable )
 
     # the variable production_prod_time_p_t equals 1 if a lot of product p is produced at time t
-    c.variables.add( obj = Instance.SetupCosts * Instance.NrTimeBucket,
+    c.variables.add( obj = Instance.SetupCosts * ( Instance.NrTimeBucket * Instance.NrScenario ),
                      lb=[ 0.0 ] * Instance.NrProductionVariable,
                      ub=[ 1.0 ] * Instance.NrProductionVariable )
     # the variable backorder_prod_time_p_t gives the amount of product p backordered at time t
-    c.variables.add( obj = Instance.BackorderCosts * Instance.NrTimeBucket,
+    c.variables.add( obj = Instance.BackorderCosts * ( Instance.NrTimeBucket * Instance.NrScenario ),
                      lb = [ 0.0 ] * Instance.NrBackorderVariable,
                      ub = [ M ] * Instance.NrBackorderVariable )
 
@@ -73,9 +73,9 @@ def CreateVariable(c):
             for t in range( Instance.NrTimeBucket ):
                 index = p * Instance.NrTimeBucket + t
                 quantityvars.append( ( GetIndexQuantityVariable( p, t ), GetNameQuanityVariable( p, t ) ) )
-                inventoryvars.append( ( GetIndexInventoryVariable( p, t ), GetNameInventoryVariable(p, t) ) )
-                productionvars.append( ( GetIndexProductionVariable( p, t ), GetNameProductionVariable(p, t) ) )
-                backordervars.append( ( GetIndexBackorderVariable( p, t ), GetNameBackOrderQuantity( p, t ) ) )
+                inventoryvars.append( ( GetIndexInventoryVariable( p, t, w ), GetNameInventoryVariable(p, t, w) ) )
+                productionvars.append( ( GetIndexProductionVariable( p, t, w ), GetNameProductionVariable(p, t, w) ) )
+                backordervars.append( ( GetIndexBackorderVariable( p, t, w ), GetNameBackOrderQuantity( p, t, w ) ) )
         varnames = quantityvars + inventoryvars + productionvars + backordervars
         c.variables.set_names( varnames )
 

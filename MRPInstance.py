@@ -112,9 +112,9 @@ class MRPInstance:
     #Compute the start of index and the number of variables for the considered instance
     def ComputeIndices( self ):
         self.NrQuantiyVariables = self.NrProduct * self.NrTimeBucket
-        self.NrInventoryVariable = self.NrProduct * ( self.NrTimeBucket )
-        self.NrProductionVariable = self.NrProduct * self.NrTimeBucket
-        self.NrBackorderVariable = self.NrProduct * self.NrTimeBucket
+        self.NrInventoryVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
+        self.NrProductionVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
+        self.NrBackorderVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
         self.StartQuantityVariable = 0
         self.StartInventoryVariable =  self.NrQuantiyVariables
         self.StartProdustionVariable =  self.StartInventoryVariable +  self.NrInventoryVariable
