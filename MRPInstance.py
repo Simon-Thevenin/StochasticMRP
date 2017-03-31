@@ -66,7 +66,7 @@ class MRPInstance:
                               [ 0, 0 ] ]
         self.Leadtimes = [0, 1]
         self.Demands = [ [ [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ] ],
-                         [[ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ] ] ]
+                         [[0.0,0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ] ] ]
 
         self.StartingInventories = [ 10.0, 10.0 ]
         self.InventoryCosts = [ 10.0, 5.0 ]
@@ -85,6 +85,7 @@ class MRPInstance:
         self.NrScenario = -1
         self.ProductSet = []
         self.TimeBucketSet = []
+        self.ScenarioSet = []
         self.Demands = []
         self.Requirements = []
         self.Leadtimes = []
@@ -113,7 +114,7 @@ class MRPInstance:
     def ComputeIndices( self ):
         self.NrQuantiyVariables = self.NrProduct * self.NrTimeBucket
         self.NrInventoryVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
-        self.NrProductionVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
+        self.NrProductionVariable = self.NrProduct * self.NrTimeBucket
         self.NrBackorderVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
         self.StartQuantityVariable = 0
         self.StartInventoryVariable =  self.NrQuantiyVariables
@@ -121,6 +122,7 @@ class MRPInstance:
         self.StartBackorderVariable =   self.StartProdustionVariable +  self.NrProductionVariable
         self.ProductSet = range( self.NrProduct )
         self.TimeBucketSet = range( self.NrTimeBucket )
+        self.ScenarioSet = range( self.NrScenario )
 
     #This function transform the sheet given in arguments into a dataframe
     def ReadDataFrame( self, wb2, framename ):
@@ -150,11 +152,11 @@ class MRPInstance:
         self.NrTimeBucket = 200
         self.ComputeIndices()
         #This set of instances assume no setup
-        self.SetupCosts = [ 0 ] *  self.NrProduct
+        self.SetupCosts = [ 0 ] * self.NrProduct
         datasheetdf = datasheetdf.fillna( 0 )
         #Get the average demand, lead time
-        self.Demands = [ [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand' ) ] * self.NrTimeBucket   for p in self.ProductSet ]
-        self.Leadtimes =  [  int ( math.ceil( datasheetdf.get_value( self.ProductName[ p ], 'stageTime' )  ) ) for p in self.ProductSet   ]
+        self.Demands = [ [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand' ) ] * self.NrTimeBucket for p in self.ProductSet ]
+        self.Leadtimes =  [  int ( math.ceil( datasheetdf.get_value( self.ProductName[ p ], 'stageTime' ) ) ) for p in self.ProductSet   ]
         #Compute the requireement from the supply chain. This set of instances assume the requirement of each arc is 1.
         self.Requirements = [[0] * self.NrProduct for _ in self.ProductSet ]
         for i, row in supplychaindf.iterrows():
@@ -163,14 +165,14 @@ class MRPInstance:
         holdingcost = 0.1
         self.InventoryCosts = [0.0] * self.NrProduct
         #The cost of the product is given by  added value per stage. The cost of the product at each stage must be computed
-        addedvalueatstage = [ datasheetdf.get_value( self.ProductName[ p ], 'stageCost' ) for p in self.ProductSet   ]
+        addedvalueatstage = [ datasheetdf.get_value( self.ProductName[ p ], 'stageCost' ) for p in self.ProductSet ]
         level = [ datasheetdf.get_value( self.ProductName[ p ], 'relDepth' ) for p in self.ProductSet    ]
         levelset = sorted( set( level ), reverse=True )
         for l in levelset:
             prodinlevel =  [ p for p in self.ProductSet  if level[p] == l ]
             for p in prodinlevel:
                 print "product: %r" % p
-                addedvalueatstage[p] = sum(addedvalueatstage[ q ] * self.Requirements[p][q] for q in self.ProductSet  ) + \
+                addedvalueatstage[p] = sum(addedvalueatstage[ q ] * self.Requirements[p][q] for q in self.ProductSet ) + \
                                             addedvalueatstage[ p ]
                 self.InventoryCosts[p] = holdingcost *  addedvalueatstage[ p ]
         #Assume a starting inventory of 0
