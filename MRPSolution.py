@@ -9,24 +9,17 @@ class MRPSolution:
 
     #This function print the solution in an Excel file in the folde "Solutions"
     def PrintToExcel(self):
-        workbook = opxl.Workbook();
-        ws = workbook.create_sheet( 'Production' )
-        for r in dataframe_to_rows( self.Production, index=True, header=True):
-            ws.append(r)
 
-        ws = workbook.create_sheet( 'ProductionQuantity' )
-        for r in dataframe_to_rows( self.ProductionQuantity, index=True, header=True):
-            ws.append(r)
 
-        ws = workbook.create_sheet( 'InventoryLevel' )
-        for r in dataframe_to_rows( self.InventoryLevel, index=True, header=True):
-            ws.append(r)
+        writer = pd.ExcelWriter("./Solutions/"+self.MRPInstance.InstanceName + "_Solution.xlsx", engine='openpyxl')
+        self.ProductionQuantity.to_excel(writer, 'ProductionQuantity')
+        self.Production.to_excel(writer, 'Production')
+        self.InventoryLevel.to_excel(writer, 'InventoryLevel')
+        self.BackOrder.to_excel(writer, 'BackOrder')
 
-        ws = workbook.create_sheet( 'BackOrder' )
-        for r in dataframe_to_rows( self.BackOrder, index=True, header=True):
-            ws.append(r)
+        writer.save()
 
-        workbook.save( "./Solutions/"+self.MRPInstance.InstanceName + "_Solution.xlsx" )
+        #workbook.save(  )
 
     #This function prints a solution
     def Print(self):
@@ -43,15 +36,20 @@ class MRPSolution:
         self.InventoryCost = inventorycostperproduct.sum();
         self.BackOrderCost = backordercostperproduct.sum();
         self.SetupCost = setupcostperproduct.sum();
+        self.TotalCost =  self.InventoryCost + self.BackOrderCost +  self.SetupCost
 
     #constructor
     def __init__( self, instance, solquantity, solproduction, solinventory, solbackorder ):
         self.MRPInstance = instance
+        #Create a multi index to store the scenarios and time
+        iterables = [ self.MRPInstance.ScenarioSet , self.MRPInstance.TimeBucketSet]
+        multiindex = pd.MultiIndex.from_product(iterables, names=['scenario', 'time'])
         self.ProductionQuantity = pd.DataFrame(  solquantity, index = instance.ProductName )
-        self.InventoryLevel = pd.DataFrame(  solinventory, index = instance.ProductName )
+        self.InventoryLevel = pd.DataFrame(  solinventory, index = instance.ProductName, columns = multiindex )
         self.Production = pd.DataFrame(  solproduction, index = instance.ProductName )
-        self.BackOrder = pd.DataFrame(  solbackorder, index = instance.ProductName )
+        self.BackOrder = pd.DataFrame(  solbackorder,  index = instance.ProductName, columns = multiindex  )
         self.InventoryCost = -1;
         self.BackOrderCost = -1;
         self.SetupCost = -1;
+        self.TotalCost =-1;
         self.ComputeCost();
