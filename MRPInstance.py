@@ -52,6 +52,8 @@ class MRPInstance:
                                       [0.0, 0.0, 0.0, 0.01, 0.0],
                                       [0.0, 0.0, 0.0, 0.0, 0.04] ]
         self.ComputeIndices()
+        self.ComputeLevel()
+        self.ComputeMaxLeadTime( )
 
      # This function defines a very small instance, this is usefull for debugging.
     def DefineAsSuperSmallIntance(self ):
@@ -64,7 +66,7 @@ class MRPInstance:
         self.NrScenario = 3
         self.Requirements = [ [ 0, 1 ],
                               [ 0, 0 ] ]
-        self.Leadtimes = [0, 1]
+        self.Leadtimes = [1, 1]
         self.Demands = [ [ [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ] ],
                          [[0.0,0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ] ] ]
 
@@ -75,6 +77,8 @@ class MRPInstance:
         self.CapacityConsumptions = [ [ 0.1, 0.0 ],
                                       [ 0.0, 0.2 ] ]
         self.ComputeIndices()
+        self.ComputeLevel()
+        self.ComputeMaxLeadTime( )
 
     #Constructor
     def __init__( self ):
@@ -108,7 +112,45 @@ class MRPInstance:
         self.StartProdustionVariable = 0
         self.StartBackorderVariable = 0
         self.ProductName = ""
+        #Compute some statistic about the instance
+        self.MaxLeadTime = -1
+        self.NrLevel = -1
+        self.Level = [] # The level of each product in the bom
+        self.MaxLeadTimeProduct = [] #The maximum leadtime to the component for each product
 
+
+    #Compute the lead time from a product to its component with the largest sum of lead time
+    def ComputeMaxLeadTime( self ):
+        self.MaxLeadTimeProduct = [ 0 for p in self.ProductSet ]
+        levelset = sorted( set(  self.Level ), reverse=True )
+        for l in levelset:
+            prodinlevel = [ p for p in self.ProductSet if  self.Level[ p ] == l ]
+            for p in prodinlevel:
+                parents = [ q for q in self.ProductSet if self.Requirements[ p ][ q ] > 0 ]
+                if len( parents ) > 0 :
+                    self.MaxLeadTimeProduct[ p ] = max( [ self.MaxLeadTimeProduct [ q ] for q in parents ] );
+                self.MaxLeadTimeProduct[p] =  self.MaxLeadTimeProduct[p] + self.Leadtimes[ p ]
+        self.MaxLeadTime = max( self.MaxLeadTimeProduct[p] for p in self.ProductSet )
+
+    #This function compute at which level each node is in the supply chain
+    def ComputeLevel( self ) :
+        #Maximum lead time and maximum number of level.
+        #Get the set of nodes without children
+        currentlevelset = [ p for p in self.ProductSet if sum( self.Requirements[ q ][ p ]
+                                                              for q in self.ProductSet  ) == 0 ];
+        currentlevel = 1
+        self.Level = [ 0 for p in self.ProductSet ]
+        while len(currentlevelset) > 0 :
+            nextlevelset = []
+            for p in currentlevelset:
+                self.Level[ p ] = currentlevel
+                childrenofp = [ q for q in self.ProductSet
+                                   if self.Requirements[ p ][ q ] == 1];
+                nextlevelset = nextlevelset + childrenofp
+            currentlevelset = set( nextlevelset )
+            currentlevel = currentlevel + 1
+
+        self.NrLevel = max( self.Level[ p ] for p in self.ProductSet )
 
     #Compute the start of index and the number of variables for the considered instance
     def ComputeIndices( self ):
@@ -136,7 +178,7 @@ class MRPInstance:
         return df;
 
     #This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile( self, instancename ):
+    def ReadFromFile( self, instancename, nrtimeperiod, nrscenario ):
         wb2 = opxl.load_workbook( "./Instances/MSOM-06-038-R2.xlsx" )
         #The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
         supplychaindf = self.ReadDataFrame( wb2, instancename + "_LL" )
@@ -149,21 +191,24 @@ class MRPInstance:
         self.CapacityConsumptions =  [  ]
         self.NrProduct = len( self.ProductName )
         #Consider a time horizon of 200 days (The instance do not have a starting inventory)
-        self.NrTimeBucket = 200
+        self.NrTimeBucket = nrtimeperiod
+        self.NrScenario = nrscenario
         self.ComputeIndices()
         #This set of instances assume no setup
-        self.SetupCosts = [ 0 ] * self.NrProduct
+        self.SetupCosts = [ 0.0 ] * self.NrProduct
         datasheetdf = datasheetdf.fillna( 0 )
         #Get the average demand, lead time
-        self.Demands = [ [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand' ) ] * self.NrTimeBucket for p in self.ProductSet ]
-        self.Leadtimes =  [  int ( math.ceil( datasheetdf.get_value( self.ProductName[ p ], 'stageTime' ) ) ) for p in self.ProductSet   ]
+        self.Demands = [ [ [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand' ) for w in self.ScenarioSet    ]
+                           for t in self.TimeBucketSet ]
+                         for p in self.ProductSet ]
+        self.Leadtimes =  [ int ( math.ceil( datasheetdf.get_value( self.ProductName[ p ], 'stageTime' ) ) ) for p in self.ProductSet ]
         #Compute the requireement from the supply chain. This set of instances assume the requirement of each arc is 1.
-        self.Requirements = [[0] * self.NrProduct for _ in self.ProductSet ]
+        self.Requirements = [ [ 0 ] * self.NrProduct for _ in self.ProductSet ]
         for i, row in supplychaindf.iterrows():
-            self.Requirements[self.ProductName.index(row.get_value('destinationStage'))][self.ProductName.index(i)] = 1
+            self.Requirements[ self.ProductName.index( row.get_value('destinationStage' ) ) ][ self.ProductName.index( i ) ] = 1
         #Assume an inventory holding cost of 0.1 per day for now
         holdingcost = 0.1
-        self.InventoryCosts = [0.0] * self.NrProduct
+        self.InventoryCosts = [ 0.0 ] * self.NrProduct
         #The cost of the product is given by  added value per stage. The cost of the product at each stage must be computed
         addedvalueatstage = [ datasheetdf.get_value( self.ProductName[ p ], 'stageCost' ) for p in self.ProductSet ]
         level = [ datasheetdf.get_value( self.ProductName[ p ], 'relDepth' ) for p in self.ProductSet    ]
@@ -171,11 +216,15 @@ class MRPInstance:
         for l in levelset:
             prodinlevel =  [ p for p in self.ProductSet  if level[p] == l ]
             for p in prodinlevel:
-                print "product: %r" % p
                 addedvalueatstage[p] = sum(addedvalueatstage[ q ] * self.Requirements[p][q] for q in self.ProductSet ) + \
                                             addedvalueatstage[ p ]
                 self.InventoryCosts[p] = holdingcost *  addedvalueatstage[ p ]
-        #Assume a starting inventory of 0
-        self.StartingInventories = [ 0 ] * self.NrProduct
+
         #The instances provide a level of service and no back order cost. Assume a backorder cost of 0.1.
         self.BackorderCosts = [ 0.1 ] * self.NrProduct
+        self.ComputeLevel()
+        self.ComputeMaxLeadTime( )
+
+        # Assume a starting inventory is the average demand during the lead time
+        self.StartingInventories = [ datasheetdf.get_value( self.ProductName[p], 'avgDemand')
+                                     * self.MaxLeadTimeProduct[p] for p in self.ProductSet]

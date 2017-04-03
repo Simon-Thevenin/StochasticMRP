@@ -9,25 +9,7 @@ class MRPSolution:
 
     #This function print the solution in an Excel file in the folde "Solutions"
     def PrintToExcel(self):
-        # workbook = opxl.Workbook();
-        #
-        # ws = workbook.create_sheet( 'Production' )
-        # for r in dataframe_to_rows( self.Production, index=True, header=True):
-        #     ws.append(r)
-        #
-        # ws = workbook.create_sheet( 'ProductionQuantity' )
-        # for r in dataframe_to_rows( self.ProductionQuantity, index=True, header=True):
-        #     ws.append(r)
-        #
-        # ws = workbook.create_sheet( 'InventoryLevel' )
-        # for r in dataframe_to_rows( self.InventoryLevel, index=True, header=True):
-        #     print r
-        #     ws.append(r)
-        #
-        # ws = workbook.create_sheet( 'BackOrder' )
-        # for r in dataframe_to_rows( self.BackOrder, index=True, header=True):
-        #     ws.append(r)
-        #
+
 
         writer = pd.ExcelWriter("./Solutions/"+self.MRPInstance.InstanceName + "_Solution.xlsx", engine='openpyxl')
         self.ProductionQuantity.to_excel(writer, 'ProductionQuantity')
@@ -54,6 +36,7 @@ class MRPSolution:
         self.InventoryCost = inventorycostperproduct.sum();
         self.BackOrderCost = backordercostperproduct.sum();
         self.SetupCost = setupcostperproduct.sum();
+        self.TotalCost =  self.InventoryCost + self.BackOrderCost +  self.SetupCost
 
     #constructor
     def __init__( self, instance, solquantity, solproduction, solinventory, solbackorder ):
@@ -68,4 +51,5 @@ class MRPSolution:
         self.InventoryCost = -1;
         self.BackOrderCost = -1;
         self.SetupCost = -1;
+        self.TotalCost =-1;
         self.ComputeCost();

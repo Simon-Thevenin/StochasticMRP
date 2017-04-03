@@ -1,7 +1,9 @@
 import cplex
 import pandas as pd
+import openpyxl as opxl
 from MRPInstance import MRPInstance
 from MRPSolution import MRPSolution
+import time
 import sys
 import numpy as np
 
@@ -152,15 +154,11 @@ def CreateConstraints(c):
 
 #This function creates the CPLEX model and solves it.
 def MRP():
-    Instance.PrintInstance()
+    if Debug:
+        Instance.PrintInstance()
 
-    print "Start to model in Cplex";
+    #print "Start to model in Cplex";
     c = cplex.Cplex()
-
-    print "The indexes of the variables are:"
-    print "quantity: %d - %d, inventory: %d - %d, prodution: %d - %d,  backorder: %d - %d" % (
-        Instance.StartQuantityVariable, Instance.NrQuantiyVariables, Instance.StartInventoryVariable, Instance.NrInventoryVariable,
-        Instance.StartProdustionVariable, Instance.NrProductionVariable, Instance.StartBackorderVariable, Instance.NrBackorderVariable)
 
     #Create the variabbles and constraints
     CreateVariable(c)
@@ -170,26 +168,31 @@ def MRP():
     c.objective.set_sense( c.objective.sense.minimize )
     if Debug:
         c.write("mrp.lp")
-    #Redircet the log files
-    c.set_log_stream("mrp_log.txt")
-    c.set_log_stream("mrp_log.txt")
-    c.set_log_stream("mrp_log.txt")
-    c.set_log_stream("mrp_log.txt")
+    else:
+        c.set_log_stream("mrp_log.txt")
+        c.set_results_stream("mrp_log.txt")
+        c.set_warning_stream("mrp_log.txt")
+        c.set_error_stream("mrp_log.txt")
 
     #tune the paramters
     c.parameters.timelimit.set( 1800.0 )
     c.parameters.threads.set( 1 )
 
     print "Start to solve with Cplex";
+    start_time = time.time()
     c.solve()
-
+    elapsedtime =  time.time() - start_time;
     sol = c.solution
-    print("Solution status = ", sol.get_status() )
-    print(sol.status[sol.get_status()])
+    #print("Solution status = ", sol.get_status() )
+    #print(sol.status[sol.get_status()])
+
+    if Debug:
+        sol.write( "mrpsolution.sol" )
 
     #Handle the results
     if sol.is_primal_feasible():
-        print("Solution value  = %r" % sol.get_objective_value())
+        objvalue = sol.get_objective_value()
+        #print("Solution value  = %r" % objvalue)
         array =  [  GetIndexQuantityVariable( p, t ) for p in Instance.ProductSet for t in Instance.TimeBucketSet ];
         solquantity =   sol.get_values( array )
         solquantity =  zip(*[iter(solquantity)] * Instance.NrTimeBucket )
@@ -201,44 +204,94 @@ def MRP():
                   for p in Instance.ProductSet  for w in  Instance.ScenarioSet   for t in Instance.TimeBucketSet  ]
         solinventory = sol.get_values( array )
         solinventory =  np.array( solinventory,np.float32 ).reshape( ( Instance.NrProduct, Instance.NrTimeBucket * Instance.NrScenario ) )
-        print solinventory
+        #print solinventory
         test = [  "w %d t %d p %d"%(w,t,p)
                   for p in Instance.ProductSet  for w in Instance.ScenarioSet   for t in Instance.TimeBucketSet   ]
         testarray = np.array(test).reshape((Instance.NrProduct,
                                             Instance.NrTimeBucket * Instance.NrScenario))
-        print test
-        print testarray
+        #print test
+        #print testarray
         iterables = [Instance.ScenarioSet, Instance.TimeBucketSet]
         multiindex = pd.MultiIndex.from_product(iterables, names=['scenario', 'time'])
 
         testdf = pd.DataFrame(testarray, index=Instance.ProductName, columns=multiindex)
-        print testdf
+        #print testdf
         array = [ GetIndexBackorderVariable( p, t, w )
                   for p in Instance.ProductSet  for w in Instance.ScenarioSet   for t in Instance.TimeBucketSet  ]
         solbackorder = sol.get_values(array)
         solbackorder = np.array(solbackorder, np.float32).reshape((Instance.NrProduct, Instance.NrTimeBucket * Instance.NrScenario))  # array # tempmatinv.reshape(  (Instance.NrScenario, Instance.NrProduct, Instance.NrTimeBucket) ) # zip(*[iter(solinventory)] * Instance.NrTimeBucket )
-        print solbackorder
+        #print solbackorder
 
         mrpsolution = MRPSolution( Instance, solquantity, solproduction, solinventory, solbackorder )
-        mrpsolution.Print()
+        if Debug:
+            mrpsolution.Print()
         mrpsolution.PrintToExcel()
+
+        #Print the output of the test in an excel file
+        #writer = pd.ExcelWriter("./Test/TestResult.xlsx", engine='openpyxl')
+
+        wb = opxl.Workbook()
+        ws = wb.active
+        try:
+            wb = opxl.load_workbook("./Test/TestResult.xlsx");
+            ws = wb.get_sheet_by_name( "Result" )
+        except IOError:
+            wb = opxl.Workbook()
+            ws = wb.create_sheet("Result")
+            columnname = [ "Instance name",
+                           "Cplex solution value",
+                           "Solution cost",
+                           "Cplex_status",
+                           "Cplex time",
+                           "Cplex gap",
+                           "Cplex Nr nodes",
+                           "Cplex best node nr",
+                           "Inventory Cost",
+                           "BackOrder cost",
+                           "Setup cost",
+                           "Nr level",
+                           "Nr product",
+                           "Nr time Period",
+                           "Nr Scenario",
+                           "Max lead time" ]
+            ws.append( columnname )
+
+        data =  [ Instance.InstanceName,
+                  objvalue,
+                  mrpsolution.TotalCost,
+                  sol.status[ sol.get_status() ],
+                  elapsedtime,
+                  sol.MIP.get_mip_relative_gap() ,
+                  sol.progress.get_num_iterations(),
+                  sol.MIP.get_incumbent_node(),
+                  mrpsolution.InventoryCost,
+                  mrpsolution.BackOrderCost,
+                  mrpsolution.SetupCost,
+                  Instance.NrLevel,
+                  Instance.NrProduct,
+                  Instance.NrTimeBucket,
+                  Instance.NrScenario,
+                  Instance.MaxLeadTime ]
+
+        ws.append( data )
+        wb.save( "./Test/TestResult.xlsx" )
     else:
         print("No solution available.")
 
 if __name__ == "__main__":
-    Instance.DefineAsSuperSmallIntance()
-    MRP();
-    # instancename = ""
-    # try:
-    #     if len(sys.argv) == 1:
-    #         instancename = raw_input("Enter the number (in [01;38]) of the instance to solve:")
-    #     else:
-    #         script, instancename = sys.argv
-    #
-    #     Instance.ReadFromFile(instancename)
-    #     MRP();
-    # except KeyError:
-    #     print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
+    #Instance.DefineAsSuperSmallIntance()
+    #MRP();
+     instancename = ""
+     try:
+         if len(sys.argv) == 1:
+             instancename = raw_input("Enter the number (in [01;38]) of the instance to solve:")
+         else:
+             script, instancename = sys.argv
+
+         Instance.ReadFromFile( instancename, 500, 1 )
+         MRP();
+     except KeyError:
+         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
    # Instance.DefineAsSmallIntance()
    #
    # Instance.PrintInstance()
