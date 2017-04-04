@@ -67,15 +67,15 @@ class MRPInstance:
         self.Requirements = [ [ 0, 1 ],
                               [ 0, 0 ] ]
         self.Leadtimes = [1, 1]
-        self.Demands = [ [ [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ] ],
-                         [[0.0,0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ] ] ]
+        self.Demands = [ [ [ 5.0, 10.0 , 200.0 ], [ 5.0, 10.0 , 200.0 ], [ 5.0, 10.0 , 200.0 ] ],
+                         [ [0.0,0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ] ] ]
 
         self.StartingInventories = [ 10.0, 10.0 ]
         self.InventoryCosts = [ 10.0, 5.0 ]
         self.SetupCosts = [ 5.0, 5.0 ]
-        self.BackorderCosts = [ 100.0, 0.0 ]  # for now assume no external demand for components
-        self.CapacityConsumptions = [ [ 0.1, 0.0 ],
-                                      [ 0.0, 0.2 ] ]
+        self.BackorderCosts = [ 10000.0, 0.0 ]  # for now assume no external demand for components
+        self.CapacityConsumptions = [ [ 0.0001, 0.0 ],
+                                      [ 0.0, 0.002 ] ]
         self.ComputeIndices()
         self.ComputeLevel()
         self.ComputeMaxLeadTime( )
@@ -178,7 +178,7 @@ class MRPInstance:
         return df;
 
     #This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile( self, instancename, nrtimeperiod, nrscenario ):
+    def ReadFromFile( self, instancename, nrscenario ):
         wb2 = opxl.load_workbook( "./Instances/MSOM-06-038-R2.xlsx" )
         #The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
         supplychaindf = self.ReadDataFrame( wb2, instancename + "_LL" )
@@ -190,17 +190,14 @@ class MRPInstance:
         self.NrResource = 0
         self.CapacityConsumptions =  [  ]
         self.NrProduct = len( self.ProductName )
-        #Consider a time horizon of 200 days (The instance do not have a starting inventory)
-        self.NrTimeBucket = nrtimeperiod
         self.NrScenario = nrscenario
+        self.NrTimeBucket = 0
         self.ComputeIndices()
         #This set of instances assume no setup
         self.SetupCosts = [ 0.0 ] * self.NrProduct
         datasheetdf = datasheetdf.fillna( 0 )
         #Get the average demand, lead time
-        self.Demands = [ [ [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand' ) for w in self.ScenarioSet    ]
-                           for t in self.TimeBucketSet ]
-                         for p in self.ProductSet ]
+
         self.Leadtimes =  [ int ( math.ceil( datasheetdf.get_value( self.ProductName[ p ], 'stageTime' ) ) ) for p in self.ProductSet ]
         #Compute the requireement from the supply chain. This set of instances assume the requirement of each arc is 1.
         self.Requirements = [ [ 0 ] * self.NrProduct for _ in self.ProductSet ]
@@ -224,7 +221,13 @@ class MRPInstance:
         self.BackorderCosts = [ 0.1 ] * self.NrProduct
         self.ComputeLevel()
         self.ComputeMaxLeadTime( )
-
+        # Consider a time horizon of 20 days plus the total lead time
+        self.NrTimeBucket = self.MaxLeadTime + 20
+        self.ComputeIndices()
         # Assume a starting inventory is the average demand during the lead time
         self.StartingInventories = [ datasheetdf.get_value( self.ProductName[p], 'avgDemand')
                                      * self.MaxLeadTimeProduct[p] for p in self.ProductSet]
+
+        self.Demands = [[[datasheetdf.get_value(self.ProductName[p], 'avgDemand') for w in self.ScenarioSet]
+                         for t in self.TimeBucketSet]
+                        for p in self.ProductSet]

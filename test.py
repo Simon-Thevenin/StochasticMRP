@@ -7,7 +7,7 @@ import time
 import sys
 import numpy as np
 
-Debug = True
+Debug = False
 Instance = MRPInstance()
 M = cplex.infinity
 
@@ -154,6 +154,7 @@ def CreateConstraints(c):
 
 #This function creates the CPLEX model and solves it.
 def MRP():
+    start_time = time.time()
     if Debug:
         Instance.PrintInstance()
 
@@ -179,9 +180,10 @@ def MRP():
     c.parameters.threads.set( 1 )
 
     print "Start to solve with Cplex";
-    start_time = time.time()
+    end_modeling = time.time();
     c.solve()
-    elapsedtime =  time.time() - start_time;
+    buildtime =   end_modeling - start_time;
+    solvetime =  time.time() - start_time;
     sol = c.solution
     #print("Solution status = ", sol.get_status() )
     #print(sol.status[sol.get_status()])
@@ -201,23 +203,24 @@ def MRP():
         solproduction = sol.get_values( array )
         solproduction = np.array( solproduction,np.float32 ).reshape( ( Instance.NrProduct, Instance.NrTimeBucket ) )
         array = [ GetIndexInventoryVariable( p, t, w )
-                  for p in Instance.ProductSet  for w in  Instance.ScenarioSet   for t in Instance.TimeBucketSet  ]
+                  for p in Instance.ProductSet   for t in Instance.TimeBucketSet  for w in  Instance.ScenarioSet ]
         solinventory = sol.get_values( array )
         solinventory =  np.array( solinventory,np.float32 ).reshape( ( Instance.NrProduct, Instance.NrTimeBucket * Instance.NrScenario ) )
+
         #print solinventory
-        test = [  "w %d t %d p %d"%(w,t,p)
-                  for p in Instance.ProductSet  for w in Instance.ScenarioSet   for t in Instance.TimeBucketSet   ]
-        testarray = np.array(test).reshape((Instance.NrProduct,
-                                            Instance.NrTimeBucket * Instance.NrScenario))
+        #test = [  "w %d t %d p %d"%(w,t,p)
+        #          for p in Instance.ProductSet  for w in Instance.ScenarioSet   for t in Instance.TimeBucketSet   ]
+        #testarray = np.array(test).reshape((Instance.NrProduct,
+        #                                    Instance.NrTimeBucket * Instance.NrScenario))
         #print test
         #print testarray
-        iterables = [Instance.ScenarioSet, Instance.TimeBucketSet]
-        multiindex = pd.MultiIndex.from_product(iterables, names=['scenario', 'time'])
+        #iterables = [Instance.ScenarioSet, Instance.TimeBucketSet]
+        #multiindex = pd.MultiIndex.from_product(iterables, names=['scenario', 'time'])
 
-        testdf = pd.DataFrame(testarray, index=Instance.ProductName, columns=multiindex)
+       # testdf = pd.DataFrame(testarray, index=Instance.ProductName, columns=multiindex)
         #print testdf
         array = [ GetIndexBackorderVariable( p, t, w )
-                  for p in Instance.ProductSet  for w in Instance.ScenarioSet   for t in Instance.TimeBucketSet  ]
+                  for p in Instance.ProductSet for t in Instance.TimeBucketSet for w in Instance.ScenarioSet ]
         solbackorder = sol.get_values(array)
         solbackorder = np.array(solbackorder, np.float32).reshape((Instance.NrProduct, Instance.NrTimeBucket * Instance.NrScenario))  # array # tempmatinv.reshape(  (Instance.NrScenario, Instance.NrProduct, Instance.NrTimeBucket) ) # zip(*[iter(solinventory)] * Instance.NrTimeBucket )
         #print solbackorder
@@ -242,10 +245,13 @@ def MRP():
                            "Cplex solution value",
                            "Solution cost",
                            "Cplex_status",
-                           "Cplex time",
+                           "Build time",
+                           "Solve time",
                            "Cplex gap",
                            "Cplex Nr nodes",
                            "Cplex best node nr",
+                           "Cplex Nr Variable",
+                           "Cplex Nr constraint",
                            "Inventory Cost",
                            "BackOrder cost",
                            "Setup cost",
@@ -260,10 +266,13 @@ def MRP():
                   objvalue,
                   mrpsolution.TotalCost,
                   sol.status[ sol.get_status() ],
-                  elapsedtime,
-                  sol.MIP.get_mip_relative_gap() ,
+                  buildtime,
+                  solvetime,
+                  sol.MIP.get_mip_relative_gap(),
                   sol.progress.get_num_iterations(),
                   sol.MIP.get_incumbent_node(),
+                  c.variables.get_num(),
+                  c.linear_constraints.get_num(),
                   mrpsolution.InventoryCost,
                   mrpsolution.BackOrderCost,
                   mrpsolution.SetupCost,
@@ -279,19 +288,19 @@ def MRP():
         print("No solution available.")
 
 if __name__ == "__main__":
-    #Instance.DefineAsSuperSmallIntance()
+    #Instance.DefineAsSmallIntance()
     #MRP();
-     instancename = ""
-     try:
-         if len(sys.argv) == 1:
-             instancename = raw_input("Enter the number (in [01;38]) of the instance to solve:")
-         else:
-             script, instancename = sys.argv
+      instancename = ""
+      try:
+          if len(sys.argv) == 1:
+              instancename = raw_input("Enter the number (in [01;38]) of the instance to solve:")
+          else:
+              script, instancename = sys.argv
 
-         Instance.ReadFromFile( instancename, 500, 1 )
-         MRP();
-     except KeyError:
-         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
+          Instance.ReadFromFile( instancename, 1 )
+          MRP();
+      except KeyError:
+          print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
    # Instance.DefineAsSmallIntance()
    #
    # Instance.PrintInstance()
