@@ -42,11 +42,11 @@ class MRPSolution:
     def __init__( self, instance, solquantity, solproduction, solinventory, solbackorder ):
         self.MRPInstance = instance
         #Create a multi index to store the scenarios and time
-        iterables = [ self.MRPInstance.ScenarioSet , self.MRPInstance.TimeBucketSet]
-        multiindex = pd.MultiIndex.from_product(iterables, names=['scenario', 'time'])
-        self.ProductionQuantity = pd.DataFrame(  solquantity, index = instance.ProductName )
+        iterables = [ self.MRPInstance.TimeBucketSet, self.MRPInstance.ScenarioSet ]
+        multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
+        self.ProductionQuantity = pd.DataFrame(  solquantity, index = instance.ProductName, columns = multiindex  )
         self.InventoryLevel = pd.DataFrame(  solinventory, index = instance.ProductName, columns = multiindex )
-        self.Production = pd.DataFrame(  solproduction, index = instance.ProductName )
+        self.Production = pd.DataFrame(  solproduction, index = instance.ProductName, columns = multiindex  )
         self.BackOrder = pd.DataFrame(  solbackorder,  index = instance.ProductName, columns = multiindex  )
         self.InventoryCost = -1;
         self.BackOrderCost = -1;

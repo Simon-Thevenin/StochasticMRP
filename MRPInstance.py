@@ -154,13 +154,17 @@ class MRPInstance:
 
     #Compute the start of index and the number of variables for the considered instance
     def ComputeIndices( self ):
-        self.NrQuantiyVariables = self.NrProduct * self.NrTimeBucket
+#        self.NrQuantiyPeriod1Variables = self.NrProduct
+        self.NrQuantiyVariables = self.NrProduct * self.NrTimeBucket * self.NrScenario
         self.NrInventoryVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
-        self.NrProductionVariable = self.NrProduct * self.NrTimeBucket
+       # self.NrProductionPeriod1Variable = self.NrProduct
+        self.NrProductionVariable = self.NrProduct  *  self.NrTimeBucket  * self.NrScenario
         self.NrBackorderVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
-        self.StartQuantityVariable = 0
-        self.StartInventoryVariable =  self.NrQuantiyVariables
-        self.StartProdustionVariable =  self.StartInventoryVariable +  self.NrInventoryVariable
+        #self.StartQuantiyPeriod1Variables = 0
+        self.StartQuantityVariable = 0 #self.StartQuantiyPeriod1Variables + self.NrQuantiyVariables;
+        self.StartInventoryVariable =  self.StartQuantityVariable + self.NrQuantiyVariables
+        #self.StartProdustionPeriod1Variable =  self.StartInventoryVariable +  self.NrInventoryVariable
+        self.StartProdustionVariable = self.StartInventoryVariable +  self.NrInventoryVariable# self.StartProdustionPeriod1Variable + self.NrProductionPeriod1Variable
         self.StartBackorderVariable =   self.StartProdustionVariable +  self.NrProductionVariable
         self.ProductSet = range( self.NrProduct )
         self.TimeBucketSet = range( self.NrTimeBucket )
@@ -171,6 +175,12 @@ class MRPInstance:
         sheet = wb2[framename];
         data =  sheet.values
         cols = next( data ) [ 1: ]
+        cols = list( cols )
+        #remove the None from the column names
+        for i in range( len( cols ) ):
+            if cols[i] == None :
+                cols[i] = i
+
         data = list( data )
         idx = [ r[ 0 ] for r in data ]
         data = ( itools.islice(r, 1, None ) for r in data )
@@ -183,6 +193,7 @@ class MRPInstance:
         #The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
         supplychaindf = self.ReadDataFrame( wb2, instancename + "_LL" )
         datasheetdf = self.ReadDataFrame( wb2, instancename + "_SD" )
+        datasheetdf = datasheetdf.fillna(0)
         #read the data
         self.ProductName = list( datasheetdf.index.values )
         self.InstanceName = instancename
@@ -195,9 +206,7 @@ class MRPInstance:
         self.ComputeIndices()
         #This set of instances assume no setup
         self.SetupCosts = [ 0.0 ] * self.NrProduct
-        datasheetdf = datasheetdf.fillna( 0 )
-        #Get the average demand, lead time
-
+         #Get the average demand, lead time
         self.Leadtimes =  [ int ( math.ceil( datasheetdf.get_value( self.ProductName[ p ], 'stageTime' ) ) ) for p in self.ProductSet ]
         #Compute the requireement from the supply chain. This set of instances assume the requirement of each arc is 1.
         self.Requirements = [ [ 0 ] * self.NrProduct for _ in self.ProductSet ]
