@@ -79,16 +79,23 @@ def CreateVariable(c):
                      ub = [ M ] * Instance.NrQuantiyVariables )
 
     # the variable inventory_prod_time_p_t indicated the inventory level of product p at time t
-    c.variables.add( obj = Instance.InventoryCosts * ( Instance.NrTimeBucket * Instance.NrScenario ),
+    inventorycosts = [ Instance.InventoryCosts[ p ] * Instance.Scenarios[ w ].Probability
+                       for w in Instance.ScenarioSet for t in Instance.TimeBucketSet for p in Instance.ProductSet]
+    c.variables.add( obj = inventorycosts,
                      lb = [ 0.0 ] * Instance.NrInventoryVariable,
                      ub = [ M ] * Instance.NrInventoryVariable )
 
+    setupcosts = [Instance.SetupCosts[p] * Instance.Scenarios[w].Probability
+                  for w in Instance.ScenarioSet for t in Instance.TimeBucketSet for p in Instance.ProductSet]
     # the variable production_prod_time_p_t equals 1 if a lot of product p is produced at time t
-    c.variables.add( obj = Instance.SetupCosts * ( Instance.NrTimeBucket  * Instance.NrScenario ),
+    c.variables.add( obj = setupcosts,
                      lb=[ 0.0 ] * Instance.NrProductionVariable,
                      ub=[ 1.0 ] * Instance.NrProductionVariable )
+
     # the variable backorder_prod_time_p_t gives the amount of product p backordered at time t
-    c.variables.add( obj = Instance.BackorderCosts * ( Instance.NrTimeBucket * Instance.NrScenario ),
+    backordercosts = [Instance.BackorderCosts[p] * Instance.Scenarios[w].Probability
+                     for w in Instance.ScenarioSet for t in Instance.TimeBucketSet  for p in Instance.ProductSet  ]
+    c.variables.add( obj = backordercosts,
                      lb = [ 0.0 ] * Instance.NrBackorderVariable,
                      ub = [ M ] * Instance.NrBackorderVariable )
 
@@ -133,8 +140,8 @@ def CreateFlowConstraints(c):
             for w in Instance.ScenarioSet:
                 righthandside = [ -1 * Instance.StartingInventories[ p ] ]
                 backordervar = [];
-                righthandside[ 0 ] = righthandside[ 0 ] + sum( Instance.Demands[ p ][ tau ][w] for tau in range( t + 1 ) )
-                if  sum( Instance.Demands[ p ][ tau ][w]  for tau in range( Instance.NrTimeBucket )   ) > 0:
+                righthandside[ 0 ] = righthandside[ 0 ] + sum( Instance.Scenarios[ w ].Demands[ tau ][p] for tau in range( t + 1 ) )
+                if  sum( Instance.Scenarios[ w ].Demands[ tau ][p]  for tau in range( Instance.NrTimeBucket )   ) > 0:
                     backordervar = [ GetIndexBackorderVariable( p, t, w ) ]
 
                 quantityvar = [ GetIndexQuantityVariable( p, tau, w ) for tau in range( t - Instance.Leadtimes[ p ] + 1 ) ]
@@ -198,27 +205,44 @@ def CreateCapacityConstraints(c):
 
 
  # This function creates the non anticipitativity constraint
-def CreateNonanticipativityConstraints(c):
+
+def CreateNonanticipativityConstraints( c ):
     #Non anticipitativity only for period 1 for now
      for w1 in Instance.ScenarioSet:
-         for w2 in Instance.ScenarioSet:
-             if w1 <> w2:
-                 for p in Instance.ProductSet:
-                     vars = [ GetIndexQuantityVariable(p, 0, w1), GetIndexQuantityVariable(p, 0, w2)]
-                     coeff = [ 1.0, -1.0]
-                     righthandside = [0.0]
-                     # PrintConstraint( vars, coeff, righthandside )
-                     c.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
-                                               senses=["E"],
-                                               rhs=righthandside )
+         for w2 in range( w1 +1, Instance.NrScenario):
+             for p in Instance.ProductSet:
+                 for t in Instance.TimeBucketSet:
+                      if Instance.Scenarios[ w1 ].QuanitityVariable[ t ][ p ] == Instance.Scenarios[ w2 ].QuanitityVariable[ t ][ p ] :
+                           vars = [ GetIndexQuantityVariable( p, t, w1 ), GetIndexQuantityVariable( p, t, w2 ) ]
+                           coeff = [ 1.0, -1.0 ]
+                           righthandside = [ 0.0 ]
+                           # PrintConstraint( vars, coeff, righthandside )
+                           c.linear_constraints.add( lin_expr = [cplex.SparsePair(vars, coeff)],
+                                                       senses=["E"],
+                                                       rhs=righthandside )
 
-                     vars = [ GetIndexProductionVariable(p, 0, w1), GetIndexProductionVariable(p, 0, w2)]
-                     coeff = [1.0, -1.0]
-                     righthandside = [0.0]
-                     # PrintConstraint( vars, coeff, righthandside )
-                     c.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
-                                              senses=["E"],
-                                              rhs=righthandside)
+                           vars = [ GetIndexProductionVariable(p, t, w1), GetIndexProductionVariable(p, t, w2)]
+                           coeff = [ 1.0, -1.0 ]
+                           righthandside = [ 0.0 ]
+                           # PrintConstraint( vars, coeff, righthandside )
+                           c.linear_constraints.add(lin_expr = [cplex.SparsePair(vars, coeff)],
+                                                      senses=["E"],
+                                                      rhs=righthandside)
+                           vars = [GetIndexBackorderVariable(p, t, w1), GetIndexBackorderVariable(p, t, w2)]
+                           coeff = [ 1.0, -1.0 ]
+                           righthandside = [ 0.0 ]
+                           # PrintConstraint( vars, coeff, righthandside )
+                           c.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                      senses=["E"],
+                                                      rhs=righthandside)
+
+                           vars = [GetIndexInventoryVariable(p, t, w1), GetIndexInventoryVariable(p, t, w2)]
+                           coeff = [ 1.0, -1.0 ]
+                           righthandside = [ 0.0 ]
+                           # PrintConstraint( vars, coeff, righthandside )
+                           c.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                      senses=["E"],
+                                                      rhs=righthandside)
 
 #Define the constraint of the model
 def CreateConstraints(c):
@@ -226,16 +250,20 @@ def CreateConstraints(c):
      CreateProductionConstraints( c )
      CreateCapacityConstraints( c )
      CreateNonanticipativityConstraints( c )
-
-
-
+     # vars = [GetIndexInventoryVariable(1, 1, 2) ]
+     # coeff = [ 1.0 ]
+     # righthandside = [ 100.0 ]
+     # # PrintConstraint( vars, coeff, righthandside )
+     # c.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+     #                          senses=["E"],
+     #                          rhs=righthandside)
 
 #This function creates the CPLEX model and solves it.
 def MRP():
     start_time = time.time()
     if Debug:
         Instance.PrintInstance()
-
+        Instance.PrintScenarioToExcel()
     #print "Start to model in Cplex";
     c = cplex.Cplex()
 
@@ -316,6 +344,7 @@ def MRP():
                            "Build time",
                            "Solve time",
                            "Cplex gap",
+                           "Cplex Nr iteration",
                            "Cplex Nr nodes",
                            "Cplex best node nr",
                            "Cplex Nr Variable",
@@ -338,6 +367,7 @@ def MRP():
                   solvetime,
                   sol.MIP.get_mip_relative_gap(),
                   sol.progress.get_num_iterations(),
+                  sol.progress.get_num_nodes_processed(),
                   sol.MIP.get_incumbent_node(),
                   c.variables.get_num(),
                   c.linear_constraints.get_num(),
@@ -356,19 +386,19 @@ def MRP():
         print("No solution available.")
 
 if __name__ == "__main__":
-    #Instance.DefineAsSmallIntance()
-    #MRP();
-      instancename = ""
-      try:
-         if len(sys.argv) == 1:
-             instancename = raw_input("Enter the number (in [01;38]) of the instance to solve:")
-         else:
-             script, instancename = sys.argv
+    Instance.DefineAsSmallIntance()
+    MRP();
+    #  instancename = ""
+    #  try:
+    #     if len(sys.argv) == 1:
+    #         instancename = raw_input("Enter the number (in [01;38]) of the instance to solve:")
+    #     else:
+    #         script, instancename = sys.argv
 
-         Instance.ReadFromFile( instancename, 1 )
-         MRP()
-      except KeyError:
-          print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
+    #     Instance.ReadFromFile( instancename, 1 )
+    #     MRP()
+    #  except KeyError:
+    #      print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
    # Instance.DefineAsSmallIntance()
    #
    # Instance.PrintInstance()

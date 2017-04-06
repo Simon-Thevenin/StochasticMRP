@@ -2,46 +2,64 @@ import pandas as pd
 import openpyxl as opxl
 import itertools as itools
 import math
+from ScenarioTree import ScenarioTree
+from Scenario import Scenario
 
 class MRPInstance:
 
     FileName = "./Instances/MSOM-06-038-R2.xls"
 
+    #This function print the instance on the screen
     def PrintInstance( self ):
         print "instance: %s" %self.InstanceName
         print "instance with %d products and %d time buckets" % ( self.NrProduct, self.NrTimeBucket );
-        print "demand: \n %r" % ( pd.DataFrame( self.Demands, index = self.ProductName ) );
+#		print "demand: \n %r" % ( pd.DataFrame( self.Demands, index = self.ProductName ) );
         print "requirements: \n %r" % (pd.DataFrame( self.Requirements, index = self.ProductName, columns = self.ProductName ) );
         print "CapacityConsumptions: \n %r" % (pd.DataFrame( self.CapacityConsumptions, index = self.ProductName ) );
         aggregated = [ self.Leadtimes, self.StartingInventories, self.InventoryCosts,
                        self.SetupCosts, self.BackorderCosts]
         col = [ "Leadtimes", "StartingInventories", "InventoryCosts", "SetupCosts", "BackorderCosts" ]
         print "Per product data: \n %r" % ( pd.DataFrame( aggregated, columns = self.ProductName, index = col ).transpose() );
+        self.DemandScenarioTree.Display()
+        # Print the set of scenario
+        print "Print the scenarios:"
+        for s in self.Scenarios:
+            s.DisplayScenario()
 
-     # This function defines a small instance, this is usefull for debugging.
+    #This function print the scenario of the instance in an excel file
+    def PrintScenarioToExcel( self ):
+        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_Scenario.xlsx",
+                                        engine='openpyxl')
+        for s in self.Scenarios:
+            s.PrintScenarioToExcel( writer )
+        writer.save()
+
+
+    #This function define the current instance as a  small one, used to test the model
     def DefineAsSmallIntance(self ):
         self.InstanceName = "SmallIntance"
         self.ProductName = [ "P1", "P2", "P3", "P4", "P5" ]
         self.NrProduct = 5
         self.NrTimeBucket = 7
         self.NrResource = 5
-        self.NrScenario = 3
         self.Requirements = [ [ 0, 1, 1, 0, 0 ],
                               [ 0, 0, 0, 1, 0 ],
                               [ 0, 0, 0, 0, 0 ],
                               [  0, 0, 0, 0, 1 ],
                               [ 0, 0, 0, 0, 0 ] ]
         self.Leadtimes = [0, 1, 1, 1, 1]
-        self.Demands = [ [ [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ],
-                           [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ]],
-                         [ [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ],
-                           [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ]],
-                         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
-                          [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
-                         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
-                          [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
-                         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
-                          [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] ]
+        # self.Demands = [ [ [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ],
+        #                    [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ], [ 5.0, 10.0 , 15.0 ]],
+        #                  [ [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ],
+        #                    [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ]],
+        #                  [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
+        #                   [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+        #                  [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
+        #                   [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+        #                  [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
+        #                   [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] ]
+        self.StandardDevDemands = [ 5, 0, 0, 0, 0 ]
+        self.AverageDemand = [ 10, 0, 0, 0, 0 ]
         self.StartingInventories = [10.0, 100.0, 100.0, 100.0, 100.0]
         self.InventoryCosts = [5.0, 4.0, 3.0, 2.0, 1.0]
         self.SetupCosts = [10000.0, 0.0, 0.0, 0.0, 0.0]
@@ -53,32 +71,41 @@ class MRPInstance:
                                       [0.0, 0.0, 0.0, 0.0, 0.04] ]
         self.ComputeIndices()
         self.ComputeLevel()
-        self.ComputeMaxLeadTime( )
+        self.ComputeMaxLeadTime()
+        self.NrScenario, self.Scenarios = self.CreateAllScenario( 3 )
+        #update indices to take into account the scenario
+        self.ComputeIndices()
 
      # This function defines a very small instance, this is usefull for debugging.
+
+    #This function define the current instance as a very small one, used to implement the model
     def DefineAsSuperSmallIntance(self ):
-        # data of a small instance to implement.
+
         self.InstanceName = "SuperSmallIntance"
         self.ProductName = [ "P1", "P2" ]
         self.NrProduct = 2
         self.NrTimeBucket = 3
         self.NrResource = 2
-        self.NrScenario = 3
         self.Requirements = [ [ 0, 1 ],
                               [ 0, 0 ] ]
-        self.Leadtimes = [1, 1]
-        self.Demands = [ [ [ 5.0, 10.0 , 200.0 ], [ 5.0, 10.0 , 200.0 ], [ 5.0, 10.0 , 200.0 ] ],
-                         [ [0.0,0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ], [ 0.0, 0.0 , 0.0 ] ] ]
-
+        self.Leadtimes = [ 0, 1 ]
+        self.StandardDevDemands = [ 5, 0 ]
+        self.AverageDemand = [ 10, 0 ]
         self.StartingInventories = [ 10.0, 10.0 ]
         self.InventoryCosts = [ 10.0, 5.0 ]
         self.SetupCosts = [ 5.0, 5.0 ]
         self.BackorderCosts = [ 10000.0, 0.0 ]  # for now assume no external demand for components
         self.CapacityConsumptions = [ [ 0.0001, 0.0 ],
                                       [ 0.0, 0.002 ] ]
+
         self.ComputeIndices()
         self.ComputeLevel()
-        self.ComputeMaxLeadTime( )
+        self.ComputeMaxLeadTime()
+        self.NrScenario = len( self.Scenarios )
+        self.ComputeIndices()
+        self.NrScenario, self.Scenarios = self.CreateAllScenario( 3 )
+        # update indices to take into account the scenario
+        self.ComputeIndices()
 
     #Constructor
     def __init__( self ):
@@ -90,7 +117,8 @@ class MRPInstance:
         self.ProductSet = []
         self.TimeBucketSet = []
         self.ScenarioSet = []
-        self.Demands = []
+        self.AverageDemand = []
+        self.StandardDevDemands = []
         self.Requirements = []
         self.Leadtimes = []
         self.StartingInventories = []
@@ -111,13 +139,26 @@ class MRPInstance:
         self.StartInventoryVariable = 0
         self.StartProdustionVariable = 0
         self.StartBackorderVariable = 0
+
+        # The attribut below correspond to the index of the variable when the non atticiaptivity constraint
+        #  are not added and the noon requireed variables are not added
+        self.NrQuantiyVariablesWithoutNonAnticipativity = 0
+        self.NrInventoryVariableWithoutNonAnticipativity  = 0
+        self.NrProductionVariableWithoutNonAnticipativity  = 0
+        self.NrBackorderVariableWithoutNonAnticipativity  = 0
+        self.StartQuantityVariableWithoutNonAnticipativity  = 0
+        self.StartInventoryVariableWithoutNonAnticipativity  = 0
+        self.StartProdustionVariableWithoutNonAnticipativity  = 0
+        self.StartBackorderVariableWithoutNonAnticipativity  = 0
+
         self.ProductName = ""
         #Compute some statistic about the instance
         self.MaxLeadTime = -1
         self.NrLevel = -1
         self.Level = [] # The level of each product in the bom
         self.MaxLeadTimeProduct = [] #The maximum leadtime to the component for each product
-
+        self.DemandScenarioTree = ScenarioTree( instance = self )
+        self.Scenarios = []
 
     #Compute the lead time from a product to its component with the largest sum of lead time
     def ComputeMaxLeadTime( self ):
@@ -154,21 +195,26 @@ class MRPInstance:
 
     #Compute the start of index and the number of variables for the considered instance
     def ComputeIndices( self ):
-#        self.NrQuantiyPeriod1Variables = self.NrProduct
         self.NrQuantiyVariables = self.NrProduct * self.NrTimeBucket * self.NrScenario
         self.NrInventoryVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
-       # self.NrProductionPeriod1Variable = self.NrProduct
         self.NrProductionVariable = self.NrProduct  *  self.NrTimeBucket  * self.NrScenario
         self.NrBackorderVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
-        #self.StartQuantiyPeriod1Variables = 0
-        self.StartQuantityVariable = 0 #self.StartQuantiyPeriod1Variables + self.NrQuantiyVariables;
+        self.StartQuantityVariable = 0
         self.StartInventoryVariable =  self.StartQuantityVariable + self.NrQuantiyVariables
-        #self.StartProdustionPeriod1Variable =  self.StartInventoryVariable +  self.NrInventoryVariable
-        self.StartProdustionVariable = self.StartInventoryVariable +  self.NrInventoryVariable# self.StartProdustionPeriod1Variable + self.NrProductionPeriod1Variable
+        self.StartProdustionVariable = self.StartInventoryVariable +  self.NrInventoryVariable
         self.StartBackorderVariable =   self.StartProdustionVariable +  self.NrProductionVariable
         self.ProductSet = range( self.NrProduct )
         self.TimeBucketSet = range( self.NrTimeBucket )
         self.ScenarioSet = range( self.NrScenario )
+
+        self.NrQuantiyVariablesWithoutNonAnticipativity = self.NrProduct * self.NrTimeBucket * self.DemandScenarioTree.NrNode
+        self.NrInventoryVariableWithoutNonAnticipativity = self.NrProduct * self.NrTimeBucket * self.DemandScenarioTree.NrNode
+        self.NrProductionVariableWithoutNonAnticipativity = self.NrProduct  *  self.NrTimeBucket  * self.DemandScenarioTree.NrNode
+        self.NrBackorderVariableWithoutNonAnticipativity = self.NrProduct * self.NrTimeBucket * self.DemandScenarioTree.NrNode
+        self.StartQuantityVariableWithoutNonAnticipativity = 0
+        self.StartInventoryVariableWithoutNonAnticipativity =  self.StartQuantityVariableWithoutNonAnticipativity + self.NrQuantiyVariablesWithoutNonAnticipativity
+        self.StartProdustionVariableWithoutNonAnticipativity = self.StartInventoryVariableWithoutNonAnticipativity +  self.NrInventoryVariableWithoutNonAnticipativity
+        self.StartBackorderVariableWithoutNonAnticipativity =   self.StartProdustionVariableWithoutNonAnticipativity +  self.NrProductionVariableWithoutNonAnticipativity
 
     #This function transform the sheet given in arguments into a dataframe
     def ReadDataFrame( self, wb2, framename ):
@@ -187,6 +233,25 @@ class MRPInstance:
         df = pd.DataFrame( data, index=idx, columns=cols )
         return df;
 
+    #This function create all the scenario using a scenario tree
+    def CreateAllScenario( self, nrbranchperlevel ):
+
+        nrbranchperlevellist = [ 1 ] + [ nrbranchperlevel ] * ( self.NrTimeBucket - 1 )
+
+        self.DemandScenarioTree = ScenarioTree( self, nrbranchperlevellist );
+
+        scenariosasleaf = self.DemandScenarioTree.CreateAllScenario()
+
+        scenarios = [ Scenario( owner = self,
+                                demand = s.DemandsInScenario,
+                                proabability = s.ProbabilityOfScenario,
+                                quantityvariable = s.QuanitityVariableOfScenario,
+                                productionvariable = s.ProductionVariableOfScenario,
+                                inventoryvariable = s.InventoryVariableOfScenario,
+                                backordervariable = s.BackOrderVariableOfScenario ) for s in scenariosasleaf ]
+
+        return len(scenarios), scenarios
+
     #This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
     def ReadFromFile( self, instancename, nrscenario ):
         wb2 = opxl.load_workbook( "./Instances/MSOM-06-038-R2.xlsx" )
@@ -201,7 +266,6 @@ class MRPInstance:
         self.NrResource = 0
         self.CapacityConsumptions =  [  ]
         self.NrProduct = len( self.ProductName )
-        self.NrScenario = nrscenario
         self.NrTimeBucket = 0
         self.ComputeIndices()
         #This set of instances assume no setup
@@ -234,9 +298,17 @@ class MRPInstance:
         self.NrTimeBucket = self.MaxLeadTime + 20
         self.ComputeIndices()
         # Assume a starting inventory is the average demand during the lead time
-        self.StartingInventories = [ datasheetdf.get_value( self.ProductName[p], 'avgDemand')
-                                     * self.MaxLeadTimeProduct[p] for p in self.ProductSet]
+        self.StartingInventories = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand')
+                                     * max( self.Leadtimes[q] *  self.Requirements[ q ][ p ]  for q in self.ProductSet )
+                                     for p in self.ProductSet ]
 
-        self.Demands = [[[datasheetdf.get_value(self.ProductName[p], 'avgDemand') for w in self.ScenarioSet]
-                         for t in self.TimeBucketSet]
-                        for p in self.ProductSet]
+        #Generate the sets of scenarios
+        self.AverageDemand = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') for p in self.ProductSet ]
+        self.StandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
+
+        self.DemandScenarioTree = ScenarioTree()
+        self.NrScenario, self.Scenarios = self.CreateAllScenario( 3 )
+        #Compute indices to account for the new scenarios
+        self.ComputeIndices()
+        self.ComputeLevel()
+        self.ComputeMaxLeadTime()
