@@ -8,18 +8,13 @@ from MRPInstance import MRPInstance
 class MRPSolution:
 
     #This function print the solution in an Excel file in the folde "Solutions"
-    def PrintToExcel(self):
-
-
-        writer = pd.ExcelWriter("./Solutions/"+self.MRPInstance.InstanceName + "_Solution.xlsx", engine='openpyxl')
+    def PrintToExcel(self, description):
+        writer = pd.ExcelWriter("./Solutions/"+ self.MRPInstance.InstanceName + "_" + description + "_Solution.xlsx", engine='openpyxl')
         self.ProductionQuantity.to_excel(writer, 'ProductionQuantity')
         self.Production.to_excel(writer, 'Production')
         self.InventoryLevel.to_excel(writer, 'InventoryLevel')
         self.BackOrder.to_excel(writer, 'BackOrder')
-
         writer.save()
-
-        #workbook.save(  )
 
     #This function prints a solution
     def Print(self):
@@ -30,23 +25,36 @@ class MRPSolution:
 
     #This funciton conpute the different costs (inventory, backorder, setups) associated with the solution.
     def ComputeCost(self):
-        inventorycostperproduct =  self.InventoryLevel.transpose().dot( self.MRPInstance.InventoryCosts )
-        setupcostperproduct = self.Production.transpose().dot( self.MRPInstance.SetupCosts )
-        backordercostperproduct = self.BackOrder.transpose().dot(self.MRPInstance.BackorderCosts )
-        self.InventoryCost = inventorycostperproduct.sum();
-        self.BackOrderCost = backordercostperproduct.sum();
-        self.SetupCost = setupcostperproduct.sum();
+        #multiply by inventory cost per product -> get a vector with cost per time unit and scenario
+        inventorycostpertimeandscenar =  self.InventoryLevel.transpose().dot( self.MRPInstance.InventoryCosts )
+        setupcostpertimeandscenar = self.Production.transpose().dot( self.MRPInstance.SetupCosts )
+        backordercostpertimeandscenar = self.BackOrder.transpose().dot(self.MRPInstance.BackorderCosts )
+
+        #Reshap the vector to get matirces
+        inventorycostpertimeandscenar = inventorycostpertimeandscenar.reshape( self.MRPInstance.NrTimeBucket, self.MRPInstance.NrScenario );
+        setupcostpertimeandscenar = setupcostpertimeandscenar.reshape( self.MRPInstance.NrTimeBucket, self.MRPInstance.NrScenario );
+        backordercostpertimeandscenar = backordercostpertimeandscenar.reshape( self.MRPInstance.NrTimeBucket, self.MRPInstance.NrScenario );
+
+        #multiply by the probability of each scenatio
+        proabailities = [ s.Probability for s in self.MRPInstance.Scenarios  ]
+        inventorycostpertime = inventorycostpertimeandscenar.dot( proabailities )
+        setupcostpertime = setupcostpertimeandscenar.dot( proabailities )
+        backordercostpertime = backordercostpertimeandscenar.dot( proabailities )
+
+        self.InventoryCost = inventorycostpertime.sum();
+        self.BackOrderCost = backordercostpertime.sum();
+        self.SetupCost = setupcostpertime.sum();
         self.TotalCost =  self.InventoryCost + self.BackOrderCost +  self.SetupCost
 
     #constructor
     def __init__( self, instance, solquantity, solproduction, solinventory, solbackorder ):
         self.MRPInstance = instance
         #Create a multi index to store the scenarios and time
-        iterables = [ self.MRPInstance.ScenarioSet , self.MRPInstance.TimeBucketSet]
-        multiindex = pd.MultiIndex.from_product(iterables, names=['scenario', 'time'])
-        self.ProductionQuantity = pd.DataFrame(  solquantity, index = instance.ProductName )
+        iterables = [ self.MRPInstance.TimeBucketSet, self.MRPInstance.ScenarioSet ]
+        multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
+        self.ProductionQuantity = pd.DataFrame(  solquantity, index = instance.ProductName, columns = multiindex  )
         self.InventoryLevel = pd.DataFrame(  solinventory, index = instance.ProductName, columns = multiindex )
-        self.Production = pd.DataFrame(  solproduction, index = instance.ProductName )
+        self.Production = pd.DataFrame(  solproduction, index = instance.ProductName, columns = multiindex  )
         self.BackOrder = pd.DataFrame(  solbackorder,  index = instance.ProductName, columns = multiindex  )
         self.InventoryCost = -1;
         self.BackOrderCost = -1;

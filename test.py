@@ -7,78 +7,201 @@ import time
 import sys
 import numpy as np
 
-Debug = True
+Debug = False
 Instance = MRPInstance()
+Solution = None
 M = cplex.infinity
 
+UseNonAnticipativity = False
+ActuallyUseAnticipativity = False
+PrintScenarios = False
+Method = "Two-stages"
+EvaluateSolution = False
+GivenQuantities =[]
+
 #This function returns the name of the quantity variable for product p and time t
-def GetNameQuanityVariable( p, t ):
-    return "quantity_prod_time_%d_%d" % ( p, t )
+def GetNameQuantityVariable( p, t, w ):
+    scenarioindex = -1;
+    if UseNonAnticipativity or ( Method == "Two-stages" ):
+        scenarioindex = w
+        if Method == "Two-stages" and t == 0 : scenarioindex = 0
+    else :
+        scenarioindex = Instance.Scenarios[w].QuanitityVariable[t][p]
+    return "quantity_prod_time_scenar_%d_%d_%d" % (p, t, scenarioindex );
 
 #This function returns the name of the inventory variable for product p and time t
 def GetNameInventoryVariable( p, t, w ):
-    return "inventory_prod_time_scenar_%d_%d_%d" % ( p, t, w )
+    scenarioindex = -1;
+    if UseNonAnticipativity or ( Method == "Two-stages" ):
+        scenarioindex = w
+        if Method == "Two-stages" and t == 0 : scenarioindex = 0
+    else :
+        scenarioindex = Instance.Scenarios[w].InventoryVariable[t][p]
+    return "inventory_prod_time_scenar_%d_%d_%d" % ( p, t, scenarioindex )
 
 #This function returns the name of the production variable for product p and time t
-def GetNameProductionVariable( p, t ):
-    return "production_prod_time_scenar_%d_%d" % ( p, t )
+def GetNameProductionVariable( p, t,w ):
+    scenarioindex = -1;
+    if UseNonAnticipativity or ( Method == "Two-stages" ):
+        scenarioindex = w
+        if Method == "Two-stages" and t == 0 : scenarioindex = 0
+    else :
+        scenarioindex = Instance.Scenarios[w].ProductionVariable[t][p]
+    return "production_prod_time_scenar_%d_%d_%d" % ( p, t, scenarioindex )
 
 #This function returns the name of the backorder variable for product p and time t
 def GetNameBackOrderQuantity( p, t, w ):
-    return "backorder_prod_time_scenar_%d_%d_%d" % ( p, t, w )
+    scenarioindex = -1;
+    if UseNonAnticipativity or ( Method == "Two-stages" ):
+        scenarioindex = w
+        if Method == "Two-stages" and t == 0 : scenarioindex = 0
+    else:
+        scenarioindex = Instance.Scenarios[w].BackOrderVariable[t][p]
+    return "backorder_prod_time_scenar_%d_%d_%d" % ( p, t, scenarioindex )
 
 #the function GetIndexQuantityVariable returns the index of the variable Q_{p, t}. Quantity of product p produced at time t
-def GetIndexQuantityVariable( p, t ):
-    return Instance.StartQuantityVariable + t * Instance.NrProduct + p
+def GetIndexQuantityVariable( p, t, w ):
+    if Method == "Two-stages":
+        if t== 0:
+            return Instance.StartQuantityVariableTwoStages +  p
+        else:
+            return Instance.StartQuantityVariableTwoStages +  Instance.NrProduct +  w  * ( Instance.NrTimeBucket -1 ) * Instance.NrProduct + (t-1) * Instance.NrProduct + p
+    elif UseNonAnticipativity:
+         return Instance.StartQuantityVariable + w * ( Instance.NrTimeBucket ) * Instance.NrProduct + t  * Instance.NrProduct + p
+    else :
+        return Instance.Scenarios[ w ].QuanitityVariable[t][p];
 
 #the function GetIndexInventoryVariable returns the index of the variable I_{p, t}. Inventory of product p produced at time t
 def GetIndexInventoryVariable( p, t, w ):
-    return Instance.StartInventoryVariable + w * Instance.NrTimeBucket * Instance.NrProduct + t * Instance.NrProduct + p
+    if Method == "Two-stages":
+        if t == 0:
+            return Instance.StartInventoryVariableTwoStages + p
+        else :
+            return Instance.StartInventoryVariableTwoStages + Instance.NrProduct + w * ( Instance.NrTimeBucket - 1) * Instance.NrProduct + (t-1) * Instance.NrProduct + p
+    elif UseNonAnticipativity:
+        return Instance.StartInventoryVariable + w * Instance.NrTimeBucket * Instance.NrProduct + t * Instance.NrProduct + p
+    else :
+        return Instance.Scenarios[ w ].InventoryVariable[t][p];
 
-#the function GetIndexProductionVariable returns the index of the variable Y_{p, t}.
+#the function GetIndexProductionVariable returns the index of the variable Y_{p, t, w}.
 # This variable equal to one is product p is produced at time t, 0 otherwise
-def GetIndexProductionVariable( p, t ):
-    return Instance.StartProdustionVariable + t * Instance.NrProduct + p
+def GetIndexProductionVariable( p, t, w ):
+    if Method == "Two-stages":
+        if t== 0:
+            return Instance.StartProdustionVariableTwoStages +  p
+        else:
+            return Instance.StartProdustionVariableTwoStages +  Instance.NrProduct +  w  * ( Instance.NrTimeBucket -1 ) * Instance.NrProduct + (t-1) * Instance.NrProduct + p
+    elif UseNonAnticipativity :
+        return Instance.StartProdustionVariable + w * Instance.NrTimeBucket * Instance.NrProduct + t * Instance.NrProduct + p
+    else:
+        return Instance.Scenarios[w].ProductionVariable[t][p];
 
 #the function GetIndexBackorderVariable returns the index of the variable B_{p, t}. Quantity of product p produced backordered at time t
 def GetIndexBackorderVariable( p, t, w ):
-    return Instance.StartBackorderVariable + w * Instance.NrTimeBucket * Instance.NrProduct + t * Instance.NrProduct + p
+    if Method == "Two-stages":
+        if t== 0:
+            return Instance.StartBackorderVariableTwoStages +  p
+        else:
+            return Instance.StartBackorderVariableTwoStages +  Instance.NrProduct +  w  * ( Instance.NrTimeBucket -1 ) * Instance.NrProduct + (t-1) * Instance.NrProduct + p
+    elif UseNonAnticipativity :
+        return Instance.StartBackorderVariable + w * Instance.NrTimeBucket * Instance.NrProduct + t * Instance.NrProduct + p
+    else:
+        return Instance.Scenarios[w].BackOrderVariable[t][p];
+
 
 #This function define the variables
 def CreateVariable(c):
-    # the variable quantity_prod_time_p_t indicated the quantity of product p produced at time t
-    c.variables.add( obj = [ 0.0 ] * Instance.NrQuantiyVariables,
-                     lb = [ 0.0 ] * Instance.NrQuantiyVariables,
-                     ub = [ M ] * Instance.NrQuantiyVariables )
+    #Define the cost vector for each variable. As the numbber of variable changes when non anticipativity is used the cost are created differently
+    if Method == "Two-stages":
+        inventorycosts = [Instance.InventoryCosts[p] * Instance.Scenarios[w].Probability
+                          for w in Instance.ScenarioSet for t in range( Instance.NrTimeBucket -1 ) for p in Instance.ProductSet]
+        setupcosts = [Instance.SetupCosts[p] * Instance.Scenarios[w].Probability
+                      for w in Instance.ScenarioSet for t in range( Instance.NrTimeBucket -1 )  for p in Instance.ProductSet]
+        backordercosts = [Instance.BackorderCosts[p] * Instance.Scenarios[w].Probability
+                          for w in Instance.ScenarioSet for t in range( Instance.NrTimeBucket -1 )  for p in Instance.ProductSet]
+        #Add the cost of time 0
+        inventorycosts =  [ Instance.InventoryCosts[p]  for p in Instance.ProductSet ] + inventorycosts
+        setupcosts = [Instance.SetupCosts[p] for p in Instance.ProductSet ] + setupcosts
+        backordercosts = [Instance.BackorderCosts[p] for p in Instance.ProductSet ] + backordercosts
+        nrinventoryvariable = Instance.NrQuantiyVariablesTwoStages;
+        nrbackordervariable = Instance.NrBackorderVariableTwoStages;
+        nrproductionvariable = Instance.NrProductionVariableTwoStages;
+        nrquantityvariable = Instance.NrQuantiyVariablesTwoStages;
 
-    # the variable inventory_prod_time_p_t indicated the inventory level of product p at time t
-    c.variables.add( obj = Instance.InventoryCosts * ( Instance.NrTimeBucket * Instance.NrScenario ),
-                     lb = [ 0.0 ] * Instance.NrInventoryVariable,
-                     ub = [ M ] * Instance.NrInventoryVariable )
+    elif UseNonAnticipativity :
+        inventorycosts = [Instance.InventoryCosts[p] * Instance.Scenarios[w].Probability
+                            for w in Instance.ScenarioSet for t in Instance.TimeBucketSet for p in Instance.ProductSet]
+        setupcosts = [Instance.SetupCosts[p] * Instance.Scenarios[w].Probability
+                      for w in Instance.ScenarioSet for t in Instance.TimeBucketSet for p in Instance.ProductSet]
+        backordercosts = [Instance.BackorderCosts[p] * Instance.Scenarios[w].Probability
+                      for w in Instance.ScenarioSet for t in Instance.TimeBucketSet for p in Instance.ProductSet]
+        nrinventoryvariable = Instance.NrInventoryVariable;
+        nrbackordervariable = Instance.NrBackorderVariable;
+        nrproductionvariable = Instance.NrProductionVariable;
+        nrquantityvariable = Instance.NrQuantiyVariables;
+    #Define only the required variables
+    else :
+        nrquantityvariable = Instance.NrQuantiyVariablesWithoutNonAnticipativity
+        nrinventoryvariable = Instance.NrInventoryVariableWithoutNonAnticipativity
+        nrbackordervariable = Instance.NrBackorderVariableWithoutNonAnticipativity
+        nrproductionvariable = Instance.NrProductionVariableWithoutNonAnticipativity
+        inventorycosts = [ 0 ] * nrinventoryvariable
+        setupcosts = [ 0 ] * nrproductionvariable
+        backordercosts = [ 0 ] * nrbackordervariable
+        for w in Instance.ScenarioSet :
+            for t in Instance.TimeBucketSet :
+                for p in Instance.ProductSet :
+                    #Add the cost of the cariable representing multiple scenarios
+                    inventorycostindex =  Instance.Scenarios[ w ].InventoryVariable[ t ][ p ] - Instance.StartInventoryVariableWithoutNonAnticipativity
+                    setupcostindex = Instance.Scenarios[w].ProductionVariable[t][p] - Instance.StartProdustionVariableWithoutNonAnticipativity
+                    backordercostindex = Instance.Scenarios[w].BackOrderVariable[t][p] - Instance.StartBackorderVariableWithoutNonAnticipativity
 
-    # the variable production_prod_time_p_t equals 1 if a lot of product p is produced at time t
-    c.variables.add( obj = Instance.SetupCosts * ( Instance.NrTimeBucket ),
-                     lb=[ 0.0 ] * Instance.NrProductionVariable,
-                     ub=[ 1.0 ] * Instance.NrProductionVariable )
-    # the variable backorder_prod_time_p_t gives the amount of product p backordered at time t
-    c.variables.add( obj = Instance.BackorderCosts * ( Instance.NrTimeBucket * Instance.NrScenario ),
-                     lb = [ 0.0 ] * Instance.NrBackorderVariable,
-                     ub = [ M ] * Instance.NrBackorderVariable )
+                    inventorycosts[ inventorycostindex ] =  inventorycosts[ inventorycostindex ]\
+                        + Instance.InventoryCosts[p] * Instance.Scenarios[w].Probability
+                    setupcosts[ setupcostindex ] = setupcosts[ setupcostindex ] \
+                        + Instance.SetupCosts[p] * Instance.Scenarios[w].Probability
+                    backordercosts[ backordercostindex ] = backordercosts[ backordercostindex ] \
+                        + Instance.BackorderCosts[p] * Instance.Scenarios[w].Probability
+
+     # the variable quantity_prod_time_scenario_p_t_w indicated the quantity of product p produced at time t in scneario w
+    c.variables.add( obj = [ 0.0 ] * nrquantityvariable,
+                      lb = [ 0.0 ] * nrquantityvariable,
+                      ub = [ M ] * nrquantityvariable)
+
+    # the variable inventory_prod_time_scenario_p_t_w indicated the inventory level of product p at time t in scneario w
+    c.variables.add( obj = inventorycosts,
+                     lb = [ 0.0 ] * nrinventoryvariable,
+                     ub = [ M ] * nrinventoryvariable )
+
+    # the variable production_prod_time_scenario_p_t_w equals 1 if a lot of product p is produced at time t in scneario w
+    c.variables.add( obj = setupcosts,
+                     lb=[ 0.0 ] * nrproductionvariable,
+                     ub=[ 1.0 ] * nrproductionvariable )
+
+    # the variable backorder_prod_time_scenario_p_t_w gives the amount of product p backordered at time t in scneario w
+    c.variables.add( obj = backordercosts,
+                     lb = [ 0.0 ] * nrbackordervariable,
+                     ub = [ M ] * nrbackordervariable )
 
     #Define the variable name.
     #Usefull for debuging purpose. Otherwise, disable it, it is time consuming.
-    if Debug:
+    if Debug :
         quantityvars = []
         inventoryvars = []
         productionvars = []
         backordervars = []
         for p in  Instance.ProductSet:
             for t in Instance.TimeBucketSet:
-                 quantityvars.append( ( GetIndexQuantityVariable( p, t ), GetNameQuanityVariable( p, t ) ) )
-                 productionvars.append((GetIndexProductionVariable(p, t), GetNameProductionVariable(p, t)))
-                 for w in Instance.ScenarioSet:
-                    inventoryvars.append( ( GetIndexInventoryVariable( p, t, w ), GetNameInventoryVariable(p, t, w) ) )
+                for w in Instance.ScenarioSet:
+                    quantityvars.append( ( GetIndexQuantityVariable( p, t, w ), GetNameQuantityVariable( p, t, w ) ) )
+                    productionvars.append( ( GetIndexProductionVariable( p, t, w ), GetNameProductionVariable( p, t, w ) ) )
+                    inventoryvars.append( ( GetIndexInventoryVariable( p, t, w ), GetNameInventoryVariable( p, t, w ) ) )
                     backordervars.append( ( GetIndexBackorderVariable( p, t, w ), GetNameBackOrderQuantity( p, t, w ) ) )
+
+        quantityvars = list( set( quantityvars ) )
+        productionvars = list( set( productionvars ) )
+        inventoryvars = list( set( inventoryvars ) )
+        backordervars = list( set( backordervars ) )
         varnames = quantityvars + inventoryvars + productionvars + backordervars
         c.variables.set_names( varnames )
 
@@ -92,26 +215,43 @@ def PrintConstraint( vars, coeff, righthandside ) :
     print "----------------Rhs-----------------------------"
     print righthandside
 
-#Define the constraint of the model
-def CreateConstraints(c):
-    # Demand and materials requirement: set the value of the invetory level and backorder quantity according to
-    #  the quantities produced and the demand
+
+#To evaluate the solution obtained with the expected demand, the solution quanitity are constraint to be equal to some values
+# This function creates the Capacity constraint
+def CreateCopyGivenSolutionConstraints(c):
+    # Capacity constraint
+    for p in Instance.ProductSet:
+        for t in Instance.TimeBucketSet:
+            for w in Instance.ScenarioSet:
+                vars = [GetIndexQuantityVariable(p, t, w) ]
+                coeff = [ 1.0 ]
+                righthandside = [ GivenQuantities[p][t] ]
+                # PrintConstraint( vars, coeff, righthandside )
+                c.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                             senses=["E"],
+                                             rhs=righthandside)
+
+
+# Demand and materials requirement: set the value of the invetory level and backorder quantity according to
+#  the quantities produced and the demand
+def CreateFlowConstraints(c):
+     expressionstoadd = []
+     sensestoadd = []
+     rigthandsidestoadd = []
      for t in Instance.TimeBucketSet:
         for p in Instance.ProductSet:
             for w in Instance.ScenarioSet:
                 righthandside = [ -1 * Instance.StartingInventories[ p ] ]
-
                 backordervar = [];
-                #
-                righthandside[ 0 ] = righthandside[ 0 ] + sum( Instance.Demands[ p ][ tau ][w] for tau in range( t + 1 ) )
-                if  sum( Instance.Demands[ p ][ tau ][w]  for tau in range( Instance.NrTimeBucket )   ) > 0:
+                righthandside[ 0 ] = righthandside[ 0 ] + sum( Instance.Scenarios[ w ].Demands[ tau ][p] for tau in range( t + 1 ) )
+                if  Instance.HasExternalDemand[ p ]:
                     backordervar = [ GetIndexBackorderVariable( p, t, w ) ]
 
-                quantityvar = [ GetIndexQuantityVariable( p, tau ) for tau in range( t - Instance.Leadtimes[ p ] + 1 ) ]
+                quantityvar = [ GetIndexQuantityVariable( p, tau, w ) for tau in range( t - Instance.Leadtimes[ p ] + 1 ) ]
 
-                dependentdemandvar = [ GetIndexQuantityVariable( q, tau ) for q in Instance.ProductSet
-                                                                          for tau in range( t + 1 )
-                                                                          if Instance.Requirements[ q ][ p ] > 0.0 ]
+                dependentdemandvar = [ GetIndexQuantityVariable( q, tau, w ) for q in Instance.ProductSet
+                                                                             for tau in range( t + 1 )
+                                                                             if Instance.Requirements[ q ][ p ] > 0.0 ]
 
                 inventoryvar = [ GetIndexInventoryVariable( p, t, w ) ]
 
@@ -123,40 +263,112 @@ def CreateConstraints(c):
                                                       for tau in range( t + 1 )
                                                       if Instance.Requirements[ q ][ p ] > 0.0  ]
 
-                # PrintConstraint( vars, coeff, righthandside )
+                 # PrintConstraint( vars, coeff, righthandside )
                 if len( vars ) > 0 :
-                    c.linear_constraints.add( lin_expr = [ cplex.SparsePair( vars, coeff ) ],
+                     c.linear_constraints.add( lin_expr = [ cplex.SparsePair( vars, coeff ) ],
                                               senses = [ "E" ],
                                               rhs = righthandside )
+     #            if len( vars ) > 0 :
+     #                expressionstoadd.append( cplex.SparsePair( vars, coeff ) )
+     #                sensestoadd.append( "E" )
+     #                rigthandsidestoadd.append( righthandside[0] )
+     #
+     # c.linear_constraints.add( lin_expr = expressionstoadd,
+     #                            senses = sensestoadd,
+     #                            rhs = rigthandsidestoadd )
 
-                # indicator constraint to se the production variable to 1 when a positive quantity is produce
+#This function creates the  indicator constraint to se the production variable to 1 when a positive quantity is produce
+def CreateProductionConstraints(c):
+    for t in Instance.TimeBucketSet:
+        for p in Instance.ProductSet:
+            for w in Instance.ScenarioSet:
                 ic_dict = {}
-                ic_dict["lin_expr"] = cplex.SparsePair( ind = [ GetIndexQuantityVariable(p, t) ],
-                                                        val = [ 1.0 ] )
+                ic_dict["lin_expr"] = cplex.SparsePair(ind=[GetIndexQuantityVariable(p, t, w)],
+                                                       val=[1.0])
                 ic_dict["rhs"] = 0.0
                 ic_dict["sense"] = "E"
-                ic_dict["indvar"] = GetIndexProductionVariable( p, t )
+                ic_dict["indvar"] = GetIndexProductionVariable(p, t, w)
                 ic_dict["complemented"] = 1
-                c.indicator_constraints.add(**ic_dict )
+                c.indicator_constraints.add(**ic_dict)
 
-     #Capacity constraint
-     if Instance.NrResource > 0:
-        for k in range( Instance.NrResource ) :
-            for t in Instance.TimeBucketSet :
-                vars = [ GetIndexQuantityVariable( p, t ) for p in Instance.ProductSet ]
-                coeff = [ Instance.CapacityConsumptions[ p ][ k ] for p in Instance.ProductSet ]
-                righthandside = [ 1.0 ]
-                # PrintConstraint( vars, coeff, righthandside )
-                c.linear_constraints.add( lin_expr = [ cplex.SparsePair( vars, coeff )],
-                                              senses = [ "L" ],
-                                              rhs = righthandside )
+# This function creates the Capacity constraint
+def CreateCapacityConstraints(c):
+    # Capacity constraint
+    if Instance.NrResource > 0:
+        for k in range(Instance.NrResource):
+            for t in Instance.TimeBucketSet:
+                for w in Instance.ScenarioSet:
+                    vars = [GetIndexQuantityVariable(p, t, w) for p in Instance.ProductSet]
+                    coeff = [Instance.CapacityConsumptions[p][k] for p in Instance.ProductSet]
+                    righthandside = [1.0]
+                    # PrintConstraint( vars, coeff, righthandside )
+                    c.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                             senses=["L"],
+                                             rhs=righthandside)
 
+
+ # This function creates the non anticipitativity constraint
+
+def CreateNonanticipativityConstraints( c ):
+    considertimebucket = Instance.TimeBucketSet;
+    if Method == "Two-stages":
+        considertimebucket = [0]
+
+    #Non anticipitativity only for period 1 for now
+    for w1 in Instance.ScenarioSet:
+         for w2 in range( w1 +1, Instance.NrScenario):
+             for p in Instance.ProductSet:
+                 for t in considertimebucket:
+                      if ( not Method == "Two-stages" ) and Instance.Scenarios[ w1 ].QuanitityVariable[ t ][ p ] == Instance.Scenarios[ w2 ].QuanitityVariable[ t ][ p ] :
+                           vars = [ GetIndexQuantityVariable( p, t, w1 ), GetIndexQuantityVariable( p, t, w2 ) ]
+                           coeff = [ 1.0, -1.0 ]
+                           righthandside = [ 0.0 ]
+                           # PrintConstraint( vars, coeff, righthandside )
+                           c.linear_constraints.add( lin_expr = [cplex.SparsePair(vars, coeff)],
+                                                       senses=["E"],
+                                                       rhs=righthandside )
+
+                           vars = [ GetIndexProductionVariable(p, t, w1), GetIndexProductionVariable(p, t, w2)]
+                           coeff = [ 1.0, -1.0 ]
+                           righthandside = [ 0.0 ]
+                           # PrintConstraint( vars, coeff, righthandside )
+                           c.linear_constraints.add(lin_expr = [cplex.SparsePair(vars, coeff)],
+                                                      senses=["E"],
+                                                      rhs=righthandside)
+                           vars = [GetIndexBackorderVariable(p, t, w1), GetIndexBackorderVariable(p, t, w2)]
+                           coeff = [ 1.0, -1.0 ]
+                           righthandside = [ 0.0 ]
+                           # PrintConstraint( vars, coeff, righthandside )
+                           c.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                      senses=["E"],
+                                                      rhs=righthandside)
+
+                           vars = [GetIndexInventoryVariable(p, t, w1), GetIndexInventoryVariable(p, t, w2)]
+                           coeff = [ 1.0, -1.0 ]
+                           righthandside = [ 0.0 ]
+                           # PrintConstraint( vars, coeff, righthandside )
+                           c.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                      senses=["E"],
+                                                      rhs=righthandside)
+
+
+#Define the constraint of the model
+def CreateConstraints(c):
+     CreateFlowConstraints( c )
+     CreateProductionConstraints( c )
+     CreateCapacityConstraints( c )
+     if UseNonAnticipativity and ActuallyUseAnticipativity:
+        CreateNonanticipativityConstraints( c )
+     if EvaluateSolution :
+         CreateCopyGivenSolutionConstraints( c )
 
 #This function creates the CPLEX model and solves it.
 def MRP():
+    start_time = time.time()
     if Debug:
         Instance.PrintInstance()
-
+    if PrintScenarios:
+        Instance.PrintScenarioToExcel()
     #print "Start to model in Cplex";
     c = cplex.Cplex()
 
@@ -169,22 +381,21 @@ def MRP():
     if Debug:
         c.write("mrp.lp")
     else:
-        c.set_log_stream("mrp_log.txt")
-        c.set_results_stream("mrp_log.txt")
-        c.set_warning_stream("mrp_log.txt")
-        c.set_error_stream("mrp_log.txt")
+        c.set_log_stream( None ) #"mrp_log.txt")
+        c.set_results_stream( None ) #"mrp_log.txt")
+        c.set_warning_stream( None ) #"mrp_log.txt")
+        c.set_error_stream( None ) #"mrp_log.txt")
 
     #tune the paramters
     c.parameters.timelimit.set( 1800.0 )
     c.parameters.threads.set( 1 )
 
-    print "Start to solve with Cplex";
-    start_time = time.time()
+    print "Start to solve instance %s with Cplex"% Instance.InstanceName;
+    end_modeling = time.time();
     c.solve()
-    elapsedtime =  time.time() - start_time;
+    buildtime =   end_modeling - start_time;
+    solvetime =  time.time() - end_modeling ;
     sol = c.solution
-    #print("Solution status = ", sol.get_status() )
-    #print(sol.status[sol.get_status()])
 
     if Debug:
         sol.write( "mrpsolution.sol" )
@@ -192,44 +403,37 @@ def MRP():
     #Handle the results
     if sol.is_primal_feasible():
         objvalue = sol.get_objective_value()
-        #print("Solution value  = %r" % objvalue)
-        array =  [  GetIndexQuantityVariable( p, t ) for p in Instance.ProductSet for t in Instance.TimeBucketSet ];
+        array =  [  GetIndexQuantityVariable( p, t, w )
+                    for p in Instance.ProductSet for t in Instance.TimeBucketSet  for w in  Instance.ScenarioSet];
         solquantity =   sol.get_values( array )
-        solquantity =  zip(*[iter(solquantity)] * Instance.NrTimeBucket )
+        solquantity = np.array(solquantity, np.float32).reshape(
+                                     (Instance.NrProduct, Instance.NrTimeBucket * Instance.NrScenario))
 
-        array = [ GetIndexProductionVariable( p, t ) for p in Instance.ProductSet for t in Instance.TimeBucketSet ]
+        result = solquantity.tolist()
+
+        array = [ GetIndexProductionVariable( p, t, w )
+                    for p in Instance.ProductSet for t in Instance.TimeBucketSet  for w in  Instance.ScenarioSet]
         solproduction = sol.get_values( array )
-        solproduction = np.array( solproduction,np.float32 ).reshape( ( Instance.NrProduct, Instance.NrTimeBucket ) )
+        solproduction = np.array( solproduction,np.float32 ).reshape( ( Instance.NrProduct, Instance.NrTimeBucket  * Instance.NrScenario  ) )
         array = [ GetIndexInventoryVariable( p, t, w )
-                  for p in Instance.ProductSet  for w in  Instance.ScenarioSet   for t in Instance.TimeBucketSet  ]
+                  for p in Instance.ProductSet   for t in Instance.TimeBucketSet  for w in  Instance.ScenarioSet ]
         solinventory = sol.get_values( array )
         solinventory =  np.array( solinventory,np.float32 ).reshape( ( Instance.NrProduct, Instance.NrTimeBucket * Instance.NrScenario ) )
-        #print solinventory
-        test = [  "w %d t %d p %d"%(w,t,p)
-                  for p in Instance.ProductSet  for w in Instance.ScenarioSet   for t in Instance.TimeBucketSet   ]
-        testarray = np.array(test).reshape((Instance.NrProduct,
-                                            Instance.NrTimeBucket * Instance.NrScenario))
-        #print test
-        #print testarray
-        iterables = [Instance.ScenarioSet, Instance.TimeBucketSet]
-        multiindex = pd.MultiIndex.from_product(iterables, names=['scenario', 'time'])
 
-        testdf = pd.DataFrame(testarray, index=Instance.ProductName, columns=multiindex)
-        #print testdf
         array = [ GetIndexBackorderVariable( p, t, w )
-                  for p in Instance.ProductSet  for w in Instance.ScenarioSet   for t in Instance.TimeBucketSet  ]
+                  for p in Instance.ProductSet for t in Instance.TimeBucketSet for w in Instance.ScenarioSet ]
         solbackorder = sol.get_values(array)
         solbackorder = np.array(solbackorder, np.float32).reshape((Instance.NrProduct, Instance.NrTimeBucket * Instance.NrScenario))  # array # tempmatinv.reshape(  (Instance.NrScenario, Instance.NrProduct, Instance.NrTimeBucket) ) # zip(*[iter(solinventory)] * Instance.NrTimeBucket )
-        #print solbackorder
 
-        mrpsolution = MRPSolution( Instance, solquantity, solproduction, solinventory, solbackorder )
+        Solution = MRPSolution( Instance, solquantity, solproduction, solinventory, solbackorder )
         if Debug:
-            mrpsolution.Print()
-        mrpsolution.PrintToExcel()
+            Solution.Print()
+
+        description = "%r_%r" % ( Method, Instance.NrScenarioPerBranch )
+
+        Solution.PrintToExcel( description )
 
         #Print the output of the test in an excel file
-        #writer = pd.ExcelWriter("./Test/TestResult.xlsx", engine='openpyxl')
-
         wb = opxl.Workbook()
         ws = wb.active
         try:
@@ -239,13 +443,18 @@ def MRP():
             wb = opxl.Workbook()
             ws = wb.create_sheet("Result")
             columnname = [ "Instance name",
+                           "Method",
                            "Cplex solution value",
                            "Solution cost",
                            "Cplex_status",
-                           "Cplex time",
+                           "Build time",
+                           "Solve time",
                            "Cplex gap",
+                           "Cplex Nr iteration",
                            "Cplex Nr nodes",
                            "Cplex best node nr",
+                           "Cplex Nr Variable",
+                           "Cplex Nr constraint",
                            "Inventory Cost",
                            "BackOrder cost",
                            "Setup cost",
@@ -253,45 +462,117 @@ def MRP():
                            "Nr product",
                            "Nr time Period",
                            "Nr Scenario",
-                           "Max lead time" ]
+                           "Max lead time",
+                           "NrScenarioPerBranch"]
             ws.append( columnname )
 
         data =  [ Instance.InstanceName,
+                  Method,
                   objvalue,
-                  mrpsolution.TotalCost,
+                  Solution.TotalCost,
                   sol.status[ sol.get_status() ],
-                  elapsedtime,
-                  sol.MIP.get_mip_relative_gap() ,
+                  buildtime,
+                  solvetime,
+                  sol.MIP.get_mip_relative_gap(),
                   sol.progress.get_num_iterations(),
+                  sol.progress.get_num_nodes_processed(),
                   sol.MIP.get_incumbent_node(),
-                  mrpsolution.InventoryCost,
-                  mrpsolution.BackOrderCost,
-                  mrpsolution.SetupCost,
+                  c.variables.get_num(),
+                  c.linear_constraints.get_num(),
+                  Solution.InventoryCost,
+                  Solution.BackOrderCost,
+                  Solution.SetupCost,
                   Instance.NrLevel,
                   Instance.NrProduct,
                   Instance.NrTimeBucket,
                   Instance.NrScenario,
-                  Instance.MaxLeadTime ]
+                  Instance.MaxLeadTime,
+                  Instance.NrScenarioPerBranch ]
 
         ws.append( data )
         wb.save( "./Test/TestResult.xlsx" )
     else:
         print("No solution available.")
 
-if __name__ == "__main__":
-    #Instance.DefineAsSuperSmallIntance()
-    #MRP();
-     instancename = ""
-     try:
-         if len(sys.argv) == 1:
-             instancename = raw_input("Enter the number (in [01;38]) of the instance to solve:")
-         else:
-             script, instancename = sys.argv
+    return result
 
-         Instance.ReadFromFile( instancename, 500, 1 )
-         MRP();
-     except KeyError:
-         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
+if __name__ == "__main__":
+
+    instancename = ""
+    try:
+        if len(sys.argv) == 1:
+            instancename = raw_input("Enter the number (in [01;38]) of the instance to solve:")
+        else:
+            script, instancename, nrbranchasstring = sys.argv
+
+        nrbranch = int(nrbranchasstring)
+        Method = "Multi-stages"
+        Instance.Average = False
+        Instance.NrScenarioPerBranch = nrbranch
+        Instance.LoadScenarioFromFile = False
+        PrintScenarios = True
+        Instance.ReadFromFile( instancename, 1 )
+        #Instance.DefineAsSmallIntance()
+        MRP()
+
+        Method = "Two-stages"
+        Instance.Average = False
+        Instance.NrScenarioPerBranch = nrbranch
+        Instance.LoadScenarioFromFile = True
+        PrintScenarios = False
+        Instance.ReadFromFile(instancename, 1)
+        #Instance.DefineAsSmallIntance()
+        MRP()
+
+        Method = "Average"
+        Instance.Average = True
+        Instance.NrScenarioPerBranch = nrbranch
+        Instance.LoadScenarioFromFile = True
+        PrintScenarios = False
+        Instance.ReadFromFile( instancename, 1 )
+        #Instance.DefineAsSmallIntance()
+        solutionofaverage = MRP()
+        #
+        Method = "Average_Solution_In_Multi-stages"
+        Instance.Average = False
+        Instance.NrScenarioPerBranch = nrbranch
+        EvaluateSolution = True
+        Instance.LoadScenarioFromFile = True
+        PrintScenarios = False
+        Instance.ReadFromFile( instancename, 1 )
+        #Instance.DefineAsSmallIntance()
+        GivenQuantities = solutionofaverage
+        MRP()
+
+        Method = "Knowledge_Of_Future"
+        Instance.Average = False
+        Instance.NrScenarioPerBranch = nrbranch
+        EvaluateSolution = False
+        Instance.LoadScenarioFromFile = True
+        PrintScenarios = False
+        UseNonAnticipativity = True
+        ActuallyUseAnticipativity = False
+        Instance.ReadFromFile( instancename, 1 )
+        #Instance.DefineAsSmallIntance()
+        MRP()
+
+
+        Method = "Multi-stages with constraints"
+        Instance.Average = False
+        Instance.NrScenarioPerBranch = nrbranch
+        EvaluateSolution = False
+        Instance.LoadScenarioFromFile = True
+        PrintScenarios = False
+        UseNonAnticipativity = True
+        ActuallyUseAnticipativity = True
+        Instance.ReadFromFile( instancename, 1 )
+        #Instance.DefineAsSmallIntance()
+        MRP()
+
+    except KeyError:
+        print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
+
+
    # Instance.DefineAsSmallIntance()
    #
    # Instance.PrintInstance()
