@@ -29,7 +29,6 @@ class Scenario:
 
     # This function print the scenario in an Excel file in the folde "Solutions"
     def PrintScenarioToExcel(self, writer):
-        print self.Demands
         demanddf = pd.DataFrame(self.Demands, columns = self.Owner.ProductName,  index = self.Owner.TimeBucketSet)
         demanddf.to_excel( writer, "DemandScenario %d" %self.ScenarioId )
         quantitydf = pd.DataFrame(self.QuanitityVariable, columns = self.Owner.ProductName, index = self.Owner.TimeBucketSet)

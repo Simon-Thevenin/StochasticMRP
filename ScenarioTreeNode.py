@@ -1,4 +1,5 @@
 import numpy as np
+
 import matplotlib.pyplot as plt
 #from MRPInstance import MRPInstance
 
@@ -7,7 +8,7 @@ class ScenarioTreeNode:
     NrNode = 0
 
     def CreateDemandNormalDistributiondemand( self, instance, nrdemand ):
-        demandvector = [ np.random.normal( instance.AverageDemand[p], instance.StandardDevDemands[p], nrdemand ).tolist()
+        demandvector = [  np.random.normal( instance.AverageDemand[p], instance.StandardDevDemands[p], nrdemand ).clip(min=0).tolist()
                             if instance.StandardDevDemands[p] > 0 else [instance.AverageDemand[p] ] * nrdemand
                             for p in instance.ProductSet ]
         #print demandvector;
@@ -22,19 +23,20 @@ class ScenarioTreeNode:
     # This function create a node for the instance and time given in argument
     #The node is associated to the time given in paramter.
     #nr demand is the number of demand scenario fo
-    def __init__( self, owner = None, parent =None, instance = None, time=-1,  nrbranch=-1, demands=None, proabibilty = -1 ):
+    def __init__( self, owner = None, parent =None, instance = None, time = -1,  nrbranch = -1, demands = None, proabibilty = -1 ):
         owner.Nodes.append( self )
         self.Owner = owner;
         self.Parent = parent
         self.Instance = instance
         self.Branches = []
-        if  instance is not None and  time < instance.NrTimeBucket -1 :
+        t= time + 1
+        if  instance is not None and  t < instance.NrTimeBucket:
             nextdemands = self.CreateDemandNormalDistributiondemand( instance, nrbranch )
             self.Branches = [ ScenarioTreeNode( owner = owner,
                                                 parent = self,
                                                 instance = instance,
-                                                time = time + 1,
-                                                nrbranch = owner.NrBranches[ time ],
+                                                time = t,
+                                                nrbranch = owner.NrBranches[ t +1 ],
                                                 demands = [ nextdemands[ p ][ b ] for p in instance.ProductSet ],
                                                 proabibilty = 1.0 / nrbranch ) for b in range( nrbranch ) ]
 
@@ -45,7 +47,7 @@ class ScenarioTreeNode:
         self.Demand = demands
 
         # An identifier of the node
-        self.NodeNumber = ScenarioTreeNode.NrNode + 1;
+        self.NodeNumber = ScenarioTreeNode.NrNode;
         ScenarioTreeNode.NrNode  = ScenarioTreeNode.NrNode  + 1;
         # The attribute DemandsInParitalScenario contains all the demand since the beginning of the time horizon in the partial scenario
         self.DemandsInScenario = []  # will be built later
@@ -64,15 +66,19 @@ class ScenarioTreeNode:
 
     #This function compute the indices of the variables associated wiht each node of the tree
     def ComputeVariableIndex( self ):
-        self.QuanitityVariable = [ ( self.Instance.StartQuantityVariableWithoutNonAnticipativity + self.Instance.NrProduct * self.NodeNumber + p )  for p in self.Instance.ProductSet ]
-        self.ProductionVariable = [ ( self.Instance.StartProdustionVariableWithoutNonAnticipativity + self.Instance.NrProduct * self.NodeNumber + p )  for p in self.Instance.ProductSet ]
-        self.InventoryVariable = [ ( self.Instance.StartInventoryVariableWithoutNonAnticipativity + self.Instance.NrProduct  * self.NodeNumber + p )  for p in self.Instance.ProductSet ]
-        self.BackOrderVariable = [ (self.Instance.StartBackorderVariableWithoutNonAnticipativity + self.Instance.NrProduct  * self.NodeNumber + p ) for p in self.Instance.ProductSet ]
+        self.QuanitityVariable = [ ( self.Instance.StartQuantityVariableWithoutNonAnticipativity + self.Instance.NrProduct * ( self.NodeNumber -1 )  + p )  for p in self.Instance.ProductSet ]
+        self.ProductionVariable = [ ( self.Instance.StartProdustionVariableWithoutNonAnticipativity + self.Instance.NrProduct * ( self.NodeNumber -1 )   + p )  for p in self.Instance.ProductSet ]
+        self.InventoryVariable = [ ( self.Instance.StartInventoryVariableWithoutNonAnticipativity + self.Instance.NrProduct  * ( self.NodeNumber -1 )  + p )  for p in self.Instance.ProductSet ]
+        self.BackOrderVariable = [ (self.Instance.StartBackorderVariableWithoutNonAnticipativity + self.Instance.NrProduct  * ( self.NodeNumber -1 )  + p ) for p in self.Instance.ProductSet ]
 
     #This function display the tree
     def Display( self ):
         print "Demand of node( %d ): %r" %( self.NodeNumber, self.Demand )
         print "Probability of branch ( %d ): %r" %( self.NodeNumber, self.Probability )
+        print "QuanitityVariable of node( %d ): %r" %( self.NodeNumber, self.QuanitityVariable )
+        print "ProductionVariable of node( %d ): %r" %( self.NodeNumber, self.ProductionVariable )
+        print "InventoryVariable of node( %d ): %r" %( self.NodeNumber, self.InventoryVariable )
+        print "BackOrderVariable of node( %d ): %r" %( self.NodeNumber, self.BackOrderVariable )
         for b in self.Branches:
             b.Display()
 

@@ -21,17 +21,18 @@ if __name__=="__main__":
 			  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", 
 			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", 
 			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
-		qsub_filename = "job_%s"%f
-		qsub_file=open(qsub_filename, 'w')
-		qsub_file.write("""
+		for b in [ "02", "03", "04", "05", "06", "07", "08", "09", "10"]:
+			qsub_filename = "job_%s_%s"%(f, b)
+			qsub_file=open(qsub_filename, 'w')
+			qsub_file.write("""
 #!/bin/bash -l
 #
 #$ -cwd
 #$ -q idra
 #$ -j y
 #$ -o /home/thesim/outputjob.txt
-python test.py %s
-""" %(f) )
+python test.py %s %s
+""" %(f, b) )
 
 
 #Create the sh file
@@ -45,4 +46,5 @@ for f in ["01", "02", "03", "04", "05", "06", "07", "08", "09",
 			  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", 
 			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", 
 			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
-	file.write("qsub job_%s \n"%f )
+    for b in [ "02", "03", "04", "05", "06", "07", "08", "09", "10"]:
+	        file.write("qsub job_%s_%s \n"%(f, b) )

@@ -8,8 +8,8 @@ from MRPInstance import MRPInstance
 class MRPSolution:
 
     #This function print the solution in an Excel file in the folde "Solutions"
-    def PrintToExcel(self):
-        writer = pd.ExcelWriter("./Solutions/"+self.MRPInstance.InstanceName + "_Solution.xlsx", engine='openpyxl')
+    def PrintToExcel(self, description):
+        writer = pd.ExcelWriter("./Solutions/"+ self.MRPInstance.InstanceName + "_" + description + "_Solution.xlsx", engine='openpyxl')
         self.ProductionQuantity.to_excel(writer, 'ProductionQuantity')
         self.Production.to_excel(writer, 'Production')
         self.InventoryLevel.to_excel(writer, 'InventoryLevel')
