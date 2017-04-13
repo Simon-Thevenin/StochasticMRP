@@ -243,13 +243,10 @@ class MRPInstance:
 
         #The indices of the variable in the case where a one stage problem is solved
         self.NrQuantiyVariablesOneStage =  self.NrProduct * ( self.NrTimeBucket  )
-        self.NrInventoryVariableOneStage =  self.NrProduct * ( self.NrTimeBucket  )
-        self.NrProductionVariableOneStage = self.NrProduct * ( self.NrTimeBucket  )
-        self.NrBackorderVariableOneStage =  self.NrProduct * ( self.NrTimeBucket  )
         self.StartQuantityVariableOneStage = 0
         self.StartInventoryVariableOneStage = self.StartQuantityVariableOneStage + self.NrQuantiyVariablesOneStage
-        self.StartProdustionVariableOneStage = self.StartInventoryVariableOneStage + self.NrInventoryVariableOneStage
-        self.StartBackorderVariableOneStage = self.StartProdustionVariableOneStage + self.NrProductionVariableOneStage
+        self.StartProdustionVariableOneStage = self.StartInventoryVariableOneStage + self.NrInventoryVariable
+        self.StartBackorderVariableOneStage = self.StartProdustionVariableOneStage + self.NrProductionVariable
 
     #This function transform the sheet given in arguments into a dataframe
     def ReadDataFrame( self, wb2, framename ):
@@ -362,10 +359,10 @@ class MRPInstance:
         #Generate the sets of scenarios
         self.AverageDemand = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') for p in self.ProductSet ]
         self.StandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
-        #self.CapacityConsumptions =  [ [ 1.0 / ( datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') 
-        #                                          + datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand')  ) 
-        #                                if ( p == k and ( ( datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') 
-        #                                          + datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') ) > 0 ) )   else 0.0
-        #                                for p in self.ProductSet ] for k in range( self.NrResource ) ]
+        self.CapacityConsumptions =  [ [ 1.0 / ( datasheetdf.get_value( self.ProductName[ p ], 'avgDemand')
+                                                  + datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand')  )
+                                        if ( p == k and ( ( datasheetdf.get_value( self.ProductName[ p ], 'avgDemand')
+                                                  + datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') ) > 0 ) )   else 0.0
+                                        for p in self.ProductSet ] for k in range( self.NrResource ) ]
         self.CapacityConsumptions =  [ [ 0.0  for p in self.ProductSet ] for k in range( self.NrResource ) ]
         self.ComputeInstanceData()

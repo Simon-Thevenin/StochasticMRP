@@ -29,11 +29,13 @@ GivenQuantities =[]
 #This function returns the name of the quantity variable for product p and time t
 def GetNameQuantityVariable( p, t, w ):
     scenarioindex = -1;
-    if UseNonAnticipativity or ( Method == "Two-stages" ):
-        scenarioindex = w
-        if Method == "Two-stages" and t == 0 : scenarioindex = 0
+    if Method == "One-stage":
+        scenarioindex = 0
+    elif UseNonAnticipativity or ( Method == "Two-stages" ):
+            scenarioindex = w
+            if Method == "Two-stages" and t == 0 : scenarioindex = 0
     else :
-        scenarioindex = Instance.Scenarios[w].QuanitityVariable[t][p]
+            scenarioindex = Instance.Scenarios[w].QuanitityVariable[t][p]
     return "quantity_prod_time_scenar_%d_%d_%d" % (p, t, scenarioindex );
 
 #This function returns the name of the inventory variable for product p and time t
@@ -68,7 +70,9 @@ def GetNameBackOrderQuantity( p, t, w ):
 
 #the function GetIndexQuantityVariable returns the index of the variable Q_{p, t}. Quantity of product p produced at time t
 def GetIndexQuantityVariable( p, t, w ):
-    if Method == "Two-stages":
+    if Method == "One-stage":
+        return Instance.StartQuantityVariableOneStage + t  * Instance.NrProduct + p
+    elif Method == "Two-stages":
         if t== 0:
             return Instance.StartQuantityVariableTwoStages +  p
         else:
@@ -80,6 +84,9 @@ def GetIndexQuantityVariable( p, t, w ):
 
 #the function GetIndexInventoryVariable returns the index of the variable I_{p, t}. Inventory of product p produced at time t
 def GetIndexInventoryVariable( p, t, w ):
+    if Method == "One-stage":
+        return Instance.StartInventoryVariableOneStage + w * Instance.NrTimeBucket * Instance.NrProduct + t * Instance.NrProduct + p
+
     if Method == "Two-stages":
         if t == 0:
             return Instance.StartInventoryVariableTwoStages + p
@@ -93,6 +100,9 @@ def GetIndexInventoryVariable( p, t, w ):
 #the function GetIndexProductionVariable returns the index of the variable Y_{p, t, w}.
 # This variable equal to one is product p is produced at time t, 0 otherwise
 def GetIndexProductionVariable( p, t, w ):
+    if Method == "One-stage":
+        return Instance.StartProdustionVariableOneStage + w * Instance.NrTimeBucket * Instance.NrProduct + t * Instance.NrProduct + p
+
     if Method == "Two-stages":
         if t== 0:
             return Instance.StartProdustionVariableTwoStages +  p
@@ -105,6 +115,9 @@ def GetIndexProductionVariable( p, t, w ):
 
 #the function GetIndexBackorderVariable returns the index of the variable B_{p, t}. Quantity of product p produced backordered at time t
 def GetIndexBackorderVariable( p, t, w ):
+    if Method == "One-stage":
+        return Instance.StartBackorderVariableOneStage + w * Instance.NrTimeBucket * Instance.NrProduct + t * Instance.NrProduct + p
+
     if Method == "Two-stages":
         if t== 0:
             return Instance.StartBackorderVariableTwoStages +  p
@@ -145,7 +158,10 @@ def CreateVariable(c):
         nrinventoryvariable = Instance.NrInventoryVariable;
         nrbackordervariable = Instance.NrBackorderVariable;
         nrproductionvariable = Instance.NrProductionVariable;
-        nrquantityvariable = Instance.NrQuantiyVariables;
+        if Method == "One-stage":
+            nrquantityvariable = Instance.NrQuantiyVariablesOneStage
+        else:
+            nrquantityvariable = Instance.NrQuantiyVariables;
     #Define only the required variables
     else :
         nrquantityvariable = Instance.NrQuantiyVariablesWithoutNonAnticipativity
@@ -308,8 +324,7 @@ def CreateCapacityConstraints(c):
                                              rhs=righthandside)
 
 
- # This function creates the non anticipitativity constraint
-
+# This function creates the non anticipitativity constraint
 def CreateNonanticipativityConstraints( c ):
     considertimebucket = Instance.TimeBucketSet;
     if Method == "Two-stages":
@@ -484,8 +499,8 @@ if __name__ == "__main__":
         Instance.NrScenarioPerBranch = nrbranch
         Instance.LoadScenarioFromFile = False
         PrintScenarios = True
-        #Instance.ReadFromFile( instancename, 1 )
-        Instance.DefineAsSuperSmallIntance()
+        Instance.ReadFromFile( instancename, 1 )
+        #Instance.DefineAsSuperSmallIntance()
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
       
@@ -505,8 +520,8 @@ if __name__ == "__main__":
     Instance.NrScenarioPerBranch = nrbranch
     Instance.LoadScenarioFromFile = True
     PrintScenarios = False
-    #Instance.ReadFromFile( instancename, 1 )
-    Instance.DefineAsSuperSmallIntance()
+    Instance.ReadFromFile( instancename, 1 )
+    #Instance.DefineAsSuperSmallIntance()
     solutionofaverage = MRP()
     #
     Method = "Average_Solution_In_Multi-stages"
@@ -515,8 +530,8 @@ if __name__ == "__main__":
     EvaluateSolution = True
     Instance.LoadScenarioFromFile = True
     PrintScenarios = False
-    #Instance.ReadFromFile( instancename, 1 )
-    Instance.DefineAsSuperSmallIntance()
+    Instance.ReadFromFile( instancename, 1 )
+    #Instance.DefineAsSuperSmallIntance()
     GivenQuantities = solutionofaverage
     MRP()
 
@@ -528,7 +543,20 @@ if __name__ == "__main__":
     PrintScenarios = False
     UseNonAnticipativity = True
     ActuallyUseAnticipativity = False
-    #Instance.ReadFromFile( instancename, 1 )
-    Instance.DefineAsSuperSmallIntance()
+    Instance.ReadFromFile( instancename, 1 )
+    #Instance.DefineAsSuperSmallIntance()
+    MRP()
+
+
+    Method = "One-stage"
+    Instance.Average = False
+    Instance.NrScenarioPerBranch = nrbranch
+    EvaluateSolution = False
+    Instance.LoadScenarioFromFile = True
+    PrintScenarios = False
+    UseNonAnticipativity = True
+    ActuallyUseAnticipativity = False
+    Instance.ReadFromFile( instancename, 1 )
+    #Instance.DefineAsSuperSmallIntance()
     MRP()
 
