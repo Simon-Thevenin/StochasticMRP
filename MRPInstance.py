@@ -15,7 +15,6 @@ class MRPInstance:
     def PrintInstance( self ):
         print "instance: %s" %self.InstanceName
         print "instance with %d products and %d time buckets" % ( self.NrProduct, self.NrTimeBucket );
-#		print "demand: \n %r" % ( pd.DataFrame( self.Demands, index = self.ProductName ) );
         print "requirements: \n %r" % (pd.DataFrame( self.Requirements, index = self.ProductName, columns = self.ProductName ) );
         print "CapacityConsumptions: \n %r" % (pd.DataFrame( self.CapacityConsumptions, index = self.ProductName ) );
         aggregated = [ self.Leadtimes, self.StartingInventories, self.InventoryCosts,
@@ -29,7 +28,7 @@ class MRPInstance:
             s.DisplayScenario()
 
     #This function print the scenario of the instance in an excel file
-    def PrintScenarioToExcel( self ):
+    def PrintScenarioToFile( self ):
         #writer = pd.ExcelWriter( "./Instances/" + self.InstanceName + "_Scenario.xlsx",
         #                                engine='openpyxl' )
         #for s in self.Scenarios:
@@ -64,8 +63,6 @@ class MRPInstance:
         self.ComputeInstanceData()
 
      # This function defines a very small instance, this is usefull for debugging.
-
-    #This function define the current instance as a very small one, used to implement the model
     def DefineAsSuperSmallIntance(self ):
 
         self.InstanceName = "SuperSmallIntance"
@@ -87,15 +84,14 @@ class MRPInstance:
 
         self.ComputeInstanceData()
 
+    #This function compute the data required to solve the instance ( indices of the variable, cretae the scenarios, level in the supply chain, .... )
     def ComputeInstanceData(self):
         self.ComputeIndices()
         self.ComputeLevel()
         self.ComputeMaxLeadTime()
         self.NrScenario = len( self.Scenarios )
         self.ComputeIndices()
-        print "Start to build the scenario"
         self.NrScenario, self.Scenarios = self.CreateAllScenario( )
-        print "Scenario built"
         # update indices to take into account the scenario
         self.ComputeIndices()
         self.ComputeHasExternalDemand()
@@ -225,6 +221,7 @@ class MRPInstance:
         self.TimeBucketSet = range( self.NrTimeBucket )
         self.ScenarioSet = range( self.NrScenario )
 
+        #The indices of the variable in the case where the non anticipativity constraints are created explicitely
         self.NrQuantiyVariablesWithoutNonAnticipativity = self.NrProduct  * ( self.DemandScenarioTree.NrNode -2 ) #remove the root node
         self.NrInventoryVariableWithoutNonAnticipativity = self.NrProduct *  ( self.DemandScenarioTree.NrNode -2 )
         self.NrProductionVariableWithoutNonAnticipativity = self.NrProduct  * ( self.DemandScenarioTree.NrNode -2 )
@@ -234,6 +231,7 @@ class MRPInstance:
         self.StartProdustionVariableWithoutNonAnticipativity = self.StartInventoryVariableWithoutNonAnticipativity +  self.NrInventoryVariableWithoutNonAnticipativity
         self.StartBackorderVariableWithoutNonAnticipativity =   self.StartProdustionVariableWithoutNonAnticipativity +  self.NrProductionVariableWithoutNonAnticipativity
 
+        #The indices of the variable in the case where the a two stage problem is solved
         self.NrQuantiyVariablesTwoStages = self.NrProduct +  self.NrProduct * ( self.NrTimeBucket -1 ) * self.NrScenario
         self.NrInventoryVariableTwoStages =  self.NrProduct +  self.NrProduct * ( self.NrTimeBucket -1 ) * self.NrScenario
         self.NrProductionVariableTwoStages = self.NrProduct +  self.NrProduct * ( self.NrTimeBucket -1 ) * self.NrScenario
@@ -242,6 +240,16 @@ class MRPInstance:
         self.StartInventoryVariableTwoStages = self.StartQuantityVariableTwoStages + self.NrQuantiyVariablesTwoStages
         self.StartProdustionVariableTwoStages = self.StartInventoryVariableTwoStages + self.NrInventoryVariableTwoStages
         self.StartBackorderVariableTwoStages = self.StartProdustionVariableTwoStages + self.NrProductionVariableTwoStages
+
+        #The indices of the variable in the case where a one stage problem is solved
+        self.NrQuantiyVariablesOneStage =  self.NrProduct * ( self.NrTimeBucket  )
+        self.NrInventoryVariableOneStage =  self.NrProduct * ( self.NrTimeBucket  )
+        self.NrProductionVariableOneStage = self.NrProduct * ( self.NrTimeBucket  )
+        self.NrBackorderVariableOneStage =  self.NrProduct * ( self.NrTimeBucket  )
+        self.StartQuantityVariableOneStage = 0
+        self.StartInventoryVariableOneStage = self.StartQuantityVariableOneStage + self.NrQuantiyVariablesOneStage
+        self.StartProdustionVariableOneStage = self.StartInventoryVariableOneStage + self.NrInventoryVariableOneStage
+        self.StartBackorderVariableOneStage = self.StartProdustionVariableOneStage + self.NrProductionVariableOneStage
 
     #This function transform the sheet given in arguments into a dataframe
     def ReadDataFrame( self, wb2, framename ):

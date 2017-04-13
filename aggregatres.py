@@ -1,3 +1,5 @@
+#This script aggregates all the csv file in the folder Test.
+
 import openpyxl as opxl
 import pandas as pd
 import glob as glob
@@ -25,12 +27,13 @@ columnname = [ "Instance name",
                "Max lead time",
                "NrScenarioPerBranch" ]
                
-all_data = pd.DataFrame( columns = columnname  )
-for f in glob.glob("./Test/*.xlsx"):
-    df = pd.read_excel(f, sheetname = 'Result', parse_cols = 'A:V' )
-    print df
-    all_data = all_data.append(df)
-    
+all_data = pd.DataFrame(  columns = columnname )
+#Add the content of each csv file at the end of the dataframe
+for f in glob.glob("./Test/*.csv"):
+    df = pd.read_csv( f, names= columnname )
+    df.columns = columnname
+    all_data = all_data.append(df,  ignore_index = True)
+
 writer = pd.ExcelWriter( "./Test/TestResult.xlsx", engine='openpyxl' ) 
 all_data.to_excel( writer, "Res" )
 writer.save( )

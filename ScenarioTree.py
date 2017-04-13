@@ -2,7 +2,7 @@ from ScenarioTreeNode import ScenarioTreeNode
 import cPickle as pickle
 import os
 class ScenarioTree:
-
+    #Constructor
     def __init__( self, instance = None, branchperlevel = [] ):
         self.Nodes = []
         self.Owner = instance
@@ -14,10 +14,12 @@ class ScenarioTree:
             self.NrLevel = instance.NrTimeBucket
         self.NrNode = ScenarioTreeNode.NrNode
 
+    #Compute the index of the variable (one variable for each node of the tree)
     def ComputeVariableIdicies( self ):
         for n in self.Nodes:
             n.ComputeVariableIndex();
 
+    #Print the scenario tree
     def Display( self ):
         print "Print the tree: "
         self.RootNode.Display()
@@ -31,6 +33,7 @@ class ScenarioTree:
         self.ComputeVariableIdicies()
         return scenarioset
 
+    #Save the scenario tree in a file
     def SaveInFile( self ):
         result = None
         filepath = '/tmp/thesim/' + self.Owner.InstanceName + '_Scenario%r.pkl'%self.NrBranches[2]

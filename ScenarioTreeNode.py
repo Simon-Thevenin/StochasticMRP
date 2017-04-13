@@ -7,17 +7,11 @@ import matplotlib.pyplot as plt
 class ScenarioTreeNode:
     NrNode = 0
 
+    #Create the demand in a node following a normal distribution
     def CreateDemandNormalDistributiondemand( self, instance, nrdemand ):
         demandvector = [  np.random.normal( instance.AverageDemand[p], instance.StandardDevDemands[p], nrdemand ).clip(min=0).tolist()
                             if instance.StandardDevDemands[p] > 0 else [instance.AverageDemand[p] ] * nrdemand
                             for p in instance.ProductSet ]
-        #print demandvector;
-        # display the mean of the demand
-        #print "Generated a set of demand with mean %r" % ( [np.mean(demandvector[p]) for p in instance.ProductSet] )
-        #print "Generated a set of demand with standar deviation %r" \
-        #        % ([ np.std( demandvector[p] ) for p in instance.ProductSet ] )
-        #if ScenarioTreeNode.NrNode == 0:
-        #	plt.hist( demandvector[ 0 ] )
         return demandvector
 
     # This function create a node for the instance and time given in argument
@@ -45,7 +39,6 @@ class ScenarioTreeNode:
         self.Probability = proabibilty
         # The demand for each product associated with the node of the sceanrio
         self.Demand = demands
-
         # An identifier of the node
         self.NodeNumber = ScenarioTreeNode.NrNode;
         ScenarioTreeNode.NrNode  = ScenarioTreeNode.NrNode  + 1;

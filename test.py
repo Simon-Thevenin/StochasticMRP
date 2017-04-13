@@ -6,16 +6,23 @@ from MRPSolution import MRPSolution
 import time
 import sys
 import numpy as np
+import csv
+from datetime import datetime
 
+#pass Debug to true to get some debug information printed
 Debug = False
 Instance = MRPInstance()
-Solution = None
 M = cplex.infinity
-
+#If UseNonAnticipativity is set to true a variable per scenario is generated, otherwise only the required variable a created.
 UseNonAnticipativity = False
+#ActuallyUseAnticipativity is set to False to compute the EPVI, otherwise, it is set to true to add the non anticipativity constraints
 ActuallyUseAnticipativity = False
+#PrintScenarios is set to true if the scenario tree is printed in a file, this is usefull if the same scenario must be reloaded in a ater test.
 PrintScenarios = False
 Method = "Two-stages"
+#When a solution is obtained, it is recorded in Solution. This is used to compute VSS for instance.
+Solution = None
+#Evaluate solution is true, the solution in the variable "GivenQuantities" is given to CPLEX to compute the associated costs
 EvaluateSolution = False
 GivenQuantities =[]
 
@@ -240,6 +247,7 @@ def CreateFlowConstraints(c):
      rigthandsidestoadd = []
      for p in Instance.ProductSet:
        for w in Instance.ScenarioSet:
+          #To speed up the creation of the model, only the variable and coffectiant which were not in the previous constraints are added (See the model definition)
           righthandside = [ -1 * Instance.StartingInventories[ p ] ]
           quantityvar = []
           quantityvarceoff = []
@@ -247,19 +255,14 @@ def CreateFlowConstraints(c):
           dependentdemandvarcoeff =[]
           for t in Instance.TimeBucketSet:
                 backordervar = []
-               # righthandside[ 0 ] = righthandside[ 0 ] + sum( Instance.Scenarios[ w ].Demands[ tau ][p] for tau in range( t + 1 ) )
                 righthandside[ 0 ] = righthandside[ 0 ] +  Instance.Scenarios[ w ].Demands[ t ][p]
                 if  Instance.HasExternalDemand[ p ]:
                     backordervar = [ GetIndexBackorderVariable( p, t, w ) ]
 
-               # quantityvar = [ GetIndexQuantityVariable( p, tau, w ) for tau in range( t - Instance.Leadtimes[ p ] + 1 ) ]
                 if  t - Instance.Leadtimes[ p ] > 0 :
                     quantityvar = quantityvar + [GetIndexQuantityVariable( p,  t - Instance.Leadtimes[ p ], w )]
                     quantityvarceoff = quantityvarceoff + [1]
 
-                #dependentdemandvar = [ GetIndexQuantityVariable( q, tau, w ) for q in Instance.ProductSet
-                #                                                             for tau in range( t + 1 )
-                #                                                             if Instance.Requirements[ q ][ p ] > 0.0 ]
                 dependentdemandvar = dependentdemandvar + [ GetIndexQuantityVariable( q, t, w ) for q in Instance.RequieredProduct[p] ]
                 dependentdemandvarcoeff = dependentdemandvarcoeff + [-1* Instance.Requirements[ q ][ p ] for q in Instance.RequieredProduct[p]  ]
                 inventoryvar = [ GetIndexInventoryVariable( p, t, w ) ]
@@ -270,19 +273,10 @@ def CreateFlowConstraints(c):
                         + quantityvarceoff \
                         + dependentdemandvarcoeff
 
-                #PrintConstraint( vars, coeff, righthandside )
                 if len( vars ) > 0 :
                      c.linear_constraints.add( lin_expr = [ cplex.SparsePair( vars, coeff ) ],
                                               senses = [ "E" ],
                                               rhs = righthandside )
-     #            if len( vars ) > 0 :
-     #                expressionstoadd.append( cplex.SparsePair( vars, coeff ) )
-     #                sensestoadd.append( "E" )
-     #                rigthandsidestoadd.append( righthandside[0] )
-     #
-     # c.linear_constraints.add( lin_expr = expressionstoadd,
-     #                            senses = sensestoadd,
-     #                            rhs = rigthandsidestoadd )
 
 #This function creates the  indicator constraint to se the production variable to 1 when a positive quantity is produce
 def CreateProductionConstraints(c):
@@ -375,7 +369,7 @@ def MRP():
     if Debug:
         Instance.PrintInstance()
     if PrintScenarios:
-        Instance.PrintScenarioToExcel()
+        Instance.PrintScenarioToFile()
     print "Start to model in Cplex";
     c = cplex.Cplex()
 
@@ -441,36 +435,6 @@ def MRP():
 
             Solution.PrintToExcel( description )
 
-        #Print the output of the test in an excel file
-        wb = opxl.Workbook()
-        ws = wb.active
-   
-        wb = opxl.Workbook()
-        ws = wb.create_sheet("Result")
-        columnname = [ "Instance name",
-                           "Method",
-                           "Cplex solution value",
-                           "Solution cost",
-                           "Cplex_status",
-                           "Build time",
-                           "Solve time",
-                           "Cplex gap",
-                           "Cplex Nr iteration",
-                           "Cplex Nr nodes",
-                           "Cplex best node nr",
-                           "Cplex Nr Variable",
-                           "Cplex Nr constraint",
-                           "Inventory Cost",
-                           "BackOrder cost",
-                           "Setup cost",
-                           "Nr level",
-                           "Nr product",
-                           "Nr time Period",
-                           "Nr Scenario",
-                           "Max lead time",
-                           "NrScenarioPerBranch"]
-        ws.append( columnname )
-
         data =  [ Instance.InstanceName,
                   Method,
                   objvalue,
@@ -494,8 +458,12 @@ def MRP():
                   Instance.MaxLeadTime,
                   Instance.NrScenarioPerBranch ]
 
-        ws.append( data )
-        wb.save( "./Test/TestResult%r%r%r.xlsx"%(Instance.InstanceName, Instance.NrScenarioPerBranch, Method ) )
+        d = datetime.now()
+        date = d.strftime('%m_%d_%Y_%H:%M:%S')
+        myfile = open(r'./Test/TestResult_%s_%r_%s_%s.csv' % (Instance.InstanceName, Instance.NrScenarioPerBranch, Method, date), 'wb')
+        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+        wr.writerow(data)
+
     else: 
         print("No solution available.")
 
@@ -516,29 +484,29 @@ if __name__ == "__main__":
         Instance.NrScenarioPerBranch = nrbranch
         Instance.LoadScenarioFromFile = False
         PrintScenarios = True
-        Instance.ReadFromFile( instancename, 1 )
-        #Instance.DefineAsSmallIntance()
+        #Instance.ReadFromFile( instancename, 1 )
+        Instance.DefineAsSuperSmallIntance()
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
       
     MRP()
 
-    Method = "Two-stages"
-    Instance.Average = False
-    Instance.NrScenarioPerBranch = nrbranch
-    Instance.LoadScenarioFromFile = True
-    PrintScenarios = False
-    Instance.ReadFromFile(instancename, 1)
-   #Instance.DefineAsSmallIntance()
-    MRP()
+    #Method = "Two-stages"
+    #Instance.Average = False
+    #Instance.NrScenarioPerBranch = nrbranch
+    #Instance.LoadScenarioFromFile = True
+    #PrintScenarios = False
+    #Instance.ReadFromFile(instancename, 1)
+    #Instance.DefineAsSuperSmallIntance()
+    #MRP()
 
     Method = "Average"
     Instance.Average = True
     Instance.NrScenarioPerBranch = nrbranch
     Instance.LoadScenarioFromFile = True
     PrintScenarios = False
-    Instance.ReadFromFile( instancename, 1 )
-        #Instance.DefineAsSmallIntance()
+    #Instance.ReadFromFile( instancename, 1 )
+    Instance.DefineAsSuperSmallIntance()
     solutionofaverage = MRP()
     #
     Method = "Average_Solution_In_Multi-stages"
@@ -547,8 +515,8 @@ if __name__ == "__main__":
     EvaluateSolution = True
     Instance.LoadScenarioFromFile = True
     PrintScenarios = False
-    Instance.ReadFromFile( instancename, 1 )
-    #Instance.DefineAsSmallIntance()
+    #Instance.ReadFromFile( instancename, 1 )
+    Instance.DefineAsSuperSmallIntance()
     GivenQuantities = solutionofaverage
     MRP()
 
@@ -560,10 +528,7 @@ if __name__ == "__main__":
     PrintScenarios = False
     UseNonAnticipativity = True
     ActuallyUseAnticipativity = False
-    Instance.ReadFromFile( instancename, 1 )
-    #Instance.DefineAsSmallIntance()
+    #Instance.ReadFromFile( instancename, 1 )
+    Instance.DefineAsSuperSmallIntance()
     MRP()
 
-   # Instance.DefineAsSmallIntance()
-   #
-   # Instance.PrintInstance()
