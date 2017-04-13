@@ -30,9 +30,11 @@ if __name__=="__main__":
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjob.txt
+#$ -o /home/thesim/outputjob%s%s.txt
+ulimit -v 8000000
+mkdir /tmp/thesim
 python test.py %s %s
-""" %(f, b) )
+""" %(f, b,f, b) )
 
 
 #Create the sh file

@@ -5,6 +5,7 @@ import math
 from ScenarioTree import ScenarioTree
 from Scenario import Scenario
 import cPickle as pickle
+import os
 
 class MRPInstance:
 
@@ -29,11 +30,11 @@ class MRPInstance:
 
     #This function print the scenario of the instance in an excel file
     def PrintScenarioToExcel( self ):
-        writer = pd.ExcelWriter( "./Instances/" + self.InstanceName + "_Scenario.xlsx",
-                                        engine='openpyxl' )
-        for s in self.Scenarios:
-            s.PrintScenarioToExcel( writer )
-        writer.save()
+        #writer = pd.ExcelWriter( "./Instances/" + self.InstanceName + "_Scenario.xlsx",
+        #                                engine='openpyxl' )
+        #for s in self.Scenarios:
+        #    s.PrintScenarioToExcel( writer )
+        #writer.save()
         self.DemandScenarioTree.SaveInFile()
 
     #This function define the current instance as a  small one, used to test the model
@@ -92,10 +93,14 @@ class MRPInstance:
         self.ComputeMaxLeadTime()
         self.NrScenario = len( self.Scenarios )
         self.ComputeIndices()
+        print "Start to build the scenario"
         self.NrScenario, self.Scenarios = self.CreateAllScenario( )
+        print "Scenario built"
         # update indices to take into account the scenario
         self.ComputeIndices()
         self.ComputeHasExternalDemand()
+        self.RequieredProduct = [ [ q for q in self.ProductSet  if self.Requirements[ q ][ p ] > 0.0 ] 
+                                                                    for p in self.ProductSet ]
     #Constructor
     def __init__( self ):
         self.InstanceName = ""
@@ -116,6 +121,8 @@ class MRPInstance:
         self.BackorderCosts = []
         self.CapacityConsumptions = []
         self.HasExternalDemand = []
+        #The set of product which are required for production of each product.
+        self.RequieredProduct = [] 
         # Define some attributes and functions which help to et the index of the variable.
         # the attributs nrquantiyvariables, nrinventoryvariable, nrproductionvariable, and nrbackordervariable gives the number
         # of variable of each type
@@ -256,9 +263,13 @@ class MRPInstance:
     #This function load the scenario tree from a fil
     def LoadFromFile( self ):
         result = None
-        with open('./Instances/' + self.InstanceName + '_Scenario.pkl', 'rb') as input:
-            result = pickle.load( input )
-        return result
+        filepath = '/tmp/thesim/' + self.InstanceName + '_Scenario%r.pkl'%self.NrScenarioPerBranch
+        try:
+          with open( filepath, 'rb') as input:
+              result = pickle.load( input )
+          return result
+        except: 
+          print "file %r not found" %(filepath)
 
     #This function create all the scenario using a scenario tree
     def CreateAllScenario( self, ):
@@ -299,13 +310,12 @@ class MRPInstance:
         self.ProductName = list( datasheetdf.index.values )
         self.InstanceName = instancename
         #This set of instances assume no capacity
-        self.NrResource = 0
-        self.CapacityConsumptions =  [  ]
+        self.NrResource =  len( self.ProductName )
         self.NrProduct = len( self.ProductName )
         self.NrTimeBucket = 0
         self.ComputeIndices()
         #This set of instances assume no setup
-        self.SetupCosts = [ 0.0 ] * self.NrProduct
+        self.SetupCosts = [ 10.0 ] * self.NrProduct 
          #Get the average demand, lead time
         self.Leadtimes = [1 for p in self.ProductSet]
 
@@ -339,10 +349,15 @@ class MRPInstance:
         # Assume a starting inventory is the average demand during the lead time
         self.StartingInventories = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand')
                                      * max( self.Leadtimes[q] *  self.Requirements[ q ][ p ]  for q in self.ProductSet )
-                                     for p in self.ProductSet ]
+                                     for p in self.ProductSet ] 
 
         #Generate the sets of scenarios
         self.AverageDemand = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') for p in self.ProductSet ]
         self.StandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
-
+        #self.CapacityConsumptions =  [ [ 1.0 / ( datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') 
+        #                                          + datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand')  ) 
+        #                                if ( p == k and ( ( datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') 
+        #                                          + datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') ) > 0 ) )   else 0.0
+        #                                for p in self.ProductSet ] for k in range( self.NrResource ) ]
+        self.CapacityConsumptions =  [ [ 0.0  for p in self.ProductSet ] for k in range( self.NrResource ) ]
         self.ComputeInstanceData()
