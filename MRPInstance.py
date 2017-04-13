@@ -5,6 +5,7 @@ import math
 from ScenarioTree import ScenarioTree
 from Scenario import Scenario
 import cPickle as pickle
+import os
 
 class MRPInstance:
 
@@ -14,7 +15,6 @@ class MRPInstance:
     def PrintInstance( self ):
         print "instance: %s" %self.InstanceName
         print "instance with %d products and %d time buckets" % ( self.NrProduct, self.NrTimeBucket );
-#		print "demand: \n %r" % ( pd.DataFrame( self.Demands, index = self.ProductName ) );
         print "requirements: \n %r" % (pd.DataFrame( self.Requirements, index = self.ProductName, columns = self.ProductName ) );
         print "CapacityConsumptions: \n %r" % (pd.DataFrame( self.CapacityConsumptions, index = self.ProductName ) );
         aggregated = [ self.Leadtimes, self.StartingInventories, self.InventoryCosts,
@@ -28,12 +28,12 @@ class MRPInstance:
             s.DisplayScenario()
 
     #This function print the scenario of the instance in an excel file
-    def PrintScenarioToExcel( self ):
-        writer = pd.ExcelWriter( "./Instances/" + self.InstanceName + "_Scenario.xlsx",
-                                        engine='openpyxl' )
-        for s in self.Scenarios:
-            s.PrintScenarioToExcel( writer )
-        writer.save()
+    def PrintScenarioToFile( self ):
+        #writer = pd.ExcelWriter( "./Instances/" + self.InstanceName + "_Scenario.xlsx",
+        #                                engine='openpyxl' )
+        #for s in self.Scenarios:
+        #    s.PrintScenarioToExcel( writer )
+        #writer.save()
         self.DemandScenarioTree.SaveInFile()
 
     #This function define the current instance as a  small one, used to test the model
@@ -63,8 +63,6 @@ class MRPInstance:
         self.ComputeInstanceData()
 
      # This function defines a very small instance, this is usefull for debugging.
-
-    #This function define the current instance as a very small one, used to implement the model
     def DefineAsSuperSmallIntance(self ):
 
         self.InstanceName = "SuperSmallIntance"
@@ -86,6 +84,7 @@ class MRPInstance:
 
         self.ComputeInstanceData()
 
+    #This function compute the data required to solve the instance ( indices of the variable, cretae the scenarios, level in the supply chain, .... )
     def ComputeInstanceData(self):
         self.ComputeIndices()
         self.ComputeLevel()
@@ -96,6 +95,8 @@ class MRPInstance:
         # update indices to take into account the scenario
         self.ComputeIndices()
         self.ComputeHasExternalDemand()
+        self.RequieredProduct = [ [ q for q in self.ProductSet  if self.Requirements[ q ][ p ] > 0.0 ] 
+                                                                    for p in self.ProductSet ]
     #Constructor
     def __init__( self ):
         self.InstanceName = ""
@@ -116,6 +117,8 @@ class MRPInstance:
         self.BackorderCosts = []
         self.CapacityConsumptions = []
         self.HasExternalDemand = []
+        #The set of product which are required for production of each product.
+        self.RequieredProduct = [] 
         # Define some attributes and functions which help to et the index of the variable.
         # the attributs nrquantiyvariables, nrinventoryvariable, nrproductionvariable, and nrbackordervariable gives the number
         # of variable of each type
@@ -218,6 +221,7 @@ class MRPInstance:
         self.TimeBucketSet = range( self.NrTimeBucket )
         self.ScenarioSet = range( self.NrScenario )
 
+        #The indices of the variable in the case where the non anticipativity constraints are created explicitely
         self.NrQuantiyVariablesWithoutNonAnticipativity = self.NrProduct  * ( self.DemandScenarioTree.NrNode -2 ) #remove the root node
         self.NrInventoryVariableWithoutNonAnticipativity = self.NrProduct *  ( self.DemandScenarioTree.NrNode -2 )
         self.NrProductionVariableWithoutNonAnticipativity = self.NrProduct  * ( self.DemandScenarioTree.NrNode -2 )
@@ -227,6 +231,7 @@ class MRPInstance:
         self.StartProdustionVariableWithoutNonAnticipativity = self.StartInventoryVariableWithoutNonAnticipativity +  self.NrInventoryVariableWithoutNonAnticipativity
         self.StartBackorderVariableWithoutNonAnticipativity =   self.StartProdustionVariableWithoutNonAnticipativity +  self.NrProductionVariableWithoutNonAnticipativity
 
+        #The indices of the variable in the case where the a two stage problem is solved
         self.NrQuantiyVariablesTwoStages = self.NrProduct +  self.NrProduct * ( self.NrTimeBucket -1 ) * self.NrScenario
         self.NrInventoryVariableTwoStages =  self.NrProduct +  self.NrProduct * ( self.NrTimeBucket -1 ) * self.NrScenario
         self.NrProductionVariableTwoStages = self.NrProduct +  self.NrProduct * ( self.NrTimeBucket -1 ) * self.NrScenario
@@ -235,6 +240,16 @@ class MRPInstance:
         self.StartInventoryVariableTwoStages = self.StartQuantityVariableTwoStages + self.NrQuantiyVariablesTwoStages
         self.StartProdustionVariableTwoStages = self.StartInventoryVariableTwoStages + self.NrInventoryVariableTwoStages
         self.StartBackorderVariableTwoStages = self.StartProdustionVariableTwoStages + self.NrProductionVariableTwoStages
+
+        #The indices of the variable in the case where a one stage problem is solved
+        self.NrQuantiyVariablesOneStage =  self.NrProduct * ( self.NrTimeBucket  )
+        self.NrInventoryVariableOneStage =  self.NrProduct * ( self.NrTimeBucket  )
+        self.NrProductionVariableOneStage = self.NrProduct * ( self.NrTimeBucket  )
+        self.NrBackorderVariableOneStage =  self.NrProduct * ( self.NrTimeBucket  )
+        self.StartQuantityVariableOneStage = 0
+        self.StartInventoryVariableOneStage = self.StartQuantityVariableOneStage + self.NrQuantiyVariablesOneStage
+        self.StartProdustionVariableOneStage = self.StartInventoryVariableOneStage + self.NrInventoryVariableOneStage
+        self.StartBackorderVariableOneStage = self.StartProdustionVariableOneStage + self.NrProductionVariableOneStage
 
     #This function transform the sheet given in arguments into a dataframe
     def ReadDataFrame( self, wb2, framename ):
@@ -256,9 +271,13 @@ class MRPInstance:
     #This function load the scenario tree from a fil
     def LoadFromFile( self ):
         result = None
-        with open('./Instances/' + self.InstanceName + '_Scenario.pkl', 'rb') as input:
-            result = pickle.load( input )
-        return result
+        filepath = '/tmp/thesim/' + self.InstanceName + '_Scenario%r.pkl'%self.NrScenarioPerBranch
+        try:
+          with open( filepath, 'rb') as input:
+              result = pickle.load( input )
+          return result
+        except: 
+          print "file %r not found" %(filepath)
 
     #This function create all the scenario using a scenario tree
     def CreateAllScenario( self, ):
@@ -299,13 +318,12 @@ class MRPInstance:
         self.ProductName = list( datasheetdf.index.values )
         self.InstanceName = instancename
         #This set of instances assume no capacity
-        self.NrResource = 0
-        self.CapacityConsumptions =  [  ]
+        self.NrResource =  len( self.ProductName )
         self.NrProduct = len( self.ProductName )
         self.NrTimeBucket = 0
         self.ComputeIndices()
         #This set of instances assume no setup
-        self.SetupCosts = [ 0.0 ] * self.NrProduct
+        self.SetupCosts = [ 10.0 ] * self.NrProduct 
          #Get the average demand, lead time
         self.Leadtimes = [1 for p in self.ProductSet]
 
@@ -339,10 +357,15 @@ class MRPInstance:
         # Assume a starting inventory is the average demand during the lead time
         self.StartingInventories = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand')
                                      * max( self.Leadtimes[q] *  self.Requirements[ q ][ p ]  for q in self.ProductSet )
-                                     for p in self.ProductSet ]
+                                     for p in self.ProductSet ] 
 
         #Generate the sets of scenarios
         self.AverageDemand = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') for p in self.ProductSet ]
         self.StandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
-
+        #self.CapacityConsumptions =  [ [ 1.0 / ( datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') 
+        #                                          + datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand')  ) 
+        #                                if ( p == k and ( ( datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') 
+        #                                          + datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') ) > 0 ) )   else 0.0
+        #                                for p in self.ProductSet ] for k in range( self.NrResource ) ]
+        self.CapacityConsumptions =  [ [ 0.0  for p in self.ProductSet ] for k in range( self.NrResource ) ]
         self.ComputeInstanceData()

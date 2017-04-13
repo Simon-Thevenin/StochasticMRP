@@ -3,7 +3,7 @@ import pandas as pd
 class Scenario:
 
     NrScenario = 0
-
+    #Constructor
     def __init__( self, owner = None, demand = None, proabability = -1, quantityvariable = None,  productionvariable = None,  inventoryvariable = None,  backordervariable = None ):
         self.Owner = owner
         # The  demand in the scenario for each time period
