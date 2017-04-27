@@ -1,5 +1,4 @@
 import numpy as np
-
 import matplotlib.pyplot as plt
 #from MRPInstance import MRPInstance
 
@@ -9,9 +8,12 @@ class ScenarioTreeNode:
 
     #Create the demand in a node following a normal distribution
     def CreateDemandNormalDistributiondemand( self, instance, nrdemand ):
-        demandvector = [  np.random.normal( instance.AverageDemand[p], instance.StandardDevDemands[p], nrdemand ).clip(min=0).tolist()
-                            if instance.StandardDevDemands[p] > 0 else [instance.AverageDemand[p] ] * nrdemand
+        demandvector = [    np.round( np.random.normal( instance.AverageDemand[p], instance.StandardDevDemands[p], nrdemand ).clip(min=0.0) , 0 ).tolist()
+                            if instance.StandardDevDemands[p] > 0 else [ float( instance.AverageDemand[p] ) ] * nrdemand
                             for p in instance.ProductSet ]
+        #round the value of the demand vector
+        #demandvector = [ round( elem, 0) for elem in floatdemandvector[p]  for p in instance.ProductSet ]
+
         return demandvector
 
     # This function create a node for the instance and time given in argument
@@ -23,6 +25,9 @@ class ScenarioTreeNode:
         self.Parent = parent
         self.Instance = instance
         self.Branches = []
+        # An identifier of the node
+        self.NodeNumber = ScenarioTreeNode.NrNode;
+        ScenarioTreeNode.NrNode  = ScenarioTreeNode.NrNode  + 1;
         t= time + 1
         if  instance is not None and  t < instance.NrTimeBucket:
             nextdemands = self.CreateDemandNormalDistributiondemand( instance, nrbranch )
@@ -39,9 +44,6 @@ class ScenarioTreeNode:
         self.Probability = proabibilty
         # The demand for each product associated with the node of the sceanrio
         self.Demand = demands
-        # An identifier of the node
-        self.NodeNumber = ScenarioTreeNode.NrNode;
-        ScenarioTreeNode.NrNode  = ScenarioTreeNode.NrNode  + 1;
         # The attribute DemandsInParitalScenario contains all the demand since the beginning of the time horizon in the partial scenario
         self.DemandsInScenario = []  # will be built later
         # The probability of the partial scenario ( take into account the paroability if parents )

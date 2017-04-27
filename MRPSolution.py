@@ -4,6 +4,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 import numpy as np
 import itertools as itools
 from MRPInstance import MRPInstance
+import math
 
 class MRPSolution:
 
@@ -26,25 +27,37 @@ class MRPSolution:
     #This funciton conpute the different costs (inventory, backorder, setups) associated with the solution.
     def ComputeCost(self):
         #multiply by inventory cost per product -> get a vector with cost per time unit and scenario
+        print self.Production.transpose()
         inventorycostpertimeandscenar =  self.InventoryLevel.transpose().dot( self.MRPInstance.InventoryCosts )
         setupcostpertimeandscenar = self.Production.transpose().dot( self.MRPInstance.SetupCosts )
         backordercostpertimeandscenar = self.BackOrder.transpose().dot(self.MRPInstance.BackorderCosts )
+        print setupcostpertimeandscenar
 
         #Reshap the vector to get matirces
         inventorycostpertimeandscenar = inventorycostpertimeandscenar.reshape( self.MRPInstance.NrTimeBucket, self.MRPInstance.NrScenario );
         setupcostpertimeandscenar = setupcostpertimeandscenar.reshape( self.MRPInstance.NrTimeBucket, self.MRPInstance.NrScenario );
         backordercostpertimeandscenar = backordercostpertimeandscenar.reshape( self.MRPInstance.NrTimeBucket, self.MRPInstance.NrScenario );
+        print setupcostpertimeandscenar
 
         #multiply by the probability of each scenatio
         proabailities = [ s.Probability for s in self.MRPInstance.Scenarios  ]
         inventorycostpertime = inventorycostpertimeandscenar.dot( proabailities )
         setupcostpertime = setupcostpertimeandscenar.dot( proabailities )
         backordercostpertime = backordercostpertimeandscenar.dot( proabailities )
+        print setupcostpertime
+        print 'Now the gamma!!!'
+        gammas = [ math.pow(self.MRPInstance.Gamma, t) for t in self.MRPInstance.TimeBucketSet]
+        netpresentvalueinventorycostpertime = inventorycostpertime.transpose().dot( gammas )
+        netpresentvaluesetupcostpertime = setupcostpertime.transpose().dot(gammas)
+        netpresentvaluebackordercostpertime = backordercostpertime.transpose().dot(gammas)
+        print netpresentvaluesetupcostpertime
 
-        self.InventoryCost = inventorycostpertime.sum();
-        self.BackOrderCost = backordercostpertime.sum();
-        self.SetupCost = setupcostpertime.sum();
+        self.InventoryCost = netpresentvalueinventorycostpertime
+        self.BackOrderCost = netpresentvaluebackordercostpertime
+        self.SetupCost = netpresentvaluesetupcostpertime
+        print 'Thae seem rith:%d!!!'%self.SetupCost
         self.TotalCost =  self.InventoryCost + self.BackOrderCost +  self.SetupCost
+        print self.SetupCost
 
     #constructor
     def __init__( self, instance, solquantity, solproduction, solinventory, solbackorder ):

@@ -1,12 +1,16 @@
 from ScenarioTreeNode import ScenarioTreeNode
 import cPickle as pickle
+import numpy as np
 import os
 class ScenarioTree:
     #Constructor
-    def __init__( self, instance = None, branchperlevel = [] ):
+    def __init__( self, instance = None, branchperlevel = [], seed = -1 ):
+        self.Seed = seed
+        np.random.seed( seed )
         self.Nodes = []
         self.Owner = instance
         self.NrBranches = branchperlevel
+        ScenarioTreeNode.NrNode = 0
         self.RootNode =  ScenarioTreeNode( owner = self, instance = instance, time = -1, nrbranch = 1, proabibilty = 1 )
         if instance is None:
             self.NrLevel = -1
@@ -34,14 +38,11 @@ class ScenarioTree:
         return scenarioset
 
     #Save the scenario tree in a file
-    def SaveInFile( self ):
+    def SaveInFile( self, scearionr ):
         result = None
-        filepath = '/tmp/thesim/' + self.Owner.InstanceName + '_Scenario%r.pkl'%self.NrBranches[2]
+        filepath = './Instances/' + self.Owner.InstanceName + '_Scenario%s.pkl'%scearionr
         try:
           with open( filepath, 'wb') as output:
                pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
         except: 
           print "file %r not found" %(filepath)
-
-
-
