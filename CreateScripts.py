@@ -22,7 +22,7 @@ if __name__=="__main__":
 #			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", 
 #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
 
-		for b in [ "07" ]: #"02", "03", "04", "05", "06", "07", "08", "09", "10"]:
+		for b in [ "SlowMoving", "Normal" ]: #"02", "03", "04", "05", "06", "07", "08", "09", "10"]:
    
 			for m in [ "YQFix" ]:#, "YFix", "_Fix" ]: 
 				for rep in ["01", "02", "03", "04", "05", "06"]: #, "07", "08", "09", "10"]: 
@@ -40,8 +40,8 @@ if __name__=="__main__":
 #$ -o /home/thesim/outputjob%s%s%s%s.txt
 ulimit -v 8000000
 mkdir /tmp/thesim
-python test.py %s %s %s 10000 %s SlowMoving
-""" %(f, rep, m , rep, f, rep, m, Param) )
+python test.py %s %s %s 10000 %s %s
+""" %(f, rep, m , b, f, rep, m, Param, b) )
 
 
 #Create the sh file
