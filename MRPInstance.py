@@ -28,17 +28,10 @@ class MRPInstance:
         #self.DemandScenarioTree.Display()
         # Print the set of scenario
         #print "Print the scenarios:"
-        for s in self.Scenarios:
-            s.DisplayScenario()
-
-    #This function print the scenario of the instance in an excel file
-    def PrintScenarioToFile( self, scenarionr ):
-        #writer = pd.ExcelWriter( "./Instances/" + self.InstanceName + "_Scenario.xlsx",
-        #                                engine='openpyxl' )
         #for s in self.Scenarios:
-        #    s.PrintScenarioToExcel( writer )
-        #writer.save()
-        self.DemandScenarioTree.SaveInFile( scenarionr )
+        #    s.DisplayScenario()
+
+
 
     #This function define the current instance as a  small one, used to test the model
     def DefineAsSmallIntance(self ):
@@ -66,6 +59,7 @@ class MRPInstance:
         self.SetupCosts = [10000.0, 1.0, 1.0, 1.0, 1.0]
         self.BackorderCosts = [100000.0, 0.0, 0.0, 0.0, 0.0]  # for now assume no external demand for components
         self.Capacity = [ 15, 15, 15, 15, 15 ]
+        self.LostSaleCost = [1000.0, 0.0, 0.0, 0.0, 0.0]
         self.ComputeInstanceData()
 
      # This function defines a very small instance, this is usefull for debugging.
@@ -81,14 +75,15 @@ class MRPInstance:
                               [ 0, 0 ] ]
         self.Capacity = [ 15, 50 ]
         self.Leadtimes = [ 0, 1 ]
-        self.ProcessingTime = [ [ 1, 1 ],
-                                [ 1, 1 ] ]
+        self.ProcessingTime = [ [ 1, 0 ],
+                                [ 0, 1 ] ]
         self.StandardDevDemands = [ 5, 0 ]
         self.AverageDemand = [ 10, 0 ]
         self.StartingInventories = [ 10.0, 10.0 ]
         self.InventoryCosts = [ 10.0, 5.0 ]
         self.SetupCosts = [ 5.0, 5.0 ]
         self.BackorderCosts = [ 100.0, 0.0 ]  # for now assume no external demand for components
+        self.LostSaleCost = [1000.0, 0.0]
         self.ComputeInstanceData()
 
     #This function compute the data required to solve the instance ( indices of the variable, cretae the scenarios, level in the supply chain, .... )
@@ -96,26 +91,22 @@ class MRPInstance:
         self.ComputeIndices()
         self.ComputeLevel()
         self.ComputeMaxLeadTime()
-        self.NrScenario = len( self.Scenarios )
-        self.ComputeIndices()
-        self.NrScenario, self.Scenarios = self.CreateAllScenario( )
-        # update indices to take into account the scenario
-        self.ComputeIndices()
-        self.ComputeHasExternalDemand()
-        self.RequieredProduct = [ [ q for q in self.ProductSet  if self.Requirements[ q ][ p ] > 0.0 ] 
+        self.RequieredProduct = [ [ q for q in self.ProductSet  if self.Requirements[ q ][ p ] > 0.0 ]
                                                                     for p in self.ProductSet ]
+        self.ComputeHasExternalDemand()
     #Constructor
     def __init__( self ):
         self.InstanceName = ""
         self.NrProduct = -1
         self.NrTimeBucket = -1
         self.NrResource = -1
-        self.NrScenario = -1
-        self.ScenarioNr = -1
+        self.LostSaleCost = []
         self.Gamma = 0
         self.ProductSet = []
+        self.ProductWithExternalDemand = []
+        #The table below give an index to each product with an external demand.
+        self.ProductWithExternalDemandIndex = []
         self.TimeBucketSet = []
-        self.ScenarioSet = []
         self.ResourceSet = []
         self.AverageDemand = []
         self.ProcessingTime = []
@@ -129,40 +120,7 @@ class MRPInstance:
         self.HasExternalDemand = []
         #The set of product which are required for production of each product.
         self.RequieredProduct = [] 
-        # Define some attributes and functions which help to et the index of the variable.
-        # the attributs nrquantiyvariables, nrinventoryvariable, nrproductionvariable, and nrbackordervariable gives the number
-        # of variable of each type
-        self.NrQuantiyVariables = 0
-        self.NrInventoryVariable = 0
-        self.NrProductionVariable = 0
-        self.NrBackorderVariable = 0
-        # The variable startquantityvariable, startinventoryvariable, startprodustionvariable, and startbackordervariable gives
-        # the index at which each variable type start
-        self.StartQuantityVariable = 0
-        self.StartInventoryVariable = 0
-        self.StartProdustionVariable = 0
-        self.StartBackorderVariable = 0
 
-        # The attribut below correspond to the index of the variable when the non atticiaptivity constraint
-        #  are not added and the noon requireed variables are not added
-        self.NrQuantiyVariablesWithoutNonAnticipativity = 0
-        self.NrInventoryVariableWithoutNonAnticipativity  = 0
-        self.NrProductionVariableWithoutNonAnticipativity  = 0
-        self.NrBackorderVariableWithoutNonAnticipativity  = 0
-        self.StartQuantityVariableWithoutNonAnticipativity  = 0
-        self.StartInventoryVariableWithoutNonAnticipativity  = 0
-        self.StartProdustionVariableWithoutNonAnticipativity  = 0
-        self.StartBackorderVariableWithoutNonAnticipativity  = 0
-
-        #Compute the index of the variable if two stage is used
-        self.NrQuantiyVariablesTwoStages  = 0
-        self.NrInventoryVariableTwoStages = 0
-        self.NrProductionVariableTwoStages = 0
-        self.NrBackorderVariableTwoStages = 0
-        self.StartQuantityVariableTwoStages = 0
-        self.StartInventoryVariableTwoStages = 0
-        self.StartProdustionVariableTwoStages = 0
-        self.StartBackorderVariableTwoStages = 0
 
         self.ProductName = ""
         #Compute some statistic about the instance
@@ -170,8 +128,8 @@ class MRPInstance:
         self.NrLevel = -1
         self.Level = [] # The level of each product in the bom
         self.MaxLeadTimeProduct = [] #The maximum leadtime to the component for each product
-        self.DemandScenarioTree = ScenarioTree( instance = self )
-        self.Scenarios = []
+       # self.DemandScenarioTree = ScenarioTree( instance = self )
+
 
         #If this is true, a single scenario with average demand is generated
         self.Average = False
@@ -212,60 +170,23 @@ class MRPInstance:
         self.NrLevel = max( self.Level[ p ] for p in self.ProductSet )
 
     def ComputeHasExternalDemand(self):
-        self.HasExternalDemand = [  ( ( sum(self.Scenarios[w].Demands[t][p] for t in self.TimeBucketSet
-                                                                            for w in self.ScenarioSet ) ) > 0  )
+        self.HasExternalDemand = [  self.AverageDemand[p] > 0
                                     for p in self.ProductSet ]
+        self.ProductWithExternalDemand = [ p for p in self.ProductSet if  self.HasExternalDemand[p] ]
+
+        index = 0
+        self.ProductWithExternalDemandIndex = [ 0 for p in self.ProductSet ]
+        for p in self.ProductWithExternalDemand:
+            self.ProductWithExternalDemandIndex[p] = index
+            index = index + 1
 
 
     #Compute the start of index and the number of variables for the considered instance
     def ComputeIndices( self ):
-        self.NrQuantiyVariables = self.NrProduct * self.NrTimeBucket * self.NrScenario
-        self.NrInventoryVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
-        self.NrProductionVariable = self.NrProduct  *  self.NrTimeBucket  * self.NrScenario
-        self.NrBackorderVariable = self.NrProduct * self.NrTimeBucket * self.NrScenario
-        self.StartQuantityVariable = 0
-        self.StartInventoryVariable =  self.StartQuantityVariable + self.NrQuantiyVariables
-        self.StartProdustionVariable = self.StartInventoryVariable +  self.NrInventoryVariable
-        self.StartBackorderVariable =   self.StartProdustionVariable +  self.NrProductionVariable
-        self.ProductSet = range( self.NrProduct )
         self.TimeBucketSet = range( self.NrTimeBucket )
-        self.ScenarioSet = range( self.NrScenario )
         self.ResourceSet = range( self.NrResource )
+        self.ProductSet = range( self.NrProduct )
 
-        #The indices of the variable in the case where the non anticipativity constraints are created explicitely
-        self.NrQuantiyVariablesWithoutNonAnticipativity = self.NrProduct  * ( self.DemandScenarioTree.NrNode -1 ) #remove the root node
-        self.NrInventoryVariableWithoutNonAnticipativity = self.NrProduct *  ( self.DemandScenarioTree.NrNode -1 )
-        self.NrProductionVariableWithoutNonAnticipativity = self.NrProduct  * ( self.DemandScenarioTree.NrNode -1 )
-        self.NrBackorderVariableWithoutNonAnticipativity = self.NrProduct  *( self.DemandScenarioTree.NrNode -1 )
-        self.StartQuantityVariableWithoutNonAnticipativity = 0
-        self.StartInventoryVariableWithoutNonAnticipativity =  self.StartQuantityVariableWithoutNonAnticipativity + self.NrQuantiyVariablesWithoutNonAnticipativity
-        self.StartProdustionVariableWithoutNonAnticipativity = self.StartInventoryVariableWithoutNonAnticipativity +  self.NrInventoryVariableWithoutNonAnticipativity
-        self.StartBackorderVariableWithoutNonAnticipativity =   self.StartProdustionVariableWithoutNonAnticipativity +  self.NrProductionVariableWithoutNonAnticipativity
-
-        #The indices of the variable in the case where the a two stage problem is solved
-        self.NrQuantiyVariablesTwoStages = self.NrProduct +  self.NrProduct * ( self.NrTimeBucket -1 ) * self.NrScenario
-        self.NrInventoryVariableTwoStages =  self.NrProduct +  self.NrProduct * ( self.NrTimeBucket -1 ) * self.NrScenario
-        self.NrProductionVariableTwoStages = self.NrProduct +  self.NrProduct * ( self.NrTimeBucket -1 ) * self.NrScenario
-        self.NrBackorderVariableTwoStages =  self.NrProduct +  self.NrProduct * ( self.NrTimeBucket -1 ) * self.NrScenario
-        self.StartQuantityVariableTwoStages = 0
-        self.StartInventoryVariableTwoStages = self.StartQuantityVariableTwoStages + self.NrQuantiyVariablesTwoStages
-        self.StartProdustionVariableTwoStages = self.StartInventoryVariableTwoStages + self.NrInventoryVariableTwoStages
-        self.StartBackorderVariableTwoStages = self.StartProdustionVariableTwoStages + self.NrProductionVariableTwoStages
-
-        #The indices of the variable in the case where a one stage problem is solved
-        self.NrQuantiyVariablesYQFix =  self.NrProduct * ( self.NrTimeBucket  )
-        self.NrProductionVariablesYQFix =  self.NrProduct * ( self.NrTimeBucket  )
-        self.StartQuantityVariablYQFix = 0
-        self.StartInventoryVariableYQFix = self.StartQuantityVariablYQFix + self.NrQuantiyVariablesYQFix
-        self.StartProdustionVariableYQFix = self.StartInventoryVariableYQFix + self.NrInventoryVariable
-        self.StartBackorderVariableYQFix = self.StartProdustionVariableYQFix + self.NrProductionVariablesYQFix
-
-        #The indices of the variable in the case where a one stage problem is solved
-        self.NrProductionVariablesYFix =  self.NrProduct * ( self.NrTimeBucket  )
-        self.StartQuantityVariablYFix = 0
-        self.StartInventoryVariableYFix = self.StartQuantityVariablYQFix + self.NrQuantiyVariables
-        self.StartProdustionVariableYFix = self.StartInventoryVariableYFix + self.NrInventoryVariable
-        self.StartBackorderVariableYFix = self.StartProdustionVariableYFix + self.NrProductionVariablesYFix
 
     #This function transform the sheet given in arguments into a dataframe
     def ReadDataFrame( self, wb2, framename ):
@@ -296,59 +217,53 @@ class MRPInstance:
           print "file %r not found" %(filepath)
 
     #This function create all the scenario using a scenario tree
-    def CreateAllScenario( self, seed = -1  ):
-        if self.Average: #1 scenario corresponding to the average demand
-            self.StandardDevDemands = [0] * self.NrProduct
-            nrbranchperlevellist = [1]  * (self.NrTimeBucket +1)
-            self.DemandScenarioTree = ScenarioTree( self, nrbranchperlevellist );
-
-        elif self.LoadScenarioFromFile : #Load the scenario tree from a file
-            self.DemandScenarioTree = self.LoadFromFile()
-
-        else :#Create the scenario tree
-            treestructur = [1] + [ 2 for t in  ( self.TimeBucketSet ) ]
-            if self.BranchingStrategy == 1:
-                treestructur = [ 1 ] + [ int(math.pow( 2, self.NrTimeBucket ) ) ] + [ 1 for t in range( self.NrTimeBucket - 1 ) ]
-            if self.BranchingStrategy == 2 :
-                treestructur = [ 1 ] + [ int( math.pow( 2, self.NrTimeBucket / 2  ) ) ] + \
-                               [ int(math.pow( 2, self.NrTimeBucket / 2  ) ) ]+ [ 1 for t in range( self.NrTimeBucket - 2 ) ]
-            if self.BranchingStrategy == 3:
-                treestructur = [1] + [int(math.pow(2, max(3 - t, 0))) for t in (self.TimeBucketSet)]
-            if self.BranchingStrategy == 4:
-                #treestructur = [1, 8, 8, 0 ]
-                treestructur = [1, 8, 4, 2, 2, 2, 0 ] # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-            if self.BranchingStrategy == 5:
-                #treestructur = [1, 16, 16, 0]
-                treestructur = [1, 8, 4, 2, 2, 2, 2]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-            if self.BranchingStrategy == 6:
-                #treestructur = [1, 32, 32, 0]
-                treestructur = [1, 8, 4, 4, 2, 2, 0]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-            if self.BranchingStrategy == 7:
-                #treestructur = [1, 64, 32, 0]
-                treestructur = [1, 8, 8, 4, 2, 1, 0]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-            if self.BranchingStrategy == 8:
-                #treestructur = [1, 64, 64, 0]
-                treestructur = [1, 16, 16, 4, 2, 1, 1]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-            if self.BranchingStrategy == 9:
-                #treestructur = [1, 128, 128, 0 ]
-                treestructur = [1, 16, 16, 8, 4, 2, 2]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-            if self.BranchingStrategy == 10:
-                treestructur =  treestructur = [1] + [ 2 for t in  ( self.TimeBucketSet ) ]
-            self.DemandScenarioTree =  ScenarioTree( self, treestructur, seed );
-
-        #Re-compute the indices to set the variable index to the correct values
-        self.ComputeIndices()
-        scenariosasleaf = self.DemandScenarioTree.CreateAllScenario()
-        #Build the set of scenarios by copying the leaves
-        scenarios = [ Scenario( owner = self,
-                                demand = s.DemandsInScenario,
-                                proabability = s.ProbabilityOfScenario,
-                                quantityvariable = s.QuanitityVariableOfScenario,
-                                productionvariable = s.ProductionVariableOfScenario,
-                                inventoryvariable = s.InventoryVariableOfScenario,
-                                backordervariable = s.BackOrderVariableOfScenario ) for s in scenariosasleaf ]
-
-        return len(scenarios), scenarios
+    # def CreateAllScenario( self, seed = -1  ):
+    #     if self.Average: #1 scenario corresponding to the average demand
+    #         self.StandardDevDemands = [0] * self.NrProduct
+    #         nrbranchperlevellist = [1]  * (self.NrTimeBucket +1)
+    #         self.DemandScenarioTree = ScenarioTree( self, nrbranchperlevellist );
+    #
+    #     elif self.LoadScenarioFromFile : #Load the scenario tree from a file
+    #         self.DemandScenarioTree = self.LoadFromFile()
+    #
+    #     else :#Create the scenario tree
+    #         treestructur = [1] + [ 2 for t in  ( self.TimeBucketSet ) ]
+    #         if self.BranchingStrategy == 1:
+    #             treestructur = [ 1 ] + [ int(math.pow( 2, self.NrTimeBucket ) ) ] + [ 1 for t in range( self.NrTimeBucket - 1 ) ]
+    #         if self.BranchingStrategy == 2 :
+    #             treestructur = [ 1 ] + [ int( math.pow( 2, self.NrTimeBucket / 2  ) ) ] + \
+    #                            [ int(math.pow( 2, self.NrTimeBucket / 2  ) ) ]+ [ 1 for t in range( self.NrTimeBucket - 2 ) ]
+    #         if self.BranchingStrategy == 3:
+    #             treestructur = [1] + [int(math.pow(2, max(3 - t, 0))) for t in (self.TimeBucketSet)]
+    #         if self.BranchingStrategy == 4:
+    #             #treestructur = [1, 8, 8, 0 ]
+    #             treestructur = [1, 8, 4, 2, 2, 2, 0 ] # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
+    #         if self.BranchingStrategy == 5:
+    #             #treestructur = [1, 16, 16, 0]
+    #             treestructur = [1, 8, 4, 2, 2, 2, 2]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
+    #         if self.BranchingStrategy == 6:
+    #             #treestructur = [1, 32, 32, 0]
+    #             treestructur = [1, 8, 4, 4, 2, 2, 0]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
+    #         if self.BranchingStrategy == 7:
+    #             #treestructur = [1, 64, 32, 0]
+    #             treestructur = [1, 8, 8, 4, 2, 1, 0]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
+    #         if self.BranchingStrategy == 8:
+    #             #treestructur = [1, 64, 64, 0]
+    #             treestructur = [1, 16, 16, 4, 2, 1, 1]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
+    #         if self.BranchingStrategy == 9:
+    #             #treestructur = [1, 128, 128, 0 ]
+    #             treestructur = [1, 16, 16, 8, 4, 2, 2]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
+    #         if self.BranchingStrategy == 10:
+    #             treestructur =  treestructur = [1] + [ 2 for t in  ( self.TimeBucketSet ) ]
+    #
+    #
+    #     #Re-compute the indices to set the variable index to the correct values
+    #     self.ComputeIndices()
+    #     scenariosasleaf = self.DemandScenarioTree.CreateAllScenario()
+    #     #Build the set of scenarios by copying the leaves
+    #
+    #
+    #     return len(scenarios), scenarios
 
     #This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
     def ReadFromFile( self, instancename ):
@@ -402,8 +317,6 @@ class MRPInstance:
         self.StandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
 
 
-
-
         # The data below are generated a according to the method given in "multi-item capacited lot-sizing with demand uncertainty, P Brandimarte, IJPR, 2006"
         self.BackorderCosts = [ randint( 200, 300 ) for p in self.ProductSet ]
 
@@ -426,20 +339,24 @@ class MRPInstance:
                                 for k in range(self.NrResource) ]
         capacityfactor = 1.8;
         self.Capacity =  [ capacityfactor * sum ( dependentaveragedemand[ p ] * self.ProcessingTime[ p ][k] for p in self.ProductSet ) for k in range( self.NrResource ) ]
+
+        # Gamma is set to 0.9 which is a common value (find reference!!!)
         self.Gamma = 0.9
+        # See how to set this value
+        self.LostSaleCost = [ 1000.0  for p in self.ProductSet ]
         self.SaveCompleteInstanceInExelFile()
         self.ComputeInstanceData()
 
 
     #Save the scenario tree in a file
-    def SaveCompleteInstanceInFile( self ):
-        result = None
-        filepath = '/tmp/thesim/' + self.InstanceName + '_%r.pkl'%self.NrScenarioPerBranch
-        try:
-          with open( filepath, 'wb') as output:
-               pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
-        except:
-          print "file %r not found" %(filepath)
+    #def SaveCompleteInstanceInFile( self ):
+    #    result = None
+    #    filepath = '/tmp/thesim/' + self.InstanceName + '_%r.pkl'%self.NrScenarioPerBranch
+    #    try:
+    #      with open( filepath, 'wb') as output:
+    #           pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
+    #    except:
+    #      print "file %r not found" %(filepath)
 
 
     #Save the Instance in an Excel  file
@@ -455,8 +372,9 @@ class MRPInstance:
         requirementdf.to_excel(writer, "Requirement")
 
         productdata = [ self.Leadtimes, self.StartingInventories, self.InventoryCosts,
-                        self.SetupCosts, self.BackorderCosts, self.AverageDemand, self.StandardDevDemands ]
-        col = [ "Leadtimes", "StartingInventories", "InventoryCosts", "SetupCosts", "BackorderCosts", "AverageDemand", "StandardDevDemands" ]
+                        self.SetupCosts, self.BackorderCosts, self.AverageDemand, self.StandardDevDemands,
+                        self.LostSaleCost ]
+        col = [ "Leadtimes", "StartingInventories", "InventoryCosts", "SetupCosts", "BackorderCosts", "AverageDemand", "StandardDevDemands", "LostSale" ]
         productdatadf = pd.DataFrame( productdata, columns=self.ProductName, index=col).transpose();
         productdatadf.to_excel(writer, "Productdata")
 
@@ -465,6 +383,7 @@ class MRPInstance:
 
         requirementdf = pd.DataFrame(self.ProcessingTime, index=self.ProductName )
         requirementdf.to_excel(writer, "ProcessingTime")
+
 
         writer.save()
 
@@ -480,7 +399,7 @@ class MRPInstance:
         self.NrResource = Genericdf.get_value('NrResources', 0)
         self.Gamma =  Genericdf.get_value('Gamma', 0)
 
-        self.ComputeIndices()
+
         Productdatadf = self.ReadDataFrame(wb2, "Productdata")
         self.ProductName = list(Productdatadf.index.values)
         self.Leadtimes = Productdatadf[ 'Leadtimes' ].tolist()
@@ -490,7 +409,9 @@ class MRPInstance:
         self.BackorderCosts = Productdatadf['BackorderCosts'].tolist()
         self.StartingInventories = Productdatadf['StartingInventories'].tolist()
         self.SetupCosts = Productdatadf['SetupCosts'].tolist()
+        self.LostSaleCost = Productdatadf['LostSale'].tolist()
 
+        self.ComputeIndices()
         Requirementdf = self.ReadDataFrame( wb2, "Requirement" )
         self.Requirements = [ [ Requirementdf.get_value( q, p ) for p in self.ProductName ] for q in self.ProductName ]
 
