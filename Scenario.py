@@ -29,13 +29,13 @@ class Scenario:
 
     # This function print the scenario in an Excel file in the folde "Solutions"
     def PrintScenarioToExcel(self, writer):
-        demanddf = pd.DataFrame(self.Demands, columns = self.Owner.ProductName,  index = self.Owner.TimeBucketSet)
+        demanddf = pd.DataFrame(self.Demands, columns = self.Owner.Instance.ProductName,  index = self.Owner.Instance.TimeBucketSet)
         demanddf.to_excel( writer, "DemandScenario %d" %self.ScenarioId )
-        quantitydf = pd.DataFrame(self.QuanitityVariable, columns = self.Owner.ProductName, index = self.Owner.TimeBucketSet)
+        quantitydf = pd.DataFrame(self.QuanitityVariable, columns = self.Owner.Instance.ProductName, index = self.Owner.Instance.TimeBucketSet)
         quantitydf.to_excel( writer, "QuanitityVariable %d" %self.ScenarioId )
-        productiondf = pd.DataFrame(self.ProductionVariable, columns = self.Owner.ProductName, index = self.Owner.TimeBucketSet)
+        productiondf = pd.DataFrame(self.ProductionVariable, columns = self.Owner.Instance.ProductName, index = self.Owner.Instance.TimeBucketSet)
         productiondf.to_excel( writer, "ProductionVariable %d" % self.ScenarioId )
-        inventorydf = pd.DataFrame(self.InventoryVariable, columns = self.Owner.ProductName, index = self.Owner.TimeBucketSet)
+        inventorydf = pd.DataFrame(self.InventoryVariable, columns = self.Owner.Instance.ProductName, index = self.Owner.Instance.TimeBucketSet)
         inventorydf.to_excel( writer, "InventoryVariable %d" % self.ScenarioId )
-        bbackorderydf = pd.DataFrame(self.BackOrderVariable, columns = self.Owner.ProductName, index = self.Owner.TimeBucketSet)
+        bbackorderydf = pd.DataFrame(self.BackOrderVariable, columns = self.Owner.Instance.ProductName, index = self.Owner.Instance.TimeBucketSet)
         bbackorderydf.to_excel( writer, "BackOrderVariable %d" % self.ScenarioId )

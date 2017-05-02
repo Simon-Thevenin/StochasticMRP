@@ -23,10 +23,22 @@ columnname = [ "Instance name",
                "Nr level",
                "Nr product",
                "Nr time Period",
-               "Nr Scenario",
+               "Demand Tree Seed",
+			   "Nr Scenario",
                "Max lead time",
-               "NrScenarioPerBranch" ]
-               
+			   "BranchingStrategy",
+               "Demand Distribuion", 
+			   " Evaluate Nr Scenario", 
+			   " Evaluate Avg	", 
+			   " Evaluate Std dev	", 
+			   "UseNonAnticipativity", 
+			   "ActuallyUseAnticipativity",
+			   "Model",
+			   "UseSlowMoving",		
+			   "ComputeAverageSolution",	
+			   "ScenarioSeed"		   
+			   ]
+			  
 all_data = pd.DataFrame(  columns = columnname )
 #Add the content of each csv file at the end of the dataframe
 for f in glob.glob("./Test/*.csv"):
