@@ -122,6 +122,7 @@ def SolveAndEvaluateYQFix( average = False, nrevaluation = 2, nrscenario = 100, 
     for k in range( nrsolve ):
         ScenarioSeed = SeedArray[ k ]
         solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
+        PrintResult()
         solutions.append( solution )
         solution.ComputeStatistics()
         solution.PrintStatistics("InSample" , -1, 0, ScenarioSeed)
