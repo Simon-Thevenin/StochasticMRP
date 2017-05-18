@@ -83,6 +83,9 @@ class MIPSolver(object):
         #This list is filled after the resolution of the MIP
         self.SolveInfo = []
 
+        #This list will contain the set of constraint number for each flow constraint
+        self.FlowConstraintNR = []
+
     # Compute the start of index and the number of variables for the considered instance
     def ComputeIndices( self ):
 
@@ -450,10 +453,12 @@ class MIPSolver(object):
     # Demand and materials requirement: set the value of the invetory level and backorder quantity according to
     #  the quantities produced and the demand
     def CreateFlowConstraints( self ):
-         for p in self.Instance.ProductSet:
+        self.FlowConstraintNR = [[[ "" for t in self.Instance.TimeBucketSet]  for p in self.Instance.ProductSet] for w in self.ScenarioSet]
+
+        for p in self.Instance.ProductSet:
             for w in self.ScenarioSet:
                 # To speed up the creation of the model, only the variable and coffectiant which were not in the previous constraints are added (See the model definition)
-                righthandside = [-1 * self.Instance.StartingInventories[p]]
+                righthandside = [ -1 * self.Instance.StartingInventories[p]]
                 quantityvar = []
                 quantityvarceoff = []
                 dependentdemandvar = []
@@ -484,7 +489,9 @@ class MIPSolver(object):
                     if len(vars) > 0:
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["E"],
-                                                           rhs=righthandside )
+                                                           rhs=righthandside,
+                                                           names = ["Flow%d%d%d"%(p,t,w)])
+                    self.FlowConstraintNR[w][p][t] = "Flow%d%d%d"%(p,t,w)
 
 
     # This function creates the  indicator constraint to se the production variable to 1 when a positive quantity is produce
@@ -760,6 +767,7 @@ class MIPSolver(object):
 
         return mdem
 
+    #This function return the value of the big M variable
     def GetBigMValue( self, p ):
         mdem = self.GetBigMDemValue( p)
 
@@ -767,3 +775,24 @@ class MIPSolver(object):
         mres = min( self.Instance.Capacity[k] / self.Instance.ProcessingTime[p][k] for k in range( self.Instance.NrResource ) if self.Instance.ProcessingTime[p][k] > 0 )
         m = min( [ mdem, mres ] )
         return m
+
+    #This function modify the MIP tosolve the scenario tree given in argument.
+    #It is assumed that both the initial scenario tree and the new one have a single scenario
+    def ModifyMipForScenario(self, scenariotree):
+        self.DemandScenarioTree = scenariotree
+        self.DemandScenarioTree.Owner = self
+        self.NrScenario = len([n for n in self.DemandScenarioTree.Nodes if len(n.Branches) == 0])
+        self.ComputeIndices()
+        self.Scenarios = scenariotree.GetAllScenarios(True)
+        self.ScenarioSet = range(self.NrScenario)
+        #Redefine the flow conservation constraint
+        constrainttuples=[]
+        for p in self.Instance.ProductWithExternalDemand:
+           for w in self.ScenarioSet:
+                righthandside = -1 * self.Instance.StartingInventories[p]
+                for t in self.Instance.TimeBucketSet:
+                    righthandside = righthandside + self.Scenarios[w].Demands[t][p]
+                    constrnr = self.FlowConstraintNR[w][p][t]
+                    constrainttuples.append( ( constrnr, righthandside) )
+
+        self.Cplex.linear_constraints.set_rhs( constrainttuples )

@@ -24,6 +24,7 @@ class Evaluator:
         index = 0
         givenquantty = []
         OutOfSampleSolution = None
+        mipsolver = None
         for sol in self.Solutions:
             if model == Constants.ModelYQFix:
                 givenquantty = [ [ sol.ProductionQuantity.ix[p, t].get_value( 0 )
@@ -54,16 +55,19 @@ class Evaluator:
                         for ti in self.Instance.TimeBucketSet:
                             demanduptotimet = [ [ scenario.Demands[t][p] for p in self.Instance.ProductSet ] for t in range(ti) ]
                             givenquantty[ti], previousnode = sol.GetQuantityToOrderAC( demanduptotimet, ti, previousnode )
+                    if seed == offset:
+                        mipsolver = MIPSolver(self.Instance, model, scenariotree,
+                                              True,
+                                              implicitnonanticipativity=False,
+                                              evaluatesolution=True,
+                                              givenquantities=givenquantty,
+                                              givensetups=givensetup,
+                                              fixsolutionuntil=FixUntilTime )
+                        mipsolver.BuildModel()
+                    else:
+                        mipsolver.ModifyMipForScenario( scenariotree )
 
-                    mipsolver = MIPSolver(self.Instance, model, scenariotree,
-                                          True,
-                                          implicitnonanticipativity=False,
-                                          evaluatesolution=True,
-                                          givenquantities=givenquantty,
-                                          givensetups=givensetup,
-                                          fixsolutionuntil=FixUntilTime )
 
-                    mipsolver.BuildModel()
                     solution = mipsolver.Solve()
                     Evaluated[ seed - offset ][ index ] = solution.TotalCost
                     if seed == offset:
