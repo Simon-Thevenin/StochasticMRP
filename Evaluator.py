@@ -25,6 +25,7 @@ class Evaluator:
         givenquantty = []
         OutOfSampleSolution = None
         mipsolver = None
+        firstsolution = True
         for sol in self.Solutions:
             if model == Constants.ModelYQFix:
                 givenquantty = [ [ sol.ProductionQuantity.ix[p, t].get_value( 0 )
@@ -70,17 +71,20 @@ class Evaluator:
 
                     solution = mipsolver.Solve()
                     Evaluated[ seed - offset ][ index ] = solution.TotalCost
-                    if seed == offset:
-                        OutOfSampleSolution = solution
-                    else:
-                        OutOfSampleSolution.Merge( solution )
+                    if firstsolution:
+                        if seed == offset:
+                            OutOfSampleSolution = solution
+                        else:
+                            OutOfSampleSolution.Merge( solution )
             index = index +1
-            if nrscenario > 1:
-                OutOfSampleSolution.ReshapeAfterMerge()
-            OutOfSampleSolution.ComputeStatistics()
-            OutOfSampleSolution.PrintStatistics( "OutOfSample", offset, nrscenario, sol.ScenarioTree.Seed )
-                #print "Evaluation of YQ: %r" % Evaluated
 
+            if firstsolution:
+                if nrscenario > 1:
+                    OutOfSampleSolution.ReshapeAfterMerge()
+                OutOfSampleSolution.ComputeStatistics()
+                OutOfSampleSolution.PrintStatistics( "OutOfSample", offset, nrscenario, sol.ScenarioTree.Seed )
+                #print "Evaluation of YQ: %r" % Evaluated
+            firstsolution = False
 
         mean = np.mean( Evaluated )
         variance = math.pow( np.std( Evaluated ), 2 )

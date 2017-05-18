@@ -124,8 +124,9 @@ def SolveAndEvaluateYQFix( average = False, nrevaluation = 2, nrscenario = 100, 
         solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
         PrintResult()
         solutions.append( solution )
-        solution.ComputeStatistics()
-        solution.PrintStatistics("InSample" , -1, 0, ScenarioSeed)
+        if k == 0:
+            solution.ComputeStatistics()
+            solution.PrintStatistics("InSample" , -1, 0, ScenarioSeed)
 
     evaluator = Evaluator( Instance, solutions  )
     evaluator.EvaluateYQFixSolution( nrevaluation,  method, Constants.ModelYQFix )
@@ -181,8 +182,9 @@ def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrs
         solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
         solutions.append( solution )
         PrintResult()
-        solution.ComputeStatistics()
-        solution.PrintStatistics("InSample" , -1, 0, ScenarioSeed)
+        if k == 0:
+            solution.ComputeStatistics()
+            solution.PrintStatistics("InSample" , -1, 0, ScenarioSeed)
     evaluator = Evaluator( Instance, solutions  )
     evaluator.EvaluateYQFixSolution( nrevaluation, Methode, Constants.ModelYFix )
 
