@@ -128,7 +128,7 @@ def SolveAndEvaluateYQFix( average = False, nrevaluation = 2, nrscenario = 100, 
         solution.PrintStatistics("InSample" , -1, 0, ScenarioSeed)
 
     evaluator = Evaluator( Instance, solutions  )
-    evaluator.EvaluateYQFixSolution( nrscenario,  method, Constants.ModelYQFix )
+    evaluator.EvaluateYQFixSolution( nrevaluation,  method, Constants.ModelYQFix )
 
 
 def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrsolve = 1):
