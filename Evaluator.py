@@ -99,7 +99,7 @@ class Evaluator:
         duration = time.time() - start_time
 
         MinAverage = min( (1.0 / M) * sum( Evaluated[seed][k] for seed in range(M) ) for k in range(K) )
-        MaxAverage = min((1.0 / M) * sum(Evaluated[seed][k] for seed in range(M)) for k in range(K) )
+        MaxAverage = max((1.0 / M) * sum(Evaluated[seed][k] for seed in range(M)) for k in range(K) )
 
         general = [self.Instance.InstanceName, model, printidentificator, mean, variance, covariance, LB, UB, MinAverage, MaxAverage ]
 
