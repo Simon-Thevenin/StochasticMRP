@@ -1,17 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
-#from MRPInstance import MRPInstance
-
+from Constants import Constants
+from Tool import Tool
 
 class ScenarioTreeNode:
     NrNode = 0
 
     #Create the demand in a node following a normal distribution
-    def CreateDemandNormalDistributiondemand( self, instance, nrdemand, average = False, slowmoving = False ):
+    @staticmethod
+    def CreateDemandNormalDistributiondemand( instance, nrdemand, average = False):
         demandvector = [  [  float(instance.AverageDemand[p])
                                  for i in range( nrdemand ) ]  for p in instance.ProductSet]
         if not average:
-            if slowmoving:
+            if instance.Distribution == Constants.SlowMoving:
                 for p in range( instance.NrProduct ):
                     for i in range( nrdemand ):
                         if np.random.random_sample() >= 0.2 or instance.AverageDemand[p] == 0 :
@@ -29,7 +30,8 @@ class ScenarioTreeNode:
     #The node is associated to the time given in paramter.
     #nr demand is the number of demand scenario fo
     def __init__( self, owner = None, parent =None, instance = None, mipsolver = None, time = -1,  nrbranch = -1, demands = None, proabibilty = -1, averagescenariotree = False,  slowmoving = False  ):
-        owner.Nodes.append( self )
+        if owner is not None:
+            owner.Nodes.append( self )
         self.Owner = owner;
         self.Parent = parent
         self.Instance = instance
@@ -37,17 +39,25 @@ class ScenarioTreeNode:
         # An identifier of the node
         self.NodeNumber = ScenarioTreeNode.NrNode;
         ScenarioTreeNode.NrNode  = ScenarioTreeNode.NrNode  + 1;
+
         t= time + 1
-        if  instance is not None and  t < instance.NrTimeBucket:
-            nextdemands = self.CreateDemandNormalDistributiondemand( instance, nrbranch, averagescenariotree, slowmoving )
+
+        if  instance is not None and  t <= instance.NrTimeBucket:
+            if t == 0:
+                nextdemands = []#  [instance.FirstPeriodDemand[p]] for p in instance.ProductSet ]
+
+            else:
+                nextdemands = ScenarioTreeNode.CreateDemandNormalDistributiondemand(instance, nrbranch, averagescenariotree )
+
+            usaverageforbranch = t >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ) or  self.Owner.AverageScenarioTree
             self.Branches = [ ScenarioTreeNode( owner = owner,
                                                 parent = self,
                                                 instance = instance,
                                                 time = t,
                                                 nrbranch = owner.NrBranches[ t +1 ],
-                                                demands = [ nextdemands[ p ][ b ] for p in instance.ProductSet ],
+                                                demands = [ nextdemands[ p ][ b ]  for p in instance.ProductSet if t > 0 ],
                                                 proabibilty = ( 1.0 / nrbranch ) ,
-                                                averagescenariotree = averagescenariotree ,
+                                                averagescenariotree = usaverageforbranch,
                                                 slowmoving = slowmoving ) for b in range( nrbranch ) ]
 
         self.Time = time
@@ -60,7 +70,7 @@ class ScenarioTreeNode:
         # The probability of the partial scenario ( take into account the paroability if parents )
         self.ProbabilityOfScenario = -1
         # The attribute below contains the index of the CPLEX variables (quanity, production, invenotry) associated with the node for each product at the relevant time.
-        self.QuanitityVariable = [ ] # will be built later
+        self.QuanitityVariable = [] # will be built later
         self.ProductionVariable = [] # will be built later
         self.InventoryVariable = []# will be built later
         self.BackOrderVariable = []# will be built later
@@ -69,13 +79,27 @@ class ScenarioTreeNode:
         self.ProductionVariableOfScenario = [] # will be built later
         self.InventoryVariableOfScenario = []# will be built later
         self.BackOrderVariableOfScenario = []# will be built later
+        self.QuantityToOrder = [] #After solving the MILP, the attribut contains the quantity to order at the node
+
 
     #This function compute the indices of the variables associated wiht each node of the tree
     def ComputeVariableIndex( self ):
-        self.QuanitityVariable = [ ( self.Owner.Owner.StartQuantityVariableWithoutNonAnticipativity + self.Instance.NrProduct * ( self.NodeNumber -1 )  + p )  for p in self.Instance.ProductSet ]
-        self.ProductionVariable = [ ( self.Owner.Owner.StartProductionVariableWithoutNonAnticipativity + self.Instance.NrProduct * ( self.NodeNumber -1 )   + p )  for p in self.Instance.ProductSet ]
-        self.InventoryVariable = [ ( self.Owner.Owner.StartInventoryVariableWithoutNonAnticipativity + self.Instance.NrProduct  * ( self.NodeNumber -1 )  + p )  for p in self.Instance.ProductSet ]
-        self.BackOrderVariable = [ (self.Owner.Owner.StartBackorderVariableWithoutNonAnticipativity + self.Instance.NrProduct  * ( self.NodeNumber -1 )  + p ) for p in self.Instance.ProductSet ]
+        if self.Time < self.Instance.NrTimeBucket: #Do not associate Production or quantity variable to the last nodes
+            self.QuanitityVariable = [ ( self.Owner.Owner.StartQuantityVariableWithoutNonAnticipativity +
+                                         self.Instance.NrProduct * ( self.NodeNumber -1 )  + p )
+                                         for p in self.Instance.ProductSet ]
+            self.ProductionVariable = [ ( self.Owner.Owner.StartProductionVariableWithoutNonAnticipativity
+                                          + self.Instance.NrProduct * ( self.NodeNumber -1 )   + p )
+                                          for p in self.Instance.ProductSet ]
+
+        if self.Time > 0 : #use ( self.NodeNumber -2 ) because thee is no inventory variable for the first node and for the root node
+            self.InventoryVariable = [ ( self.Owner.Owner.StartInventoryVariableWithoutNonAnticipativity
+                                         + self.Instance.NrProduct  * ( self.NodeNumber -2 )  + p )
+                                       for p in self.Instance.ProductSet ]
+            self.BackOrderVariable = [ ( self.Owner.Owner.StartBackorderVariableWithoutNonAnticipativity
+                                         + len( self.Instance.ProductWithExternalDemand )  * ( self.NodeNumber -2 )
+                                         + self.Instance.ProductWithExternalDemandIndex[ p ] )
+                                         for p in self.Instance.ProductWithExternalDemand ]
 
     #This function display the tree
     def Display( self ):
@@ -100,12 +124,12 @@ class ScenarioTreeNode:
             self.BackOrderVariableOfScenario = self.Parent.BackOrderVariableOfScenario[ : ]
 
             # Add the demand of the the current node and update the probability
-            self.DemandsInScenario.append( self.Demand )
-            self.QuanitityVariableOfScenario.append( self.QuanitityVariable )
-            self.ProductionVariableOfScenario.append( self.ProductionVariable )
-            self.InventoryVariableOfScenario.append( self.InventoryVariable )
-            self.BackOrderVariableOfScenario.append( self.BackOrderVariable )
-
+            Tool.AppendIfNotEmpty( self.DemandsInScenario, self.Demand )
+            Tool.AppendIfNotEmpty( self.QuanitityVariableOfScenario, self.QuanitityVariable )
+            Tool.AppendIfNotEmpty( self.ProductionVariableOfScenario, self.ProductionVariable )
+            Tool.AppendIfNotEmpty( self.InventoryVariableOfScenario, self.InventoryVariable )
+            Tool.AppendIfNotEmpty( self.BackOrderVariableOfScenario, self.BackOrderVariable )
+            #Compute the probability of the scenario
             self.ProbabilityOfScenario = self.ProbabilityOfScenario * self.Probability
         else :
             self.ProbabilityOfScenario = 1

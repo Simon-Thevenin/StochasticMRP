@@ -3,6 +3,7 @@ import openpyxl as opxl
 import itertools as itools
 import math
 from ScenarioTree import ScenarioTree
+from ScenarioTreeNode import ScenarioTreeNode
 from Scenario import Scenario
 import cPickle as pickle
 import os
@@ -36,9 +37,11 @@ class MRPInstance:
     #This function define the current instance as a  small one, used to test the model
     def DefineAsSmallIntance(self ):
         self.InstanceName = "SmallIntance"
+        self.Distribution = "Normal"
         self.ProductName = [ "P1", "P2", "P3", "P4", "P5" ]
         self.NrProduct = 5
         self.NrTimeBucket = 6
+        self.NrTimeBucketWithoutUncertainty = 3
         self.NrResource = 5
         self.Gamma = 0.9
         self.Requirements = [ [ 0, 1, 1, 0, 0 ],
@@ -66,9 +69,11 @@ class MRPInstance:
     def DefineAsSuperSmallIntance(self ):
 
         self.InstanceName = "SuperSmallIntance"
+        self.Distribution = "Normal"
         self.ProductName = [ "P1", "P2" ]
         self.NrProduct = 2
-        self.NrTimeBucket = 3
+        self.NrTimeBucket = 6
+        self.NrTimeBucketWithoutUncertainty = 3
         self.NrResource = 2
         self.Gamma = 0.9
         self.Requirements = [ [ 0, 1 ],
@@ -119,8 +124,7 @@ class MRPInstance:
         self.BackorderCosts = []
         self.HasExternalDemand = []
         #The set of product which are required for production of each product.
-        self.RequieredProduct = [] 
-
+        self.RequieredProduct = []
 
         self.ProductName = ""
         #Compute some statistic about the instance
@@ -186,7 +190,6 @@ class MRPInstance:
         self.TimeBucketSet = range( self.NrTimeBucket )
         self.ResourceSet = range( self.NrResource )
         self.ProductSet = range( self.NrProduct )
-
 
     #This function transform the sheet given in arguments into a dataframe
     def ReadDataFrame( self, wb2, framename ):
@@ -266,7 +269,7 @@ class MRPInstance:
     #     return len(scenarios), scenarios
 
     #This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile( self, instancename ):
+    def ReadFromFile( self, instancename, slowmoving = False ):
         wb2 = opxl.load_workbook( "./Instances/MSOM-06-038-R2.xlsx" )
         #The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
         supplychaindf = self.ReadDataFrame( wb2, instancename + "_LL" )
@@ -281,8 +284,12 @@ class MRPInstance:
         self.NrTimeBucket = 0
         self.ComputeIndices()
 
-         #Get the average demand, lead time
-        self.Leadtimes = [1 for p in self.ProductSet]
+        self.Distribution = "Normal"
+        if slowmoving:
+            self.Distribution = "SlowMoving"
+
+        #Get the average demand, lead time
+        self.Leadtimes = [randint( 1, 1 ) for p in self.ProductSet]
 
         #self.Leadtimes =  [  int ( math.ceil( datasheetdf.get_value( self.ProductName[ p ], 'stageTime' ) ) ) for p in self.ProductSet ]
         print " CAUTION: LEAD TIME ARe MODIFIED"
@@ -302,23 +309,25 @@ class MRPInstance:
             for p in prodinlevel:
                 addedvalueatstage[p] = sum(addedvalueatstage[ q ] * self.Requirements[p][q] for q in self.ProductSet ) + \
                                             addedvalueatstage[ p ]
-                self.InventoryCosts[p] = holdingcost *  addedvalueatstage[ p ]
+                self.InventoryCosts[p] = holdingcost / 250 *  addedvalueatstage[ p ]
 
 
         self.ComputeLevel()
         self.ComputeMaxLeadTime( )
         # Consider a time horizon of 20 days plus the total lead time
-        self.NrTimeBucket = 2* self.MaxLeadTime
+        self.NrTimeBucket =  3 * self.MaxLeadTime
+        self.NrTimeBucketWithoutUncertainty = self.MaxLeadTime
         self.ComputeIndices()
 
 
         #Generate the sets of scenarios
         self.AverageDemand = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') for p in self.ProductSet ]
         self.StandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
-
+        #demand = ScenarioTreeNode.CreateDemandNormalDistributiondemand( self, 1, average = False, slowmoving = slowmoving )
+        #self.FirstPeriodDemand = [ demand[p][0] for p in self.ProductSet ]
 
         # The data below are generated a according to the method given in "multi-item capacited lot-sizing with demand uncertainty, P Brandimarte, IJPR, 2006"
-        self.BackorderCosts = [ randint( 200, 300 ) for p in self.ProductSet ]
+
 
         dependentaveragedemand = [ datasheetdf.get_value(self.ProductName[p], 'avgDemand') for p in self.ProductSet ]
         levelset = sorted(set(level), reverse=False)
@@ -328,10 +337,10 @@ class MRPInstance:
                 dependentaveragedemand[p] = sum(dependentaveragedemand[q] * self.Requirements[q][p] for q in self.ProductSet) + \
                                                 dependentaveragedemand[p]
         # Assume a starting inventory is the average demand during the lead time
-        self.StartingInventories = [  randint( 0, 2 * dependentaveragedemand[ p ] )  for p in self.ProductSet ]
+        self.StartingInventories = [   int( random.uniform( 1, 2 ) * dependentaveragedemand[ p ] )   for p in self.ProductSet ]
 
         #This set of instances assume no setup
-        self.SetupCosts =  [  ( ( ( dependentaveragedemand[ p ] / 2 ) * 4 * 0.1 ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
+        self.SetupCosts =  [  round( ( ( ( dependentaveragedemand[ p ] / 2 ) * 4 * 0.1 ) * random.uniform( 0.8, 1.2 ) ), 2)  for p in self.ProductSet ]
 
         self.ProcessingTime = [ [ randint( 1, 5 )
                                     if (p == k )   else 0.0
@@ -342,8 +351,11 @@ class MRPInstance:
 
         # Gamma is set to 0.9 which is a common value (find reference!!!)
         self.Gamma = 0.9
+        #Back order is twice the  holding cost as in :
+        # Solving the capacitated lot - sizing problem with backorder consideration CH Cheng1 *, MS Madan2, Y Gupta3 and S So4
         # See how to set this value
-        self.LostSaleCost = [ 1000.0  for p in self.ProductSet ]
+        self.BackorderCosts = [ 10 * self.InventoryCosts[p]  for p in self.ProductSet ]
+        self.LostSaleCost = [ 100 * self.InventoryCosts[p]  for p in self.ProductSet ] # [ randint( 200, 300 ) for p in self.ProductSet ]
         self.SaveCompleteInstanceInExelFile()
         self.ComputeInstanceData()
 
@@ -361,10 +373,10 @@ class MRPInstance:
 
     #Save the Instance in an Excel  file
     def SaveCompleteInstanceInExelFile( self ):
-        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + ".xlsx",  engine='openpyxl' )
+        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_" + self.Distribution + ".xlsx",  engine='openpyxl' )
 
-        general = [ self.InstanceName, self.NrProduct, self.NrTimeBucket, self.NrResource, self.Gamma ]
-        columnstab = [ "Name", "NrProducts", "NrBuckets", "NrResources", "Gamma" ]
+        general = [ self.InstanceName, self.NrProduct, self.NrTimeBucket, self.NrResource, self.Gamma, self.Distribution,  self.NrTimeBucketWithoutUncertainty  ]
+        columnstab = [ "Name", "NrProducts", "NrBuckets", "NrResources", "Gamma", "Distribution", "NrTimeBucketWithoutUncertainty" ]
         generaldf = pd.DataFrame(general, index=columnstab )
         generaldf.to_excel( writer, "Generic" )
 
@@ -384,7 +396,6 @@ class MRPInstance:
         requirementdf = pd.DataFrame(self.ProcessingTime, index=self.ProductName )
         requirementdf.to_excel(writer, "ProcessingTime")
 
-
         writer.save()
 
 
@@ -396,9 +407,10 @@ class MRPInstance:
         self.InstanceName = Genericdf.get_value( 'Name', 0 )
         self.NrProduct = Genericdf.get_value('NrProducts', 0)
         self.NrTimeBucket = Genericdf.get_value('NrBuckets', 0)
+        self.NrTimeBucketWithoutUncertainty = Genericdf.get_value('NrTimeBucketWithoutUncertainty', 0)
         self.NrResource = Genericdf.get_value('NrResources', 0)
         self.Gamma =  Genericdf.get_value('Gamma', 0)
-
+        self.Distribution =  Genericdf.get_value('Distribution', 0)
 
         Productdatadf = self.ReadDataFrame(wb2, "Productdata")
         self.ProductName = list(Productdatadf.index.values)
@@ -410,7 +422,6 @@ class MRPInstance:
         self.StartingInventories = Productdatadf['StartingInventories'].tolist()
         self.SetupCosts = Productdatadf['SetupCosts'].tolist()
         self.LostSaleCost = Productdatadf['LostSale'].tolist()
-
         self.ComputeIndices()
         Requirementdf = self.ReadDataFrame( wb2, "Requirement" )
         self.Requirements = [ [ Requirementdf.get_value( q, p ) for p in self.ProductName ] for q in self.ProductName ]
@@ -420,8 +431,6 @@ class MRPInstance:
 
         Processingdf = self.ReadDataFrame( wb2, "ProcessingTime" )
         self.ProcessingTime = [[Processingdf.get_value(p, k) for p in self.ProductName] for k in self.ResourceSet]
-
-
 
         self.ComputeLevel()
         self.ComputeMaxLeadTime()

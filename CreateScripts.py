@@ -23,25 +23,28 @@ if __name__=="__main__":
 #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
 
 		for b in [ "SlowMoving", "Normal" ]: #"02", "03", "04", "05", "06", "07", "08", "09", "10"]:
-   
-			for m in [ "YQFix" ]:#, "YFix", "_Fix" ]: 
-				for rep in ["01", "02", "03", "04", "05", "06"]: #, "07", "08", "09", "10"]: 
-					Param = "False"
-					if rep == "06":
-					  Param = "True"
-					qsub_filename = "job_%s_%s_%s_%s"%(f, b, m, rep)
-					qsub_file=open(qsub_filename, 'w')
-					qsub_file.write("""
+				for m in [ "YQFix", "YFix" ]:#, "YFix", "_Fix" ]: 
+						for Method in ["Average", "BigMip"]: #, "07", "08", "09", "10"]: 
+								scenarset =  [ "1024", "8192" ]
+								avg = False
+								if m == "YQFix": scenarset =  [ "2", "4", "8", "50", "100" ] 
+								if Method == "Average": 
+										scenarset =  [ "1" ]
+										avg = True
+								for nrscenar in scenarset: 
+										qsub_filename = "job_%s_%s_%s_%s_%s"%(f, m, avg, b, nrscenar)
+										qsub_file=open(qsub_filename, 'w')
+										qsub_file.write("""
 #!/bin/bash -l
 #
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjob%s%s%s%s.txt
+#$ -o /home/thesim/outputjob%s%s%s%s%s.txt
 ulimit -v 8000000
 mkdir /tmp/thesim
-python test.py %s %s %s 10000 %s %s
-""" %(f, rep, m , b, f, rep, m, Param, b) )
+python test.py %s 05 %s %s %s %s 10000
+""" %(f, m, avg, b, nrscenar, f, m, avg, b, nrscenar) )
 
 
 #Create the sh file
@@ -56,8 +59,14 @@ for f in ["01"  , "02", "03", "04", "05" ]:# "06", "07", "08", "09",
 #			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", 
 #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
 
-		for b in [ "07" ]: #"02", "03", "04", "05", "06", "07", "08", "09", "10"]:
-   
-			for m in [ "YQFix" ]:#, "YFix", "_Fix" ]: 
-				for rep in ["01", "02", "03", "04", "05", "06"]:#, "06", "07", "08", "09", "10"]: 
-						file.write("qsub job_%s_%s_%s_%s \n"%(f, b, m, rep) )
+		for b in [ "SlowMoving", "Normal" ]: #"02", "03", "04", "05", "06", "07", "08", "09", "10"]:
+				for m in [ "YQFix", "YFix" ]:#, "YFix", "_Fix" ]: 
+						for Method in ["Average", "BigMip"]: #, "07", "08", "09", "10"]: 
+								scenarset =  [ "1024", "8192" ]
+								avg = False
+								if m == "YQFix": scenarset =  [ "2", "4", "8", "50", "100" ] 
+								if Method == "Average": 
+										scenarset =  [ "1" ]
+										avg = True
+								for nrscenar in scenarset: 
+										file.write("qsub job_%s_%s_%s_%s_%s \n"%(f, m, avg, b, nrscenar )
