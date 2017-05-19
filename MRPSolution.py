@@ -164,7 +164,8 @@ class MRPSolution:
         self.InSamplePercenBackOrder =  100 * ( sum( self.InSampleTotalBackOrderPerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
         self.InSamplePercentLostSale = 100 * ( sum( self.InSampleTotalLostSalePerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
 
-    def PrintStatistics(self, filepostscript, offsetseed, nrevaluation, solutionseed):
+    def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed):
+
         scenarioset = range(len(self.Scenarioset))
 
         d = datetime.now()
@@ -203,11 +204,13 @@ class MRPSolution:
         perscenariodf.to_excel(writer, "Info Per scenario" )
 
 
-        general = [ self.InSampleAverageDemand, self.InSamplePercenBackOrder, self.InSamplePercentLostSale, offsetseed, nrevaluation, solutionseed ]
-        columnstab = [ "Average demand", "avg back order", "avg lostsale", "offsetseed", "nrevaluation", "solutionseed" ]
+        general = testidentifier+ [ self.InSampleAverageDemand, self.InSamplePercenBackOrder, self.InSamplePercentLostSale, offsetseed, nrevaluation, solutionseed ]
+        columnstab = [ "Instance","Distribution", "Model", "NrInSampleScenario", "Average demand", "avg back order", "avg lostsale", "offsetseed", "nrevaluation", "solutionseed" ]
         generaldf = pd.DataFrame(general, index=columnstab )
         generaldf.to_excel( writer, "General" )
         writer.save()
+
+
 
         #Compute the average inventory level at each level of the supply chain
         AverageStockAtLevel = [ ( sum( sum ( avginventorydf.loc[t,self.MRPInstance.ProductName[p]]
@@ -216,8 +219,12 @@ class MRPSolution:
                                 / sum( 1 for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p] == l +1 )
                                 for l in range( self.MRPInstance.NrLevel ) ]
 
-        data = [ self.MRPInstance.InstanceName, filepostscript, len( self.Scenarioset ),
-                 100 - (self.InSamplePercenBackOrder +  self.InSamplePercentLostSale), self.InSamplePercenBackOrder,  self.InSamplePercentLostSale   ] + AverageStockAtLevel
+        kpistat = [ 100 - (self.InSamplePercenBackOrder + self.InSamplePercentLostSale),
+                   self.InSamplePercenBackOrder,
+                   self.InSamplePercentLostSale
+                    ] + AverageStockAtLevel
+
+        data = testidentifier + [  filepostscript, len( self.Scenarioset ) ] + kpistat
         d = datetime.now()
         date = d.strftime('%m_%d_%Y_%H_%M_%S')
         myfile = open(r'./Test/Statistic/TestResult_%s_%r_%s.csv' % (
@@ -225,6 +232,8 @@ class MRPSolution:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         wr.writerow(data)
         myfile.close()
+
+        return kpistat
 
     #This function return the quantity to order a time t, given the first t-1 demands
     def GetQuantityToOrder(self, demands, time):

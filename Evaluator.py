@@ -17,7 +17,7 @@ class Evaluator:
         self.Solutions = solutions
         self.NrSolutions = len( self.Solutions )
 
-    def EvaluateYQFixSolution( self, nrscenario, printidentificator, model):
+    def EvaluateYQFixSolution( self, testidentifier, nrscenario, printidentificator, model):
         # Compute the average value of the demand
         start_time = time.time()
         Evaluated = [ [ -1 for sol in self.Solutions ] for e in range(nrscenario) ]
@@ -26,6 +26,7 @@ class Evaluator:
         OutOfSampleSolution = None
         mipsolver = None
         firstsolution = True
+        KPIStat = []
         for sol in self.Solutions:
             if model == Constants.ModelYQFix:
                 givenquantty = [ [ sol.ProductionQuantity.ix[p, t].get_value( 0 )
@@ -82,7 +83,7 @@ class Evaluator:
                 if nrscenario > 1:
                     OutOfSampleSolution.ReshapeAfterMerge()
                 OutOfSampleSolution.ComputeStatistics()
-                OutOfSampleSolution.PrintStatistics( "OutOfSample", offset, nrscenario, sol.ScenarioTree.Seed )
+                KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", offset, nrscenario, sol.ScenarioTree.Seed )
                 #print "Evaluation of YQ: %r" % Evaluated
             firstsolution = False
 
@@ -109,10 +110,10 @@ class Evaluator:
         MinAverage = min( (1.0 / M) * sum( Evaluated[seed][k] for seed in range(M) ) for k in range(K) )
         MaxAverage = max((1.0 / M) * sum(Evaluated[seed][k] for seed in range(M)) for k in range(K) )
 
-        general = [self.Instance.InstanceName, model, printidentificator, mean, variance, covariance, LB, UB, MinAverage, MaxAverage ]
+        general = testidentifier + [self.Instance.InstanceName, printidentificator, mean, variance, covariance, LB, UB, MinAverage, MaxAverage ]
 
 
-        columnstab = ["Instance name", "Model", "Identificator","Mean", "Variance", "Covariance", "LB", "UB", "Min Average", "Max Average"]
+        columnstab = ["Instance","Distribution", "Model", "NrInSampleScenario", "Identificator","Mean", "Variance", "Covariance", "LB", "UB", "Min Average", "Max Average"]
         myfile = open(r'./Test/Bounds/TestResultOfEvaluated_%s_%r_%s_%s.csv' % (
                                      self.Instance.InstanceName, printidentificator, model, date ), 'wb')
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
@@ -120,9 +121,9 @@ class Evaluator:
         myfile.close()
        # generaldf = pd.DataFrame(general, index=columnstab)
        # generaldf.to_excel(writer, "General")
-
+        EvaluateInfo = [mean, LB, UB ] + KPIStat
         #writer.save()
-        return [duration] + EvaluateInfo
+        return EvaluateInfo
 
 
     def ComputeInformation( self, Evaluation, nrscenario ):

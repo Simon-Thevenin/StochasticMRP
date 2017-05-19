@@ -40,17 +40,19 @@ columnname = [ "Instance name",
 			  
 all_data = pd.DataFrame(  columns = columnname )
 #Add the content of each csv file at the end of the dataframe
-for f in glob.glob("./Test/*.csv"):
+for f in glob.glob("./Test/SolveInfo/*.csv"):
     df = pd.read_csv( f, names= columnname )
     df.columns = columnname
     all_data = all_data.append(df,  ignore_index = True)
 
-writer = pd.ExcelWriter( "./Test/TestResult.xlsx", engine='openpyxl' ) 
+writer = pd.ExcelWriter( "./Test/SolveInfo/TestResultSolveInfo.xlsx", engine='openpyxl' )
 all_data.to_excel( writer, "Res" )
 writer.save( )
 
 columnname = ["Instance name",
               "Model",
+              "Distribution",
+              "NrScenario",
               "Identificator",
               "Mean",
               "Variance",
@@ -74,6 +76,9 @@ writer.save()
 
 columnname = ["Instance name",
               "Model",
+              "Distribution",
+              "NrInSampleScenario",
+              " Whatever ",
               "Nr Scenario",
               "KPI On Time",
               "KPI Backorder",
@@ -93,5 +98,45 @@ for f in glob.glob("./Test/Statistic/*.csv"):
     all_data = all_data.append(df, ignore_index=True)
 
 writer = pd.ExcelWriter("./Test/Statistic/TestResultStatistic.xlsx", engine='openpyxl')
+all_data.to_excel(writer, "Res")
+writer.save()
+
+
+columnname = ["Instance name",
+              "Model",
+              "Distribution",
+              "NrInSampleScenario",
+              "Expected In Sample",
+              "CPLEX Time",
+              "CPLEX Gap",
+              "In Sample KPI On Time",
+              "In Sample KPI Backorder",
+              "In Sample KPI Lost sales",
+              "In Sample Stock level 1",
+              "In Sample Stock level 2",
+              "In Sample Stock level 3",
+              "In Sample Stock level 4",
+              "In Sample Stock level 5",
+              "Expected Out Sample",
+              "LB",
+              "UB",
+              "Out Sample KPI On Time",
+              "Out Sample KPI Backorder",
+              "Out Sample KPI Lost sales",
+              "Out Sample Stock level 1",
+              "Out Sample Stock level 2",
+              "Out Sample Stock level 3",
+              "Out Sample Stock level 4",
+              "Out Sample Stock level 5"
+              ]
+
+all_data = pd.DataFrame(columns=columnname)
+# Add the content of each csv file at the end of the dataframe
+for f in glob.glob("./Test/*.csv"):
+    df = pd.read_csv(f, names=columnname)
+    df.columns = columnname
+    all_data = all_data.append(df, ignore_index=True)
+
+writer = pd.ExcelWriter("./Test/TestResult.xlsx", engine='openpyxl')
 all_data.to_excel(writer, "Res")
 writer.save()

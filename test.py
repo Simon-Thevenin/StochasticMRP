@@ -46,16 +46,31 @@ GivenQuantities =[]
 GivenSetup = []
 VSS = []
 ScenarioSeed = 1
+
+TestIdentifier = []
 SeedArray = [ 875800000, 354325, 76574, 5463456, 7688795, 2425676865, 7658, 1423235, 23647, 7885434 ]
 
 #This list contain the information obtained after solving the problem
 SolveInformation = []
-
+OutOfSampleTestResult = []
+CompactSolveInformation = [ 0, 0, 0]
+InSampleKPIStat= [ 0, 0, 0, 0, 0, 0, 0, 0 ]
 EvaluateInfo = []
 
 def PrintResult():
     Parameter =  [ UseNonAnticipativity, UseInmplicitAnticipativity, Model, UseSlowMoving, ComputeAverageSolution, ScenarioSeed ]
     data = SolveInformation +  Parameter
+    d = datetime.now()
+    date = d.strftime('%m_%d_%Y_%H_%M_%S')
+    myfile = open(r'./Test/SolveInfo/TestResult_%s_%r_%s_%s.csv' % (
+        Instance.InstanceName,  Model, ScenarioSeed , date), 'wb')
+    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+    wr.writerow( data )
+    myfile.close()
+
+
+def PrintFinalResult():
+    data = TestIdentifier + CompactSolveInformation + InSampleKPIStat + OutOfSampleTestResult
     d = datetime.now()
     date = d.strftime('%m_%d_%Y_%H_%M_%S')
     myfile = open(r'./Test/TestResult_%s_%r_%s_%s.csv' % (
@@ -68,6 +83,8 @@ def PrintResult():
 def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False ):
 
     global SolveInformation
+    global CompactSolveInformation
+    global InSampleKPIStat
 
     scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed, averagescenariotree= ( Methode == "Average" ) )
 
@@ -100,12 +117,17 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     if recordsolveinfo:
         SolveInformation = mipsolver.SolveInfo
 
+    CompactSolveInformation = [ CompactSolveInformation[0] + mipsolver.SolveInfo[3],
+                                CompactSolveInformation[1] + mipsolver.SolveInfo[6],
+                                CompactSolveInformation[2] +mipsolver.SolveInfo[7] ]
     return solution, mipsolver
 
 def SolveAndEvaluateYQFix( average = False, nrevaluation = 2, nrscenario = 100, nrsolve = 1):
     global ScenarioSeed
     global Model
     global Methode
+    global OutOfSampleTestResult
+    global InSampleKPIStat
 
     if Constants.Debug:
         Instance.PrintInstance()
@@ -124,12 +146,13 @@ def SolveAndEvaluateYQFix( average = False, nrevaluation = 2, nrscenario = 100, 
         solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
         PrintResult()
         solutions.append( solution )
-        if k == 0:
-            solution.ComputeStatistics()
-            solution.PrintStatistics("InSample" , -1, 0, ScenarioSeed)
+        solution.ComputeStatistics()
+        insamplekpisstate = solution.PrintStatistics( TestIdentifier, "InSample" , -1, 0, ScenarioSeed)
 
+    for i in range(3 + Instance.NrLevel):
+        InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
     evaluator = Evaluator( Instance, solutions  )
-    evaluator.EvaluateYQFixSolution( nrevaluation,  method, Constants.ModelYQFix )
+    OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, nrevaluation,  method, Constants.ModelYQFix )
 
 
 def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrsolve = 1):
@@ -138,11 +161,13 @@ def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrs
     global ScenarioSeed
     global Model
     global Methode
+    global InSampleKPIStat
+    global OutOfSampleTestResult
 
     if Constants.Debug:
         Instance.PrintInstance()
 
-    treestructure = [1, 2, 1, 1, 1, 1, 1, 0]
+    treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0]
 
     if nrscenario == 64:
         if Instance.NrTimeBucket == 6 :
@@ -156,11 +181,11 @@ def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrs
 
     if nrscenario == 1024:
         if Instance.NrTimeBucket == 9 :
-              treestructure = [1, 8, 4, 4, 1, 1, 1, 1, 1, 1, 0 ]
+              treestructure = [1, 8, 4, 4, 2, 2, 2, 1, 1, 1, 0 ]
         if Instance.NrTimeBucket == 12 :
-             treestructure = [1, 4, 4, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0 ]
+             treestructure = [1, 4, 4, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0 ]
         if Instance.NrTimeBucket == 15 :
-             treestructure = [1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 0 ]
+             treestructure = [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0 ]
 
     if nrscenario == 8192:
         if Instance.NrTimeBucket == 9 :
@@ -182,11 +207,13 @@ def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrs
         solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
         solutions.append( solution )
         PrintResult()
-        if k == 0:
-            solution.ComputeStatistics()
-            solution.PrintStatistics("InSample" , -1, 0, ScenarioSeed)
+        solution.ComputeStatistics()
+        insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample" , -1, 0, ScenarioSeed)
+
+    for i in range(3 + Instance.NrLevel):
+        InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
     evaluator = Evaluator( Instance, solutions  )
-    evaluator.EvaluateYQFixSolution( nrevaluation, Methode, Constants.ModelYFix )
+    OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier,nrevaluation, Methode, Constants.ModelYFix )
 
 #
 # def EvaluateYFixSolution( nrscenario, solutionname ):
@@ -408,6 +435,7 @@ if __name__ == "__main__":
         else:
             script, instancename, nrsolve, Model, avg, distribution, nrscenario, nrevaluation  = sys.argv
 
+        TestIdentifier = [instancename, Model, distribution, nrscenario ]
         UseSlowMoving = distribution == "SlowMoving"
 
         #ScenarioNr = scenarionr
@@ -440,6 +468,9 @@ if __name__ == "__main__":
          SolveAndEvaluateYQFix(  average = average, nrevaluation = int(nrevaluation), nrscenario = int(nrscenario), nrsolve = int( nrsolve ) )
     if Model == Constants.ModelYFix:
          SolveAndEvaluateYFix( average=average, nrevaluation = int(nrevaluation), nrscenario= int(nrscenario), nrsolve = int( nrsolve ) )
+
+    CompactSolveInformation = [CompactSolveInformation[i] /  int( nrsolve ) for i in range( 3) ]
+    PrintFinalResult()
 
   #  PrintResult()
   # end = raw_input( "press enter" )
