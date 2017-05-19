@@ -86,7 +86,7 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     global CompactSolveInformation
     global InSampleKPIStat
 
-    scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed, averagescenariotree= ( Methode == "Average" ) )
+    scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed, averagescenariotree=averagescenario )
 
     mipsolver = MIPSolver(Instance, Model, scenariotree, UseNonAnticipativity,
                           implicitnonanticipativity=UseInmplicitAnticipativity,
