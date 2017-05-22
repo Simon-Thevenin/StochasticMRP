@@ -149,8 +149,12 @@ def SolveAndEvaluateYQFix( average = False, nrevaluation = 2, nrscenario = 100, 
         solution.ComputeStatistics()
         insamplekpisstate = solution.PrintStatistics( TestIdentifier, "InSample" , -1, 0, ScenarioSeed)
 
+        for i in range(3 + Instance.NrLevel):
+            InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
+
     for i in range(3 + Instance.NrLevel):
-        InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
+        InSampleKPIStat[i] = InSampleKPIStat[i] / nrsolve
+
     evaluator = Evaluator( Instance, solutions  )
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, nrevaluation,  method, Constants.ModelYQFix )
 
@@ -210,8 +214,12 @@ def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrs
         solution.ComputeStatistics()
         insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample" , -1, 0, ScenarioSeed)
 
+        for i in range(3 + Instance.NrLevel):
+            InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
+
     for i in range(3 + Instance.NrLevel):
-        InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
+        InSampleKPIStat[i] = InSampleKPIStat[i] / nrsolve
+
     evaluator = Evaluator( Instance, solutions  )
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier,nrevaluation, Methode, Constants.ModelYFix )
 
