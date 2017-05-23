@@ -111,6 +111,7 @@ class MRPInstance:
         self.ProductWithExternalDemand = []
         #The table below give an index to each product with an external demand.
         self.ProductWithExternalDemandIndex = []
+        self.ProductWithoutExternalDemandIndex = []
         self.TimeBucketSet = []
         self.ResourceSet = []
         self.AverageDemand = []
@@ -177,11 +178,17 @@ class MRPInstance:
         self.HasExternalDemand = [  self.AverageDemand[p] > 0
                                     for p in self.ProductSet ]
         self.ProductWithExternalDemand = [ p for p in self.ProductSet if  self.HasExternalDemand[p] ]
+        self.ProductWithoutExternalDemand = [p for p in self.ProductSet if not self.HasExternalDemand[p]]
 
         index = 0
         self.ProductWithExternalDemandIndex = [ 0 for p in self.ProductSet ]
         for p in self.ProductWithExternalDemand:
             self.ProductWithExternalDemandIndex[p] = index
+            index = index + 1
+
+        self.ProductWithoutExternalDemandIndex = [ 0 for p in self.ProductSet ]
+        for p in self.ProductWithoutExternalDemand:
+            self.ProductWithoutExternalDemandIndex[p] = index
             index = index + 1
 
 
