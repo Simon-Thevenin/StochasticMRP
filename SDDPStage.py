@@ -141,13 +141,18 @@ class SDDPStage:
                                   lb = [0.0] * self.NrProductionVariable,
                                   ub = [self.M] * self.NrQuantityVariable )
 
+
+
         self.Cplex.variables.add( obj = [ math.pow( self.Instance.Gamma, self.DecisionStage )
+                                          * self.Instance.InventoryCosts[p]
+                                          if self.Instance.HasExternaldemand[p] else
+                                          math.pow(self.Instance.Gamma, self.DecisionStage +1)
                                           * self.Instance.InventoryCosts[p]
                                           for p in self.Instance.ProductSet ],
                                   lb = [0.0] * self.NrStockVariable,
                                   ub = [self.M] * self.NrStockVariable )
 
-        self.Cplex.variables.add( obj = [self.Instance.BackorderCosts[p] for p in self.Instance.ProductSet ],
+        self.Cplex.variables.add( obj = [self.Instance.BackorderCosts[  self.Instance.ProductWithExternalDemandIndex[p] ] for p in self.Instance.ProductWithExternalDemand ],
                                   lb = [0.0] * self.NrBackOrderVariable,
                                   ub = [self.M] * self.NrBackOrderVariable )
 

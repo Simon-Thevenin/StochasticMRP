@@ -105,6 +105,7 @@ class MRPSolution:
         #The attribute below compute some statistic on the solution
         self.InSampleAverageInventory = []
         self.InSampleAverageBackOrder = []
+        self.InSampleAverageOnTime = []
         self.InSampleAverageQuantity = []
         self.InSampleTotalDemand = -1
         self.InSampleTotalBackOrder = -1
@@ -143,12 +144,24 @@ class MRPSolution:
                                                                      self.MRPInstance.TimeBucketSet,
                                                                      scenarioset  )
 
+        self.InSampleAverageOnTime = [ [ ( sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder.loc[  self.MRPInstance.ProductName[ p ], (t,s)], 0 ] )
+                                           for s in scenarioset )
+                                             / len( scenarioset ) )
+                                              for p in self.MRPInstance.ProductWithExternalDemand ]
+                                              for t in self.MRPInstance.TimeBucketSet ]
+
         self.InSampleTotalDemandPerScenario = [ sum( sum( s.Demands[t ][p]
                                                               for p in self.MRPInstance.ProductSet )
                                                          for t in self.MRPInstance.TimeBucketSet   )
                                                     for s in self.Scenarioset ]
 
         backordertime = range( self.MRPInstance.NrTimeBucket - 1)
+
+        self.InSampleTotalOnTimePerScenario =  [  ( sum (  sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder.loc[  self.MRPInstance.ProductName[ p ], (t,s)], 0 ] )
+                                                    for p in self.MRPInstance.ProductWithExternalDemand )
+                                                   for t in self.MRPInstance.TimeBucketSet  )
+                                                   )
+                                                for s in scenarioset]
         self.InSampleTotalBackOrderPerScenario = Tool.ComputeSumOnIndex1Column( self.BackOrder,
                                                                                       self.MRPInstance.ProductWithExternalDemand,
                                                                                       self.MRPInstance.ProductName,
@@ -163,6 +176,7 @@ class MRPSolution:
         self.InSampleAverageDemand = sum( self.InSampleTotalDemandPerScenario[s] for s in scenarioset ) / nrscenario
         self.InSamplePercenBackOrder =  100 * ( sum( self.InSampleTotalBackOrderPerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
         self.InSamplePercentLostSale = 100 * ( sum( self.InSampleTotalLostSalePerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
+        self.InSamplePercentOnTime = 100 * ( sum( self.InSampleTotalOnTimePerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
 
     def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed):
 
@@ -216,12 +230,13 @@ class MRPSolution:
         AverageStockAtLevel = [ ( sum( sum ( avginventorydf.loc[t,self.MRPInstance.ProductName[p]]
                                     for t in self.MRPInstance.TimeBucketSet )
                                         for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p] == l +1 ) )
-                                / sum( 1 for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p] == l +1 )
+                                / ( sum( 1 for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p] == l +1 )
+                                    * self.MRPInstance.NrTimeBucket )
                                 for l in range( self.MRPInstance.NrLevel ) ]
 
-        kpistat = [ 100 - (self.InSamplePercenBackOrder + self.InSamplePercentLostSale),
-                   self.InSamplePercenBackOrder,
-                   self.InSamplePercentLostSale
+        kpistat = [ self.InSamplePercentOnTime,
+                    self.InSamplePercenBackOrder,
+                    self.InSamplePercentLostSale
                     ] + AverageStockAtLevel
 
         data = testidentifier + [  filepostscript, len( self.Scenarioset ) ] + kpistat
