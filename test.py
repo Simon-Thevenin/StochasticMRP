@@ -185,7 +185,8 @@ def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrs
 
     if nrscenario == 1024:
         if Instance.NrTimeBucket == 6 :
-              treestructure = [1, 32, 8, 4, 1, 1, 1, 0 ]
+             #treestructure = [1, 2, 2, 2, 1, 1, 1, 0]
+             treestructure = [1, 32, 8, 4, 1, 1, 1, 0 ]
         if Instance.NrTimeBucket == 9 :
               treestructure = [1, 8, 4, 4, 2, 2, 2, 1, 1, 1, 0 ]
         if Instance.NrTimeBucket == 12 :

@@ -86,6 +86,8 @@ class MIPSolver(object):
         #This list will contain the set of constraint number for each flow constraint
         self.FlowConstraintNR = []
 
+        self.QuantityConstraintNR = []
+
     # Compute the start of index and the number of variables for the considered instance
     def ComputeIndices( self ):
 
@@ -414,6 +416,8 @@ class MIPSolver(object):
     # This function creates the Capacity constraint
     def CreateCopyGivenQuantityConstraints( self ):
         AlreadyAdded = [ False for v in range( self.GetNrQuantityVariable() ) ]
+        self.QuantityConstraintNR = [[["" for t in self.Instance.TimeBucketSet] for p in self.Instance.ProductSet] for w in
+                                 self.ScenarioSet]
 
         # Capacity constraint
         for p in self.Instance.ProductSet:
@@ -429,8 +433,9 @@ class MIPSolver(object):
                         # PrintConstraint( vars, coeff, righthandside )
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["E"],
-                                                           rhs=righthandside )
-
+                                                           rhs=righthandside ,
+                                                           names = ["Quantity%d%d%d"%(p,t,w)])
+                        self.QuantityConstraintNR[w][p][t] = "Quantity%d%d%d"%(p,t,w)
     def CreateCopyGivenSetupConstraints(self):
          AlreadyAdded = [False for v in range(self.GetNrProductionVariable())]
          # Setup equal to the given ones
@@ -796,3 +801,17 @@ class MIPSolver(object):
                     constrainttuples.append( ( constrnr, righthandside) )
 
         self.Cplex.linear_constraints.set_rhs( constrainttuples )
+
+        # This function modify the MIP tosolve the scenario tree given in argument.
+        # It is assumed that both the initial scenario tree and the new one have a single scenario
+    def ModifyMipForFixQuantity(self, givenquanities):
+            # Redefine the flow conservation constraint
+            constrainttuples = []
+            for p in self.Instance.ProductWithExternalDemand:
+                for w in self.ScenarioSet:
+                    for t in self.Instance.TimeBucketSet:
+                        righthandside =  givenquanities[t][p]
+                        constrnr = self.QuantityConstraintNR[w][p][t]
+                        constrainttuples.append((constrnr, righthandside))
+
+            self.Cplex.linear_constraints.set_rhs(constrainttuples)
