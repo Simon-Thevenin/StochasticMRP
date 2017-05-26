@@ -807,7 +807,7 @@ class MIPSolver(object):
     def ModifyMipForFixQuantity(self, givenquanities):
             # Redefine the flow conservation constraint
             constrainttuples = []
-            for p in self.Instance.ProductWithExternalDemand:
+            for p in self.Instance.ProductSet:
                 for w in self.ScenarioSet:
                     for t in self.Instance.TimeBucketSet:
                         righthandside =  givenquanities[t][p]

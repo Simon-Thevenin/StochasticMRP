@@ -89,3 +89,4 @@ class ScenarioTree:
         for n in self.Nodes:
             if n.Time >= 0 and n.Time < self.Instance.NrTimeBucket :
                  n.QuantityToOrder = sol.get_values( [ n.QuanitityVariable[ p ] for p in self.Instance.ProductSet ] )
+                 n.QuantityToOrder = [ round( n.QuantityToOrder[p], 2)for p in self.Instance.ProductSet ]
