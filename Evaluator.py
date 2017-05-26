@@ -68,7 +68,8 @@ class Evaluator:
                         mipsolver.BuildModel()
                     else:
                         mipsolver.ModifyMipForScenario( scenariotree )
-                        mipsolver.ModifyMipForFixQuantity( givenquantty )
+                        if model == Constants.ModelYFix:
+                            mipsolver.ModifyMipForFixQuantity( givenquantty )
 
 
                     solution = mipsolver.Solve()
