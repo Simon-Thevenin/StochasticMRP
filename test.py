@@ -463,12 +463,12 @@ if __name__ == "__main__":
         PrintScenarios = False
 
         #Instance.DefineAsSuperSmallIntance()
-        #Instance.ReadInstanceFromExelFile( instancename + "_" + distribution )
+        Instance.ReadInstanceFromExelFile( instancename + "_" + distribution )
 
         #Instance.ReadFromFile( instancename, UseSlowMoving )
         #Instance.SaveCompleteInstanceInExelFile()
 
-        Instance.DefineAsSuperSmallIntance()
+        #Instance.DefineAsSuperSmallIntance()
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
       
