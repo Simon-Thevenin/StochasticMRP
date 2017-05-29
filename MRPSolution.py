@@ -219,12 +219,10 @@ class MRPSolution:
 
 
         general = testidentifier+ [ self.InSampleAverageDemand, self.InSamplePercenBackOrder, self.InSamplePercentLostSale, offsetseed, nrevaluation, solutionseed ]
-        columnstab = [ "Instance","Distribution", "Model", "NrInSampleScenario", "Average demand", "avg back order", "avg lostsale", "offsetseed", "nrevaluation", "solutionseed" ]
+        columnstab = [ "Instance", "Model", "Distribution", "Generate As YQFix", "Policy Generation methos", "NrInSampleScenario", "Average demand", "avg back order", "avg lostsale", "offsetseed", "nrevaluation", "solutionseed" ]
         generaldf = pd.DataFrame(general, index=columnstab )
         generaldf.to_excel( writer, "General" )
         writer.save()
-
-
 
         #Compute the average inventory level at each level of the supply chain
         AverageStockAtLevel = [ ( sum( sum ( avginventorydf.loc[t,self.MRPInstance.ProductName[p]]
@@ -338,7 +336,7 @@ class MRPSolution:
                                            ).set_index(["Product"])
 
         self.Production.columns = pd.MultiIndex.from_product(
-            [range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet], names=['scenario', 'time'])
+            [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet ], names=['scenario', 'time'])
 
 
         solution2.BackOrder.columns = newindex
@@ -349,7 +347,7 @@ class MRPSolution:
                                    ).set_index(["Product"])
 
         self.BackOrder.columns = pd.MultiIndex.from_product(
-            [range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet], names=['scenario', 'time'])
+            [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet ], names=['scenario', 'time'])
 
 
     def ReshapeAfterMerge( self ):

@@ -10,6 +10,8 @@ import os
 from random import randint
 import random
 import math
+from Constants import Constants
+
 class MRPInstance:
 
     FileName = "./Instances/MSOM-06-038-R2.xls"
@@ -276,7 +278,7 @@ class MRPInstance:
     #     return len(scenarios), scenarios
 
     #This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile( self, instancename, slowmoving = False ):
+    def ReadFromFile( self, instancename, distribution):
         wb2 = opxl.load_workbook( "./Instances/MSOM-06-038-R2.xlsx" )
         #The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
         supplychaindf = self.ReadDataFrame( wb2, instancename + "_LL" )
@@ -291,9 +293,7 @@ class MRPInstance:
         self.NrTimeBucket = 0
         self.ComputeIndices()
 
-        self.Distribution = "Normal"
-        if slowmoving:
-            self.Distribution = "SlowMoving"
+        self.Distribution =distribution
 
         #Get the average demand, lead time
         self.Leadtimes = [randint( 1, 1 ) for p in self.ProductSet]
@@ -322,13 +322,16 @@ class MRPInstance:
         self.ComputeLevel()
         self.ComputeMaxLeadTime( )
         # Consider a time horizon of 20 days plus the total lead time
-        self.NrTimeBucket =  3 * self.MaxLeadTime
+        self.NrTimeBucket =  2 * self.MaxLeadTime
         self.NrTimeBucketWithoutUncertainty = self.MaxLeadTime
         self.ComputeIndices()
 
 
         #Generate the sets of scenarios
         self.AverageDemand = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') for p in self.ProductSet ]
+        if distribution == Constants.SlowMoving:
+            self.AverageDemand = [ 5.0 if datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') > 0 else 0 for p in self.ProductSet]
+
         self.StandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
         #demand = ScenarioTreeNode.CreateDemandNormalDistributiondemand( self, 1, average = False, slowmoving = slowmoving )
         #self.FirstPeriodDemand = [ demand[p][0] for p in self.ProductSet ]
@@ -336,7 +339,7 @@ class MRPInstance:
         # The data below are generated a according to the method given in "multi-item capacited lot-sizing with demand uncertainty, P Brandimarte, IJPR, 2006"
 
 
-        dependentaveragedemand = [ datasheetdf.get_value(self.ProductName[p], 'avgDemand') for p in self.ProductSet ]
+        dependentaveragedemand = [ self.AverageDemand[p] for p in self.ProductSet ]
         levelset = sorted(set(level), reverse=False)
         for l in levelset:
             prodinlevel = [p for p in self.ProductSet if level[p] == l]

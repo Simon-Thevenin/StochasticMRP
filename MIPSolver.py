@@ -424,7 +424,7 @@ class MIPSolver(object):
             for t in self.Instance.TimeBucketSet:
                 for w in self.ScenarioSet:
                     indexvariable = self.GetIndexQuantityVariable(p, t, w)
-                    if   not AlreadyAdded[indexvariable] \
+                    if not AlreadyAdded[indexvariable] \
                             and (t <= self.FixSolutionUntil):
                         vars = [indexvariable]
                         AlreadyAdded[indexvariable] = True
@@ -436,6 +436,7 @@ class MIPSolver(object):
                                                            rhs=righthandside ,
                                                            names = ["Quantity%d%d%d"%(p,t,w)])
                         self.QuantityConstraintNR[w][p][t] = "Quantity%d%d%d"%(p,t,w)
+
     def CreateCopyGivenSetupConstraints(self):
          AlreadyAdded = [False for v in range(self.GetNrProductionVariable())]
          # Setup equal to the given ones
@@ -810,7 +811,7 @@ class MIPSolver(object):
             for p in self.Instance.ProductSet:
                 for w in self.ScenarioSet:
                     for t in self.Instance.TimeBucketSet:
-                        righthandside =  givenquanities[t][p]
+                        righthandside =  float( givenquanities[t][p] )
                         constrnr = self.QuantityConstraintNR[w][p][t]
                         constrainttuples.append((constrnr, righthandside))
 

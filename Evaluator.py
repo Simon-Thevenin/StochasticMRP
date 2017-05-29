@@ -12,10 +12,40 @@ from MRPSolution import MRPSolution
 
 class Evaluator:
 
-    def __init__( self, instance, solutions ):
+    def __init__( self, instance, solutions, policy = "" ):
         self.Instance = instance
         self.Solutions = solutions
         self.NrSolutions = len( self.Solutions )
+        self.Policy = policy
+        self.StartSeedResolve = 84752390
+
+
+
+    def GetQuantityByResolve( self, demanduptotimet, time, givenquantty, solution, givensetup, model ):
+        result = 0
+
+        if time == 0: # return the quantity at the root of the node
+            result = [ solution.ScenarioTree.RootNode.Branches[ 0 ].QuantityToOrder[ p ] for p in self.Instance.ProductSet ]
+        else:
+            treestructure = [ 1 ] + [ 1 ]*time + [ 8 ]*(self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty -time) + [1]*self.Instance.NrTimeBucketWithoutUncertainty + [0]
+            self.StartSeedResolve = self.StartSeedResolve + 1
+            scenariotree = ScenarioTree( self.Instance, treestructure, self.StartSeedResolve, givenfirstperiod = demanduptotimet )
+            quantitytofix = [ [ givenquantty[t][p] for p in self.Instance.ProductSet ]  for t in range( time ) ]
+            mipsolver = MIPSolver( self.Instance, model, scenariotree,
+                                   True,
+                                   implicitnonanticipativity = True,
+                                   evaluatesolution = True,
+                                   givenquantities = quantitytofix,
+                                   givensetups = givensetup,
+                                   fixsolutionuntil = (time-1) )
+
+            mipsolver.BuildModel()
+            solution = mipsolver.Solve()
+            #Get the corresponding node:
+            result = [ solution.ProductionQuantity.loc[self.Instance.ProductName[p], (time, 0)] for p in self.Instance.ProductSet ]
+
+
+        return result
 
     def EvaluateYQFixSolution( self, testidentifier, nrscenario, printidentificator, model):
         # Compute the average value of the demand
@@ -36,7 +66,6 @@ class Evaluator:
             givensetup = [[sol.Production.ix[p, t].get_value(0) for p in self.Instance.ProductSet]
                           for t in self.Instance.TimeBucketSet]
 
-
             #Use an offset in the seed to make sure the scenario used for evaluation are different from the scenario used for optimization
             offset = sol.ScenarioTree.Seed + 999323
             for seed in range(offset, nrscenario + offset, 1):
@@ -56,7 +85,11 @@ class Evaluator:
                         previousnode = sol.ScenarioTree.RootNode
                         for ti in self.Instance.TimeBucketSet:
                             demanduptotimet = [ [ scenario.Demands[t][p] for p in self.Instance.ProductSet ] for t in range(ti) ]
-                            givenquantty[ti], previousnode = sol.GetQuantityToOrderAC( demanduptotimet, ti, previousnode )
+                            if self.Policy == Constants.NearestNeighbor:
+                                givenquantty[ti], previousnode = sol.GetQuantityToOrderAC( demanduptotimet, ti, previousnode )
+                            if self.Policy == Constants.Resolve:
+                                givenquantty[ti] = self.GetQuantityByResolve( demanduptotimet, ti, givenquantty, sol, givensetup, model )
+
                     if seed == offset:
                         mipsolver = MIPSolver(self.Instance, model, scenariotree,
                                               True,
@@ -71,14 +104,15 @@ class Evaluator:
                         if model == Constants.ModelYFix:
                             mipsolver.ModifyMipForFixQuantity( givenquantty )
 
-
                     solution = mipsolver.Solve()
                     Evaluated[ seed - offset ][ index ] = solution.TotalCost
+
                     if firstsolution:
                         if seed == offset:
                             OutOfSampleSolution = solution
                         else:
                             OutOfSampleSolution.Merge( solution )
+
             index = index +1
 
             if firstsolution:
@@ -101,11 +135,6 @@ class Evaluator:
         d = datetime.now()
         date = d.strftime('%m_%d_%Y_%H_%M_%S')
 
-     #   writer = pd.ExcelWriter( './Test/Bounds/TestResultOfEvaluated_%s_%r_%s_%s.xlsx' % (
-     #                                self.Instance.InstanceName, printidentificator, model, date ) )
-     #   evvaluationdataframe = pd.DataFrame(Evaluated)
-
-     #   evvaluationdataframe.to_excel( writer, "Evaluation" )
         EvaluateInfo = self.ComputeInformation( Evaluated, nrscenario )
         duration = time.time() - start_time
 

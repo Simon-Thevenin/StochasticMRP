@@ -6,23 +6,40 @@ from Tool import Tool
 class ScenarioTreeNode:
     NrNode = 0
 
-    #Create the demand in a node following a normal distribution
+
+    def GetDemandAsYQFix( self, time, nrdemand ):
+            demandvector = [ [ self.Owner.DemandToFollow[i][time][p]
+                                 for i in range(nrdemand)]
+                                      for p in self.Instance.ProductSet]
+            return demandvector
+
+    def GetDemandToFollow(self, time):
+             demandvector = [[self.Owner.GivenFirstPeriod[time][p]
+                                 for i in [0]]
+                                for p in self.Instance.ProductSet]
+             return demandvector
+
+        #Create the demand in a node following a normal distribution
     @staticmethod
-    def CreateDemandNormalDistributiondemand( instance, nrdemand, average = False):
+    def CreateDemandNormalDistributiondemand( instance, nrdemand, average = False ):
         demandvector = [  [  float(instance.AverageDemand[p])
                                  for i in range( nrdemand ) ]  for p in instance.ProductSet]
         if not average:
             if instance.Distribution == Constants.SlowMoving:
-                for p in range( instance.NrProduct ):
+                    for p in instance.ProductWithExternalDemand:
+                        for i in range(nrdemand):
+                                demandvector[p][i] =   np.random.poisson( instance.AverageDemand[p] , 1)[0];
+            elif instance.Distribution == Constants.Lumpy:
+                 for p in range( instance.NrProduct ):
                     for i in range( nrdemand ):
                         if np.random.random_sample() >= 0.2 or instance.AverageDemand[p] == 0 :
-                            demandvector[p][i] = 0;
+                                demandvector[p][i] = 0;
                         else :
-                            demandvector[p][i] =   np.random.poisson( ( instance.AverageDemand[p] )  / 0.2 , 1)[0] + 1 ;
+                                demandvector[p][i] =   np.random.poisson( ( instance.AverageDemand[p] )  / 0.2 , 1)[0] + 1 ;
             else:
                 demandvector = [    np.round( np.random.normal( instance.AverageDemand[p], instance.StandardDevDemands[p], nrdemand ).clip(min=0.0) , 0 ).tolist()
-                                    if instance.StandardDevDemands[p] > 0 else [ float( instance.AverageDemand[p] ) ] * nrdemand
-                                    for p in instance.ProductSet ]
+                                        if instance.StandardDevDemands[p] > 0 else [ float( instance.AverageDemand[p] ) ] * nrdemand
+                                        for p in instance.ProductSet ]
 
         return demandvector
 
@@ -47,7 +64,12 @@ class ScenarioTreeNode:
                 nextdemands = []#  [instance.FirstPeriodDemand[p]] for p in instance.ProductSet ]
 
             else:
-                nextdemands = ScenarioTreeNode.CreateDemandNormalDistributiondemand(instance, nrbranch, averagescenariotree )
+                if self.Owner.GenerateasYQfix:
+                    nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
+                elif t <= self.Owner.FollowGivenUntil:
+                    nextdemands = self.GetDemandToFollow( t-1 )
+                else:
+                    nextdemands = ScenarioTreeNode.CreateDemandNormalDistributiondemand(instance, nrbranch, averagescenariotree )
 
             usaverageforbranch = t >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ) or  self.Owner.AverageScenarioTree
             self.Branches = [ ScenarioTreeNode( owner = owner,

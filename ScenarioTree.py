@@ -7,7 +7,7 @@ from Constants import Constants
 
 class ScenarioTree:
     #Constructor
-    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False ):
+    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False, generateasYQfix = False, givenfirstperiod = [] ):
         self.Seed = seed
         np.random.seed( seed )
         self.Nodes = []
@@ -17,9 +17,21 @@ class ScenarioTree:
         self.EvaluationScenrio = evaluationscenario
         self.AverageScenarioTree = averagescenariotree
         ScenarioTreeNode.NrNode = 0
-        self.Distribution = Constants.Normal
-        if instance.Distribution == Constants.SlowMoving:
-                self.Distribution = Constants.SlowMoving
+       # self.Distribution = Constants.Normal
+        #For some types of evaluation, the demand of the  first periods are given and the rest is stochastic
+        self.GivenFirstPeriod = givenfirstperiod
+        self.FollowGivenUntil = len(self.GivenFirstPeriod )
+        #In case the scenario tree has to be the same aas the two stage (YQFix) scenario tree.
+        self.GenerateasYQfix = generateasYQfix
+        self.Distribution = instance.Distribution
+        self.DemandToFollow = []
+        if self.GenerateasYQfix :
+            treestructure = [1,8] + [1] * (instance.NrTimeBucket-1) + [0]
+            YQFixTree =   ScenarioTree( instance, treestructure, seed )
+            YQFixSceanrios =  YQFixTree.GetAllScenarios( computeindex= False)
+            self.DemandToFollow = [ [ [  YQFixSceanrios[w].Demands[t][p] for p in self.Instance.ProductSet ]
+                                                                            for t in self.Instance.TimeBucketSet ]
+                                                                               for w in range(len(YQFixSceanrios) )  ]
 
         self.RootNode =  ScenarioTreeNode( owner = self,
                                            instance = instance,
@@ -57,7 +69,7 @@ class ScenarioTree:
         self.RootNode.Display()
 
     #This function assemble the data in the tree, and return the list of leaves, which contain the scenarios
-    def GetAllScenarios( self, computeindex ):
+    def GetAllScenarios( self, computeindex = True ):
         #A mip solver is required to compute the index, it is not always set
         if computeindex:
             self.ComputeVariableIdicies()
