@@ -50,6 +50,8 @@ all_data.to_excel( writer, "Res" )
 writer.save( )
 
 columnname = ["Instance name",
+              "Scenario from YQFix",
+              "Policy generation",
               "Model",
               "Distribution",
               "NrScenario",

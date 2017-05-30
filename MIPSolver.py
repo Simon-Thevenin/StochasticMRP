@@ -811,7 +811,7 @@ class MIPSolver(object):
             for p in self.Instance.ProductSet:
                 for w in self.ScenarioSet:
                     for t in self.Instance.TimeBucketSet:
-                        righthandside =  float( givenquanities[t][p] )
+                        righthandside =  float( round( givenquanities[t][p], 2) )
                         constrnr = self.QuantityConstraintNR[w][p][t]
                         constrainttuples.append((constrnr, righthandside))
 

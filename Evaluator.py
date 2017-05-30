@@ -40,7 +40,10 @@ class Evaluator:
                                    fixsolutionuntil = (time-1) )
 
             mipsolver.BuildModel()
+
             solution = mipsolver.Solve()
+           # scenariotree.Owner = None
+
             #Get the corresponding node:
             result = [ solution.ProductionQuantity.loc[self.Instance.ProductName[p], (time, 0)] for p in self.Instance.ProductSet ]
 
