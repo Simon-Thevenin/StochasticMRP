@@ -49,7 +49,7 @@ if __name__ == "__main__":
 #$ -o /home/thesim/outputjob%s%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py %s 05 %s %s %s %s %s %s %s 20
+python test.py %s 05 %s %s %s %s %s %s %s 2000
 """ % (f, m, avg, scenarioasYP, Policy, b, nrscenar, generation, f, m, avg, scenarioasYP, Policy, b, nrscenar,
        generation))  # Create the sh file
 filename = "runalljobs.sh"
