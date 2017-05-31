@@ -304,7 +304,7 @@ if __name__ == "__main__":
             script, instancename, nrsolve, Model, avg, generateasYQFix, policy, distribution, nrscenario, generationmethod,  nrevaluation  = sys.argv
 
         ScenarioGeneration = generationmethod
-        TestIdentifier = [ instancename, Model, generateasYQFix, policy, distribution, nrscenario ]
+        TestIdentifier = [ instancename, Model, generateasYQFix, policy, distribution, nrscenario, generationmethod ]
         GenerateAsYFix = ( generateasYQFix == 'True' )
         PolicyGeneration = policy
         #ScenarioNr = scenarionr

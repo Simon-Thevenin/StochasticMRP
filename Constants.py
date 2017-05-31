@@ -6,7 +6,7 @@ class Constants:
     Normal = "Normal"
     NearestNeighbor = "NearestNeighbor"
     Resolve = "Re-solve"
-    Debug = True
+    Debug = False
     ModelYQFix = "YQFix"
     ModelYFix = "YFix"
     Model_Fix = "_Fix"

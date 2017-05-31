@@ -12,6 +12,7 @@ import math
 from datetime import datetime
 import cPickle as pickle
 from Constants import Constants
+from decimal import Decimal, ROUND_HALF_UP
 
 class MIPSolver(object):
     M = cplex.infinity
@@ -811,7 +812,8 @@ class MIPSolver(object):
             for p in self.Instance.ProductSet:
                 for w in self.ScenarioSet:
                     for t in self.Instance.TimeBucketSet:
-                        righthandside =  float( round( givenquanities[t][p], 2) )
+                        value =  Decimal( givenquanities[t][p] )
+                        righthandside =  float( Decimal( value.quantize(Decimal('0.01'), rounding= ROUND_HALF_UP ) ) )
                         constrnr = self.QuantityConstraintNR[w][p][t]
                         constrainttuples.append((constrnr, righthandside))
 

@@ -33,11 +33,13 @@ class ScenarioTreeNode:
         n = -1
         a = []
         #reurn the array given by the library
+        if dimensionpoint == 1 and nrpoints == 1: n = 1; a = [1]
         if dimensionpoint == 1 and nrpoints == 2: n = 2; a = [1]
         if dimensionpoint == 1 and nrpoints == 4: n = 4; a = [1]
         if dimensionpoint == 1 and nrpoints == 8: n = 8; a = [1]
         if dimensionpoint == 1 and nrpoints == 16: n = 16; a = [1]
         if dimensionpoint == 1 and nrpoints == 32: n = 32; a = [1]
+        if dimensionpoint == 3 and nrpoints == 1: n = 1; a = [1, 0, 0]
         if dimensionpoint == 3 and nrpoints == 2: n = 2; a = [1, 1, 1]
         if dimensionpoint == 3 and nrpoints == 4: n = 4; a = [1, 1, 1]
         if dimensionpoint == 3 and nrpoints == 8: n = 8; a = [1, 3, 1]
@@ -52,7 +54,7 @@ class ScenarioTreeNode:
     def TransformInverse( points, nrpoints, dimensionpoint, distribution, average, std = 0 ):
 
         if distribution == Constants.Normal:
-            result = [[ scipy.stats.norm.ppf( points[i][p], average[p], std[p]) for i in range(nrpoints) ] for p in range(dimensionpoint) ]
+            result = [[ max( scipy.stats.norm.ppf( points[i][p], average[p], std[p]), 0.0) for i in range(nrpoints) ] for p in range(dimensionpoint) ]
 
         if distribution == Constants.SlowMoving:
             result = [[scipy.stats.poisson.ppf(points[i][p], average[p]) for i in range(nrpoints)] for p in range(dimensionpoint)]
@@ -66,7 +68,7 @@ class ScenarioTreeNode:
     @staticmethod
     def GeneratePoints( method, nrpoints, dimensionpoint, distribution, average, std = [] ):
         points = []
-        proability = [ 1.0 / nrpoints for pt in range( nrpoints ) ]
+        proability = [ 1.0 / max( nrpoints, 1) for pt in range( max( nrpoints, 1) ) ]
         #Generate the points using MonteCarlo
         if method == Constants.MonteCarlo:
             #For each considered distribution create an array with nrpoints random points for each distribution
@@ -115,7 +117,7 @@ class ScenarioTreeNode:
         demandvector = [  [  float(instance.AverageDemand[p])
                                  for i in range( nrdemand ) ]  for p in instance.ProductSet]
 
-        probability =   [  float( 1/ nrdemand)  for i in range( nrdemand ) ]
+        probability =   [  float( 1/ max( nrdemand, 1))  for i in range( max( nrdemand, 1)  ) ]
 
         if not average:
             points, probability = ScenarioTreeNode.GeneratePoints( method= scenariogenerationmethod,
@@ -146,13 +148,14 @@ class ScenarioTreeNode:
         t= time + 1
 
         if  instance is not None and  t <= instance.NrTimeBucket:
-            probabilities =  [  ( 1.0 / owner.NrBranches[ t +1 ] )  for b in range( owner.NrBranches[ t +1 ] )  ]
+            nrscneartoconsider = max( nrbranch, 1)
+            probabilities =  [  ( 1.0 / nrscneartoconsider )  for b in range( nrscneartoconsider )  ]
             if t == 0:
                 nextdemands = []
                 probabilities = [1]
             else:
                 if self.Owner.GenerateasYQfix:
-                    nextdemands, probabilities = self.GetDemandAsYQFix( t-1, nrbranch )
+                    nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
                 elif t <= self.Owner.FollowGivenUntil:
                     nextdemands = self.GetDemandToFollowFirstPeriods( t-1 )
                 else:
