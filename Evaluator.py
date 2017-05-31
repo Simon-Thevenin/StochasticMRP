@@ -61,70 +61,75 @@ class Evaluator:
         firstsolution = True
         KPIStat = []
         for sol in self.Solutions:
-            if model == Constants.ModelYQFix:
-                givenquantty = [ [ sol.ProductionQuantity.ix[p, t].get_value( 0 )
-                                   for p in self.Instance.ProductSet ]
-                                    for t in self.Instance.TimeBucketSet ]
+          #  if not sol == self.Solutions[ 0  ] and not sol == self.Solutions[ 1  ]:
+                if model == Constants.ModelYQFix:
+                    givenquantty = [ [ sol.ProductionQuantity.ix[p, t].get_value( 0 )
+                                       for p in self.Instance.ProductSet ]
+                                        for t in self.Instance.TimeBucketSet ]
 
-            givensetup = [[sol.Production.ix[p, t].get_value(0) for p in self.Instance.ProductSet]
-                          for t in self.Instance.TimeBucketSet]
+                givensetup = [[sol.Production.ix[p, t].get_value(0) for p in self.Instance.ProductSet]
+                              for t in self.Instance.TimeBucketSet]
 
-            #Use an offset in the seed to make sure the scenario used for evaluation are different from the scenario used for optimization
-            offset = sol.ScenarioTree.Seed + 999323
-            for seed in range(offset, nrscenario + offset, 1):
-                #Generate a random scenario
-                ScenarioSeed =  seed
-                #Evaluate the solution on the scenario
-                for t in [self.Instance.NrTimeBucket -1]:
-                    FixUntilTime = t
-                    treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
+                #Use an offset in the seed to make sure the scenario used for evaluation are different from the scenario used for optimization
+                offset = sol.ScenarioTree.Seed + 999323
+                for seed in range(offset, nrscenario + offset, 1):
+                    #Generate a random scenario
+                    ScenarioSeed =  seed
+                    #Evaluate the solution on the scenario
+                    for t in [self.Instance.NrTimeBucket -1]:
+                        FixUntilTime = t
+                        treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
 
-                    scenariotree = ScenarioTree( self.Instance, treestructure, ScenarioSeed, evaluationscenario = True )
+                        scenariotree = ScenarioTree( self.Instance, treestructure, ScenarioSeed, evaluationscenario = True )
 
-                    if model == Constants.ModelYFix:
-                        scenario = scenariotree.GetAllScenarios( False ) [0]
-                        givenquantty = [ [ 0 for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
-
-                        previousnode = sol.ScenarioTree.RootNode
-                        for ti in self.Instance.TimeBucketSet:
-                            demanduptotimet = [ [ scenario.Demands[t][p] for p in self.Instance.ProductSet ] for t in range(ti) ]
-                            if self.Policy == Constants.NearestNeighbor:
-                                givenquantty[ti], previousnode = sol.GetQuantityToOrderAC( demanduptotimet, ti, previousnode )
-                            if self.Policy == Constants.Resolve:
-                                givenquantty[ti] = self.GetQuantityByResolve( demanduptotimet, ti, givenquantty, sol, givensetup, model )
-
-                    if seed == offset:
-                        mipsolver = MIPSolver(self.Instance, model, scenariotree,
-                                              True,
-                                              implicitnonanticipativity=False,
-                                              evaluatesolution=True,
-                                              givenquantities=givenquantty,
-                                              givensetups=givensetup,
-                                              fixsolutionuntil=FixUntilTime )
-                        mipsolver.BuildModel()
-                    else:
-                        mipsolver.ModifyMipForScenario( scenariotree )
                         if model == Constants.ModelYFix:
-                            mipsolver.ModifyMipForFixQuantity( givenquantty )
+                            scenario = scenariotree.GetAllScenarios( False ) [0]
+                            givenquantty = [ [ 0 for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
 
-                    solution = mipsolver.Solve()
-                    Evaluated[ seed - offset ][ index ] = solution.TotalCost
+                            previousnode = sol.ScenarioTree.RootNode
+                            for ti in self.Instance.TimeBucketSet:
+                                demanduptotimet = [ [ scenario.Demands[t][p] for p in self.Instance.ProductSet ] for t in range(ti) ]
+                                if self.Policy == Constants.NearestNeighbor:
+                                    givenquantty[ti], previousnode = sol.GetQuantityToOrderAC( demanduptotimet, ti, previousnode )
+                                if self.Policy == Constants.Resolve:
+                                    givenquantty[ti] = self.GetQuantityByResolve( demanduptotimet, ti, givenquantty, sol, givensetup, model )
 
-                    if firstsolution:
                         if seed == offset:
-                            OutOfSampleSolution = solution
+                            mipsolver = MIPSolver(self.Instance, model, scenariotree,
+                                                  True,
+                                                  implicitnonanticipativity=False,
+                                                  evaluatesolution=True,
+                                                  givenquantities=givenquantty,
+                                                  givensetups=givensetup,
+                                                  fixsolutionuntil=FixUntilTime )
+                            mipsolver.BuildModel()
                         else:
-                            OutOfSampleSolution.Merge( solution )
+                            mipsolver.ModifyMipForScenario( scenariotree )
+                            if model == Constants.ModelYFix:
+                                mipsolver.ModifyMipForFixQuantity( givenquantty )
 
-            index = index +1
+                        solution = mipsolver.Solve()
+                        if solution == None:
+                            print "error at seed %d with given qty %r"%(seed, givenquantty)
+                            mipsolver.Cplex.write("mrp.lp")
 
-            if firstsolution:
-                if nrscenario > 1:
-                    OutOfSampleSolution.ReshapeAfterMerge()
-                OutOfSampleSolution.ComputeStatistics()
-                KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", offset, nrscenario, sol.ScenarioTree.Seed )
-                #print "Evaluation of YQ: %r" % Evaluated
-            firstsolution = False
+                        Evaluated[ seed - offset ][ index ] = solution.TotalCost
+
+                        if firstsolution:
+                            if seed == offset:
+                                OutOfSampleSolution = solution
+                            else:
+                                OutOfSampleSolution.Merge( solution )
+
+                index = index +1
+
+                if firstsolution:
+                    if nrscenario > 1:
+                        OutOfSampleSolution.ReshapeAfterMerge()
+                    OutOfSampleSolution.ComputeStatistics()
+                    KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", offset, nrscenario, sol.ScenarioTree.Seed )
+                    #print "Evaluation of YQ: %r" % Evaluated
+                firstsolution = False
 
         mean = np.mean( Evaluated )
         variance = math.pow( np.std( Evaluated ), 2 )

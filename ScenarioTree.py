@@ -7,7 +7,7 @@ from Constants import Constants
 
 class ScenarioTree:
     #Constructor
-    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False, generateasYQfix = False, givenfirstperiod = [] ):
+    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False, generateasYQfix = False, givenfirstperiod = [], scenariogenerationmethod = "MC" ):
         self.Seed = seed
         np.random.seed( seed )
         self.Nodes = []
@@ -16,8 +16,8 @@ class ScenarioTree:
         self.NrBranches = branchperlevel
         self.EvaluationScenrio = evaluationscenario
         self.AverageScenarioTree = averagescenariotree
+        self.ScenarioGenerationMethod = scenariogenerationmethod
         ScenarioTreeNode.NrNode = 0
-       # self.Distribution = Constants.Normal
         #For some types of evaluation, the demand of the  first periods are given and the rest is stochastic
         self.GivenFirstPeriod = givenfirstperiod
         self.FollowGivenUntil = len(self.GivenFirstPeriod )
@@ -25,9 +25,10 @@ class ScenarioTree:
         self.GenerateasYQfix = generateasYQfix
         self.Distribution = instance.Distribution
         self.DemandToFollow = []
+        #Generate the demand of YFix, then replicate them in the generation of the scenario tree
         if self.GenerateasYQfix :
             treestructure = [1,8] + [1] * (instance.NrTimeBucket-1) + [0]
-            YQFixTree =   ScenarioTree( instance, treestructure, seed )
+            YQFixTree =   ScenarioTree( instance, treestructure, seed, scenariogenerationmethod=self.ScenarioGenerationMethod )
             YQFixSceanrios =  YQFixTree.GetAllScenarios( computeindex= False)
             self.DemandToFollow = [ [ [  YQFixSceanrios[w].Demands[t][p] for p in self.Instance.ProductSet ]
                                                                             for t in self.Instance.TimeBucketSet ]

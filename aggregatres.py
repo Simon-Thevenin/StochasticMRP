@@ -106,6 +106,8 @@ writer.save()
 
 columnname = ["Instance name",
               "Model",
+              "Scenario from YQFix",
+              "Policy generation",
               "Distribution",
               "NrInSampleScenario",
               "Expected In Sample",

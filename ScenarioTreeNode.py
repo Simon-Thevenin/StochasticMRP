@@ -2,46 +2,132 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Constants import Constants
 from Tool import Tool
+import scipy as scipy
 
 class ScenarioTreeNode:
     NrNode = 0
 
-
+    #This function is used when the demand to use are the one generated for YQFix, which are stored in an array DemandToFollow
+    #Return the demand of time at position nrdemand in array DemandTo follow
     def GetDemandAsYQFix( self, time, nrdemand ):
             demandvector = [ [ self.Owner.DemandToFollow[i][time][p]
                                  for i in range(nrdemand)]
                                       for p in self.Instance.ProductSet]
             return demandvector
 
-    def GetDemandToFollow(self, time):
+    #This function is used when the demand of the first periods are given, and only the end of the scenario tree has to be generated.
+    #The demand of the first period are stored in a table GivenFirstPeriod.
+    #This function returns the given demand at time
+    def GetDemandToFollowFirstPeriods(self, time):
              demandvector = [[self.Owner.GivenFirstPeriod[time][p]
                                  for i in [0]]
                                 for p in self.Instance.ProductSet]
              return demandvector
 
-        #Create the demand in a node following a normal distribution
+    #This method generate a set of points in [0,1] using RQMC. The points are generated with the library given on the website of P. Lecuyer
     @staticmethod
-    def CreateDemandNormalDistributiondemand( instance, nrdemand, average = False ):
+    def RQMC01( nrpoints, dimensionpoint ):
+        randomizer = np.random.uniform( 0 , 1)
+        result=[]
+        #For dimension 3 only, and nr point in 2, 4, 8, 16, 32
+        n = -1
+        a = []
+        #reurn the array given by the library
+        if dimensionpoint == 1 and nrpoints == 2: n = 2; a = [1]
+        if dimensionpoint == 1 and nrpoints == 4: n = 4; a = [1]
+        if dimensionpoint == 1 and nrpoints == 8: n = 8; a = [1]
+        if dimensionpoint == 1 and nrpoints == 16: n = 16; a = [1]
+        if dimensionpoint == 1 and nrpoints == 32: n = 32; a = [1]
+        if dimensionpoint == 3 and nrpoints == 2: n = 2; a = [1, 1, 1]
+        if dimensionpoint == 3 and nrpoints == 4: n = 4; a = [1, 1, 1]
+        if dimensionpoint == 3 and nrpoints == 8: n = 8; a = [1, 3, 1]
+        if dimensionpoint == 3 and nrpoints == 16: n = 16; a = [1, 7, 5]
+        if dimensionpoint == 3 and nrpoints == 32: n = 32; a = [1, 7, 5]
+        result = [[ ( (i * aj % n) / float(n) + randomizer ) % 1 for aj in a] for i in range(n)]
+
+        return result
+
+    # Apply the inverse of  the given distribution for each point (generated in [0,1]) in the set.
+    @staticmethod
+    def TransformInverse( points, nrpoints, dimensionpoint, distribution, average, std = 0 ):
+
+        if distribution == Constants.Normal:
+            result = [[ scipy.stats.norm.ppf( points[i][p], average[p], std[p]) for i in range(nrpoints) ] for p in range(dimensionpoint) ]
+
+        if distribution == Constants.SlowMoving:
+            result = [[scipy.stats.poisson.ppf(points[i][p], average[p]) for i in range(nrpoints)] for p in range(dimensionpoint)]
+
+        if distribution == Constants.Lumpy:
+            result = [[scipy.stats.poisson.ppf( points[i][p] / 0.2, (average[p]) / 0.2 ) +1 if points[i][p] < 0.2 else 0 for i in range(nrpoints)] for p in range(dimensionpoint)]
+
+        return result
+
+    #This method generate a set of nrpoint according to the method and given distribution.
+    @staticmethod
+    def GeneratePoints( method, nrpoints, dimensionpoint, distribution, average, std = [] ):
+        points = []
+        proability = [ 1.0 / nrpoints for pt in range( nrpoints ) ]
+        #Generate the points using MonteCarlo
+        if method == Constants.MonteCarlo:
+            #For each considered distribution create an array with nrpoints random points for each distribution
+            if distribution == Constants.SlowMoving:
+                points = [ [ 0  for pt in range(nrpoints) ] for p in range(dimensionpoint) ]
+                for p in range(dimensionpoint):#instance.ProductWithExternalDemand:
+                    for i in range(nrpoints):
+                        if average[p] > 0:
+                            points[p][i] = np.round(  np.random.poisson(average[p], 1)[0], 0 );
+            elif distribution == Constants.Lumpy:
+                points = [ [ 0  for pt in range(nrpoints)] for p in range(dimensionpoint) ]
+                for p in range(dimensionpoint):
+                    for i in range(nrpoints):
+                        if np.random.random_sample() >= 0.2 or average[p] == 0:
+                            points[p][i] = 0;
+                        else:
+                            points[p][i] = np.round( np.random.poisson((average[p]) / 0.2, 1)[0] + 1, 0 );
+            else:
+                points = [np.round(
+                    np.random.normal(average[p], std[p], nrpoints).clip(min=0.0),
+                    0).tolist()
+                                if std[p] > 0 else [float(average[p])] * nrpoints
+                                for p in range( dimensionpoint )]
+            #In monte Carlo, each point as the sam proability
+
+
+        # Generate the points using RQMC
+        if method == Constants.RQMC:
+            points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
+            nrnonzero = sum( 1  for p in range( dimensionpoint ) if average[p] > 0 )
+            idnonzero = [  p  for p in range( dimensionpoint ) if average[p] > 0 ]
+            avg = [ average[prod] for prod in idnonzero ]
+            stddev = [std[prod] for prod in idnonzero ]
+            pointsin01 = ScenarioTreeNode.RQMC01(nrpoints, nrnonzero)
+            rqmcpoints = ScenarioTreeNode.TransformInverse( pointsin01, nrpoints, nrnonzero, distribution, avg, stddev )
+
+            for p in range( nrnonzero ):  # instance.ProductWithExternalDemand:
+                    for i in range(nrpoints):
+                        points[idnonzero[p]] [i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
+
+        return points, proability
+
+#Create the demand in a node following a normal distribution
+    @staticmethod
+    def CreateDemandNormalDistributiondemand( instance, nrdemand, average = False, scenariogenerationmethod = Constants.MonteCarlo ):
         demandvector = [  [  float(instance.AverageDemand[p])
                                  for i in range( nrdemand ) ]  for p in instance.ProductSet]
-        if not average:
-            if instance.Distribution == Constants.SlowMoving:
-                    for p in instance.ProductWithExternalDemand:
-                        for i in range(nrdemand):
-                                demandvector[p][i] =   np.random.poisson( instance.AverageDemand[p] , 1)[0];
-            elif instance.Distribution == Constants.Lumpy:
-                 for p in range( instance.NrProduct ):
-                    for i in range( nrdemand ):
-                        if np.random.random_sample() >= 0.2 or instance.AverageDemand[p] == 0 :
-                                demandvector[p][i] = 0;
-                        else :
-                                demandvector[p][i] =   np.random.poisson( ( instance.AverageDemand[p] )  / 0.2 , 1)[0] + 1 ;
-            else:
-                demandvector = [    np.round( np.random.normal( instance.AverageDemand[p], instance.StandardDevDemands[p], nrdemand ).clip(min=0.0) , 0 ).tolist()
-                                        if instance.StandardDevDemands[p] > 0 else [ float( instance.AverageDemand[p] ) ] * nrdemand
-                                        for p in instance.ProductSet ]
 
-        return demandvector
+        probability =   [  float( 1/ nrdemand)  for i in range( nrdemand ) ]
+
+        if not average:
+            points, probability = ScenarioTreeNode.GeneratePoints( method= scenariogenerationmethod,
+                                                                   nrpoints=nrdemand,
+                                                                   dimensionpoint = instance.NrProduct ,
+                                                                   distribution = instance.Distribution,
+                                                                   average = [ instance.AverageDemand[p] for p in instance.ProductSet ],
+                                                                   std = [ instance.StandardDevDemands[p] for p in instance.ProductSet ]  )
+
+            demandvector = points
+
+        return demandvector, probability
 
     # This function create a node for the instance and time given in argument
     #The node is associated to the time given in paramter.
@@ -60,16 +146,17 @@ class ScenarioTreeNode:
         t= time + 1
 
         if  instance is not None and  t <= instance.NrTimeBucket:
+            probabilities =  [  ( 1.0 / owner.NrBranches[ t +1 ] )  for b in range( owner.NrBranches[ t +1 ] )  ]
             if t == 0:
-                nextdemands = []#  [instance.FirstPeriodDemand[p]] for p in instance.ProductSet ]
-
+                nextdemands = []
+                probabilities = [1]
             else:
                 if self.Owner.GenerateasYQfix:
-                    nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
+                    nextdemands, probabilities = self.GetDemandAsYQFix( t-1, nrbranch )
                 elif t <= self.Owner.FollowGivenUntil:
-                    nextdemands = self.GetDemandToFollow( t-1 )
+                    nextdemands = self.GetDemandToFollowFirstPeriods( t-1 )
                 else:
-                    nextdemands = ScenarioTreeNode.CreateDemandNormalDistributiondemand(instance, nrbranch, averagescenariotree )
+                    nextdemands, probabilities = ScenarioTreeNode.CreateDemandNormalDistributiondemand(instance, nrbranch, averagescenariotree, self.Owner.ScenarioGenerationMethod )
 
             usaverageforbranch = t >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ) or  self.Owner.AverageScenarioTree
             self.Branches = [ ScenarioTreeNode( owner = owner,
@@ -78,7 +165,7 @@ class ScenarioTreeNode:
                                                 time = t,
                                                 nrbranch = owner.NrBranches[ t +1 ],
                                                 demands = [ nextdemands[ p ][ b ]  for p in instance.ProductSet if t > 0 ],
-                                                proabibilty = ( 1.0 / nrbranch ) ,
+                                                proabibilty =   probabilities[ b ]  ,
                                                 averagescenariotree = usaverageforbranch,
                                                 slowmoving = slowmoving ) for b in range( nrbranch ) ]
 

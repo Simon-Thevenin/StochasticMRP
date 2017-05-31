@@ -10,3 +10,5 @@ class Constants:
     ModelYQFix = "YQFix"
     ModelYFix = "YFix"
     Model_Fix = "_Fix"
+    MonteCarlo = "MC"
+    RQMC = "RQMC"

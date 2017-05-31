@@ -39,6 +39,8 @@ GenerateAsYFix = False
 #How to generate a policy from the solution of a scenario tree
 PolicyGeneration = "NearestNeighbor"
 
+ScenarioGeneration = "MC"
+
 #When a solution is obtained, it is recorded in Solution. This is used to compute VSS for instance.
 Solution = None
 #Evaluate solution is true, the solution in the variable "GivenQuantities" is given to CPLEX to compute the associated costs
@@ -88,7 +90,10 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     global CompactSolveInformation
     global InSampleKPIStat
 
-    scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed, averagescenariotree=averagescenario, generateasYQfix= GenerateAsYFix )
+    scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed,
+                                 averagescenariotree=averagescenario,
+                                 generateasYQfix= GenerateAsYFix,
+                                 scenariogenerationmethod = ScenarioGeneration )
 
     mipsolver = MIPSolver(Instance, Model, scenariotree, UseNonAnticipativity,
                           implicitnonanticipativity=True,
@@ -296,8 +301,9 @@ if __name__ == "__main__":
         if len(sys.argv) == 1:
             instancename = raw_input("Enter the number (in [01;38]) of the instance to solve:")
         else:
-            script, instancename, nrsolve, Model, avg, generateasYQFix, policy, distribution, nrscenario, nrevaluation  = sys.argv
+            script, instancename, nrsolve, Model, avg, generateasYQFix, policy, distribution, nrscenario, generationmethod,  nrevaluation  = sys.argv
 
+        ScenarioGeneration = generationmethod
         TestIdentifier = [ instancename, Model, generateasYQFix, policy, distribution, nrscenario ]
         GenerateAsYFix = ( generateasYQFix == 'True' )
         PolicyGeneration = policy

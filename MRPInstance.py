@@ -69,7 +69,6 @@ class MRPInstance:
 
      # This function defines a very small instance, this is usefull for debugging.
     def DefineAsSuperSmallIntance(self ):
-
         self.InstanceName = "SuperSmallIntance"
         self.Distribution = "Normal"
         self.ProductName = [ "P1", "P2" ]
@@ -219,7 +218,6 @@ class MRPInstance:
 
     #This function load the scenario tree from a fil
     def LoadFromFile( self ):
-        result = None
         filepath = './Instances/' + self.InstanceName + '_Scenario%s.pkl'%self.ScenarioNr
         try:
           with open( filepath, 'rb') as input:
@@ -228,54 +226,6 @@ class MRPInstance:
         except: 
           print "file %r not found" %(filepath)
 
-    #This function create all the scenario using a scenario tree
-    # def CreateAllScenario( self, seed = -1  ):
-    #     if self.Average: #1 scenario corresponding to the average demand
-    #         self.StandardDevDemands = [0] * self.NrProduct
-    #         nrbranchperlevellist = [1]  * (self.NrTimeBucket +1)
-    #         self.DemandScenarioTree = ScenarioTree( self, nrbranchperlevellist );
-    #
-    #     elif self.LoadScenarioFromFile : #Load the scenario tree from a file
-    #         self.DemandScenarioTree = self.LoadFromFile()
-    #
-    #     else :#Create the scenario tree
-    #         treestructur = [1] + [ 2 for t in  ( self.TimeBucketSet ) ]
-    #         if self.BranchingStrategy == 1:
-    #             treestructur = [ 1 ] + [ int(math.pow( 2, self.NrTimeBucket ) ) ] + [ 1 for t in range( self.NrTimeBucket - 1 ) ]
-    #         if self.BranchingStrategy == 2 :
-    #             treestructur = [ 1 ] + [ int( math.pow( 2, self.NrTimeBucket / 2  ) ) ] + \
-    #                            [ int(math.pow( 2, self.NrTimeBucket / 2  ) ) ]+ [ 1 for t in range( self.NrTimeBucket - 2 ) ]
-    #         if self.BranchingStrategy == 3:
-    #             treestructur = [1] + [int(math.pow(2, max(3 - t, 0))) for t in (self.TimeBucketSet)]
-    #         if self.BranchingStrategy == 4:
-    #             #treestructur = [1, 8, 8, 0 ]
-    #             treestructur = [1, 8, 4, 2, 2, 2, 0 ] # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-    #         if self.BranchingStrategy == 5:
-    #             #treestructur = [1, 16, 16, 0]
-    #             treestructur = [1, 8, 4, 2, 2, 2, 2]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-    #         if self.BranchingStrategy == 6:
-    #             #treestructur = [1, 32, 32, 0]
-    #             treestructur = [1, 8, 4, 4, 2, 2, 0]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-    #         if self.BranchingStrategy == 7:
-    #             #treestructur = [1, 64, 32, 0]
-    #             treestructur = [1, 8, 8, 4, 2, 1, 0]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-    #         if self.BranchingStrategy == 8:
-    #             #treestructur = [1, 64, 64, 0]
-    #             treestructur = [1, 16, 16, 4, 2, 1, 1]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-    #         if self.BranchingStrategy == 9:
-    #             #treestructur = [1, 128, 128, 0 ]
-    #             treestructur = [1, 16, 16, 8, 4, 2, 2]  # + [ 1 for t in (self.TimeBucketSet - 4 ) ]
-    #         if self.BranchingStrategy == 10:
-    #             treestructur =  treestructur = [1] + [ 2 for t in  ( self.TimeBucketSet ) ]
-    #
-    #
-    #     #Re-compute the indices to set the variable index to the correct values
-    #     self.ComputeIndices()
-    #     scenariosasleaf = self.DemandScenarioTree.CreateAllScenario()
-    #     #Build the set of scenarios by copying the leaves
-    #
-    #
-    #     return len(scenarios), scenarios
 
     #This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
     def ReadFromFile( self, instancename, distribution):
