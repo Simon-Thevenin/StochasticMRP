@@ -1,5 +1,7 @@
 import pandas as pd
 import openpyxl as opxl
+
+print(opxl.__version__)
 import itertools as itools
 import math
 from ScenarioTree import ScenarioTree
@@ -362,6 +364,7 @@ class MRPInstance:
     #Save the Instance in an Excel  file
     def ReadInstanceFromExelFile( self, instancename ):
         wb2 = opxl.load_workbook("./Instances/" + instancename + ".xlsx")
+
         # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
         wb2.sheetnames
         print "Try to print it %r - %r  - %r" %( wb2, ("./Instances/" + instancename + ".xlsx" ),   wb2.sheetnames)
