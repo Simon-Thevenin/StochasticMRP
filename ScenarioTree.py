@@ -7,7 +7,7 @@ from Constants import Constants
 
 class ScenarioTree:
     #Constructor
-    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False, generateasYQfix = False, givenfirstperiod = [], scenariogenerationmethod = "MC" ):
+    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False, generateasYQfix = False, givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False ):
         self.Seed = seed
         np.random.seed( seed )
         self.Nodes = []
@@ -33,6 +33,23 @@ class ScenarioTree:
             self.DemandToFollow = [ [ [  YQFixSceanrios[w].Demands[t][p] for p in self.Instance.ProductSet ]
                                                                             for t in self.Instance.TimeBucketSet ]
                                                                                for w in range(len(YQFixSceanrios) )  ]
+
+        self.DemandYQFixRQMC = []
+        self.GenerateRQMCForYQFix = generateRQMCForYQfix
+        if self.ScenarioGenerationMethod == Constants.RQMC and generateRQMCForYQfix:
+            nrtimebuckets = self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty
+            avgvector = [  self.Instance.AverageDemand[p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
+            stdvector = [  self.Instance.StandardDevDemands[p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
+            dimension = len( self.Instance.ProductWithExternalDemand ) * (nrtimebuckets)
+            nrscenarion = self.NrBranches[1]
+            rqmcpoint01 = ScenarioTreeNode.RQMC01( nrscenarion , dimension  )
+            rmcpoint = ScenarioTreeNode.TransformInverse( rqmcpoint01, nrscenarion, dimension, self.Instance.Distribution, avgvector, stdvector )
+            self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebuckets + t ][s]
+                                         if  self.Instance.HasExternalDemand[p]
+                                         else 0.0
+                                       for p in self.Instance.ProductSet ]
+                                     for t in range( nrtimebuckets ) ]
+                                    for s in range( nrscenarion )]
 
         self.RootNode =  ScenarioTreeNode( owner = self,
                                            instance = instance,

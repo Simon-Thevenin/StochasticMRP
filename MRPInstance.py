@@ -107,6 +107,7 @@ class MRPInstance:
         self.InstanceName = ""
         self.NrProduct = -1
         self.NrTimeBucket = -1
+        self.NrTimeBucketWithoutUncertainty = -1
         self.NrResource = -1
         self.LostSaleCost = []
         self.Gamma = 0

@@ -94,7 +94,8 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed,
                                  averagescenariotree=averagescenario,
                                  generateasYQfix= GenerateAsYFix,
-                                 scenariogenerationmethod = ScenarioGeneration )
+                                 scenariogenerationmethod = ScenarioGeneration,
+                                 generateRQMCForYQfix = ( Model  == Constants.ModelYQFix and ScenarioGeneration == Constants.RQMC ) )
 
     mipsolver = MIPSolver(Instance, Model, scenariotree, UseNonAnticipativity,
                           implicitnonanticipativity=True,

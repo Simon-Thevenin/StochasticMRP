@@ -7,6 +7,14 @@ import scipy as scipy
 class ScenarioTreeNode:
     NrNode = 0
 
+    #This function is used when the demand is gereqated using RQMC for YQFix
+    #Return the demands  at time at position nrdemand in array DemandYQFixRQMC
+    def GetDemandRQMCForYQFix( self, time, nrdemand ):
+            demandvector = [ [ self.Owner.DemandYQFixRQMC[i][time][p]
+                                 for i in range(nrdemand)]
+                                      for p in self.Instance.ProductSet]
+            return demandvector
+
     #This function is used when the demand to use are the one generated for YQFix, which are stored in an array DemandToFollow
     #Return the demand of time at position nrdemand in array DemandTo follow
     def GetDemandAsYQFix( self, time, nrdemand ):
@@ -39,12 +47,24 @@ class ScenarioTreeNode:
         if dimensionpoint == 1 and nrpoints == 8: n = 8; a = [1]
         if dimensionpoint == 1 and nrpoints == 16: n = 16; a = [1]
         if dimensionpoint == 1 and nrpoints == 32: n = 32; a = [1]
+        if dimensionpoint == 1 and nrpoints == 50: n = 50; a = [1]
+        if dimensionpoint == 1 and nrpoints == 100: n = 100; a = [1]
         if dimensionpoint == 3 and nrpoints == 1: n = 1; a = [1, 0, 0]
         if dimensionpoint == 3 and nrpoints == 2: n = 2; a = [1, 1, 1]
         if dimensionpoint == 3 and nrpoints == 4: n = 4; a = [1, 1, 1]
         if dimensionpoint == 3 and nrpoints == 8: n = 8; a = [1, 3, 1]
         if dimensionpoint == 3 and nrpoints == 16: n = 16; a = [1, 7, 5]
         if dimensionpoint == 3 and nrpoints == 32: n = 32; a = [1, 7, 5]
+        if dimensionpoint == 3 and nrpoints == 50: n = 50; a = [1, 21, 19]
+        if dimensionpoint == 3 and nrpoints == 100: n = 100; a = [1, 41, 27]
+        if dimensionpoint == 9 and nrpoints == 1: n = 1; a = [1, 0, 0, 0, 0, 0, 0, 0, 0]
+        if dimensionpoint == 9 and nrpoints == 2: n = 2; a = [1, 1, 1, 1, 1, 1, 1, 1, 1]
+        if dimensionpoint == 9 and nrpoints == 4: n = 4; a = [1, 1, 1, 1, 1, 1, 1, 1, 1]
+        if dimensionpoint == 9 and nrpoints == 8: n = 8; a = [1, 3, 1, 3, 1, 3, 1, 3, 1]
+        if dimensionpoint == 9 and nrpoints == 16: n = 16; a = [1, 7, 5, 3, 5, 3, 7, 1, 1]
+        if dimensionpoint == 9 and nrpoints == 32: n = 32; a = [1, 7, 5, 15, 9, 3, 11, 13, 1]
+        if dimensionpoint == 9 and nrpoints == 50: n = 50; a = [1, 21, 19, 9, 11, 23, 17, 13, 7]
+        if dimensionpoint == 9 and nrpoints == 100: n = 100; a = [1, 41, 27, 17, 11, 31, 13, 21, 43]
         result = [[ ( (i * aj % n) / float(n) + randomizer ) % 1 for aj in a] for i in range(n)]
 
         return result
@@ -156,6 +176,8 @@ class ScenarioTreeNode:
             else:
                 if self.Owner.GenerateasYQfix:
                     nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
+                elif self.Owner.ScenarioGenerationMethod == Constants.RQMC and self.Owner.GenerateRQMCForYQFix and not t >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ):
+                    nextdemands = self.GetDemandRQMCForYQFix( t-1, nrbranch )
                 elif t <= self.Owner.FollowGivenUntil:
                     nextdemands = self.GetDemandToFollowFirstPeriods( t-1 )
                 else:
