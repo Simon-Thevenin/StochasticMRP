@@ -742,7 +742,7 @@ class MIPSolver(object):
 
 
         costperscenarion = [costperscenarion[w]
-                            + sum(  self.Cplex.solution.get_values([self.GetIndexBackorderVariable(p, t, w)][0])
+                            + sum(  self.Cplex.solution.get_values([self.GetIndexBackorderVariable(p, t, w)])[0]
                                      * self.Instance.BackorderCosts[p] * math.pow(self.Instance.Gamma, t)
                                     for p in self.Instance.ProductWithExternalDemand
                                         for t in range(self.Instance.NrTimeBucket -1 ))
