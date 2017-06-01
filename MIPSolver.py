@@ -437,13 +437,12 @@ class MIPSolver(object):
                                                            senses=["L"],
                                                            rhs=righthandside ,
                                                            names = ["LQuantity%d%d%d"%(p,t,w)])
-                        self.QuantityConstraintNR[w][p][t] = "LQuantity%d%d%d"%(p,t,w)
                         righthandside[0] = righthandside[0]  - 0.002
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["G"],
                                                            rhs=righthandside ,
                                                            names = ["GQuantity%d%d%d"%(p,t,w)])
-                        self.QuantityConstraintNR[w][p][t] = "GQuantity%d%d%d"%(p,t,w)
+                        self.QuantityConstraintNR[w][p][t] = "Quantity%d%d%d"%(p,t,w)
 
     def CreateCopyGivenSetupConstraints(self):
          AlreadyAdded = [False for v in range(self.GetNrProductionVariable())]
@@ -820,14 +819,18 @@ class MIPSolver(object):
                 for w in self.ScenarioSet:
                     for t in self.Instance.TimeBucketSet:
                         value =  "%f"%givenquanities[t][p]
-                        righthandside = [float(Decimal(self.GivenQuantity[t][p]).quantize(Decimal('0.0001'),rounding=ROUND_HALF_DOWN))]
+                        righthandside = givenquanities[t][p]#
 
-                        righthandside[0] = righthandside[0] + 0.001
+                        value = float( righthandside + 0.001)
+                        righthandside1 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
                         constrnr = "L"+self.QuantityConstraintNR[w][p][t]
-                        constrainttuples.append((constrnr, righthandside))
+                        constrainttuples.append((constrnr, righthandside1))
 
-                        righthandside[0] = righthandside[0] - 0.002
+                        value = max( float( righthandside - 0.001), 0.0)
+
+                        righthandside2 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
+
                         constrnr = "G"+self.QuantityConstraintNR[w][p][t]
-                        constrainttuples.append((constrnr, righthandside))
+                        constrainttuples.append((constrnr, righthandside2))
 
-            self.Cplex.linear_constraints.set_rhs(constrainttuples)
+            self.Cplex.linear_constraints.set_rhs( constrainttuples )
