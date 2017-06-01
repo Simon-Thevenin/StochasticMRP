@@ -94,6 +94,8 @@ class Evaluator:
                                 if self.Policy == Constants.Resolve:
                                     givenquantty[ti] = self.GetQuantityByResolve( demanduptotimet, ti, givenquantty, sol, givensetup, model )
 
+                        givenquantty = [ [ round( givenquantty[t][p], 2) for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
+
                         if seed == offset:
                             mipsolver = MIPSolver(self.Instance, model, scenariotree,
                                                   True,
