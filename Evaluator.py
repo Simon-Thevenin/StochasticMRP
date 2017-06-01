@@ -77,13 +77,13 @@ class Evaluator:
                     #Generate a random scenario
                     ScenarioSeed =  seed
                     #Evaluate the solution on the scenario
-                    for t in [self.Instance.NrTimeBucket -1]:
-                        FixUntilTime = t
-                        treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
+                    #for t in [self.Instance.NrTimeBucket -1]:
+                    #    FixUntilTime = t
+                    treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
 
-                        scenariotree = ScenarioTree( self.Instance, treestructure, ScenarioSeed, evaluationscenario = True )
+                    scenariotree = ScenarioTree( self.Instance, treestructure, ScenarioSeed, evaluationscenario = True )
 
-                        if model == Constants.ModelYFix:
+                    if model == Constants.ModelYFix:
                             scenario = scenariotree.GetAllScenarios( False ) [0]
                             givenquantty = [ [ 0 for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
 
@@ -95,32 +95,32 @@ class Evaluator:
                                 if self.Policy == Constants.Resolve:
                                     givenquantty[ti] = self.GetQuantityByResolve( demanduptotimet, ti, givenquantty, sol, givensetup, model )
 
-                        givenquantty = [[("%f" % givenquantty[t][p] )         for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet]
+                    givenquantty = [[("%f" % givenquantty[t][p] )         for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet]
 
-                        givenquantty = [ [  float(  Decimal( givenquantty[t][p]  ).quantize(Decimal('0.01'), rounding= ROUND_HALF_UP )  ) for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
+                    givenquantty = [ [  float(  Decimal( givenquantty[t][p]  ).quantize(Decimal('0.01'), rounding= ROUND_HALF_UP )  ) for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
 
-                        if seed == offset:
+                    if seed == offset:
                             mipsolver = MIPSolver(self.Instance, model, scenariotree,
                                                   True,
                                                   implicitnonanticipativity=False,
                                                   evaluatesolution=True,
                                                   givenquantities=givenquantty,
                                                   givensetups=givensetup,
-                                                  fixsolutionuntil=FixUntilTime )
+                                                  fixsolutionuntil=self.Instance.NrTimeBucket )
                             mipsolver.BuildModel()
-                        else:
+                    else:
                             mipsolver.ModifyMipForScenario( scenariotree )
                             if model == Constants.ModelYFix:
                                 mipsolver.ModifyMipForFixQuantity( givenquantty )
 
-                        solution = mipsolver.Solve()
-                        if solution == None:
+                    solution = mipsolver.Solve()
+                    if solution == None:
                             print "error at seed %d with given qty %r"%(seed, givenquantty)
                             mipsolver.Cplex.write("mrp.lp")
 
-                        Evaluated[ seed - offset ][ index ] = solution.TotalCost
+                    Evaluated[ seed - offset ][ index ] = solution.TotalCost
 
-                        if firstsolution:
+                    if firstsolution:
                             if seed == offset:
                                 OutOfSampleSolution = solution
                             else:
