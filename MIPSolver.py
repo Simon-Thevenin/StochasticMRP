@@ -12,7 +12,7 @@ import math
 from datetime import datetime
 import cPickle as pickle
 from Constants import Constants
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_DOWN, ROUND_HALF_UP
 
 class MIPSolver(object):
     M = cplex.infinity
@@ -430,13 +430,20 @@ class MIPSolver(object):
                         vars = [indexvariable]
                         AlreadyAdded[indexvariable] = True
                         coeff = [1.0]
-                        righthandside = [ float(  Decimal( self.GivenQuantity[t][p]  ).quantize(Decimal('0.001'), rounding= ROUND_HALF_UP )  )]
-                        # PrintConstraint( vars, coeff, righthandside )
+                        righthandside =  [ float(  Decimal( "%r"%(self.GivenQuantity[t][p])  ).quantize(Decimal('0.0001'), rounding= ROUND_HALF_DOWN )  ) ]
+                         # PrintConstraint( vars, coeff, righthandside )
+                        righthandside[0] = righthandside[0]  + 0.001
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
-                                                           senses=["E"],
+                                                           senses=["L"],
                                                            rhs=righthandside ,
-                                                           names = ["Quantity%d%d%d"%(p,t,w)])
-                        self.QuantityConstraintNR[w][p][t] = "Quantity%d%d%d"%(p,t,w)
+                                                           names = ["LQuantity%d%d%d"%(p,t,w)])
+                        self.QuantityConstraintNR[w][p][t] = "LQuantity%d%d%d"%(p,t,w)
+                        righthandside[0] = righthandside[0]  - 0.002
+                        self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                           senses=["G"],
+                                                           rhs=righthandside ,
+                                                           names = ["GQuantity%d%d%d"%(p,t,w)])
+                        self.QuantityConstraintNR[w][p][t] = "GQuantity%d%d%d"%(p,t,w)
 
     def CreateCopyGivenSetupConstraints(self):
          AlreadyAdded = [False for v in range(self.GetNrProductionVariable())]
@@ -813,8 +820,14 @@ class MIPSolver(object):
                 for w in self.ScenarioSet:
                     for t in self.Instance.TimeBucketSet:
                         value =  "%f"%givenquanities[t][p]
-                        righthandside =  float(  Decimal( value ).quantize(Decimal('0.001'), rounding= ROUND_HALF_UP )  )
-                        constrnr = self.QuantityConstraintNR[w][p][t]
+                        righthandside = [float(Decimal(self.GivenQuantity[t][p]).quantize(Decimal('0.0001'),rounding=ROUND_HALF_DOWN))]
+
+                        righthandside[0] = righthandside[0] + 0.001
+                        constrnr = "L"+self.QuantityConstraintNR[w][p][t]
+                        constrainttuples.append((constrnr, righthandside))
+
+                        righthandside[0] = righthandside[0] - 0.002
+                        constrnr = "G"+self.QuantityConstraintNR[w][p][t]
                         constrainttuples.append((constrnr, righthandside))
 
             self.Cplex.linear_constraints.set_rhs(constrainttuples)

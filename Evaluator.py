@@ -9,7 +9,7 @@ import csv
 from scipy import stats
 import numpy as np
 from MRPSolution import MRPSolution
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_DOWN
 
 class Evaluator:
 
@@ -71,8 +71,7 @@ class Evaluator:
                 givensetup = [[sol.Production.ix[p, t].get_value(0) for p in self.Instance.ProductSet]
                               for t in self.Instance.TimeBucketSet]
 
-                print "dataset:%r" %sol.ProductionQuantity
-                #Use an offset in the seed to make sure the scenario used for evaluation are different from the scenario used for optimization
+                 #Use an offset in the seed to make sure the scenario used for evaluation are different from the scenario used for optimization
                 offset = sol.ScenarioTree.Seed + 999323
                 for seed in range(offset, nrscenario + offset, 1):
                     #Generate a random scenario
@@ -96,9 +95,9 @@ class Evaluator:
                                 if self.Policy == Constants.Resolve:
                                     givenquantty[ti] = self.GetQuantityByResolve( demanduptotimet, ti, givenquantty, sol, givensetup, model )
 
-                    givenquantty = [[("%f" % givenquantty[t][p] )         for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet]
+                  #  givenquantty = [[("%f" % givenquantty[t][p] )         for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet]
 
-                    givenquantty = [ [  float(  Decimal( givenquantty[t][p]  ).quantize(Decimal('0.00000001'), rounding= ROUND_HALF_UP )  ) for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
+                  #  givenquantty = [ [  float(  Decimal( givenquantty[t][p]  ).quantize(Decimal('0.0001'), rounding= ROUND_HALF_DOWN )  ) for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
 
                     if seed == offset:
                             mipsolver = MIPSolver(self.Instance, model, scenariotree,

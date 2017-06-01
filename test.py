@@ -53,7 +53,7 @@ VSS = []
 ScenarioSeed = 1
 
 TestIdentifier = []
-SeedArray = [ 875800000, 354325, 76574, 5463456, 7688795, 2425676865, 7658, 1423235, 23647, 7885434 ]
+SeedArray = [ 2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788 ]
 
 #This list contain the information obtained after solving the problem
 SolveInformation = []

@@ -9,8 +9,8 @@ class ScenarioTreeNode:
 
     #This function is used when the demand is gereqated using RQMC for YQFix
     #Return the demands  at time at position nrdemand in array DemandYQFixRQMC
-    def GetDemandRQMCForYQFix( self, time, nrdemand ):
-            demandvector = [ [ self.Owner.DemandYQFixRQMC[i][time][p]
+    def GetDemandRQMCForYQFix( self, time, nrdemand, firstbranchid ):
+            demandvector = [ [ self.Owner.DemandYQFixRQMC[firstbranchid + i][time][p]
                                  for i in range(nrdemand)]
                                       for p in self.Instance.ProductSet]
             return demandvector
@@ -35,7 +35,7 @@ class ScenarioTreeNode:
     #This method generate a set of points in [0,1] using RQMC. The points are generated with the library given on the website of P. Lecuyer
     @staticmethod
     def RQMC01( nrpoints, dimensionpoint ):
-        randomizer = np.random.uniform( 0 , 1)
+        randomizer = np.random.uniform( 0.0 , 10.0)
         result=[]
         #For dimension 3 only, and nr point in 2, 4, 8, 16, 32
         n = -1
@@ -66,6 +66,7 @@ class ScenarioTreeNode:
         if dimensionpoint == 9 and nrpoints == 50: n = 50; a = [1, 21, 19, 9, 11, 23, 17, 13, 7]
         if dimensionpoint == 9 and nrpoints == 100: n = 100; a = [1, 41, 27, 17, 11, 31, 13, 21, 43]
         result = [[ ( (i * aj % n) / float(n) + randomizer ) % 1 for aj in a] for i in range(n)]
+        #result = [[ 0.1 for aj in a] for i in range(n)]
 
         return result
 
@@ -154,7 +155,7 @@ class ScenarioTreeNode:
     # This function create a node for the instance and time given in argument
     #The node is associated to the time given in paramter.
     #nr demand is the number of demand scenario fo
-    def __init__( self, owner = None, parent =None, instance = None, mipsolver = None, time = -1,  nrbranch = -1, demands = None, proabibilty = -1, averagescenariotree = False,  slowmoving = False  ):
+    def __init__( self, owner = None, parent =None, firstbranchid = -1, instance = None, mipsolver = None, time = -1,  nrbranch = -1, demands = None, proabibilty = -1, averagescenariotree = False,  slowmoving = False  ):
         if owner is not None:
             owner.Nodes.append( self )
         self.Owner = owner;
@@ -164,7 +165,9 @@ class ScenarioTreeNode:
         # An identifier of the node
         self.NodeNumber = ScenarioTreeNode.NrNode;
         ScenarioTreeNode.NrNode  = ScenarioTreeNode.NrNode  + 1;
-
+        self.FirstBranchID = firstbranchid
+        if time > 1 :
+            self.FirstBranchID = self.Parent.FirstBranchID
         t= time + 1
 
         if  instance is not None and  t <= instance.NrTimeBucket:
@@ -176,16 +179,18 @@ class ScenarioTreeNode:
             else:
                 if self.Owner.GenerateasYQfix:
                     nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
-                elif self.Owner.ScenarioGenerationMethod == Constants.RQMC and self.Owner.GenerateRQMCForYQFix and not t >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ):
-                    nextdemands = self.GetDemandRQMCForYQFix( t-1, nrbranch )
+                elif self.Owner.ScenarioGenerationMethod == Constants.RQMC and self.Owner.GenerateRQMCForYQFix and not time >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ):
+                    nextdemands = self.GetDemandRQMCForYQFix( t-1, nrbranch, firstbranchid )
                 elif t <= self.Owner.FollowGivenUntil:
                     nextdemands = self.GetDemandToFollowFirstPeriods( t-1 )
                 else:
                     nextdemands, probabilities = ScenarioTreeNode.CreateDemandNormalDistributiondemand(instance, nrbranch, averagescenariotree, self.Owner.ScenarioGenerationMethod )
 
             usaverageforbranch = t >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ) or  self.Owner.AverageScenarioTree
+
             self.Branches = [ ScenarioTreeNode( owner = owner,
                                                 parent = self,
+                                                firstbranchid =  b ,
                                                 instance = instance,
                                                 time = t,
                                                 nrbranch = owner.NrBranches[ t +1 ],
