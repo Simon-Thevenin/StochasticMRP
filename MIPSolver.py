@@ -813,7 +813,7 @@ class MIPSolver(object):
                 for w in self.ScenarioSet:
                     for t in self.Instance.TimeBucketSet:
                         value =  "%f"%givenquanities[t][p]
-                        righthandside =  float(  Decimal( value ).quantize(Decimal('0.01'), rounding= ROUND_HALF_UP )  )
+                        righthandside =  float(  Decimal( value ).quantize(Decimal('0.00000001'), rounding= ROUND_HALF_UP )  )
                         constrnr = self.QuantityConstraintNR[w][p][t]
                         constrainttuples.append((constrnr, righthandside))
 

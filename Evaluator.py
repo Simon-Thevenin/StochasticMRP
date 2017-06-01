@@ -98,7 +98,7 @@ class Evaluator:
 
                     givenquantty = [[("%f" % givenquantty[t][p] )         for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet]
 
-                    givenquantty = [ [  float(  Decimal( givenquantty[t][p]  ).quantize(Decimal('0.01'), rounding= ROUND_HALF_UP )  ) for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
+                    givenquantty = [ [  float(  Decimal( givenquantty[t][p]  ).quantize(Decimal('0.00000001'), rounding= ROUND_HALF_UP )  ) for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
 
                     if seed == offset:
                             mipsolver = MIPSolver(self.Instance, model, scenariotree,
