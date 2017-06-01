@@ -9,6 +9,7 @@ import csv
 from scipy import stats
 import numpy as np
 from MRPSolution import MRPSolution
+from decimal import Decimal, ROUND_HALF_UP
 
 class Evaluator:
 
@@ -94,7 +95,9 @@ class Evaluator:
                                 if self.Policy == Constants.Resolve:
                                     givenquantty[ti] = self.GetQuantityByResolve( demanduptotimet, ti, givenquantty, sol, givensetup, model )
 
-                        givenquantty = [ [ round( givenquantty[t][p], 2) for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
+                        givenquantty = [[("%f" % givenquantty[t][p] )         for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet]
+
+                        givenquantty = [ [  float(  Decimal( givenquantty[t][p]  ).quantize(Decimal('0.01'), rounding= ROUND_HALF_UP )  ) for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
 
                         if seed == offset:
                             mipsolver = MIPSolver(self.Instance, model, scenariotree,
