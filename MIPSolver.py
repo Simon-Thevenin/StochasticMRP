@@ -732,9 +732,9 @@ class MIPSolver(object):
 
     def ComputeCostPerScenario( self ):
         # Compute the cost per scenario:
-        costperscenarion = [ sum( self.Cplex.solution.get_values( self.GetIndexInventoryVariable(p, t, w) )
+        costperscenarion = [ sum( self.Cplex.solution.get_values( [self.GetIndexInventoryVariable(p, t, w)] )[0]
                                 * self.Instance.InventoryCosts[p] * math.pow( self.Instance.Gamma, t )
-                                + self.Cplex.solution.get_values( self.GetIndexProductionVariable(p, t, w) )
+                                + self.Cplex.solution.get_values( [self.GetIndexProductionVariable(p, t, w)] )[0]
                                 * self.Instance.SetupCosts[p] * math.pow( self.Instance.Gamma, t )
                                 for p in self.Instance.ProductSet
                                 for t in range(self.Instance.NrTimeBucket ))
@@ -742,14 +742,14 @@ class MIPSolver(object):
 
 
         costperscenarion = [costperscenarion[w]
-                            + sum(  self.Cplex.solution.get_values(self.GetIndexBackorderVariable(p, t, w))
+                            + sum(  self.Cplex.solution.get_values([self.GetIndexBackorderVariable(p, t, w)][0])
                                      * self.Instance.BackorderCosts[p] * math.pow(self.Instance.Gamma, t)
                                     for p in self.Instance.ProductWithExternalDemand
                                         for t in range(self.Instance.NrTimeBucket -1 ))
                                            for w in self.ScenarioSet ]
 
         costperscenarion = [costperscenarion[w]
-                            + sum(  self.Cplex.solution.get_values(self.GetIndexBackorderVariable(p, self.Instance.NrTimeBucket - 1, w))
+                            + sum(  self.Cplex.solution.get_values([self.GetIndexBackorderVariable(p, self.Instance.NrTimeBucket - 1, w)])[0]
                                     * self.Instance.LostSaleCost[p] * math.pow( self.Instance.Gamma, self.Instance.NrTimeBucket - 1)
                                     for p in self.Instance.ProductWithExternalDemand)
                                                     for w in self.ScenarioSet ]
