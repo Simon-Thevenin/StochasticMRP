@@ -65,7 +65,7 @@ for f in ["01"]:  # , "02", "03", "04", "05" ]:# "06", "07", "08", "09",
     for b in ["SlowMoving", "Normal", "Lumpy"]:  # "02", "03", "04", "05", "06", "07", "08", "09", "10"]:
         for m in ["YFix", "YQFix"]:  # , "YFix", "_Fix" ]:
             for scenarioasYP in ["False", "True"]:
-                for generation in ["MC", "RMC"]:
+                for generation in ["MC", "RQMC"]:
                     for Policy in ["NearestNeighbor", "Re-solve"]:  # , "07", "08", "09", "10"]:
                         scenarset = ["512"]
                         avg = False
