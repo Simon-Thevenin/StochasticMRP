@@ -71,6 +71,7 @@ class Evaluator:
                 givensetup = [[sol.Production.ix[p, t].get_value(0) for p in self.Instance.ProductSet]
                               for t in self.Instance.TimeBucketSet]
 
+                print "dataset:%r" %sol.ProductionQuantity
                 #Use an offset in the seed to make sure the scenario used for evaluation are different from the scenario used for optimization
                 offset = sol.ScenarioTree.Seed + 999323
                 for seed in range(offset, nrscenario + offset, 1):
