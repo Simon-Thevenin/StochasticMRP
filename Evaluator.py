@@ -160,7 +160,7 @@ class Evaluator:
         myfile.close()
        # generaldf = pd.DataFrame(general, index=columnstab)
        # generaldf.to_excel(writer, "General")
-        EvaluateInfo = [mean, LB, UB ] + KPIStat
+        EvaluateInfo = [mean, LB, UB, MinAverage, MaxAverage ] + KPIStat
         #writer.save()
         return EvaluateInfo
 

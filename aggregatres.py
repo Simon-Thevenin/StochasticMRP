@@ -129,6 +129,8 @@ columnname = ["Instance name",
               "Expected Out Sample",
               "LB",
               "UB",
+              "Min Average",
+              "Max Average"
               "Out Sample KPI On Time",
               "Out Sample KPI Backorder",
               "Out Sample KPI Lost sales",
