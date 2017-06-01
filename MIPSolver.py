@@ -430,7 +430,7 @@ class MIPSolver(object):
                         vars = [indexvariable]
                         AlreadyAdded[indexvariable] = True
                         coeff = [1.0]
-                        righthandside = [round( self.GivenQuantity[t][p], 2) ]
+                        righthandside = [ float(  Decimal( self.GivenQuantity[t][p]  ).quantize(Decimal('0.001'), rounding= ROUND_HALF_UP )  )]
                         # PrintConstraint( vars, coeff, righthandside )
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["E"],
@@ -813,7 +813,7 @@ class MIPSolver(object):
                 for w in self.ScenarioSet:
                     for t in self.Instance.TimeBucketSet:
                         value =  "%f"%givenquanities[t][p]
-                        righthandside =  float(  Decimal( value ).quantize(Decimal('0.00000001'), rounding= ROUND_HALF_UP )  )
+                        righthandside =  float(  Decimal( value ).quantize(Decimal('0.001'), rounding= ROUND_HALF_UP )  )
                         constrnr = self.QuantityConstraintNR[w][p][t]
                         constrainttuples.append((constrnr, righthandside))
 
