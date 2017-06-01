@@ -366,8 +366,6 @@ class MRPInstance:
         wb2 = opxl.load_workbook("./Instances/" + instancename + ".xlsx")
 
         # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
-        wb2.sheetnames
-        print "Try to print it %r - %r  - %r" %( wb2, ("./Instances/" + instancename + ".xlsx" ),   wb2.sheetnames)
         Genericdf = self.ReadDataFrame(wb2, "Generic")
         self.InstanceName = Genericdf.get_value( 'Name', 0 )
         self.NrProduct = Genericdf.get_value('NrProducts', 0)
