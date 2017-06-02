@@ -141,6 +141,16 @@ class ScenarioTreeNode:
                     for i in range(nrpoints):
                         points[idnonzero[p]] [i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
 
+        if method == "all":
+            points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
+            nrnonzero = sum(1 for p in range(dimensionpoint) if average[p] > 0)
+            idnonzero = [p for p in range(dimensionpoint) if average[p] > 0]
+
+            nonzeropoints = [[0, 0, 0, 0, 1, 1, 1, 1], [0, 0, 1, 1, 0, 0, 1, 1], [0, 1, 0, 1, 0, 1, 0, 1]]
+            for p in range(nrnonzero):  # instance.ProductWithExternalDemand:
+                for i in range(nrpoints):
+                    points[idnonzero[p]][i] = nonzeropoints[p][i]
+
         return points, proability
 
 #Create the demand in a node following a normal distribution
