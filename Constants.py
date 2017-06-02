@@ -4,6 +4,7 @@ class Constants:
     Lumpy = "Lumpy"
     SlowMoving = "SlowMoving"
     Normal = "Normal"
+    Uniform = "Uniform"
     NearestNeighbor = "NearestNeighbor"
     Resolve = "Re-solve"
     Debug = False

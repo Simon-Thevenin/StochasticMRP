@@ -87,6 +87,10 @@ class ScenarioTreeNode:
         if distribution == Constants.Lumpy:
             result = [[scipy.stats.poisson.ppf( ( points[i][p] - 0.8 ) / 0.2, (average[p]) / 0.2 ) +1 if points[i][p] > 0.8 else 0 for i in range(nrpoints)] for p in range(dimensionpoint)]
 
+        if distribution == Constants.Uniform:
+            result = [[0.0 if points[i][p] < 0.5 else 1.0
+                       for i in range(nrpoints)] for p in range(dimensionpoint)]
+
         return result
 
     #This method generate a set of nrpoint according to the method and given distribution.
@@ -111,6 +115,9 @@ class ScenarioTreeNode:
                             points[p][i] = 0;
                         else:
                             points[p][i] = np.round( np.random.poisson((average[p]) / 0.2, 1)[0] + 1, 0 );
+            elif distribution == Constants.Uniform:
+                points = [[0.0 if(  average[p] <= 0 or np.random.uniform(0,1) < 0.5 ) else 1.0
+                               for i in range(nrpoints)] for p in range(dimensionpoint)]
             else:
                 points = [np.round(
                     np.random.normal(average[p], std[p], nrpoints).clip(min=0.0),
