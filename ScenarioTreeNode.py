@@ -57,6 +57,8 @@ class ScenarioTreeNode:
         if dimensionpoint == 3 and nrpoints == 32: n = 32; a = [1, 7, 5]
         if dimensionpoint == 3 and nrpoints == 50: n = 50; a = [1, 21, 19]
         if dimensionpoint == 3 and nrpoints == 100: n = 100; a = [1, 41, 27]
+        if dimensionpoint == 3 and nrpoints == 200: n = 200; a = [1, 59, 93]
+        if dimensionpoint == 3 and nrpoints == 500: n = 500; a = [1, 211, 191]
         if dimensionpoint == 9 and nrpoints == 1: n = 1; a = [1, 0, 0, 0, 0, 0, 0, 0, 0]
         if dimensionpoint == 9 and nrpoints == 2: n = 2; a = [1, 1, 1, 1, 1, 1, 1, 1, 1]
         if dimensionpoint == 9 and nrpoints == 4: n = 4; a = [1, 1, 1, 1, 1, 1, 1, 1, 1]
@@ -65,6 +67,8 @@ class ScenarioTreeNode:
         if dimensionpoint == 9 and nrpoints == 32: n = 32; a = [1, 7, 5, 15, 9, 3, 11, 13, 1]
         if dimensionpoint == 9 and nrpoints == 50: n = 50; a = [1, 21, 19, 9, 11, 23, 17, 13, 7]
         if dimensionpoint == 9 and nrpoints == 100: n = 100; a = [1, 41, 27, 17, 11, 31, 13, 21, 43]
+        if dimensionpoint == 9 and nrpoints == 200: n = 200; a = [1, 59, 93, 43, 19, 53, 89, 33, 97]
+        if dimensionpoint == 9 and nrpoints == 500: n = 500; a = [1, 211, 191, 223, 123, 151, 109, 161, 183]
         result = [[ ( (i * aj % n) / float(n) + randomizer ) % 1 for aj in a] for i in range(n)]
         #result = [[ 0.1 for aj in a] for i in range(n)]
 
