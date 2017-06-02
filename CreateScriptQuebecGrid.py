@@ -51,7 +51,8 @@ if __name__ == "__main__":
 #PBS -r n
 ulimit -v 16000000
 mkdir /tmp/thesim
-python /home/thesim/stochasticmrp/test.py %s 05 %s %s %s %s %s %s %s 2000
+cd /home/thesim/stochasticmrp/
+python test.py %s 05 %s %s %s %s %s %s %s 2000
 """ % ( f, m, avg, scenarioasYP, Policy, b, nrscenar,
        generation))
 # Create the sh file
