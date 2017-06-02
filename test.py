@@ -242,7 +242,7 @@ def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrs
     for i in range(3 + Instance.NrLevel):
         InSampleKPIStat[i] = InSampleKPIStat[i] / nrsolve
 
-    evaluator = Evaluator( Instance, solutions, PolicyGeneration )
+    evaluator = Evaluator( Instance, solutions, PolicyGeneration, ScenarioGeneration )
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier,nrevaluation, Methode, Constants.ModelYFix )
 
 #This function compute some statistic about the genrated trees. It is usefull to check if the generator works as expected.

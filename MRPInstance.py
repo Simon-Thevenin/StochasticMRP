@@ -283,7 +283,7 @@ class MRPInstance:
         #Generate the sets of scenarios
         self.AverageDemand = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') for p in self.ProductSet ]
         if distribution == Constants.SlowMoving:
-            self.AverageDemand = [ 5.0 if datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') > 0 else 0 for p in self.ProductSet]
+            self.AverageDemand = [ 1.0 if datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') > 0 else 0 for p in self.ProductSet]
 
         self.StandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
         #demand = ScenarioTreeNode.CreateDemandNormalDistributiondemand( self, 1, average = False, slowmoving = slowmoving )

@@ -81,7 +81,7 @@ class ScenarioTreeNode:
             result = [[scipy.stats.poisson.ppf(points[i][p], average[p]) for i in range(nrpoints)] for p in range(dimensionpoint)]
 
         if distribution == Constants.Lumpy:
-            result = [[scipy.stats.poisson.ppf( points[i][p] / 0.2, (average[p]) / 0.2 ) +1 if points[i][p] < 0.2 else 0 for i in range(nrpoints)] for p in range(dimensionpoint)]
+            result = [[scipy.stats.poisson.ppf( ( points[i][p] - 0.8 ) / 0.2, (average[p]) / 0.2 ) +1 if points[i][p] > 0.8 else 0 for i in range(nrpoints)] for p in range(dimensionpoint)]
 
         return result
 

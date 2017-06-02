@@ -13,13 +13,13 @@ from decimal import Decimal, ROUND_HALF_DOWN
 
 class Evaluator:
 
-    def __init__( self, instance, solutions, policy = "" ):
+    def __init__( self, instance, solutions, policy = "", scenariogenerationresolve = "" ):
         self.Instance = instance
         self.Solutions = solutions
         self.NrSolutions = len( self.Solutions )
         self.Policy = policy
         self.StartSeedResolve = 84752390
-
+        self.ScenarioGenerationResolvePolicy = scenariogenerationresolve
 
 
     def GetQuantityByResolve( self, demanduptotimet, time, givenquantty, solution, givensetup, model ):
@@ -30,7 +30,7 @@ class Evaluator:
         else:
             treestructure = [ 1 ] + [ 1 ]*time + [ 8 ]*(self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty -time) + [1]*self.Instance.NrTimeBucketWithoutUncertainty + [0]
             self.StartSeedResolve = self.StartSeedResolve + 1
-            scenariotree = ScenarioTree( self.Instance, treestructure, self.StartSeedResolve, givenfirstperiod = demanduptotimet )
+            scenariotree = ScenarioTree( self.Instance, treestructure, self.StartSeedResolve, givenfirstperiod = demanduptotimet, scenariogenerationmethod= self.ScenarioGenerationResolvePolicy )
             quantitytofix = [ [ givenquantty[t][p] for p in self.Instance.ProductSet ]  for t in range( time ) ]
             mipsolver = MIPSolver( self.Instance, model, scenariotree,
                                    True,

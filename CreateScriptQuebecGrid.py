@@ -44,17 +44,17 @@ if __name__ == "__main__":
                                 f, m, avg, b, nrscenar, scenarioasYP, Policy, generation)
                                 qsub_file = open(qsub_filename, 'w')
                                 qsub_file.write("""
-#!/bin/bash -l
-#
-#$ -cwd
-#$ -q idra
-#$ -j y
-#$ -o /home/thesim/outputjob%s%s%s%s%s%s%s%s.txt
+#!/bin/bash
+#PBS -A abc-123-aa
+#PBS -l walltime=3:00:00
+#PBS -l nodes=1:ppn=1
+#PBS -r n
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py %s 05 %s %s %s %s %s %s %s 2000
-""" % (f, m, avg, scenarioasYP, Policy, b, nrscenar, generation, f, m, avg, scenarioasYP, Policy, b, nrscenar,
-       generation))  # Create the sh file
+python /home/thesim/stochasticmrp/test.py %s 05 %s %s %s %s %s %s %s 2000
+""" % ( f, m, avg, scenarioasYP, Policy, b, nrscenar,
+       generation))
+# Create the sh file
 filename = "runalljobs.sh"
 file = open(filename, 'w')
 file.write("""
