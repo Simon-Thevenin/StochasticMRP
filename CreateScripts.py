@@ -69,7 +69,7 @@ for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
               "NonStationary"]:  # "02", "03", "04", "05", "06", "07", "08", "09", "10"]:
         for m in ["YFix", "YQFix"]:  # , "YFix", "_Fix" ]:
             for generation in ["MC", "RQMC"]:
-                scenarset = ["8"]
+                scenarset = ["512"]
                 policyset = ["NearestNeighbor", "Re-solve"]
                 scenarioasYPset = ["False", "True"]
                 avg = False

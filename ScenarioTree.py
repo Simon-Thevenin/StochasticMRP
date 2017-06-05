@@ -38,8 +38,8 @@ class ScenarioTree:
         self.GenerateRQMCForYQFix = generateRQMCForYQfix
         if self.ScenarioGenerationMethod == Constants.RQMC and generateRQMCForYQfix:
             nrtimebuckets = self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty
-            avgvector = [  self.Instance.AverageDemand[p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
-            stdvector = [  self.Instance.StandardDevDemands[p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
+            avgvector = [  self.Instance.ForecastedAverageDemand[t][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
+            stdvector = [  self.Instance.ForcastedStandardDeviation[t][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
             dimension = len( self.Instance.ProductWithExternalDemand ) * (nrtimebuckets)
             nrscenarion = self.NrBranches[1]
             rqmcpoint01 = ScenarioTreeNode.RQMC01( nrscenarion , dimension  )
