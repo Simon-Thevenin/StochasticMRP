@@ -17,6 +17,7 @@ from matplotlib import pyplot as plt
 import cPickle as pickle
 from Constants import Constants
 from Evaluator import Evaluator
+from SDDP import SDDP
 #pass Debug to true to get some debug information printed
 
 Instance = MRPInstance()
@@ -119,9 +120,9 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
    # result = solution.TotalCost, [ [ sum( solution.Production.get_value( Instance.ProductName[ p], t, w ) *  for w in Instance.ScenarioSet ) for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
 
     if Constants.Debug:
-           solution.Print()
+       #    solution.Print()
            description = "%r_%r" % ( Model, ScenarioSeed )
-           solution.PrintToExcel( description )
+      #     solution.PrintToExcel( description )
 
     if recordsolveinfo:
         SolveInformation = mipsolver.SolveInfo
@@ -168,7 +169,7 @@ def SolveAndEvaluateYQFix( average = False, nrevaluation = 2, nrscenario = 100, 
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, nrevaluation,  method, Constants.ModelYQFix )
 
 
-def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrsolve = 1):
+def SolveAndEvaluateYFix( method = "MIP", nrevaluation = 2, nrscenario = 1, nrsolve = 1):
     global GivenSetup
     global GivenQuantities
     global ScenarioSeed
@@ -182,23 +183,50 @@ def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrs
 
     treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0]
 
-    if nrscenario == 64:
+    if nrscenario == 8:
         if Instance.NrTimeBucket == 6 :
-              treestructure = [1, 4, 4, 4, 1, 1, 1, 0]
+              treestructure = [1, 2, 2, 2, 1, 1, 1, 0]
              # treestructure = [1, 8, 4, 2, 1, 1, 1, 0 ]
+        if Instance.NrTimeBucket == 8:
+            treestructure = [1, 2, 2, 2, 2, 1, 1, 1, 1,  0]
         if Instance.NrTimeBucket == 9 :
-              treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 0 ]
+              treestructure = [1, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0 ]
+        if Instance.NrTimeBucket == 10:
+            treestructure = [1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0]
         if Instance.NrTimeBucket == 12 :
              treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 ]
         if Instance.NrTimeBucket == 15 :
              treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 ]
 
+    if nrscenario == 64:
+        if Instance.NrTimeBucket == 6 :
+              treestructure = [1, 4, 4, 4, 1, 1, 1, 0]
+             # treestructure = [1, 8, 4, 2, 1, 1, 1, 0 ]
+        if Instance.NrTimeBucket == 8:
+            treestructure = [1, 4, 4, 4, 4, 1, 1, 1, 1,  0]
+        if Instance.NrTimeBucket == 9 :
+              treestructure = [1, 4, 4, 4, 4, 1, 1, 1, 1, 1, 0 ]
+        if Instance.NrTimeBucket == 10:
+            treestructure = [1, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 0]
+        if Instance.NrTimeBucket == 12 :
+             treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 ]
+        if Instance.NrTimeBucket == 15 :
+             treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 ]
 
     if nrscenario == 512:
         if Instance.NrTimeBucket == 6 :
              #treestructure = [1, 2, 2, 2, 1, 1, 1, 0]
              treestructure = [1, 8, 8, 8, 1, 1, 1, 0 ]
-
+        if Instance.NrTimeBucket == 8:
+            treestructure = [1, 8, 8, 8, 8, 1, 1, 1, 1,  0]
+        if Instance.NrTimeBucket == 9 :
+              treestructure = [1,8, 8, 8, 2, 1, 1, 1, 1, 1, 0 ]
+        if Instance.NrTimeBucket == 10:
+            treestructure = [1, 8, 8, 8, 8, 8, 1, 1, 1, 1, 1, 0]
+        if Instance.NrTimeBucket == 12 :
+             treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 ]
+        if Instance.NrTimeBucket == 15 :
+             treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 ]
 
     if nrscenario == 1024:
         if Instance.NrTimeBucket == 6 :
@@ -221,23 +249,27 @@ def SolveAndEvaluateYFix( average = False, nrevaluation = 2, nrscenario = 1, nrs
         if Instance.NrTimeBucket == 15 :
              treestructure = [1, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0 ]
 
-    Methode = "MultistageYFix"
+
 
     if average:
         treestructure = [1] + [1] * Instance.NrTimeBucket + [0]
-        Methode = "Average"
 
     solutions = []
     for k in range(nrsolve):
         ScenarioSeed = SeedArray[k]
-        solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
-        solutions.append( solution )
-        PrintResult()
-        solution.ComputeStatistics()
-        insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample" , -1, 0, ScenarioSeed)
+        if method == "MIP" or method == "Avergae":
+            solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
+            solutions.append(solution)
+            PrintResult()
+            solution.ComputeStatistics()
+            insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample", -1, 0, ScenarioSeed)
 
-        for i in range(3 + Instance.NrLevel):
-            InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
+            for i in range(3 + Instance.NrLevel):
+                InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
+        if method == "SDDP":
+            sddpsolver = SDDP()
+            sddpsolver.Run()
+
 
     for i in range(3 + Instance.NrLevel):
         InSampleKPIStat[i] = InSampleKPIStat[i] / nrsolve
@@ -303,7 +335,7 @@ if __name__ == "__main__":
         if len(sys.argv) == 1:
             instancename = raw_input("Enter the number (in [01;38]) of the instance to solve:")
         else:
-            script, instancename, nrsolve, Model, avg, generateasYQFix, policy, distribution, nrscenario, generationmethod,  nrevaluation  = sys.argv
+            script, instancename, nrsolve, Model, method, generateasYQFix, policy, distribution, nrscenario, generationmethod,  nrevaluation  = sys.argv
 
         ScenarioGeneration = generationmethod
         TestIdentifier = [ instancename, Model, generateasYQFix, policy, distribution, nrscenario, generationmethod ]
@@ -332,13 +364,13 @@ if __name__ == "__main__":
       
     #MRP() #[1, 2, 1, 1, 1, 1, 0 ])
    # ComputeVSS()
-    average = ( avg =='True' )
+    average = ( method =='Average' )
    # ComputeAverageGeneraor()
 
     if Model == Constants.ModelYQFix:
          SolveAndEvaluateYQFix(  average = average, nrevaluation = int(nrevaluation), nrscenario = int(nrscenario), nrsolve = int( nrsolve ) )
     if Model == Constants.ModelYFix:
-         SolveAndEvaluateYFix( average=average, nrevaluation = int(nrevaluation), nrscenario= int(nrscenario), nrsolve = int( nrsolve ) )
+         SolveAndEvaluateYFix( method = method, nrevaluation = int(nrevaluation), nrscenario= int(nrscenario), nrsolve = int( nrsolve ) )
 
     CompactSolveInformation = [CompactSolveInformation[i] /  int( nrsolve ) for i in range( 3) ]
     PrintFinalResult()

@@ -6,10 +6,14 @@ class Constants:
     Normal = "Normal"
     Uniform = "Uniform"
     NearestNeighbor = "NearestNeighbor"
+    NonStationary = "NonStationary"
     Resolve = "Re-solve"
-    Debug = False
     ModelYQFix = "YQFix"
     ModelYFix = "YFix"
     Model_Fix = "_Fix"
     MonteCarlo = "MC"
     RQMC = "RQMC"
+
+    Debug = True
+    Infinity = 999999999999.9
+    AlgorithmTimeLimit = 3600.0

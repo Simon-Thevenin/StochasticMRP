@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import openpyxl as opxl
 
 print(opxl.__version__)
@@ -59,8 +60,22 @@ class MRPInstance:
                                [0, 0, 5, 0, 0],
                                [0, 0, 0, 1, 2],
                                [0, 0, 0, 1, 5] ]
-        self.StandardDevDemands = [ 5, 0, 0, 0, 0 ]
-        self.AverageDemand = [ 10, 0, 0, 0, 0 ]
+
+        self.YearlyAverageDemand = [10, 0, 0, 0, 0]
+        self.ForecastedAverageDemand = [ [10, 0, 0, 0, 0],
+                                         [10, 0, 0, 0, 0],
+                                         [10, 0, 0, 0, 0],
+                                         [10, 0, 0, 0, 0],
+                                         [10, 0, 0, 0, 0] ]
+        self.ForecastError = [0.5, 0, 0, 0, 0]
+        self.RateOfKnownDemand = 0.0
+        self.YearlyStandardDevDemands = [5, 0, 0, 0, 0]
+        self.ForcastedStandardDeviation = [ [5, 0, 0, 0, 0],
+                                            [5, 0, 0, 0, 0],
+                                            [5, 0, 0, 0, 0],
+                                            [5, 0, 0, 0, 0],
+                                            [5, 0, 0, 0, 0] ]
+
         self.StartingInventories = [10.0, 100.0, 100.0, 100.0, 100.0]
         self.InventoryCosts = [15.0, 4.0, 3.0, 2.0, 1.0]
         self.SetupCosts = [10000.0, 1.0, 1.0, 1.0, 1.0]
@@ -85,8 +100,25 @@ class MRPInstance:
         self.Leadtimes = [ 0, 1 ]
         self.ProcessingTime = [ [ 1, 0 ],
                                 [ 0, 1 ] ]
-        self.StandardDevDemands = [ 5, 0 ]
-        self.AverageDemand = [ 10, 0 ]
+
+        self.YearlyAverageDemand = [ 10, 0 ]
+        self.ForecastedAverageDemand =  [ [ 10, 0 ],
+                                          [ 10, 0 ],
+                                          [ 10, 0 ],
+                                          [10, 0],
+                                          [10, 0],
+                                          [10, 0]
+                                          ]
+        self.ForecastError = [ 0.5, 0 ]
+        self.RateOfKnownDemand = 0.0
+        self.YearlyStandardDevDemands = [5, 0]
+        self.ForcastedStandardDeviation = [ [ 5, 0 ],
+                                            [5, 0],
+                                            [5, 0],
+                                            [5, 0],
+                                            [5, 0],
+                                            [ 5, 0 ] ]
+
         self.StartingInventories = [ 10.0, 10.0 ]
         self.InventoryCosts = [ 10.0, 5.0 ]
         self.SetupCosts = [ 5.0, 5.0 ]
@@ -118,9 +150,13 @@ class MRPInstance:
         self.ProductWithoutExternalDemandIndex = []
         self.TimeBucketSet = []
         self.ResourceSet = []
-        self.AverageDemand = []
+        self.YearlyAverageDemand = []
+        self.ForecastedAverageDemand = []
         self.ProcessingTime = []
-        self.StandardDevDemands = []
+        self.YearlyStandardDevDemands = []
+        self.ForecastError = -1
+        self.RateOfKnownDemand = -1
+        self.ForcastedStandardDeviation = []
         self.Requirements = []
         self.Leadtimes = []
         self.StartingInventories = []
@@ -179,7 +215,7 @@ class MRPInstance:
         self.NrLevel = max( self.Level[ p ] for p in self.ProductSet )
 
     def ComputeHasExternalDemand(self):
-        self.HasExternalDemand = [  self.AverageDemand[p] > 0
+        self.HasExternalDemand = [  self.YearlyAverageDemand[p] > 0
                                     for p in self.ProductSet ]
         self.ProductWithExternalDemand = [ p for p in self.ProductSet if  self.HasExternalDemand[p] ]
         self.ProductWithoutExternalDemand = [p for p in self.ProductSet if not self.HasExternalDemand[p]]
@@ -279,24 +315,56 @@ class MRPInstance:
         self.NrTimeBucketWithoutUncertainty = self.MaxLeadTime
         self.ComputeIndices()
 
+        self.YearlyAverageDemand = [10, 0, 0, 0, 0]
+        self.ForecastedAverageDemand = [[10, 0, 0, 0, 0],
+                                        [10, 0, 0, 0, 0],
+                                        [10, 0, 0, 0, 0],
+                                        [10, 0, 0, 0, 0],
+                                        [10, 0, 0, 0, 0]]
+        self.ForecastError = 0.5
+        self.RateOfKnownDemand = 0.0
+        self.YearlyStandardDevDemands = [5, 0, 0, 0, 0]
+        self.ForcastedStandardDeviation = [[5, 0, 0, 0, 0],
+                                           [5, 0, 0, 0, 0],
+                                           [5, 0, 0, 0, 0],
+                                           [5, 0, 0, 0, 0],
+                                           [5, 0, 0, 0, 0]]
 
         #Generate the sets of scenarios
-        self.AverageDemand = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') for p in self.ProductSet ]
+        self.YearlyAverageDemand = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') for p in self.ProductSet ]
         if distribution == Constants.SlowMoving:
-            self.AverageDemand = [ 1 if datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') > 0 else 0 for p in self.ProductSet]
+            self.YearlyAverageDemand = [ 1 if datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') > 0 else 0 for p in self.ProductSet]
 
         if distribution == Constants.Uniform:
-            self.AverageDemand = [0.5 if datasheetdf.get_value(self.ProductName[p], 'avgDemand') > 0 else 0 for p in
+            self.YearlyAverageDemand = [0.5 if datasheetdf.get_value(self.ProductName[p], 'avgDemand') > 0 else 0 for p in
                                   self.ProductSet]
 
-        self.StandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
+        self.YearlyStandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
+
+        stationarydistribution = ( self.Distribution == Constants.Normal ) or ( self.Distribution == Constants.SlowMoving ) or ( self.Distribution == Constants.Lumpy ) or ( self.Distribution == Constants.Uniform )
+
+        if stationarydistribution:
+            self.ForecastedAverageDemand = [ self.YearlyAverageDemand  for t in self.TimeBucketSet ]
+            self.ForcastedStandardDeviation = [ self.YearlyStandardDevDemands for t in self.TimeBucketSet ]
+            self.ForecastError =   [ self.YearlyStandardDevDemands[p] / self.YearlyAverageDemand[p] for t in self.TimeBucketSet ]
+            self.RateOfKnownDemand = 0.0
+        else:
+            self.ForecastError = [ 0.25 for p in self.ProductSet ]
+            self.RateOfKnownDemand = [ math.pow( 0.9, t+1) for t in self.TimeBucketSet ]
+            self.ForecastedAverageDemand = [ [ np.floor( np.random.normal(self.YearlyAverageDemand[p], self.YearlyStandardDevDemands[p], 1.0).clip( min=0.0) ).tolist()[0]
+                                               if self.YearlyStandardDevDemands[p] > 0 else float(self.YearlyAverageDemand[p])
+                                               for p in self.ProductSet ] for t in self.TimeBucketSet ]
+
+            self.ForcastedStandardDeviation = [ [ (1-self.RateOfKnownDemand[t]) *  self.ForecastError[p] *  self.ForecastedAverageDemand[t][p]
+                                                 for p in self.ProductSet ] for t in self.TimeBucketSet ]
+
         #demand = ScenarioTreeNode.CreateDemandNormalDistributiondemand( self, 1, average = False, slowmoving = slowmoving )
         #self.FirstPeriodDemand = [ demand[p][0] for p in self.ProductSet ]
 
         # The data below are generated a according to the method given in "multi-item capacited lot-sizing with demand uncertainty, P Brandimarte, IJPR, 2006"
 
 
-        dependentaveragedemand = [ self.AverageDemand[p] for p in self.ProductSet ]
+        dependentaveragedemand = [ self.YearlyAverageDemand[p] for p in self.ProductSet ]
         levelset = sorted(set(level), reverse=False)
         for l in levelset:
             prodinlevel = [p for p in self.ProductSet if level[p] == l]
@@ -351,11 +419,17 @@ class MRPInstance:
         requirementdf.to_excel(writer, "Requirement")
 
         productdata = [ self.Leadtimes, self.StartingInventories, self.InventoryCosts,
-                        self.SetupCosts, self.BackorderCosts, self.AverageDemand, self.StandardDevDemands,
+                        self.SetupCosts, self.BackorderCosts, self.YearlyAverageDemand, self.YearlyStandardDevDemands,
                         self.LostSaleCost ]
         col = [ "Leadtimes", "StartingInventories", "InventoryCosts", "SetupCosts", "BackorderCosts", "AverageDemand", "StandardDevDemands", "LostSale" ]
         productdatadf = pd.DataFrame( productdata, columns=self.ProductName, index=col).transpose();
         productdatadf.to_excel(writer, "Productdata")
+
+        capacitydf = pd.DataFrame( self.ForecastedAverageDemand, index=self.TimeBucketSet, columns = self.ProductName  )
+        capacitydf.to_excel(writer, "ForecastedAverageDemand")
+
+        capacitydf = pd.DataFrame( self.ForcastedStandardDeviation, index=self.TimeBucketSet, columns = self.ProductName  )
+        capacitydf.to_excel(writer, "ForcastedStandardDeviation")
 
         capacitydf = pd.DataFrame( self.Capacity )
         capacitydf.to_excel(writer, "Capacity")
@@ -384,8 +458,8 @@ class MRPInstance:
         self.ProductName = list(Productdatadf.index.values)
         self.Leadtimes = Productdatadf[ 'Leadtimes' ].tolist()
         self.InventoryCosts = Productdatadf[ 'InventoryCosts' ].tolist()
-        self.AverageDemand = Productdatadf[ 'AverageDemand' ].tolist()
-        self.StandardDevDemands = Productdatadf[ 'StandardDevDemands' ].tolist()
+        self.YearlyAverageDemand = Productdatadf[ 'AverageDemand' ].tolist()
+        self.YearlyStandardDevDemands = Productdatadf[ 'StandardDevDemands' ].tolist()
         self.BackorderCosts = Productdatadf['BackorderCosts'].tolist()
         self.StartingInventories = Productdatadf['StartingInventories'].tolist()
         self.SetupCosts = Productdatadf['SetupCosts'].tolist()
@@ -399,6 +473,13 @@ class MRPInstance:
 
         Processingdf = self.ReadDataFrame( wb2, "ProcessingTime" )
         self.ProcessingTime = [[Processingdf.get_value(p, k) for p in self.ProductName] for k in self.ResourceSet]
+
+        forecastedavgdemanddf = self.ReadDataFrame(wb2, "ForecastedAverageDemand")
+        self.ForecastedAverageDemand = [ [ forecastedavgdemanddf.get_value(t, p) for p in self.ProductName] for t in self.TimeBucketSet ]
+
+        forecastedstddf = self.ReadDataFrame(wb2, "ForcastedStandardDeviation")
+        self.ForcastedStandardDeviation = [ [ forecastedstddf.get_value(t, p) for p in self.ProductName] for t in self.TimeBucketSet ]
+
 
         self.ComputeLevel()
         self.ComputeMaxLeadTime()

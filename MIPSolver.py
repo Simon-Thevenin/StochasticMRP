@@ -314,10 +314,6 @@ class MIPSolver(object):
                         # Add the cost of the cariable representing multiple scenarios
                         inventorycostindex = self.Scenarios[w].InventoryVariable[t][
                                                  p] - self.StartInventoryVariableWithoutNonAnticipativity
-
-
-
-
                         inventorycosts[inventorycostindex] = inventorycosts[inventorycostindex] \
                                                              + self.Instance.InventoryCosts[p] * self.Scenarios[
                             w].Probability * math.pow( self.Instance.Gamma, t )
@@ -647,7 +643,7 @@ class MIPSolver(object):
             self.Cplex.set_error_stream( None )
 
         # tune the paramters
-        self.Cplex.parameters.timelimit.set( 3600.0 )
+        self.Cplex.parameters.timelimit.set( Constants.AlgorithmTimeLimit )
         self.Cplex.parameters.mip.limits.treememory.set( 7000.0 )
         self.Cplex.parameters.threads.set(1)
 

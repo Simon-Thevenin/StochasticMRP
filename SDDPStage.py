@@ -1,5 +1,7 @@
 import cplex
 import math
+from Constants import Constants
+
 # This class contains the attributes and methodss allowing to define one stage of the SDDP algorithm.
 class SDDPStage:
 
@@ -15,6 +17,8 @@ class SDDPStage:
         self.Cplex = cplex.Cplex()
         self.DecisionStage = -1
         self.Instance = self.SDDPOwner.Instance
+
+        self.MIP = None
 
         #The following attribute will contain the coefficient of hte variable in the cuts
         self.CoefficientConstraint = []
@@ -165,3 +169,22 @@ class SDDPStage:
     def UpdateMIP( self ):
         print "TBD"
 
+    #This function Build or update the MIP of the current stage
+    def BuildMIP( self ):
+        if Constants.Debug:
+            print "build the MIP of stage %d" %self.DecisionStage
+
+        if self.MIP is None:
+            self.DefineMIP()
+        else:
+            self.UpdateMIP()
+
+    # This function run the MIP of the current stage
+    def Run(self):
+        if Constants.Debug:
+            print "Run the MIP of stage %d" % self.DecisionStage
+
+        if self.MIP is None:
+            self.DefineMIP()
+        else:
+            self.UpdateMIP()

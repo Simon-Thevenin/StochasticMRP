@@ -17,11 +17,11 @@ if __name__ == "__main__":
     # Path to a folder where you want your results to be
     output_folder = r"/home/thesim/TestFolder/stochasticmrp/"
 
-    for f in ["01"]:  # , "02", "03", "04", "05" ]:# "06", "07", "08", "09",
+    for f in ["01", "02", "03", "04", "05" ]:# "06", "07", "08", "09",
         #			  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
         #			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
         #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
-        for b in ["SlowMoving", "Normal", "Lumpy", "Uniform"]:  # "02", "03", "04", "05", "06", "07", "08", "09", "10"]:
+        for b in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:  # "02", "03", "04", "05", "06", "07", "08", "09", "10"]:
             for m in ["YFix", "YQFix"]:  # , "YFix", "_Fix" ]:
                 for generation in ["MC", "RQMC"]:
                     scenarset = ["512"]
@@ -61,14 +61,15 @@ file.write("""
 #!/bin/bash -l
 #
 """)
-for f in ["01"]:  # , "02", "03", "04", "05" ]:# "06", "07", "08", "09",
+for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
     #			  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
     #			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
     #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
-    for b in ["SlowMoving", "Normal", "Lumpy", "Uniform"]:  # "02", "03", "04", "05", "06", "07", "08", "09", "10"]:
+    for b in ["SlowMoving", "Normal", "Lumpy", "Uniform",
+              "NonStationary"]:  # "02", "03", "04", "05", "06", "07", "08", "09", "10"]:
         for m in ["YFix", "YQFix"]:  # , "YFix", "_Fix" ]:
             for generation in ["MC", "RQMC"]:
-                scenarset = ["512"]
+                scenarset = ["8"]
                 policyset = ["NearestNeighbor", "Re-solve"]
                 scenarioasYPset = ["False", "True"]
                 avg = False
