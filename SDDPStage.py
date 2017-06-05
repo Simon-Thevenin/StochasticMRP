@@ -167,7 +167,7 @@ class SDDPStage:
 
     #The function below update the constraint of the MIP to correspond to the new scenario
     def UpdateMIP( self ):
-        print "TBD"
+        print "TBD "
 
     #This function Build or update the MIP of the current stage
     def BuildMIP( self ):
