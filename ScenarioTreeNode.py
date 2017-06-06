@@ -41,54 +41,19 @@ class ScenarioTreeNode:
         n = -1
         a = []
         #reurn the array given by the library
-        if dimensionpoint == 1 and nrpoints == 1: n = 1; a = [1]
-        if dimensionpoint == 1 and nrpoints == 2: n = 2; a = [1]
-        if dimensionpoint == 1 and nrpoints == 4: n = 4; a = [1]
-        if dimensionpoint == 1 and nrpoints == 8: n = 8; a = [1]
-        if dimensionpoint == 1 and nrpoints == 16: n = 16; a = [1]
-        if dimensionpoint == 1 and nrpoints == 32: n = 32; a = [1]
-        if dimensionpoint == 1 and nrpoints == 50: n = 50; a = [1]
-        if dimensionpoint == 1 and nrpoints == 100: n = 100; a = [1]
-        if dimensionpoint == 3 and nrpoints == 1: n = 1; a = [1, 0, 0]
-        if dimensionpoint == 3 and nrpoints == 2: n = 2; a = [1, 1, 1]
-        if dimensionpoint == 3 and nrpoints == 4: n = 4; a = [1, 1, 1]
-        if dimensionpoint == 3 and nrpoints == 8: n = 8; a = [1, 3, 1]
-        if dimensionpoint == 3 and nrpoints == 16: n = 16; a = [1, 7, 5]
-        if dimensionpoint == 3 and nrpoints == 32: n = 32; a = [1, 7, 5]
-        if dimensionpoint == 3 and nrpoints == 50: n = 50; a = [1, 21, 19]
-        if dimensionpoint == 3 and nrpoints == 100: n = 100; a = [1, 41, 27]
-        if dimensionpoint == 3 and nrpoints == 200: n = 200; a = [1, 59, 93]
-        if dimensionpoint == 3 and nrpoints == 500: n = 500; a = [1, 211, 191]
-        if dimensionpoint == 9 and nrpoints == 1: n = 1; a = [1, 0, 0, 0, 0, 0, 0, 0, 0]
-        if dimensionpoint == 9 and nrpoints == 2: n = 2; a = [1, 1, 1, 1, 1, 1, 1, 1, 1]
-        if dimensionpoint == 9 and nrpoints == 4: n = 4; a = [1, 1, 1, 1, 1, 1, 1, 1, 1]
-        if dimensionpoint == 9 and nrpoints == 8: n = 8; a = [1, 3, 1, 3, 1, 3, 1, 3, 1]
-        if dimensionpoint == 9 and nrpoints == 16: n = 16; a = [1, 7, 5, 3, 5, 3, 7, 1, 1]
-        if dimensionpoint == 9 and nrpoints == 32: n = 32; a = [1, 7, 5, 15, 9, 3, 11, 13, 1]
-        if dimensionpoint == 9 and nrpoints == 50: n = 50; a = [1, 21, 19, 9, 11, 23, 17, 13, 7]
-        if dimensionpoint == 9 and nrpoints == 100: n = 100; a = [1, 41, 27, 17, 11, 31, 13, 21, 43]
-        if dimensionpoint == 9 and nrpoints == 200: n = 200; a = [1, 59, 93, 43, 19, 53, 89, 33, 97]
-        if dimensionpoint == 9 and nrpoints == 500: n = 500; a = [1, 211, 191, 223, 123, 151, 109, 161, 183]
-        if dimensionpoint == 16 and nrpoints == 1: n = 1; a = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        if dimensionpoint == 16 and nrpoints == 2: n = 2; a = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        if dimensionpoint == 16 and nrpoints == 4: n = 4; a = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        if dimensionpoint == 16 and nrpoints == 8: n = 8; a = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3]
-        if dimensionpoint == 16 and nrpoints == 16: n = 16; a = [1, 7, 5, 3, 5, 3, 7, 1, 1, 7, 3, 5,1, 7, 3, 5]
-        if dimensionpoint == 16 and nrpoints == 32: n = 32; a = [1, 7, 5, 15, 9, 3, 11, 13, 1, 7, 9, 15, 3, 13, 5, 11]
-        if dimensionpoint == 16 and nrpoints == 50: n = 50; a = [1, 21, 19, 9, 11, 23, 17, 13, 7, 3, 1, 23, 21, 11, 3, 7]
-        if dimensionpoint == 16 and nrpoints == 100: n = 100; a = [1, 41, 27, 17, 11, 31, 13, 21, 43, 49, 3, 37, 33, 9, 47, 19]
-        if dimensionpoint == 16 and nrpoints == 200: n = 200; a = [1, 59, 93, 43, 19, 53, 89, 33, 97, 77, 69, 51, 21, 29, 27, 83]
-        if dimensionpoint == 16 and nrpoints == 500: n = 500; a = [1, 211, 191, 223, 123, 151, 109, 161, 183, 29, 233, 19, 177, 247, 201, 51]
-        if dimensionpoint == 25 and nrpoints == 1: n = 1; a = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        if dimensionpoint == 25 and nrpoints == 2: n = 2; a = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        if dimensionpoint == 25 and nrpoints == 4: n = 4; a = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        if dimensionpoint == 25 and nrpoints == 8: n = 8; a = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1]
-        if dimensionpoint == 25 and nrpoints == 16: n = 16; a = [1, 7, 5, 3, 5, 3, 7, 1, 1, 7, 3, 5, 1, 7, 3, 5, 1, 7, 3, 5, 1, 7, 3, 5, 7]
-        if dimensionpoint == 25 and nrpoints == 32: n = 32; a = [1, 7, 5, 15, 9, 3, 11, 13, 1, 7, 9, 15, 3, 13, 5, 11, 1, 7, 9, 15, 3, 13, 5, 11, 1]
-        if dimensionpoint == 25 and nrpoints == 50: n = 50; a = [1, 21, 19, 9, 11, 23, 17, 13, 7, 3, 1, 23, 21, 11, 3, 7, 19, 13, 17, 9, 1, 23, 13, 19, 3]
-        if dimensionpoint == 25 and nrpoints == 100: n = 100; a = [1, 41, 27, 17, 11, 31, 13, 21, 43, 49, 3, 37, 33, 9, 47, 19, 23, 29, 7, 39, 1, 27, 17, 31, 47]
-        if dimensionpoint == 25 and nrpoints == 200: n = 200; a = [1, 59, 93, 43, 19, 53, 89, 33, 97, 77, 69, 51, 21, 29, 27, 83, 61, 13, 9, 73, 37, 11, 99, 71, 7]
-        if dimensionpoint == 25 and nrpoints == 500: n = 500; a = [1, 211, 191, 223, 123, 151, 109, 161, 183, 29, 233, 19, 177, 247, 201, 51, 227, 37, 97, 139, 33, 141, 137, 147, 119]
+        if nrpoints == 1: n = 1; a = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        if nrpoints == 2: n = 2; a = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        if nrpoints == 4: n = 4; a = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        if nrpoints == 8: n = 8; a = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1]
+        if nrpoints == 16: n = 16; a = [1, 7, 5, 3, 5, 3, 7, 1, 1, 7, 3, 5, 1, 7, 3, 5, 1, 7, 3, 5, 1, 7, 3, 5, 7]
+        if nrpoints == 32: n = 32; a = [1, 7, 5, 15, 9, 3, 11, 13, 1, 7, 9, 15, 3, 13, 5, 11, 1, 7, 9, 15, 3, 13, 5, 11, 1]
+        if nrpoints == 50: n = 50; a = [1, 21, 19, 9, 11, 23, 17, 13, 7, 3, 1, 23, 21, 11, 3, 7, 19, 13, 17, 9, 1, 23, 13, 19, 3]
+        if nrpoints == 100: n = 100; a = [1, 41, 27, 17, 11, 31, 13, 21, 43, 49, 3, 37, 33, 9, 47, 19, 23, 29, 7, 39, 1, 27, 17, 31, 47]
+        if nrpoints == 200: n = 200; a = [1, 59, 93, 43, 19, 53, 89, 33, 97, 77, 69, 51, 21, 29, 27, 83, 61, 13, 9, 73, 37, 11, 99, 71, 7]
+        if nrpoints == 500: n = 500; a = [1, 211, 191, 223, 123, 151, 109, 161, 183, 29, 233, 19, 177, 247, 201, 51, 227, 37, 97, 139, 33, 141, 137, 147, 119]
+
+        a = [ a[d] for d in range( dimensionpoint ) ]
+
         result = [[ ( (i * aj % n) / float(n) + randomizer ) % 1 for aj in a] for i in range(n)]
         #result = [[ 0.1 for aj in a] for i in range(n)]
 
@@ -99,7 +64,7 @@ class ScenarioTreeNode:
     def TransformInverse( points, nrpoints, dimensionpoint, distribution, average, std = 0 ):
 
         if distribution == Constants.Normal or distribution == Constants.NonStationary:
-            result = [[ max( np.floor( scipy.stats.norm.ppf( points[i][p], average[p], std[p]) ), 0.0) for i in range(nrpoints) ] for p in range(dimensionpoint) ]
+            result = [[ float( max( np.floor( scipy.stats.norm.ppf( points[i][p], average[p], std[p]) ), 0.0) ) for i in range(nrpoints) ] for p in range(dimensionpoint) ]
 
         if distribution == Constants.SlowMoving:
             result = [[scipy.stats.poisson.ppf(points[i][p], average[p]) for i in range(nrpoints)] for p in range(dimensionpoint)]
@@ -131,10 +96,11 @@ class ScenarioTreeNode:
                 points = [ [ 0  for pt in range(nrpoints)] for p in range(dimensionpoint) ]
                 for p in range(dimensionpoint):
                     for i in range(nrpoints):
-                        if np.random.random_sample() >= 0.2 or average[p] == 0:
+                        randompoint = scipy.random.uniform(0, 1)
+                        if randompoint < 0.8 or average[p] == 0:
                             points[p][i] = 0;
                         else:
-                            points[p][i] = np.round( np.random.poisson((average[p]) / 0.2, 1)[0] + 1, 0 );
+                            points[p][i] = scipy.stats.poisson.ppf( ( points[i][p] - 0.8 ) / 0.2, (average[p]) / 0.2 ) +1
             elif distribution == Constants.Uniform:
                 points = [[0.0 if(  average[p] <= 0 or np.random.uniform(0,1) < 0.5 ) else 1.0
                                for i in range(nrpoints)] for p in range(dimensionpoint)]

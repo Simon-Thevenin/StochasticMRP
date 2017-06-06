@@ -26,7 +26,7 @@ if __name__ == "__main__":
                 for generation in ["MC", "RQMC"]:
                     scenarset = ["512"]
                     policyset = [ "NearestNeighbor", "Re-solve"]
-                    scenarioasYPset = ["False", "True"]
+                    scenarioasYPset = ["False"]
                     avg = False
                     if m == "YQFix":
                         scenarset = ["2", "4", "8", "50", "100", "200", "500"]
@@ -71,7 +71,7 @@ for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
             for generation in ["MC", "RQMC"]:
                 scenarset = ["512"]
                 policyset = ["NearestNeighbor", "Re-solve"]
-                scenarioasYPset = ["False", "True"]
+                scenarioasYPset = ["False"]
                 avg = False
                 if m == "YQFix":
                     scenarset = ["2", "4", "8", "50", "100", "200", "500"]
