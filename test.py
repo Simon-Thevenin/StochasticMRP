@@ -267,7 +267,7 @@ def SolveAndEvaluateYFix( method = "MIP", nrevaluation = 2, nrscenario = 1, nrso
             for i in range(3 + Instance.NrLevel):
                 InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
         if method == "SDDP":
-            sddpsolver = SDDP()
+            sddpsolver = SDDP( Instance )
             sddpsolver.Run()
 
 
@@ -352,8 +352,8 @@ if __name__ == "__main__":
         Instance.LoadScenarioFromFile = False
         PrintScenarios = False
 
-        #Instance.DefineAsSuperSmallIntance()
-        Instance.ReadInstanceFromExelFile( instancename + "_" + distribution )
+        Instance.DefineAsSuperSmallIntance()
+        #Instance.ReadInstanceFromExelFile( instancename + "_" + distribution )
 
         #Instance.ReadFromFile( instancename, distribution )
         #Instance.SaveCompleteInstanceInExelFile()

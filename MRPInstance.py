@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
 import openpyxl as opxl
-
-print(opxl.__version__)
 import itertools as itools
 import math
 from ScenarioTree import ScenarioTree

@@ -7,4 +7,8 @@ rm ./Test/SolveInfo/*
 
 rm ./Test/Statistic/* 
 
-rm ./Test/*  
+rm ./Test/*
+
+rm ./Solutions/*
+
+rm ./job*

@@ -14,33 +14,33 @@ class SDDPStage:
         self.SDDPOwner = owner
         self.PreviousSDDPStage = previousstage
         self.NextSDDPStage = nextstage
+        #A Cplex MIP object will be associated to each stage later.
         self.Cplex = cplex.Cplex()
-        self.DecisionStage = -1
+        #The variable MIPDefined is turned to True when the MIP is built
+        self.MIPDefined = False
+        self.DecisionStage = decisionstage
         self.Instance = self.SDDPOwner.Instance
-
-        self.MIP = None
 
         #The following attribute will contain the coefficient of hte variable in the cuts
         self.CoefficientConstraint = []
         #The following variable constains the value at which the variables are fixed
         self.VariableFixedTo = []
-
+        #The number of variable of each type in the stage will be set later
         self.NrProductionVariable = 0
         self.NrQuantityVariable = 0
         self.NrStockVariable = 0
         self.NrBackOrderVariable = 0
-
         self.ComputeNrVariables()
-
+        #The start of the index of each variable
         self.StartProduction = 0
         self.StartQuantity = self.StartProduction + self.NrProductionVariable
-        self.StartStock = self.StartStock + self.NrStockVariable
-        self.StartBackOrder = self.StartBackOrder + self.NrBackOrderVariable
-
-
-
+        self.StartStock = self.StartQuantity + self.NrQuantityVariable
+        self.StartBackOrder = self.StartStock + self.NrStockVariable
         # Demand and materials requirement: set the value of the invetory level and backorder quantity according to
         #  the quantities produced and the demand
+
+
+        self.M = cplex.infinity
 
     def IsLastStage(self):
         return self.DecisionStage == self.Instance.NrTimeBucket
@@ -156,14 +156,23 @@ class SDDPStage:
                                   lb = [0.0] * self.NrStockVariable,
                                   ub = [self.M] * self.NrStockVariable )
 
-        self.Cplex.variables.add( obj = [self.Instance.BackorderCosts[  self.Instance.ProductWithExternalDemandIndex[p] ] for p in self.Instance.ProductWithExternalDemand ],
-                                  lb = [0.0] * self.NrBackOrderVariable,
-                                  ub = [self.M] * self.NrBackOrderVariable )
+
+        self.Cplex.variables.add( obj = [math.pow( self.Instance.Gamma, self.DecisionStage ) * self.Instance.BackorderCosts[  self.Instance.ProductWithExternalDemandIndex[p] ]
+                                             if not self.IsLastStage()
+                                             else math.pow( self.Instance.Gamma, self.DecisionStage ) * self.Instance.LostSaleCost[  self.Instance.ProductWithExternalDemandIndex[p] ]
+                                             for p in self.Instance.ProductWithExternalDemand ],
+                                      lb = [0.0] * self.NrBackOrderVariable,
+                                      ub = [self.M] * self.NrBackOrderVariable )
 
 
     def DefineMIP( self ):
+
+        if Constants.Debug:
+            print "Define the MIP of stage %d" % self.DecisionStage
+
         self.DefineVariables()
 
+        self.MIPDefined = True
 
     #The function below update the constraint of the MIP to correspond to the new scenario
     def UpdateMIP( self ):
@@ -174,7 +183,7 @@ class SDDPStage:
         if Constants.Debug:
             print "build the MIP of stage %d" %self.DecisionStage
 
-        if self.MIP is None:
+        if self.MIPDefined:
             self.DefineMIP()
         else:
             self.UpdateMIP()
@@ -182,9 +191,16 @@ class SDDPStage:
     # This function run the MIP of the current stage
     def Run(self):
         if Constants.Debug:
-            print "Run the MIP of stage %d" % self.DecisionStage
+            print "Update the MIP of stage %d" % self.DecisionStage
+            self.Cplex.write( "stage_%d_iter_%d.lp" %( self.DecisionStage, self.SDDPOwner.CurrentIteration ) )
 
         if self.MIP is None:
             self.DefineMIP()
         else:
             self.UpdateMIP()
+
+
+
+    def GernerateCut( self ):
+        if Constants.Debug:
+            print "Generate a cut to add at stage %d" % self.PreviousSDDPStage.DecisionStage

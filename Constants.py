@@ -14,6 +14,7 @@ class Constants:
     MonteCarlo = "MC"
     RQMC = "RQMC"
 
-    Debug = False
+    Debug = True
     Infinity = 999999999999.9
     AlgorithmTimeLimit = 3600.0
+    AlgorithmOptimalityTolerence = 0.00001
