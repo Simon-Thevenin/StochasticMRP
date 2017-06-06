@@ -224,6 +224,7 @@ class MRPInstance:
             self.ProductWithExternalDemandIndex[p] = index
             index = index + 1
 
+        index = 0
         self.ProductWithoutExternalDemandIndex = [ 0 for p in self.ProductSet ]
         for p in self.ProductWithoutExternalDemand:
             self.ProductWithoutExternalDemandIndex[p] = index

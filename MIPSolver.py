@@ -141,7 +141,6 @@ class MIPSolver(object):
             if self.UseImplicitNonAnticipativity:
                 self.StartProdustionVariableYFix =  self.StartProductionVariableWithoutNonAnticipativity
 
-
     # This function returns the name of the quantity variable for product p and time t
     def GetNameQuantityVariable(self, p, t, w):
         scenarioindex = -1
@@ -155,7 +154,6 @@ class MIPSolver(object):
 
         return "q_p_t_s_%d_%d_%d" % (p, t, scenarioindex)
 
-
     # This function returns the name of the inventory variable for product p and time t
     def GetNameInventoryVariable(self, p, t, w):
         scenarioindex = -1;
@@ -166,7 +164,6 @@ class MIPSolver(object):
             scenarioindex = self.Scenarios[w].InventoryVariable[t][p]
 
         return "i_%d_%d_%d" % (p, t, scenarioindex)
-
 
     # This function returns the name of the production variable for product p and time t
     def GetNameProductionVariable( self, p, t, w ):
@@ -179,7 +176,6 @@ class MIPSolver(object):
             scenarioindex = self.Scenarios[w].ProductionVariable[t][p]
 
         return "p_%d_%d_%d" % (p, t, scenarioindex)
-
 
     # This function returns the name of the backorder variable for product p and time t
     def GetNameBackOrderQuantity(self, p, t, w):

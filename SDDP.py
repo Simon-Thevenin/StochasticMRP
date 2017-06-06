@@ -1,6 +1,7 @@
 from Constants import Constants
 from MRPSolution import MRPSolution
 from SDDPStage import SDDPStage
+from ScenarioTree import ScenarioTree
 import time
 # This class contains the attributes and methodss allowing to define the SDDP algorithm.
 class SDDP:
@@ -23,29 +24,32 @@ class SDDP:
 
     def __init__(self, instance):
         self.Instance = instance
-        self.Stage = [ SDDPStage( owner=self, decisionstage = t) for t in self.Instance.TimeBucketSet ]
-        self.LinkStages()
+        self.StagesSet = range( self.Instance.NrTimeBucket + 1 )
         self.CurrentIteration = 0
         self.CurrentLowerBound = 0
         self.CurrentUpperBound = Constants.Infinity
         self.StartOfAlsorithm = time.time()
+        self.CurrentSetOfScenarios = []
+        self.ScenarioNrSet = []
+        self.CurrentScenarioSeed = 0
+        self.Stage = [ SDDPStage( owner=self, decisionstage = t) for t in self.StagesSet ]
+        self.LinkStages()
 
     #This function make the forward pass of SDDP
     def ForwardPass(self):
         if Constants.Debug:
             print "Start forward pass"
-        for t in self.Instance.TimeBucketSet:
-            #Build or update the MIP of stage t
-            self.Stage[t].BuildMIP();
-            #Run The MIP
-            self.Stage[t].Run();
+        for t in self.StagesSet:
+            #Run the forward pass at each stage t
+            self.Stage[t].RunForwardPassMIP()
+
 
     #This function make the backward pass of SDDP
     def BackwardPass(self):
         if Constants.Debug:
             print "Start Backward pass"
 
-        for t in reversed( range( 1, self.Instance.NrTimeBucket) ):
+        for t in reversed( range( 1, len( self.StagesSet ) ) ):
             #Build or update the MIP of stage t
             self.Stage[t].GernerateCut();
 
@@ -55,12 +59,34 @@ class SDDP:
 
 
     #This function generates the scenarios for the current iteration of the algorithm
-    def GenerateScenarios(self):
+    def GenerateScenarios(self, nrscenario ):
         if Constants.Debug:
             print "Start generation of new scenarios"
 
+        #Generate a scenario tree
+        treestructure = [ 1, nrscenario ] + [1] * ( self.Instance.NrTimeBucket - 1 ) + [0]
+        scenariotree = ScenarioTree( self.Instance, treestructure, self.CurrentScenarioSeed )
+
+        #Get the set of scenarios
+        self.CurrentSetOfScenarios = scenariotree.GetAllScenarios( computeindex= False )
+        self.ScenarioNrSet = range( len(  self.CurrentSetOfScenarios ) )
+
+        #Modify the number of scenario at each stage
+        for stage in self.StagesSet:
+            self.Stage[ stage ].SetNrScenario( len(  self.CurrentSetOfScenarios ) )
+
     #This function return the quanity of product to produce at time which has been decided at an earlier stage
     def GetQuantityFixedEarlier(self, product, time, scenario):
+        result = 0
+        return result
+
+    # This function return the inventory quanity of product to produce at time which has been decided at an earlier stage
+    def GetInventoryFixedEarlier(self, product, time, scenario):
+        result = 0
+        return result
+
+        # This function return the backordered quantity of product which has been decided at an earlier stage
+    def GetBackorderFixedEarlier(self, product, time, scenario):
         result = 0
         return result
 
@@ -87,10 +113,11 @@ class SDDP:
         duration = time.time() - self.StartOfAlsorithm
         timalimiteached = ( duration > Constants.AlgorithmTimeLimit )
         optimalitygap = self.CurrentUpperBound - self.CurrentLowerBound
-        optimalitygapreached = ( ( self.CurrentUpperBound - self.CurrentLowerBound ) < Constants.AlgorithmOptimalityTolerence )
-        result = optimalitygapreached or timalimiteached
+        optimalitygapreached = ( optimalitygap < Constants.AlgorithmOptimalityTolerence )
+        iterationlimitreached = ( self.CurrentIteration > Constants.SDDPIterationLimit )
+        result = optimalitygapreached or timalimiteached or iterationlimitreached
         if Constants.Debug:
-            print "Iteration: %d, Duration: %d, LB: %d, UB: %d " %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentUpperBound)
+            print "Iteration: %d, Duration: %d, LB: %d, UB: %d, Gap: %d " %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentUpperBound, optimalitygap)
 
         return result
 
@@ -107,7 +134,7 @@ class SDDP:
         self.StartOfAlsorithm = time.time()
 
         while not self.CheckStoppingCriterion():
-            self.GenerateScenarios()
+            self.GenerateScenarios( 1 )
             self.ForwardPass()
             self.UpdateLowerBound()
             self.UpdateUpperBound()
