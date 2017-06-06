@@ -46,7 +46,7 @@ class SDDPStage:
         return self.DecisionStage == self.Instance.NrTimeBucket
 
     def IsFirstStage(self):
-        return self.DecisionStage == 1
+        return self.DecisionStage == 0
 
     def ComputeNrVariables(self):
         #number of variable at stage 1<t<T
@@ -89,7 +89,28 @@ class SDDPStage:
         else :
             return self.StartBackOrder + self.Instance.ProductWithExternalDemandIndex[p]
 
+        def GetNameProductionVariable(self, p, t):
+            if self.IsFirstStage():
+                return "Y_%d_%d"%(p, t )
+            else:
+                raise ValueError('Production variables are only defined at stage 0')
 
+        def GetNameQuantityVariable(self, p):
+            time =
+            return "Q_%d_%d"%(p, time )
+
+        def GetNameStockVariable(self, p):
+            time =
+            return "I_%d_%d"%(p, t ime)
+
+        def GetNameBackorderVariable(self, p):
+            time =
+            return "I_%d_%d" % (p, time)
+
+
+    def GetTimePeriodAssociatedToQuantityVariable( self, p ):
+        result = 0
+        return result
 
     # def CreateFlowConstraints(self):
     #     self.FlowConstraintNR = [[["" for t in self.Instance.TimeBucketSet] for p in self.Instance.ProductSet] for w in
@@ -143,16 +164,20 @@ class SDDPStage:
                                             for p in self.Instance.ProductSet
                                             for t in self.Instance.TimeBucketSet],
                                   lb = [0.0] * self.NrProductionVariable,
-                                  ub = [self.M] * self.NrQuantityVariable )
+                                  ub = [self.M] * self.NrProductionVariable )
 
 
+        productwithstockvariable = self.Instance.ProductSet
+        #At the first stage, only the components are associated with a stock variable
+        if self.IsFirstStage():
+            productwithstockvariable = self.Instance.ProductWithoutExternalDemand
 
         self.Cplex.variables.add( obj = [ math.pow( self.Instance.Gamma, self.DecisionStage )
                                           * self.Instance.InventoryCosts[p]
-                                          if self.Instance.HasExternaldemand[p] else
+                                          if self.Instance.HasExternalDemand[p] else
                                           math.pow(self.Instance.Gamma, self.DecisionStage +1)
                                           * self.Instance.InventoryCosts[p]
-                                          for p in self.Instance.ProductSet ],
+                                          for p in productwithstockvariable ],
                                   lb = [0.0] * self.NrStockVariable,
                                   ub = [self.M] * self.NrStockVariable )
 
@@ -166,7 +191,6 @@ class SDDPStage:
 
 
     def DefineMIP( self ):
-
         if Constants.Debug:
             print "Define the MIP of stage %d" % self.DecisionStage
 
@@ -183,7 +207,7 @@ class SDDPStage:
         if Constants.Debug:
             print "build the MIP of stage %d" %self.DecisionStage
 
-        if self.MIPDefined:
+        if not self.MIPDefined:
             self.DefineMIP()
         else:
             self.UpdateMIP()
@@ -194,10 +218,7 @@ class SDDPStage:
             print "Update the MIP of stage %d" % self.DecisionStage
             self.Cplex.write( "stage_%d_iter_%d.lp" %( self.DecisionStage, self.SDDPOwner.CurrentIteration ) )
 
-        if self.MIP is None:
-            self.DefineMIP()
-        else:
-            self.UpdateMIP()
+        self.Cplex.solve()
 
 
 

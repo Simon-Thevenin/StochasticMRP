@@ -352,8 +352,8 @@ if __name__ == "__main__":
         Instance.LoadScenarioFromFile = False
         PrintScenarios = False
 
-        Instance.DefineAsSuperSmallIntance()
-        #Instance.ReadInstanceFromExelFile( instancename + "_" + distribution )
+        #Instance.DefineAsSuperSmallIntance()
+        Instance.ReadInstanceFromExelFile( instancename + "_" + distribution )
 
         #Instance.ReadFromFile( instancename, distribution )
         #Instance.SaveCompleteInstanceInExelFile()

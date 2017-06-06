@@ -37,7 +37,7 @@ class SDDP:
             #Build or update the MIP of stage t
             self.Stage[t].BuildMIP();
             #Run The MIP
-            self.Stage[t].Cplex.solve();
+            self.Stage[t].Run();
 
     #This function make the backward pass of SDDP
     def BackwardPass(self):
