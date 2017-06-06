@@ -261,7 +261,6 @@ class MIPSolver(object):
         if self.Model == Constants.ModelYFix: return self.NrProductionVariablesYFix
         if self.Model == Constants.Model_Fix: return self.NrProductionVariables
 
-
     # This function define the variables
     def CreateVariable( self ):
         # Define the cost vector for each variable. As the numbber of variable changes when non anticipativity is used the cost are created differently
@@ -397,7 +396,6 @@ class MIPSolver(object):
             varnames = quantityvars + inventoryvars + productionvars + backordervars
             self.Cplex.variables.set_names(varnames)
 
-
     # Print a constraint (usefull for debugging)
     def PrintConstraint( vars, coeff, righthandside):
         print "Add the following constraint:"
@@ -407,7 +405,6 @@ class MIPSolver(object):
         print coeff
         print "----------------Rhs-----------------------------"
         print righthandside
-
 
     # To evaluate the solution obtained with the expected demand, the solution quanitity are constraint to be equal to some values
     # This function creates the Capacity constraint
@@ -502,7 +499,6 @@ class MIPSolver(object):
                                                            names = ["Flow%d%d%d"%(p,t,w)])
                     self.FlowConstraintNR[w][p][t] = "Flow%d%d%d"%(p,t,w)
 
-
     # This function creates the  indicator constraint to se the production variable to 1 when a positive quantity is produce
     def CreateProductionConstraints( self ):
         AlreadyAdded = [ [ False for v in range( self.GetNrQuantityVariable() ) ]  for w in range( self.GetNrProductionVariable() ) ]
@@ -532,7 +528,6 @@ class MIPSolver(object):
                         self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                                     senses=["G"],
                                                                     rhs=righthandside)
-
 
     # This function creates the Capacity constraint
     def CreateCapacityConstraints( self ):
@@ -731,7 +726,7 @@ class MIPSolver(object):
             s.PrintScenarioToExcel( writer )
         writer.save()
 
-
+    #This function compute the cost per scenario
     def ComputeCostPerScenario( self ):
         # Compute the cost per scenario:
         costperscenarion = [ sum( self.Cplex.solution.get_values( [self.GetIndexInventoryVariable(p, t, w)] )[0]
@@ -764,8 +759,7 @@ class MIPSolver(object):
 
         return costperscenarion, Average, std_dev
 
-
-
+    #This function return the upperbound on hte quantities infered from the demand
     def GetBigMDemValue( self, p ):
         mdem = 0
         if self.Instance.HasExternalDemand[ p ] :
@@ -808,6 +802,8 @@ class MIPSolver(object):
 
         # This function modify the MIP tosolve the scenario tree given in argument.
         # It is assumed that both the initial scenario tree and the new one have a single scenario
+
+    #This function modify the MIP to fix the quantities given in argument
     def ModifyMipForFixQuantity(self, givenquanities):
             # Redefine the flow conservation constraint
             constrainttuples = []

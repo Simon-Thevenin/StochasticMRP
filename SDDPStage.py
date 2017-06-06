@@ -89,27 +89,39 @@ class SDDPStage:
         else :
             return self.StartBackOrder + self.Instance.ProductWithExternalDemandIndex[p]
 
-        def GetNameProductionVariable(self, p, t):
-            if self.IsFirstStage():
-                return "Y_%d_%d"%(p, t )
-            else:
-                raise ValueError('Production variables are only defined at stage 0')
+    def GetNameProductionVariable(self, p, t):
+        if self.IsFirstStage():
+            return "Y_%d_%d"%(p, t )
+        else:
+            raise ValueError('Production variables are only defined at stage 0')
 
-        def GetNameQuantityVariable(self, p):
-            time =
-            return "Q_%d_%d"%(p, time )
+    def GetNameQuantityVariable(self, p):
+        time = self.GetTimePeriodAssociatedToQuantityVariable( p )
+        return "Q_%d_%d"%(p, time )
 
-        def GetNameStockVariable(self, p):
-            time =
-            return "I_%d_%d"%(p, t ime)
+    def GetNameStockVariable(self, p):
+        time = self.GetTimePeriodAssociatedToInventoryVariable( p )
+        return "I_%d_%d"%(p, time)
 
-        def GetNameBackorderVariable(self, p):
-            time =
-            return "I_%d_%d" % (p, time)
-
+    def GetNameBackorderVariable(self, p):
+         time = self.GetTimePeriodAssociatedToBackorderVariable( p )
+         return "I_%d_%d" % (p, time)
 
     def GetTimePeriodAssociatedToQuantityVariable( self, p ):
-        result = 0
+        result = self.DecisionStage
+        return result
+
+    def GetTimePeriodAssociatedToInventoryVariable( self, p ):
+        result = self.DecisionStage
+        if self.Instance.HasExternalDemand[p]:
+            result = self.DecisionStage + 1
+
+        return result
+
+    def GetTimePeriodAssociatedToBackorderVariable( self, p ):
+        result = self.DecisionStage
+        if not self.Instance.HasExternalDemand[p]:
+            raise ValueError('Backorder variables are not defined for component')
         return result
 
     # def CreateFlowConstraints(self):
@@ -189,6 +201,36 @@ class SDDPStage:
                                       lb = [0.0] * self.NrBackOrderVariable,
                                       ub = [self.M] * self.NrBackOrderVariable )
 
+        if Constants.Debug:
+            self.AddVariableName()
+
+
+
+    def AddVariableName(self):
+        print "Add the names of the variable"
+        # Define the variable name.
+        # Usefull for debuging purpose. Otherwise, disable it, it is time consuming.
+        if Constants.Debug:
+            quantityvars = []
+            inventoryvars = []
+            productionvars = []
+            backordervars = []
+            if self.IsFirstStage():
+                for p in self.Instance.ProductSet:
+                    for t in self.Instance.TimeBucketSet:
+                        productionvars.append((self.GetIndexProductionVariable(p, t), self.GetNameProductionVariable(p, t)))
+
+            quantityvars.append( ( self.GetIndexQuantityVariable(p), self.GetNameQuantityVariable(p) ) )
+            inventoryvars.append( ( self.GetIndexStockVariable(p), self.GetNameStockVariable(p) ) )
+            if self.Instance.HasExternalDemand[p] and not self.IsFirstStage():
+                     backordervars.append( ( self.GetIndexBackorderVariable(p), self.GetNameBackorderVariable(p) ) )
+
+            quantityvars = list( set( quantityvars ) )
+            productionvars = list( set( productionvars ) )
+            inventoryvars = list( set( inventoryvars ) )
+            backordervars = list( set( backordervars ) )
+            varnames = quantityvars + inventoryvars + productionvars + backordervars
+            self.Cplex.variables.set_names(varnames)
 
     def DefineMIP( self ):
         if Constants.Debug:

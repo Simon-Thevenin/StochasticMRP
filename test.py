@@ -74,7 +74,6 @@ def PrintResult():
     wr.writerow( data )
     myfile.close()
 
-
 def PrintFinalResult():
     data = TestIdentifier + CompactSolveInformation + InSampleKPIStat + OutOfSampleTestResult
     d = datetime.now()

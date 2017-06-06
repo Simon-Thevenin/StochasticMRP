@@ -109,8 +109,7 @@ class MRPSolution:
         self.InSampleAverageBackOrder = -1
         self.InSampleAverageLostSale = -1
 
-
-
+    #This function compute some statistic on the current solution
     def ComputeStatistics( self ):
 
         scenarioset = range( len( self.Scenarioset ) )
@@ -173,6 +172,7 @@ class MRPSolution:
         self.InSamplePercentLostSale = 100 * ( sum( self.InSampleTotalLostSalePerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
         self.InSamplePercentOnTime = 100 * ( sum( self.InSampleTotalOnTimePerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
 
+    #This function print hthe statistic in an Excel file
     def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed):
 
         scenarioset = range(len(self.Scenarioset))
@@ -344,7 +344,7 @@ class MRPSolution:
         self.BackOrder.columns = pd.MultiIndex.from_product(
             [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet ], names=['scenario', 'time'])
 
-
+    #After having merged two solution, this function reshape the dataframe to have them in 3 dimension
     def ReshapeAfterMerge( self ):
         self.InventoryLevel.columns =  self.InventoryLevel.columns.swaplevel()
         self.InventoryLevel.sortlevel(0, axis=1, inplace=True)

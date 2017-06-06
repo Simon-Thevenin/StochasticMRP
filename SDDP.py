@@ -5,13 +5,14 @@ import time
 # This class contains the attributes and methodss allowing to define the SDDP algorithm.
 class SDDP:
 
-
-    def GetSDDPStage(self, time):
+    #return the object stage associated with the decision stage given in paramter
+    def GetSDDPStage(self, decisionstage):
         result = None
-        if time >= 0:
-            result = self.Stage[time]
+        if decisionstage >= 0:
+            result = self.Stage[decisionstage]
         return result
 
+    #Fill the links predecessor and next of each object stage
     def LinkStages(self):
         previousstage = None
         for stage in self.Stage:
