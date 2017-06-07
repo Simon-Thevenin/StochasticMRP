@@ -10,8 +10,7 @@ class SDDPStage:
                  owner = None,
                  previousstage = None,
                  nextstage = None,
-                 decisionstage = -1,
-                 scenarioset = [] ):
+                 decisionstage = -1 ):
 
         self.SDDPOwner = owner
         self.PreviousSDDPStage = previousstage
@@ -169,9 +168,9 @@ class SDDPStage:
             dependentdemandvar = []
             dependentdemandvarcoeff = []
             righthandside = [-1 * self.Instance.StartingInventories[p]]
-            if self.Instance.HasExternalDemand[p]:
+            if self.Instance.HasExternalDemand[p] and not self.IsFirstStage():
                  righthandside[0] = righthandside[0] \
-                                    + self.SDDPOwner.CurrentSetOfScenarios[ self.CurrentScenario ].Demands[self.GetTimePeriodAssociatedToQuantityVariable(p)] \
+                                    + self.SDDPOwner.CurrentSetOfScenarios[ self.CurrentScenarioNr ].Demands[self.GetTimePeriodAssociatedToQuantityVariable(p)] \
                                     - self.SDDPOwner.GetInventoryFixedEarlier( p, self.GetTimePeriodAssociatedToQuantityVariable(p) - 1, self.CurrentScenarioNr )
 
                  backordervar = [ self.GetIndexBackorderVariable(p) ]
@@ -184,7 +183,7 @@ class SDDPStage:
                                + self.SDDPOwner.GetQuantityFixedEarlier( p, self.GetTimePeriodAssociatedToQuantityVariable(p) - self.Instance.Leadtimes[p], self.CurrentScenarioNr ) \
                                + self.SDDPOwner.GetInventoryFixedEarlier( p, self.GetTimePeriodAssociatedToQuantityVariable(p) - 1, self.CurrentScenarioNr ) \
 
-            inventoryvar = [self.GetIndexInventoryVariable(p)]
+            inventoryvar = [self.GetIndexStockVariable(p)]
 
             vars = inventoryvar + backordervar + dependentdemandvar
             coeff = [-1] * len(inventoryvar) \

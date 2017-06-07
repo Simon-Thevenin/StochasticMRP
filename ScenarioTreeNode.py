@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Constants import Constants
 from Tool import Tool
+from RQMCGenerator import RQMCGenerator
 import scipy as scipy
 
 class ScenarioTreeNode:
@@ -33,31 +34,7 @@ class ScenarioTreeNode:
              return demandvector
 
     #This method generate a set of points in [0,1] using RQMC. The points are generated with the library given on the website of P. Lecuyer
-    @staticmethod
-    def RQMC01( nrpoints, dimensionpoint ):
-        randomizer = np.random.uniform( 0.0 , 10.0)
-        result=[]
-        #For dimension 3 only, and nr point in 2, 4, 8, 16, 32
-        n = -1
-        a = []
-        #reurn the array given by the library
-        if nrpoints == 1: n = 1; a = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        if nrpoints == 2: n = 2; a = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        if nrpoints == 4: n = 4; a = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        if nrpoints == 8: n = 8; a = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1]
-        if nrpoints == 16: n = 16; a = [1, 7, 5, 3, 5, 3, 7, 1, 1, 7, 3, 5, 1, 7, 3, 5, 1, 7, 3, 5, 1, 7, 3, 5, 7]
-        if nrpoints == 32: n = 32; a = [1, 7, 5, 15, 9, 3, 11, 13, 1, 7, 9, 15, 3, 13, 5, 11, 1, 7, 9, 15, 3, 13, 5, 11, 1]
-        if nrpoints == 50: n = 50; a = [1, 21, 19, 9, 11, 23, 17, 13, 7, 3, 1, 23, 21, 11, 3, 7, 19, 13, 17, 9, 1, 23, 13, 19, 3]
-        if nrpoints == 100: n = 100; a = [1, 41, 27, 17, 11, 31, 13, 21, 43, 49, 3, 37, 33, 9, 47, 19, 23, 29, 7, 39, 1, 27, 17, 31, 47]
-        if nrpoints == 200: n = 200; a = [1, 59, 93, 43, 19, 53, 89, 33, 97, 77, 69, 51, 21, 29, 27, 83, 61, 13, 9, 73, 37, 11, 99, 71, 7]
-        if nrpoints == 500: n = 500; a = [1, 211, 191, 223, 123, 151, 109, 161, 183, 29, 233, 19, 177, 247, 201, 51, 227, 37, 97, 139, 33, 141, 137, 147, 119]
 
-        a = [ a[d] for d in range( dimensionpoint ) ]
-
-        result = [[ ( (i * aj % n) / float(n) + randomizer ) % 1 for aj in a] for i in range(n)]
-        #result = [[ 0.1 for aj in a] for i in range(n)]
-
-        return result
 
     # Apply the inverse of  the given distribution for each point (generated in [0,1]) in the set.
     @staticmethod
@@ -118,7 +95,7 @@ class ScenarioTreeNode:
             idnonzero = [  p  for p in range( dimensionpoint ) if average[p] > 0 ]
             avg = [ average[prod] for prod in idnonzero ]
             stddev = [std[prod] for prod in idnonzero ]
-            pointsin01 = ScenarioTreeNode.RQMC01(nrpoints, nrnonzero)
+            pointsin01 = RQMCGenerator.RQMC01(nrpoints, nrnonzero)
             rqmcpoints = ScenarioTreeNode.TransformInverse( pointsin01, nrpoints, nrnonzero, distribution, avg, stddev )
 
             for p in range( nrnonzero ):  # instance.ProductWithExternalDemand:
@@ -182,9 +159,9 @@ class ScenarioTreeNode:
                 nextdemands = []
                 probabilities = [1]
             else:
-                if self.Owner.GenerateasYQfix:
-                    nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
-                elif self.Owner.ScenarioGenerationMethod == Constants.RQMC and self.Owner.GenerateRQMCForYQFix and not time >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ):
+                #if self.Owner.GenerateasYQfix:
+                #    nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
+                if self.Owner.ScenarioGenerationMethod == Constants.RQMC and self.Owner.GenerateRQMCForYQFix and not time >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ):
                     nextdemands = self.GetDemandRQMCForYQFix( t-1, nrbranch, firstbranchid )
                 elif t <= self.Owner.FollowGivenUntil:
                     nextdemands = self.GetDemandToFollowFirstPeriods( t-1 )

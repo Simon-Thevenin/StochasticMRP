@@ -2,6 +2,7 @@ from ScenarioTreeNode import ScenarioTreeNode
 from Scenario import Scenario
 import cPickle as pickle
 import numpy as np
+from RQMCGenerator import RQMCGenerator
 import os
 from Constants import Constants
 
@@ -22,34 +23,34 @@ class ScenarioTree:
         self.GivenFirstPeriod = givenfirstperiod
         self.FollowGivenUntil = len(self.GivenFirstPeriod )
         #In case the scenario tree has to be the same aas the two stage (YQFix) scenario tree.
-        self.GenerateasYQfix = generateasYQfix
+        #self.GenerateasYQfix = generateasYQfix
         self.Distribution = instance.Distribution
         self.DemandToFollow = []
         #Generate the demand of YFix, then replicate them in the generation of the scenario tree
-        if self.GenerateasYQfix :
-            treestructure = [1,8] + [1] * (instance.NrTimeBucket-1) + [0]
-            YQFixTree =   ScenarioTree( instance, treestructure, seed, scenariogenerationmethod=self.ScenarioGenerationMethod )
-            YQFixSceanrios =  YQFixTree.GetAllScenarios( computeindex= False)
-            self.DemandToFollow = [ [ [  YQFixSceanrios[w].Demands[t][p] for p in self.Instance.ProductSet ]
-                                                                            for t in self.Instance.TimeBucketSet ]
-                                                                               for w in range(len(YQFixSceanrios) )  ]
+        #if self.GenerateasYQfix :
+        #    treestructure = [1,8] + [1] * (instance.NrTimeBucket-1) + [0]
+        #    YQFixTree =   ScenarioTree( instance, treestructure, seed, scenariogenerationmethod=self.ScenarioGenerationMethod )
+        #    YQFixSceanrios =  YQFixTree.GetAllScenarios( computeindex= False)
+        #    self.DemandToFollow = [ [ [  YQFixSceanrios[w].Demands[t][p] for p in self.Instance.ProductSet ]
+        #                                                                    for t in self.Instance.TimeBucketSet ]
+        #                                                                       for w in range(len(YQFixSceanrios) )  ]
 
         self.DemandYQFixRQMC = []
         self.GenerateRQMCForYQFix = generateRQMCForYQfix
         if self.ScenarioGenerationMethod == Constants.RQMC and generateRQMCForYQfix:
-            nrtimebuckets = self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty
-            avgvector = [  self.Instance.ForecastedAverageDemand[t][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
-            stdvector = [  self.Instance.ForcastedStandardDeviation[t][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
-            dimension = len( self.Instance.ProductWithExternalDemand ) * (nrtimebuckets)
-            nrscenarion = self.NrBranches[1]
-            rqmcpoint01 = ScenarioTreeNode.RQMC01( nrscenarion , dimension  )
-            rmcpoint = ScenarioTreeNode.TransformInverse( rqmcpoint01, nrscenarion, dimension, self.Instance.Distribution, avgvector, stdvector )
-            self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebuckets + t ][s]
-                                         if  self.Instance.HasExternalDemand[p]
-                                         else 0.0
-                                       for p in self.Instance.ProductSet ]
-                                     for t in range( nrtimebuckets ) ]
-                                    for s in range( nrscenarion )]
+             nrtimebuckets = self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty
+             avgvector = [  self.Instance.ForecastedAverageDemand[t][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
+             stdvector = [  self.Instance.ForcastedStandardDeviation[t][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
+             dimension = len( self.Instance.ProductWithExternalDemand ) * (nrtimebuckets)
+             nrscenarion = self.NrBranches[1]
+             rqmcpoint01 = RQMCGenerator.RQMC01( nrscenarion , dimension  )
+             rmcpoint = ScenarioTreeNode.TransformInverse( rqmcpoint01, nrscenarion, dimension, self.Instance.Distribution, avgvector, stdvector )
+             self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebuckets + t ][s]
+                                          if  self.Instance.HasExternalDemand[p]
+                                          else 0.0
+                                        for p in self.Instance.ProductSet ]
+                                      for t in range( nrtimebuckets ) ]
+                                     for s in range( nrscenarion )]
 
         self.RootNode =  ScenarioTreeNode( owner = self,
                                            instance = instance,
