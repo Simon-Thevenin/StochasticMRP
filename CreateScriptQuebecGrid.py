@@ -34,7 +34,7 @@ if __name__ == "__main__":
                         scenarioasYPset =  ["False"  ]
                         scenarioasYP = False
             # if m == "Average":
-            #			scenarset =  [ "1" ]
+            #			scenarset =  [ "1 " ]
 
             #			avg = True
                     for scenarioasYP in scenarioasYPset:
