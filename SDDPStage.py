@@ -222,7 +222,7 @@ class SDDPStage:
        #                 r ange(self.GetNrProductionVariable()) ]
 
         for p in self.Instance.ProductSet:
-            if self.IsFirstStage:
+            if self.IsFirstStage():
                 vars = [  self.GetIndexQuantityVariable( p ) , self.GetIndexProductionVariable( p, self.GetTimePeriodAssociatedToQuantityVariable( p ) ) ]
                 coeff = [-1.0, self.GetBigMValue(p)]
                 righthandside = [0.0]
@@ -232,7 +232,7 @@ class SDDPStage:
                                                     rhs=righthandside)
 
             else:
-                yvalue =  self.SDDPOwner.GetSetupFixedEarlier(self, p,  self.GetTimePeriodAssociatedToQuantityVariable( p ), self.CurrentScenarioNr)
+                yvalue =  self.SDDPOwner.GetSetupFixedEarlier( p,  self.GetTimePeriodAssociatedToQuantityVariable( p ), self.CurrentScenarioNr)
                 vars = [ self.GetIndexQuantityVariable(p) ]
                 coeff = [1.0]
                 righthandside = [  self.GetBigMValue(p) * yvalue]

@@ -41,7 +41,7 @@ class ScenarioTreeNode:
     def TransformInverse( points, nrpoints, dimensionpoint, distribution, average, std = 0 ):
 
         if distribution == Constants.Normal or distribution == Constants.NonStationary:
-            result = [[ float( max( np.floor( scipy.stats.norm.ppf( points[i][p], average[p], std[p]) ), 0.0) ) for i in range(nrpoints) ] for p in range(dimensionpoint) ]
+            result = [[ float( max( np.floor( scipy.stats.norm.ppf( points[i][p], average[p], std[p]) ), 0.0) ) if average[p] > 0 else 0.0 for i in range(nrpoints) ] for p in range(dimensionpoint) ]
 
         if distribution == Constants.SlowMoving:
             result = [[scipy.stats.poisson.ppf(points[i][p], average[p]) for i in range(nrpoints)] for p in range(dimensionpoint)]
