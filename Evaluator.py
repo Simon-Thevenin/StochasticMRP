@@ -13,14 +13,16 @@ from decimal import Decimal, ROUND_HALF_DOWN
 
 class Evaluator:
 
-    def __init__( self, instance, solutions, policy = "", scenariogenerationresolve = "" ):
+    def __init__( self, instance, solutions, policy = "", scenariogenerationresolve = "", treestructure =[] ):
         self.Instance = instance
         self.Solutions = solutions
         self.NrSolutions = len( self.Solutions )
         self.Policy = policy
         self.StartSeedResolve = 84752390
         self.ScenarioGenerationResolvePolicy = scenariogenerationresolve
-
+        self.MIPResolveTime = [ None for t in instance.TimeBucketSet  ]
+        self.IsDefineMIPResolveTime = [False for t in instance.TimeBucketSet]
+        self.ReferenceTreeStructure = treestructure
 
     def GetQuantityByResolve( self, demanduptotimet, time, givenquantty, solution, givensetup, model ):
         result = 0
@@ -28,21 +30,40 @@ class Evaluator:
         if time == 0: # return the quantity at the root of the node
             result = [ solution.ScenarioTree.RootNode.Branches[ 0 ].QuantityToOrder[ p ] for p in self.Instance.ProductSet ]
         else:
-            treestructure = [ 1 ] + [ 1 ]*time + [ 8 ]*(self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty -time) + [1]*self.Instance.NrTimeBucketWithoutUncertainty + [0]
+            treestructure = [1] + [ self.ReferenceTreeStructure[t-time +1 ] if ( t >= time and ( t< ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ) )) else 1  for  t in range(self.Instance.NrTimeBucket) ] +[0]
+
+            #if self.Instance.NrTimeBucket == 6:
+            #    treestructure = [ 1 ] + [ 1 ]*time + [ 8 ]*(self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty -time) + [1]*self.Instance.NrTimeBucketWithoutUncertainty + [0]
+            #if self.Instance.NrTimeBucket == 8:
+            #    treestructure = [1] + [1] * time + [8] * ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty - time) + [1] * self.Instance.NrTimeBucketWithoutUncertainty + [0]
+            #if self.Instance.NrTimeBucket == 10:
+            #    if time == 1:
+            #        treestructure = [1, 1, 8, 8, 4, 2, 1, 1, 1, 1, 1, 0]
+            #    if time > 1:
+            #        treestructure = [1] + [1] * time + [8] * (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty - time) + [1] * self.Instance.NrTimeBucketWithoutUncertainty + [0]
+
             self.StartSeedResolve = self.StartSeedResolve + 1
             scenariotree = ScenarioTree( self.Instance, treestructure, self.StartSeedResolve, givenfirstperiod = demanduptotimet, scenariogenerationmethod= self.ScenarioGenerationResolvePolicy )
             quantitytofix = [ [ givenquantty[t][p] for p in self.Instance.ProductSet ]  for t in range( time ) ]
-            mipsolver = MIPSolver( self.Instance, model, scenariotree,
-                                   True,
-                                   implicitnonanticipativity = True,
-                                   evaluatesolution = True,
-                                   givenquantities = quantitytofix,
-                                   givensetups = givensetup,
-                                   fixsolutionuntil = (time-1) )
+            if not self.IsDefineMIPResolveTime[ time ]:
+                mipsolver = MIPSolver( self.Instance, model, scenariotree,
+                                       True,
+                                       implicitnonanticipativity = True,
+                                       evaluatesolution = True,
+                                       givenquantities = quantitytofix,
+                                       givensetups = givensetup,
+                                       fixsolutionuntil = (time-1) )
 
-            mipsolver.BuildModel()
+                mipsolver.BuildModel()
+                self.MIPResolveTime [ time] = mipsolver
+                self.IsDefineMIPResolveTime[time] = True
+            else:
+                self.MIPResolveTime[time].ModifyMipForScenario( scenariotree )
+                self.MIPResolveTime[time].ModifyMipForFixQuantity( quantitytofix, fixuntil = time )
 
-            solution = mipsolver.Solve()
+            print " time%d "%time
+            self.MIPResolveTime[time].Cplex.write( "MRPTe-Solve.lp" )
+            solution =  self.MIPResolveTime[time].Solve()
            # scenariotree.Owner = None
 
             #Get the corresponding node:

@@ -49,9 +49,17 @@ class SDDPStage:
         self.InventoryValue = []
         #The value of the backorder variable (filled after having solve the MIPs for all scenario)
         self.BackorderValue = []
+        #The cost of each scenario
+        self.StageCostPerScenario = []
+        self.PassCost = -1
+        self.NrScenario = -1
+
+    def ComputePassCost(self):
+        self.PassCost = sum(self.StageCostPerScenario[w] for w in self.ScenarioNrSet) / self.NrScenario
 
     #This function modify the number of scenario in the stage
     def SetNrScenario(self, nrscenario ):
+        self.NrScenario = nrscenario
         self.ScenarioNrSet = range( nrscenario )
         #The quantity to order (filled after having solve the MIPs for all scenario)
         self.QuantityValues = [ [] for w in self.ScenarioNrSet ]
@@ -61,7 +69,8 @@ class SDDPStage:
         self.InventoryValue = [ [] for w in self.ScenarioNrSet ]
         #The value of the backorder variable (filled after having solve the MIPs for all scenario)
         self.BackorderValue = [ [] for w in self.ScenarioNrSet ]
-
+        # The cost of each scenario
+        self.StageCostPerScenario = [ -1 for w in self.ScenarioNrSet ]
     #Return true if the current stage is the last
     def IsLastStage(self):
         return self.DecisionStage == self.Instance.NrTimeBucket
@@ -168,11 +177,13 @@ class SDDPStage:
                 quantityvar = []
                 dependentdemandvar = []
                 dependentdemandvarcoeff = []
-                righthandside = [-1 * self.Instance.StartingInventories[p]]
+                righthandside = [0]
                 if self.Instance.HasExternalDemand[p] and not self.IsFirstStage():
                      righthandside[0] = righthandside[0] \
-                                        + self.SDDPOwner.CurrentSetOfScenarios[ self.CurrentScenarioNr ].Demands[self.GetTimePeriodAssociatedToInventoryVariable(p)][p] \
-                                        + self.SDDPOwner.GetBackorderFixedEarlier( p, self.GetTimePeriodAssociatedToInventoryVariable(p) - 1, self.CurrentScenarioNr )
+                                        + self.SDDPOwner.CurrentSetOfScenarios[ self.CurrentScenarioNr ].Demands[self.GetTimePeriodAssociatedToInventoryVariable(p)][p]
+                     if self.GetTimePeriodAssociatedToBackorderVariable(p) - 1 >= 0:
+                         righthandside[0] = righthandside[0] \
+                                            +  self.SDDPOwner.GetBackorderFixedEarlier(p, self.GetTimePeriodAssociatedToBackorderVariable( p) - 1, self.CurrentScenarioNr)
 
                      backordervar = [ self.GetIndexBackorderVariable(p) ]
 
@@ -186,7 +197,7 @@ class SDDPStage:
                     righthandside[0] = righthandside[0] \
                                        - self.SDDPOwner.GetQuantityFixedEarlier(p,  productionstartedtime, self.CurrentScenarioNr)
 
-                if self.GetTimePeriodAssociatedToInventoryVariable(p) - 1 >= 0:
+                if  self.GetTimePeriodAssociatedToInventoryVariable(p) - 1 >= -1 :
                     righthandside[0] = righthandside[0] \
                                         - self.SDDPOwner.GetInventoryFixedEarlier(p, self.GetTimePeriodAssociatedToInventoryVariable(p) - 1, self.CurrentScenarioNr)
 
@@ -336,12 +347,12 @@ class SDDPStage:
             self.Cplex.variables.set_names(varnames)
 
     #Create the MIP
-    def DefineMIP( self ):
+    def DefineMIP( self, scenarionr ):
         if Constants.Debug:
             print "Define the MIP of stage %d" % self.DecisionStage
 
         self.DefineVariables()
-
+        self.CurrentScenarioNr  = scenarionr
         self.CreateProductionConstraints()
         self.CreateFlowConstraints()
         self.CreateCapacityConstraints()
@@ -359,11 +370,13 @@ class SDDPStage:
         if Constants.Debug:
             print "build the MIP of stage %d" %self.DecisionStage
 
-        if not self.MIPDefined:
-            self.DefineMIP()
+
 
         for w in range( len( self.SDDPOwner.CurrentSetOfScenarios ) ):
-            self.UpdateMIPForScenario( w )
+            if not self.MIPDefined:
+                self.DefineMIP( w )
+            else:
+                self.UpdateMIPForScenario( w )
             if Constants.Debug:
                 print "Update the MIP of stage %d for scenario %d" %( self.DecisionStage, w )
                 self.Cplex.write("stage_%d_iter_%d_scenar_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, w))
@@ -378,10 +391,10 @@ class SDDPStage:
             if Constants.Debug:
                 sol.write("mrpsolution.sol")
 
-            objvalue = sol.get_objective_value()
+            self.StageCostPerScenario[ self.CurrentScenarioNr ] = sol.get_objective_value()
             if not self.IsLastStage():
                 indexarray = [ self.GetIndexQuantityVariable(p) for p in self.Instance.ProductSet ]
-                self.QuantityValues[self.CurrentScenarioNr] = sol.get_values( indexarray )
+                self.QuantityValues[ self.CurrentScenarioNr ] = sol.get_values( indexarray )
 
             if self.IsFirstStage():
                 indexarray = [self.GetIndexProductionVariable(p, t)  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet ]
@@ -393,7 +406,6 @@ class SDDPStage:
             if not self.IsFirstStage():
                 indexarray = [self.GetIndexBackorderVariable(p) for p in self.GetProductWithBackOrderVariable() ]
                 self.BackorderValue[ self.CurrentScenarioNr ] = sol.get_values( indexarray )
-
 
 
      #Generate the bender cut

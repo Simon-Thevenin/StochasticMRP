@@ -348,9 +348,16 @@ class MIPSolver(object):
                           for t in self.Instance.TimeBucketSet for p in self.Instance.ProductSet ]
 
                         # the variable quantity_prod_time_scenario_p_t_w indicated the quantity of product p produced at time t in scneario w
+        upperbound = [self.M] * nrquantityvariable
+        if len( self.GivenSetup) > 0:
+            for w in self.ScenarioSet:
+                for t in self.Instance.TimeBucketSet:
+                    for p in self.Instance.ProductSet:
+                        upperbound[self.GetIndexQuantityVariable(p,t,w)] = self.GivenSetup[t][p] * self.M
+
         self.Cplex.variables.add(obj=[0.0] * nrquantityvariable,
                         lb=[0.0] * nrquantityvariable,
-                        ub=[self.M] * nrquantityvariable)
+                        ub= upperbound)
 
         # the variable inventory_prod_time_scenario_p_t_w indicated the inventory level of product p at time t in scneario w
         self.Cplex.variables.add(obj=inventorycosts,
@@ -362,7 +369,6 @@ class MIPSolver(object):
                                  #lb=[0.0] * nrproductionvariable,
                                  #ub=[1.0] * nrproductionvariable,
                                  types= ['B']*nrproductionvariable )
-        #Add types = "I"
 
         # the variable backorder_prod_time_scenario_p_t_w gives the amount of product p backordered at time t in scneario w
         self.Cplex.variables.add(obj=backordercosts,
@@ -425,13 +431,13 @@ class MIPSolver(object):
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["L"],
                                                            rhs=righthandside ,
-                                                           names = ["LQuantity%d%d%d"%(p,t,w)])
+                                                           names = ["LQuantitya%da%da%d"%(p,t,w)])
                         righthandside[0] = righthandside[0]  - 0.002
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["G"],
                                                            rhs=righthandside ,
-                                                           names = ["GQuantity%d%d%d"%(p,t,w)])
-                        self.QuantityConstraintNR[w][p][t] = "Quantity%d%d%d"%(p,t,w)
+                                                           names = ["GQuantitya%da%da%d"%(p,t,w)])
+                        self.QuantityConstraintNR[w][p][t] = "Quantitya%da%da%d"%(p,t,w)
 
     def CreateCopyGivenSetupConstraints(self):
          AlreadyAdded = [False for v in range(self.GetNrProductionVariable())]
@@ -492,12 +498,13 @@ class MIPSolver(object):
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["E"],
                                                            rhs=righthandside,
-                                                           names = ["Flow%d%d%d"%(p,t,w)])
-                    self.FlowConstraintNR[w][p][t] = "Flow%d%d%d"%(p,t,w)
+                                                           names = ["Flowa%da%da%d"%(p,t,w)])
+                    self.FlowConstraintNR[w][p][t] = "Flowa%da%da%d"%(p,t,w)
 
     # This function creates the  indicator constraint to se the production variable to 1 when a positive quantity is produce
     def CreateProductionConstraints( self ):
-        AlreadyAdded = [ [ False for v in range( self.GetNrQuantityVariable() ) ]  for w in range( self.GetNrProductionVariable() ) ]
+        n = self.GetNrQuantityVariable()
+        AlreadyAdded = [ [ False ] * n  for w in range( self.GetNrProductionVariable() ) ]
 
         for t in self.Instance.TimeBucketSet:
             for p in self.Instance.ProductSet:
@@ -603,7 +610,8 @@ class MIPSolver(object):
     # Define the constraint of the model
     def CreateConstraints( self ):
         self.CreateFlowConstraints()
-        self.CreateProductionConstraints()
+        if len(self.GivenSetup) == 0:
+            self.CreateProductionConstraints()
         self.CreateCapacityConstraints()
         if self.UseNonAnticipativity and not self.UseImplicitNonAnticipativity:
             self.CreateNonanticipativityConstraints( )
@@ -800,25 +808,35 @@ class MIPSolver(object):
         # It is assumed that both the initial scenario tree and the new one have a single scenario
 
     #This function modify the MIP to fix the quantities given in argument
-    def ModifyMipForFixQuantity(self, givenquanities):
+    def ModifyMipForFixQuantity(self, givenquanities, fixuntil = -1 ):
+            timeset = self.Instance.TimeBucketSet
+            if fixuntil > -1:
+                timeset = range( fixuntil )
             # Redefine the flow conservation constraint
             constrainttuples = []
+            AlreadyAdded = [False for v in range(self.GetNrQuantityVariable())]
+
+
+            # Capacity constraint
             for p in self.Instance.ProductSet:
-                for w in self.ScenarioSet:
-                    for t in self.Instance.TimeBucketSet:
-                        value =  "%f"%givenquanities[t][p]
-                        righthandside = givenquanities[t][p]#
+                for t in timeset:
+                    for w in self.ScenarioSet:
+                        indexvariable = self.GetIndexQuantityVariable(p, t, w)
+                        if not AlreadyAdded[indexvariable]:
+                            AlreadyAdded[indexvariable]= True
+                            value =  "%f"%givenquanities[t][p]
+                            righthandside = givenquanities[t][p]#
 
-                        value = float( righthandside + 0.001)
-                        righthandside1 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
-                        constrnr = "L"+self.QuantityConstraintNR[w][p][t]
-                        constrainttuples.append((constrnr, righthandside1))
+                            value = float( righthandside + 0.001)
+                            righthandside1 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
+                            constrnr = "L"+self.QuantityConstraintNR[w][p][t]
+                            constrainttuples.append((constrnr, righthandside1))
 
-                        value = max( float( righthandside - 0.001), 0.0)
+                            value = max( float( righthandside - 0.001), 0.0)
 
-                        righthandside2 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
+                            righthandside2 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
 
-                        constrnr = "G"+self.QuantityConstraintNR[w][p][t]
-                        constrainttuples.append((constrnr, righthandside2))
+                            constrnr = "G"+self.QuantityConstraintNR[w][p][t]
+                            constrainttuples.append((constrnr, righthandside2))
 
             self.Cplex.linear_constraints.set_rhs( constrainttuples )

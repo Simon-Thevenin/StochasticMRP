@@ -2,6 +2,8 @@ from Constants import Constants
 from MRPSolution import MRPSolution
 from SDDPStage import SDDPStage
 from ScenarioTree import ScenarioTree
+import numpy as np
+import math
 import time
 # This class contains the attributes and methodss allowing to define the SDDP algorithm.
 class SDDP:
@@ -34,6 +36,7 @@ class SDDP:
         self.CurrentScenarioSeed = 0
         self.Stage = [ SDDPStage( owner=self, decisionstage = t) for t in self.StagesSet ]
         self.LinkStages()
+        self.CurrentNrScenario = 1;
 
     #This function make the forward pass of SDDP
     def ForwardPass(self):
@@ -82,18 +85,21 @@ class SDDP:
 
     # This function return the inventory quanity of product to produce at time which has been decided at an earlier stage
     def GetInventoryFixedEarlier(self, product, time, scenario):
-        decisiontime = 0
-        if self.Instance.HasExternalDemand[product]:
-            decisiontime= time
+        if time == -1:
+            result = self.Instance.StartingInventories[product]
         else:
-            decisiontime = time -1
+            decisiontime = 0
+            if self.Instance.HasExternalDemand[product]:
+                decisiontime= time + 1
+            else:
+                decisiontime = time
 
-        result = self.Stage[ decisiontime ].InventoryValue[ scenario ][ product ]
+            result = self.Stage[ decisiontime ].InventoryValue[ scenario ][ product ]
         return result
 
         # This function return the backordered quantity of product which has been decided at an earlier stage
     def GetBackorderFixedEarlier(self, product, time, scenario):
-        result = self.Stage[ time  ].BackorderValue[ scenario ][ product ]
+        result = self.Stage[ time  +1 ].BackorderValue[ scenario ][ self.Instance.ProductWithExternalDemandIndex[product] ]
         return result
 
     #This function return the value of the setup variable of product to produce at time which has been decided at an earlier stage
@@ -108,11 +114,15 @@ class SDDP:
 
     #This funciton update the lower bound based on the last forward pass
     def UpdateLowerBound(self):
-            self.CurrentLowerBound = 0
+        result = self.Stage[0].PassCost
+        self.CurrentLowerBound = result
 
     #This funciton update the upper bound based on the last forward pass
     def UpdateUpperBound(self):
-            self.CurrentUpperBound = Constants.Infinity
+            laststage = len( self.StagesSet ) - 1
+            expectedupperbound = self.Stage[ laststage ].PassCost
+            variance = math.pow( np.std( self.Stage[ laststage ].StageCostPerScenario ), 2 )
+            self.CurrentUpperBound = expectedupperbound + variance /  math.sqrt( self.CurrentNrScenario )
 
     #This function check if the stopping criterion of the algorithm is met
     def CheckStoppingCriterion(self):
@@ -140,7 +150,7 @@ class SDDP:
         self.StartOfAlsorithm = time.time()
 
         while not self.CheckStoppingCriterion():
-            self.GenerateScenarios( 1 )
+            self.GenerateScenarios( self.CurrentNrScenario )
             self.ForwardPass()
             self.UpdateLowerBound()
             self.UpdateUpperBound()
@@ -149,3 +159,7 @@ class SDDP:
 
         if Constants.Debug:
             print "End of the SDDP algorithm"
+
+    def ComputeCost(self):
+        for stage in self.Stage:
+            stage.PassCost = sum( stage.StageCostPerScenario[w] for w in self.ScenarioNrSet  ) / s
