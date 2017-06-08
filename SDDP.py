@@ -77,12 +77,12 @@ class SDDP:
 
     #This function return the quanity of product to produce at time which has been decided at an earlier stage
     def GetQuantityFixedEarlier(self, product, time, scenario):
-        result = 0
+        result = self.StagesSet[ time - 1 ].QuantityValues[ scenario][product]
         return result
 
     # This function return the inventory quanity of product to produce at time which has been decided at an earlier stage
     def GetInventoryFixedEarlier(self, product, time, scenario):
-        result = 0
+        result = self.StagesSet[ time - 1 ].QuantityValues[ scenario][product]
         return result
 
         # This function return the backordered quantity of product which has been decided at an earlier stage
