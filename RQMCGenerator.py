@@ -1,4 +1,3 @@
-class RQMCGenerator:
 import numpy as np
 
 class RQMCGenerator:
