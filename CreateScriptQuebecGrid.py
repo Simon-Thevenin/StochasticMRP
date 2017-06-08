@@ -52,8 +52,8 @@ if __name__ == "__main__":
 ulimit -v 16000000
 mkdir /tmp/thesim
 cd /home/thesim/stochasticmrp/
-python test.py %s 05 %s %s %s %s %s %s %s 2000
-""" % ( f, m, avg, scenarioasYP, Policy, b, nrscenar,
+python test.py %s 05 %s MIP %s %s %s %s %s 500
+""" % (f, m, scenarioasYP, Policy, b, nrscenar,
        generation))
 # Create the sh file
 filename = "runalljobs.sh"
@@ -86,5 +86,5 @@ for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
                 for scenarioasYP in scenarioasYPset:
                     for Policy in policyset:  # , "07", "08", "09", "10"]:
                         for nrscenar in scenarset:
-                            file.write("qsub job_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
-                            f, m, avg, b, nrscenar, scenarioasYP, Policy, generation))
+                            file.write("qsub job_%s_%s_%s_%s_%s_%s_%s \n" % (
+                                f, m, b, nrscenar, scenarioasYP, Policy, generation))
