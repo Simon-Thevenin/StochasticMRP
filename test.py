@@ -180,7 +180,7 @@ def SolveAndEvaluateYFix( method = "MIP", nrevaluation = 2, nrscenario = 1, nrso
     if Constants.Debug:
         Instance.PrintInstance()
 
-    treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0]
+    treestructure = [1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0]
 
     if nrscenario == 8:
         if Instance.NrTimeBucket == 6 :
@@ -272,6 +272,8 @@ def SolveAndEvaluateYFix( method = "MIP", nrevaluation = 2, nrscenario = 1, nrso
 
     for i in range(3 + Instance.NrLevel):
         InSampleKPIStat[i] = InSampleKPIStat[i] / nrsolve
+
+    print "%d Start evaluation..."%time.time()
 
     evaluator = Evaluator( Instance, solutions, PolicyGeneration, ScenarioGeneration )
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier,nrevaluation, Methode, Constants.ModelYFix )
