@@ -180,10 +180,15 @@ class SDDPStage:
                      dependentdemandvar = [self.GetIndexQuantityVariable(q) for q in  self.Instance.RequieredProduct[p] ]
                      dependentdemandvarcoeff =  [-1 * self.Instance.Requirements[q][p] for q in self.Instance.RequieredProduct[p]]
 
-                righthandside[0] = righthandside[0] \
-                                   - self.SDDPOwner.GetQuantityFixedEarlier( p, self.GetTimePeriodAssociatedToQuantityVariable(p) - self.Instance.Leadtimes[p], self.CurrentScenarioNr ) \
-                                   - self.SDDPOwner.GetInventoryFixedEarlier( p, self.GetTimePeriodAssociatedToQuantityVariable(p) - 1, self.CurrentScenarioNr ) \
 
+                productionstartedtime = self.GetTimePeriodAssociatedToQuantityVariable(p) - self.Instance.Leadtimes[p]
+                if productionstartedtime -1 >= 0:
+                    righthandside[0] = righthandside[0] \
+                                       - self.SDDPOwner.GetQuantityFixedEarlier(p,  productionstartedtime, self.CurrentScenarioNr)
+
+                if self.GetTimePeriodAssociatedToInventoryVariable(p) - 1 >= 0:
+                    righthandside[0] = righthandside[0] \
+                                        - self.SDDPOwner.GetInventoryFixedEarlier(p, self.GetTimePeriodAssociatedToInventoryVariable(p) - 1, self.CurrentScenarioNr)
 
                 inventoryvar = [self.GetIndexStockVariable(p)]
 
@@ -387,7 +392,7 @@ class SDDPStage:
 
             if not self.IsFirstStage():
                 indexarray = [self.GetIndexBackorderVariable(p) for p in self.GetProductWithBackOrderVariable() ]
-                self.InventoryValue[ self.CurrentScenarioNr ] = sol.get_values( indexarray )
+                self.BackorderValue[ self.CurrentScenarioNr ] = sol.get_values( indexarray )
 
 
 

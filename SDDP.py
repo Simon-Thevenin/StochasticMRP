@@ -77,22 +77,28 @@ class SDDP:
 
     #This function return the quanity of product to produce at time which has been decided at an earlier stage
     def GetQuantityFixedEarlier(self, product, time, scenario):
-        result = self.StagesSet[ time - 1 ].QuantityValues[ scenario][product]
+        result = self.Stage[ time - 1 ].QuantityValues[ scenario][product]
         return result
 
     # This function return the inventory quanity of product to produce at time which has been decided at an earlier stage
     def GetInventoryFixedEarlier(self, product, time, scenario):
-        result = self.StagesSet[ time - 1 ].QuantityValues[ scenario][product]
+        decisiontime = 0
+        if self.Instance.HasExternalDemand[product]:
+            decisiontime= time
+        else:
+            decisiontime = time -1
+
+        result = self.Stage[ decisiontime ].InventoryValue[ scenario ][ product ]
         return result
 
         # This function return the backordered quantity of product which has been decided at an earlier stage
     def GetBackorderFixedEarlier(self, product, time, scenario):
-        result = 0
+        result = self.Stage[ time  ].BackorderValue[ scenario ][ product ]
         return result
 
     #This function return the value of the setup variable of product to produce at time which has been decided at an earlier stage
     def GetSetupFixedEarlier(self, product, time, scenario):
-        result = 0
+        result = self.Stage[0].ProductionValue[scenario][product]
         return result
 
     #This function return the demand of product at time in scenario
