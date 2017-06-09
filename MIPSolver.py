@@ -356,8 +356,8 @@ class MIPSolver(object):
                         upperbound[self.GetIndexQuantityVariable(p,t,w)] = self.GivenSetup[t][p] * self.M
 
         self.Cplex.variables.add(obj=[0.0] * nrquantityvariable,
-                        lb=[0.0] * nrquantityvariable,
-                        ub= upperbound)
+                                lb=[0.0] * nrquantityvariable,
+                                ub= upperbound)
 
         # the variable inventory_prod_time_scenario_p_t_w indicated the inventory level of product p at time t in scneario w
         self.Cplex.variables.add(obj=inventorycosts,
@@ -618,7 +618,7 @@ class MIPSolver(object):
         if self.EvaluateSolution:
             if self.Model == Constants.ModelYQFix or self.Model == Constants.ModelYFix:
                 self.CreateCopyGivenQuantityConstraints( )
-            if self.Model == Constants.ModelYFix:
+            #if self.Model == Constants.ModelYFix:
                 self.CreateCopyGivenSetupConstraints()
 
     #This function build the CPLEX model

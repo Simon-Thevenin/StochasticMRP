@@ -3,8 +3,15 @@
 import openpyxl as opxl
 import pandas as pd
 import glob as glob
-
-columnname = [ "Instance name",
+columnname = [
+              "Instance name",
+              "Model",
+              "Scenario from YQFix",
+              "Policy generation",
+              "Distribution",
+              "NrInSampleScenario",
+              "Scenario Geeration Method",
+              "Instance name",
                "Method",
                "Cplex solution value",
                "Solution cost",
@@ -30,11 +37,9 @@ columnname = [ "Instance name",
                "Max lead time",
 			   "BranchingStrategy",
                "Demand Distribuion",
-			   "UseNonAnticipativity", 
-			   "ActuallyUseAnticipativity",
+			   "UseNonAnticipativity",
 			   "Model",
-			   "UseSlowMoving",		
-			   "ComputeAverageSolution",	
+			   "UseSlowMoving",
 			   "ScenarioSeed"		   
 			   ]
 			  
@@ -118,6 +123,7 @@ columnname = ["Instance name",
               "Expected In Sample",
               "CPLEX Time",
               "CPLEX Gap",
+              "SetupCost",
               "In Sample KPI On Time",
               "In Sample KPI Backorder",
               "In Sample KPI Lost sales",
@@ -131,6 +137,7 @@ columnname = ["Instance name",
               "UB",
               "Min Average",
               "Max Average",
+              "SetupCost",
               "Out Sample KPI On Time",
               "Out Sample KPI Backorder",
               "Out Sample KPI Lost sales",

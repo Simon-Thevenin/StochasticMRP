@@ -77,7 +77,7 @@ class ScenarioTreeNode:
                         if randompoint < 0.8 or average[p] == 0:
                             points[p][i] = 0;
                         else:
-                            points[p][i] = scipy.stats.poisson.ppf( ( points[i][p] - 0.8 ) / 0.2, (average[p]) / 0.2 ) +1
+                            points[p][i] = scipy.stats.poisson.ppf( (randompoint - 0.8 ) / 0.2, (average[p]) / 0.2 ) +1
             elif distribution == Constants.Uniform:
                 points = [[0.0 if(  average[p] <= 0 or np.random.uniform(0,1) < 0.5 ) else 1.0
                                for i in range(nrpoints)] for p in range(dimensionpoint)]

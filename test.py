@@ -60,12 +60,12 @@ SeedArray = [ 2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788 ]
 SolveInformation = []
 OutOfSampleTestResult = []
 CompactSolveInformation = [ 0, 0, 0]
-InSampleKPIStat= [ 0, 0, 0, 0, 0, 0, 0, 0 ]
+InSampleKPIStat= [ 0, 0, 0, 0, 0, 0, 0, 0, 0  ]
 EvaluateInfo = []
 
 def PrintResult():
     Parameter =  [ UseNonAnticipativity, Model, ComputeAverageSolution, ScenarioSeed ]
-    data = SolveInformation +  Parameter
+    data = TestIdentifier + SolveInformation +  Parameter
     d = datetime.now()
     date = d.strftime('%m_%d_%Y_%H_%M_%S')
     myfile = open(r'./Test/SolveInfo/TestResult_%s_%r_%s_%s.csv' % (
@@ -89,7 +89,7 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
 
     global SolveInformation
     global CompactSolveInformation
-    global InSampleKPIStat
+
 
     scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed,
                                  averagescenariotree=averagescenario,
@@ -158,10 +158,10 @@ def SolveAndEvaluateYQFix( average = False, nrevaluation = 2, nrscenario = 100, 
         solution.ComputeStatistics()
         insamplekpisstate = solution.PrintStatistics( TestIdentifier, "InSample" , -1, 0, ScenarioSeed)
 
-        for i in range(3 + Instance.NrLevel):
+        for i in range(4 + Instance.NrLevel):
             InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
 
-    for i in range(3 + Instance.NrLevel):
+    for i in range(4 + Instance.NrLevel):
         InSampleKPIStat[i] = InSampleKPIStat[i] / nrsolve
 
     evaluator = Evaluator( Instance, solutions  )

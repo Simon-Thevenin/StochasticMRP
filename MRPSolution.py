@@ -227,7 +227,9 @@ class MRPSolution:
                                     * self.MRPInstance.NrTimeBucket )
                                 for l in range( self.MRPInstance.NrLevel ) ]
 
-        kpistat = [ self.InSamplePercentOnTime,
+
+        kpistat = [ self.SetupCost,
+                    self.InSamplePercentOnTime,
                     self.InSamplePercenBackOrder,
                     self.InSamplePercentLostSale
                     ] + AverageStockAtLevel
