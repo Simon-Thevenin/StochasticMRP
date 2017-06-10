@@ -82,6 +82,7 @@ class Evaluator:
         mipsolver = None
         firstsolution = True
         KPIStat = []
+        nrerror = 0
         for sol in self.Solutions:
           #  if not sol == self.Solutions[ 0  ] and not sol == self.Solutions[ 1  ]:
                 if model == Constants.ModelYQFix:
@@ -138,10 +139,12 @@ class Evaluator:
                     if solution == None:
                             print "error at seed %d with given qty %r"%(seed, givenquantty)
                             mipsolver.Cplex.write("mrp.lp")
+                            Evaluated[seed - offset][index] = Evaluated[seed - offset -1][index]
+                            nrerror = nrerror +1
+                    else:
+                        Evaluated[ seed - offset ][ index ] = solution.TotalCost
 
-                    Evaluated[ seed - offset ][ index ] = solution.TotalCost
-
-                    if firstsolution:
+                        if firstsolution:
                             if seed == offset:
                                 OutOfSampleSolution = solution
                             else:
@@ -175,10 +178,10 @@ class Evaluator:
         MinAverage = min( (1.0 / M) * sum( Evaluated[seed][k] for seed in range(M) ) for k in range(K) )
         MaxAverage = max((1.0 / M) * sum(Evaluated[seed][k] for seed in range(M)) for k in range(K) )
 
-        general = testidentifier + [self.Instance.InstanceName, printidentificator, mean, variance, covariance, LB, UB, MinAverage, MaxAverage ]
+        general = testidentifier + [self.Instance.InstanceName, printidentificator, mean, variance, covariance, LB, UB, MinAverage, MaxAverage, nrerror ]
 
 
-        columnstab = ["Instance","Distribution", "Model", "NrInSampleScenario", "Identificator","Mean", "Variance", "Covariance", "LB", "UB", "Min Average", "Max Average"]
+        columnstab = ["Instance","Distribution", "Model", "NrInSampleScenario", "Identificator","Mean", "Variance", "Covariance", "LB", "UB", "Min Average", "Max Average", "nrerror"]
         myfile = open(r'./Test/Bounds/TestResultOfEvaluated_%s_%r_%s_%s.csv' % (
                                      self.Instance.InstanceName, printidentificator, model, date ), 'wb')
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
@@ -186,7 +189,7 @@ class Evaluator:
         myfile.close()
        # generaldf = pd.DataFrame(general, index=columnstab)
        # generaldf.to_excel(writer, "General")
-        EvaluateInfo = [mean, LB, UB, MinAverage, MaxAverage ] + KPIStat
+        EvaluateInfo = [mean, LB, UB, MinAverage, MaxAverage, nrerror  ] + KPIStat
         #writer.save()
         return EvaluateInfo
 
