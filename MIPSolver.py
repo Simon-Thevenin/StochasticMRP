@@ -827,12 +827,12 @@ class MIPSolver(object):
                             value =  "%f"%givenquanities[t][p]
                             righthandside = givenquanities[t][p]#
 
-                            value = float( righthandside + 0.001)
+                            value = float( righthandside + 0.01)
                             righthandside1 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
                             constrnr = "L"+self.QuantityConstraintNR[w][p][t]
                             constrainttuples.append((constrnr, righthandside1))
 
-                            value = max( float( righthandside - 0.001), 0.0)
+                            value = max( float( righthandside - 0.01), 0.0)
 
                             righthandside2 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
 
