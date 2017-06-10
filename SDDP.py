@@ -104,7 +104,7 @@ class SDDP:
 
     #This function return the value of the setup variable of product to produce at time which has been decided at an earlier stage
     def GetSetupFixedEarlier(self, product, time, scenario):
-        result = self.Stage[0].ProductionValue[scenario][product]
+        result = self.Stage[0].ProductionValue[scenario][time][product]
         return result
 
     #This function return the demand of product at time in scenario

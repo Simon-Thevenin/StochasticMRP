@@ -1,6 +1,7 @@
 import cplex
 import math
 from Constants import Constants
+from SDDPCut import SDDPCut
 
 
 # This class contains the attributes and methodss allowing to define one stage of the SDDP algorithm.
@@ -54,6 +55,19 @@ class SDDPStage:
         self.PassCost = -1
         self.NrScenario = -1
 
+        self.LastAddedConstraintIndex = 0
+        self.IndexFlowConstraint = []
+        self.IndexProductionQuantityConstraint = []
+        self.IndexCapacityConstraint = []
+        self.IndexCutConstraint = []
+
+        self.ConcernedProductFlowConstraint = []
+        self.ConcernedProductProductionQuantityConstraint = []
+        self.ConcernedResourceCapacityConstraint = []
+        self.IndexCutConstraint = []
+        self.ConcernedCutinConstraint = []
+
+
     def ComputePassCost(self):
         self.PassCost = sum(self.StageCostPerScenario[w] for w in self.ScenarioNrSet) / self.NrScenario
 
@@ -64,7 +78,7 @@ class SDDPStage:
         #The quantity to order (filled after having solve the MIPs for all scenario)
         self.QuantityValues = [ [] for w in self.ScenarioNrSet ]
         #The value of the production variables (filled after having solve the MIPs for all scenario)
-        self.ProductionValue = [ [] for w in self.ScenarioNrSet ]
+        self.ProductionValue = [ [ [] for t in self.Instance.TimeBucketSet] for w in self.ScenarioNrSet ]
         # The value of the inventory variables (filled after having solve the MIPs for all scenario)
         self.InventoryValue = [ [] for w in self.ScenarioNrSet ]
         #The value of the backorder variable (filled after having solve the MIPs for all scenario)
@@ -215,6 +229,13 @@ class SDDPStage:
                                                            names=["Flow%d" %(p)])
                        self.FlowConstraintNR[p] = "Flow%d" % (p)
 
+                       self.IndexFlowConstraint.append( self.LastAddedConstraintIndex )
+                       self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
+                       self.ConcernedProductFlowConstraint.append( p )
+
+
+
     # Return the set of products which are associated with stock decisions at the current stage
     def GetProductWithStockVariable(self):
         result = self.Instance.ProductSet
@@ -249,6 +270,10 @@ class SDDPStage:
                                                     senses=["G"],
                                                     rhs=righthandside)
 
+                self.IndexProductionQuantityConstraint.append(self.LastAddedConstraintIndex)
+                self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
+                self.ConcernedProductProductionQuantityConstraint.append(p)
             else:
                 if not self.IsLastStage():
                     yvalue =  self.SDDPOwner.GetSetupFixedEarlier( p,  self.GetTimePeriodAssociatedToQuantityVariable( p ), self.CurrentScenarioNr)
@@ -259,6 +284,10 @@ class SDDPStage:
                     self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                          senses=["L"],
                                                          rhs=righthandside)
+                    self.IndexProductionQuantityConstraint.append(self.LastAddedConstraintIndex)
+                    self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
+                    self.ConcernedProductProductionQuantityConstraint.append(p)
                         # This function creates the Capacity constraint
 
     def CreateCapacityConstraints(self):
@@ -271,6 +300,14 @@ class SDDPStage:
                self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                   senses=["L"],
                                                   rhs=righthandside)
+
+               self.IndexCapacityConstraint.append(self.LastAddedConstraintIndex)
+               self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
+               self.ConcernedResourceCapacityConstraint.append(p)
+
+
+
 
     #Define the variables
     def DefineVariables( self ):
@@ -378,13 +415,14 @@ class SDDPStage:
             else:
                 self.UpdateMIPForScenario( w )
             if Constants.Debug:
-                print "Update the MIP of stage %d for scenario %d" %( self.DecisionStage, w )
+                print "Update or build the MIP of stage %d for scenario %d" %( self.DecisionStage, w )
                 self.Cplex.write("stage_%d_iter_%d_scenar_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, w))
-            sol = self.Cplex.solve()
-            self.SaveSolutionForScenario( sol )
+            self.Cplex.solve()
+            print self.Cplex.solution.get_status()
+            self.SaveSolutionForScenario(  )
 
     # This function run the MIP of the current stage
-    def SaveSolutionForScenario(self, sol):
+    def SaveSolutionForScenario(self):
 
         sol = self.Cplex.solution
         if sol.is_primal_feasible():
@@ -397,8 +435,9 @@ class SDDPStage:
                 self.QuantityValues[ self.CurrentScenarioNr ] = sol.get_values( indexarray )
 
             if self.IsFirstStage():
-                indexarray = [self.GetIndexProductionVariable(p, t)  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet ]
-                self.ProductionValue[self.CurrentScenarioNr] = sol.get_values( indexarray )
+                indexarray = [  self.GetIndexProductionVariable(p, t)   for t in self.Instance.TimeBucketSet  for p in self.Instance.ProductSet ]
+                values = sol.get_values( indexarray )
+                self.ProductionValue[self.CurrentScenarioNr] =  [ [ values[ t * self.Instance.NrProduct + p] for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
 
             indexarray = [self.GetIndexStockVariable(p) for p in self.GetProductWithStockVariable() ]
             self.InventoryValue[ self.CurrentScenarioNr ] = sol.get_values( indexarray )
@@ -413,7 +452,81 @@ class SDDPStage:
         if Constants.Debug:
             print "Generate a cut to add at stage %d" % self.PreviousSDDPStage.DecisionStage
 
+        #Create a cute for the previous stage problem
+        cut = SDDPCut(  self )
+
+        #Solve the problem for each scenario
+        for w in range(len(self.SDDPOwner.CurrentSetOfScenarios)):
+            self.UpdateMIPForScenario(w)
+            if Constants.Debug:
+                print "Resolve for backward pass the MIP of stage %d for scenario %d" % (self.DecisionStage, w)
+                self.Cplex.write(
+                    "backward_stage_%d_iter_%d_scenar_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, w))
+            self.Cplex.solve()
+            sol =self.Cplex.solution
+            self.IncreaseCutWithFlowDual(cut, sol)
+
+            self.IncreaseCutWithProductionDual(cut, sol)
+
+#            self.IncreaseCutWithCapacityDual(cut, sol)
+
+            self.IncreaseCutWithCutDuals( cut, sol )
+
+
+
+        #Average by the number of scenario
+        cut.DivideAllCoeff( len(self.SDDPOwner.CurrentSetOfScenarios) )
+        cut.AddCut()
+
+
     def GetBigMValue( self, p ):
         print "TBD"
         result = 999999999
         return result
+
+    def IncreaseCutWithFlowDual(self, cut, sol):
+        print "Increase cut with flow dual"
+        duals = sol.get_dual_values(  self.IndexFlowConstraint )
+        for i in range( len( duals )):
+            p = self.ConcernedProductFlowConstraint[ self.IndexFlowConstraint[i] ]
+            cut.IncreaseCoefficientQuantity( p, self.GetTimePeriodAssociatedToQuantityVariable( p ) - self.Instance.Leadtimes[p], -duals[i])
+            cut.IncreaseCoefficientInventory( p, self.GetTimePeriodAssociatedToInventoryVariable( p ) - 1 , -duals[i])
+            if self.Instance.HasExternalDemand[p]:
+                cut.IncreaseCoefficientBackorder( p, self.GetTimePeriodAssociatedToBackorderVariable( p ) -1 , -duals[i])
+                cut.IncreaseDemandRHS( duals[i] )
+
+    def IncreaseCutWithProductionDual(self, cut, sol):
+        if not self.IsLastStage():
+            print "Increase cut with production dual"
+            duals = sol.get_dual_values(self.IndexProductionQuantityConstraint)
+            for i in range(len(duals)):
+                p = self.ConcernedProductProductionQuantityConstraint[ self.IndexProductionQuantityConstraint[i] ]
+                cut.IncreaseCoefficientProduction( p, self.GetTimePeriodAssociatedToQuantityVariable(p) ,  self.GetBigMValue(p) * duals[i])
+
+
+    # def IncreaseCutWithCapacityDual(self, cut, sol):
+    #     print "Increase cut with capacity dual"
+    #     duals = sol.get_dual_values(self.IndexCapacityConstraint)
+    #     for i in range(len(duals)):
+    #         k = self.ConcernedResourceCapacityConstraint[ self.IndexCapacityConstraint[i] ]
+    #         cut.IncreaseCoefficient( p, self.GetTimePeriodAssociatedToQuantityVariable(p) ,  self.Instance.ProcessingTime[p][k] * duals[i])
+
+    def IncreaseCutWithCutDuals(self, cut, sol):
+
+        if self.SDDPOwner.CurrentIteration > 0 :
+            print "Increase cut with cut duals"
+            duals = sol.get_dual_values(self.IndexCutConstraint)
+            for i in range(len(duals)):
+                c = self.ConcernedCutinConstraint[self.self.IndexCutConstraint[i]]
+                for tuple in cut.NonZeroFixedEarlierProductionVar:
+                    p=tuple[0]; t=tuple[1]
+                    cut.IncreaseCoefficientProduction(p,t, c.CoefficientProductionVariable[p][t] * duals[i])
+                for tuple in cut.NonZeroFixedEarlierQuantityVar:
+                    p = tuple[0];                t = tuple[1]
+                    cut.IncreaseCoefficientQuantity(p,t, c.CoefficientQuantityVariable[p][t] * duals[i])
+                for tuple in cut.NonZeroFixedEarlierBackOrderVar:
+                    p = tuple[0];               t = tuple[1]
+                    cut.IncreaseCoefficientBackorder(p,t, c.CoefficientBackorderyVariable[p][t] * duals[i])
+                for tuple in cut.NonZeroFixedEarlierStockVar:
+                    p = tuple[0];                t = tuple[1]
+                    cut.IncreaseCoefficientInventory(p,t, c.CoefficientStockVariable[p][t] * duals[i])
