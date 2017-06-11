@@ -35,9 +35,12 @@ if __name__ == "__main__":
                     scenarioasYP = False
 
                 if m == "YFix" and b == "Uniform":
-                   policyset = ["NearestNeighbor", "Re-solve", "all"]
-
+                   policyset = ["MC", "RQMC", "all"]
+                method = "MIP"
+                model=m
                 if m == "Average":
+                    model = "YQFix"
+                    method = "Average"
                     scenarset =  [ "1" ]
                     avg = True
                     policyset = ["Fix"]
@@ -46,8 +49,8 @@ if __name__ == "__main__":
                     for scenarioasYP in scenarioasYPset:
                           for Policy in policyset:  # , "07", "08", "09", "10"]:
                              for nrscenar in scenarset:
-                                qsub_filename = "job_%s_%s_%s_%s_%s_%s_%s" % (
-                                f, m, b, nrscenar, scenarioasYP, Policy, generation)
+                                qsub_filename = "job_%s_%s_%s_%s_%s_%s_%s_%s" % (
+                                f, model, method, b, nrscenar, scenarioasYP, Policy, generation)
                                 qsub_file = open(qsub_filename, 'w')
                                 qsub_file.write("""
 #!/bin/bash -l
@@ -58,8 +61,8 @@ if __name__ == "__main__":
 #$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py %s 05 %s MIP %s %s %s %s %s 500
-""" % (f, m, scenarioasYP, Policy, b, nrscenar, generation, f, m, scenarioasYP, Policy, b, nrscenar,
+python test.py %s 05 %s %s %s %s %s %s %s 500
+""" % (f, model, method, scenarioasYP, Policy, b, nrscenar, generation, f, model, method, scenarioasYP, Policy, b, nrscenar,
        generation))  # Create the sh file
 filename = "runalljobs.sh"
 file = open(filename, 'w')
@@ -76,7 +79,7 @@ for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
         for m in ["YFix", "Average"]:  # , "YFix", "_Fix" ]:
             generationset = ["MC", "RQMC"]
             scenarset = ["512"]
-            policyset = [ "Re-solve"]
+            policyset = [ ]
             scenarioasYPset = ["False"]
             avg = False
             if m == "YQFix":
@@ -86,9 +89,12 @@ for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
                 scenarioasYP = False
 
             if m == "YFix" and b == "Uniform":
-                policyset = [ "Re-solve", "all"]
-
+                policyset = ["all"]
+            method = "MIP"
+            model = m
             if m == "Average":
+                model = "YQFix"
+                method = "Average"
                 scenarset = ["1"]
                 avg = True
                 policyset = ["Fix"]
@@ -97,5 +103,5 @@ for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
                 for scenarioasYP in scenarioasYPset:
                     for Policy in policyset:  # , "07", "08", "09", "10"]:
                         for nrscenar in scenarset:
-                            file.write("qsub job_%s_%s_%s_%s_%s_%s_%s \n" % (
-                            f, m, b, nrscenar, scenarioasYP, Policy, generation))
+                            file.write("qsub job_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
+                            f, model, method, b, nrscenar, scenarioasYP, Policy, generation))
