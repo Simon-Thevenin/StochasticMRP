@@ -41,6 +41,7 @@ if __name__ == "__main__":
                         scenarset =  [ "1" ]
                         avg = True
                         policyset = ["Fix"]
+                        generation = ["MC"]
                     for scenarioasYP in scenarioasYPset:
                           for Policy in policyset:  # , "07", "08", "09", "10"]:
                              for nrscenar in scenarset:
@@ -90,6 +91,7 @@ for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
                     scenarset = ["1"]
                     avg = True
                     policyset = ["Fix"]
+                    generation = ["MC"]
 
                 for scenarioasYP in scenarioasYPset:
                     for Policy in policyset:  # , "07", "08", "09", "10"]:
