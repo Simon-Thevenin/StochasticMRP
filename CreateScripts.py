@@ -38,8 +38,9 @@ if __name__ == "__main__":
                         policyset = ["NearestNeighbor", "Re-solve", "all"]
 
                     if m == "Average":
-                        			scenarset =  [ "1" ]
-                        			avg = True
+                        scenarset =  [ "1" ]
+                        avg = True
+                        policyset = ["Fix"]
                     for scenarioasYP in scenarioasYPset:
                           for Policy in policyset:  # , "07", "08", "09", "10"]:
                              for nrscenar in scenarset:
@@ -88,6 +89,8 @@ for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
                 if m == "Average":
                     scenarset = ["1"]
                     avg = True
+                    policyset = ["Fix"]
+
                 for scenarioasYP in scenarioasYPset:
                     for Policy in policyset:  # , "07", "08", "09", "10"]:
                         for nrscenar in scenarset:
