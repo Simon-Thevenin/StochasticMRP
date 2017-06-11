@@ -61,8 +61,8 @@ class Evaluator:
                 self.MIPResolveTime[time].ModifyMipForScenario( scenariotree )
                 self.MIPResolveTime[time].ModifyMipForFixQuantity( quantitytofix, fixuntil = time )
 
-            print " time%d "%time
-            self.MIPResolveTime[time].Cplex.write( "MRPTe-Solve.lp" )
+           # print " time%d "%time
+           # self.MIPResolveTime[time].Cplex.write( "MRPTe-Solve.lp" )
             solution =  self.MIPResolveTime[time].Solve()
            # scenariotree.Owner = None
 
