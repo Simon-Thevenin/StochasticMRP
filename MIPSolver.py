@@ -427,12 +427,12 @@ class MIPSolver(object):
                         coeff = [1.0]
                         righthandside =  [ float(  Decimal( "%r"%(self.GivenQuantity[t][p])  ).quantize(Decimal('0.0001'), rounding= ROUND_HALF_DOWN )  ) ]
                          # PrintConstraint( vars, coeff, righthandside )
-                        righthandside[0] = righthandside[0]  + 0.001
+                        righthandside[0] = righthandside[0]  + 0.1
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["L"],
                                                            rhs=righthandside ,
                                                            names = ["LQuantitya%da%da%d"%(p,t,w)])
-                        righthandside[0] = righthandside[0]  - 0.002
+                        righthandside[0] = righthandside[0]  - 0.1
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["G"],
                                                            rhs=righthandside ,
@@ -827,12 +827,12 @@ class MIPSolver(object):
                             value =  "%f"%givenquanities[t][p]
                             righthandside = givenquanities[t][p]#
 
-                            value = float( righthandside + 0.01)
+                            value = float( righthandside + 0.1)
                             righthandside1 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
                             constrnr = "L"+self.QuantityConstraintNR[w][p][t]
                             constrainttuples.append((constrnr, righthandside1))
 
-                            value = max( float( righthandside - 0.01), 0.0)
+                            value = max( float( righthandside - 0.1), 0.0)
 
                             righthandside2 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
 
