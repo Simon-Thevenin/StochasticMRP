@@ -26,6 +26,7 @@ class Evaluator:
 
     def GetQuantityByResolve( self, demanduptotimet, time, givenquantty, solution, givensetup, model ):
         result = 0
+        error = 0
 
         if time == 0: # return the quantity at the root of the node
             result = [ solution.ScenarioTree.RootNode.Branches[ 0 ].QuantityToOrder[ p ] for p in self.Instance.ProductSet ]
@@ -67,10 +68,12 @@ class Evaluator:
            # scenariotree.Owner = None
 
             #Get the corresponding node:
-            result = [ solution.ProductionQuantity.loc[self.Instance.ProductName[p], (time, 0)] for p in self.Instance.ProductSet ]
+            if not solution is None:
+                result = [ solution.ProductionQuantity.loc[self.Instance.ProductName[p], (time, 0)] for p in self.Instance.ProductSet ]
+            else:
+                error = 1
 
-
-        return result
+        return result, error
 
     def EvaluateYQFixSolution( self, testidentifier, nrscenario, printidentificator, model):
         # Compute the average value of the demand
@@ -104,7 +107,7 @@ class Evaluator:
                     treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
 
                     scenariotree = ScenarioTree( self.Instance, treestructure, ScenarioSeed, evaluationscenario = True )
-
+                    error = 0
                     if model == Constants.ModelYFix:
                             scenario = scenariotree.GetAllScenarios( False ) [0]
                             givenquantty = [ [ 0 for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
@@ -115,40 +118,42 @@ class Evaluator:
                                 if self.Policy == Constants.NearestNeighbor:
                                     givenquantty[ti], previousnode = sol.GetQuantityToOrderAC( demanduptotimet, ti, previousnode )
                                 if self.Policy == Constants.Resolve:
-                                    givenquantty[ti] = self.GetQuantityByResolve( demanduptotimet, ti, givenquantty, sol, givensetup, model )
+                                    givenquantty[ti], error = self.GetQuantityByResolve( demanduptotimet, ti, givenquantty, sol, givensetup, model )
 
                   #  givenquantty = [[("%f" % givenquantty[t][p] )         for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet]
 
                   #  givenquantty = [ [  float(  Decimal( givenquantty[t][p]  ).quantize(Decimal('0.0001'), rounding= ROUND_HALF_DOWN )  ) for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
+                    if error == 0:
+                        if seed == offset:
+                                mipsolver = MIPSolver(self.Instance, model, scenariotree,
+                                                      True,
+                                                      implicitnonanticipativity=False,
+                                                      evaluatesolution=True,
+                                                      givenquantities=givenquantty,
+                                                      givensetups=givensetup,
+                                                      fixsolutionuntil=self.Instance.NrTimeBucket )
+                                mipsolver.BuildModel()
+                        else:
+                                mipsolver.ModifyMipForScenario( scenariotree )
+                                if model == Constants.ModelYFix:
+                                    mipsolver.ModifyMipForFixQuantity( givenquantty )
 
-                    if seed == offset:
-                            mipsolver = MIPSolver(self.Instance, model, scenariotree,
-                                                  True,
-                                                  implicitnonanticipativity=False,
-                                                  evaluatesolution=True,
-                                                  givenquantities=givenquantty,
-                                                  givensetups=givensetup,
-                                                  fixsolutionuntil=self.Instance.NrTimeBucket )
-                            mipsolver.BuildModel()
-                    else:
-                            mipsolver.ModifyMipForScenario( scenariotree )
-                            if model == Constants.ModelYFix:
-                                mipsolver.ModifyMipForFixQuantity( givenquantty )
-
-                    solution = mipsolver.Solve()
-                    if solution == None:
+                        solution = mipsolver.Solve()
+                        if solution == None:
                             print "error at seed %d with given qty %r"%(seed, givenquantty)
                             mipsolver.Cplex.write("mrp.lp")
-                            Evaluated[seed - offset][index] = Evaluated[seed - offset -1][index]
+                          #  Evaluated[seed - offset][index] = Evaluated[seed - offset -1][index]
                             nrerror = nrerror +1
-                    else:
-                        Evaluated[ seed - offset ][ index ] = solution.TotalCost
+                        else:
+                            Evaluated[ seed - offset ][ index ] = solution.TotalCost
 
                         if firstsolution:
                             if seed == offset:
                                 OutOfSampleSolution = solution
                             else:
                                 OutOfSampleSolution.Merge( solution )
+                    else :
+                        nrerror = nrerror + 1
 
                 index = index +1
 
