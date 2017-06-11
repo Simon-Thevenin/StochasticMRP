@@ -23,25 +23,26 @@ if __name__ == "__main__":
         #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
         for b in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:  # "02", "03", "04", "05", "06", "07", "08", "09", "10"]:
             for m in ["YFix", "YQFix", "Average"]:  # , "YFix", "_Fix" ]:
-                for generation in ["MC", "RQMC"]:
-                    scenarset = ["512"]
-                    policyset = [ "NearestNeighbor", "Re-solve"]
-                    scenarioasYPset = ["False"]
-                    avg = False
-                    if m == "YQFix":
-                        scenarset = ["2", "4", "8", "50", "100", "200", "500"]
-                        policyset = [ "Fix" ]
-                        scenarioasYPset =  ["False"  ]
-                        scenarioasYP = False
+                generationset = ["MC", "RQMC"]
+                scenarset = ["512"]
+                policyset = [ "NearestNeighbor", "Re-solve"]
+                scenarioasYPset = ["False"]
+                avg = False
+                if m == "YQFix":
+                    scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+                    policyset = [ "Fix" ]
+                    scenarioasYPset =  ["False"  ]
+                    scenarioasYP = False
 
-                    if m == "YFix" and b == "Uniform":
-                        policyset = ["NearestNeighbor", "Re-solve", "all"]
+                if m == "YFix" and b == "Uniform":
+                   policyset = ["NearestNeighbor", "Re-solve", "all"]
 
-                    if m == "Average":
-                        scenarset =  [ "1" ]
-                        avg = True
-                        policyset = ["Fix"]
-                        generation = ["MC"]
+                if m == "Average":
+                    scenarset =  [ "1" ]
+                    avg = True
+                    policyset = ["Fix"]
+                    generationset = ["MC"]
+                for generation in generationset:
                     for scenarioasYP in scenarioasYPset:
                           for Policy in policyset:  # , "07", "08", "09", "10"]:
                              for nrscenar in scenarset:
@@ -72,27 +73,27 @@ for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
     #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
     for b in ["SlowMoving", "Normal", "Lumpy", "Uniform",
               "NonStationary"]:  # "02", "03", "04", "05", "06", "07", "08", "09", "10"]:
-        for m in ["YFix",  "Average"]:  # , "YFix", "_Fix" ]:
-            for generation in ["MC", "RQMC"]:
-                scenarset = ["512"]
-                policyset = [ "Re-solve"]
+        for m in ["YFix", "Average"]:  # , "YFix", "_Fix" ]:
+            generationset = ["MC", "RQMC"]
+            scenarset = ["512"]
+            policyset = [ "Re-solve"]
+            scenarioasYPset = ["False"]
+            avg = False
+            if m == "YQFix":
+                scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+                policyset = ["Fix"]
                 scenarioasYPset = ["False"]
-                avg = False
-                if m == "YQFix":
-                    scenarset = ["2", "4", "8", "50", "100", "200", "500"]
-                    policyset = ["Fix"]
-                    scenarioasYPset = ["False"]
-                    scenarioasYP = False
+                scenarioasYP = False
 
-                if m == "YFix" and b == "Uniform":
-                    policyset = [ "Re-solve", "all"]
+            if m == "YFix" and b == "Uniform":
+                policyset = [ "Re-solve", "all"]
 
-                if m == "Average":
-                    scenarset = ["1"]
-                    avg = True
-                    policyset = ["Fix"]
-                    generation = ["MC"]
-
+            if m == "Average":
+                scenarset = ["1"]
+                avg = True
+                policyset = ["Fix"]
+                generationset = ["MC"]
+            for generation in generationset:
                 for scenarioasYP in scenarioasYPset:
                     for Policy in policyset:  # , "07", "08", "09", "10"]:
                         for nrscenar in scenarset:
