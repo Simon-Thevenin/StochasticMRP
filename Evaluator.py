@@ -25,7 +25,7 @@ class Evaluator:
         self.ReferenceTreeStructure = treestructure
 
     def GetQuantityByResolve( self, demanduptotimet, time, givenquantty, solution, givensetup, model ):
-        result = 0
+        result = [ 0  for p in self.Instance.ProductSet ]
         error = 0
 
         if time == 0: # return the quantity at the root of the node
@@ -71,6 +71,10 @@ class Evaluator:
             if not solution is None:
                 result = [ solution.ProductionQuantity.loc[self.Instance.ProductName[p], (time, 0)] for p in self.Instance.ProductSet ]
             else:
+                if Constants.Debug:
+                    self.MIPResolveTime[time].Cplex.write("MRP-Re-Solve.lp")
+                    raise NameError("Infeasible MIP at time %d in Re-solve see MRP-Re-Solve.lp"%time)
+
                 error = 1
 
         return result, error
@@ -87,7 +91,8 @@ class Evaluator:
         KPIStat = []
         nrerror = 0
         for sol in self.Solutions:
-          #  if not sol == self.Solutions[ 0  ] and not sol == self.Solutions[ 1  ]:
+                self.IsDefineMIPResolveTime = [False for t in self.Instance.TimeBucketSet]
+                #  if not sol == self.Solutions[ 0  ] and not sol == self.Solutions[ 1  ]:
                 if model == Constants.ModelYQFix:
                     givenquantty = [ [ sol.ProductionQuantity.ix[p, t].get_value( 0 )
                                        for p in self.Instance.ProductSet ]
@@ -95,6 +100,9 @@ class Evaluator:
 
                 givensetup = [[sol.Production.ix[p, t].get_value(0) for p in self.Instance.ProductSet]
                               for t in self.Instance.TimeBucketSet]
+
+               # print "sol.Production: %r" % sol.Production
+               # print "Given setup: %r" %givensetup
 
                  #Use an offset in the seed to make sure the scenario used for evaluation are different from the scenario used for optimization
                 offset = sol.ScenarioTree.Seed + 999323
@@ -140,8 +148,10 @@ class Evaluator:
 
                         solution = mipsolver.Solve()
                         if solution == None:
-                            print "error at seed %d with given qty %r"%(seed, givenquantty)
-                            mipsolver.Cplex.write("mrp.lp")
+                            if Constants.Debug:
+                                mipsolver.Cplex.write("mrp.lp")
+                                raise NameError("error at seed %d with given qty %r"%(seed, givenquantty))
+
                           #  Evaluated[seed - offset][index] = Evaluated[seed - offset -1][index]
                             nrerror = nrerror +1
                         else:

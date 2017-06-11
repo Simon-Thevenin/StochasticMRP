@@ -68,7 +68,8 @@ columnname = ["Instance name",
               "LB",
               "UB",
               "Min Average",
-              "Max Average"
+              "Max Average",
+              "Error"
               ]
 
 all_data = pd.DataFrame(columns=columnname)
@@ -137,6 +138,7 @@ columnname = ["Instance name",
               "UB",
               "Min Average",
               "Max Average",
+              "Error",
               "SetupCost",
               "Out Sample KPI On Time",
               "Out Sample KPI Backorder",
