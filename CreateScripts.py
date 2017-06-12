@@ -34,8 +34,7 @@ if __name__ == "__main__":
                     scenarioasYPset =  ["False"  ]
                     scenarioasYP = False
 
-                if m == "YFix" and b == "Uniform":
-                   policyset = ["MC", "RQMC", "all"]
+
                 method = "MIP"
                 model=m
                 if m == "Average":
@@ -79,7 +78,7 @@ for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
         for m in ["YFix", "Average"]:  # , "YFix", "_Fix" ]:
             generationset = ["MC", "RQMC"]
             scenarset = ["512"]
-            policyset = [ ]
+            policyset = [ "Re-solve"]
             scenarioasYPset = ["False"]
             avg = False
             if m == "YQFix":
@@ -88,8 +87,7 @@ for f in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
                 scenarioasYPset = ["False"]
                 scenarioasYP = False
 
-            if m == "YFix" and b == "Uniform":
-                policyset = ["all"]
+
             method = "MIP"
             model = m
             if m == "Average":
