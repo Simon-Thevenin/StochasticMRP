@@ -94,7 +94,7 @@ class Evaluator:
                 self.IsDefineMIPResolveTime = [False for t in self.Instance.TimeBucketSet]
                 #  if not sol == self.Solutions[ 0  ] and not sol == self.Solutions[ 1  ]:
                 if model == Constants.ModelYQFix:
-                    givenquantty = [ [ sol.ProductionQuantity.ix[p, t].get_value( 0 )
+                    givenquantty = [ [ round( sol.ProductionQuantity.ix[p, t].get_value( 0 ) , 2)
                                        for p in self.Instance.ProductSet ]
                                         for t in self.Instance.TimeBucketSet ]
 
