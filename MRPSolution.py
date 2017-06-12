@@ -3,6 +3,7 @@ from Tool import Tool
 import csv
 from datetime import datetime
 import math
+from Constants import Constants
 
 class MRPSolution:
 
@@ -268,8 +269,9 @@ class MRPSolution:
 
     #This function return the quantity to order a time t, given the first t-1 demands
     def GetQuantityToOrderAC( self, demands, time, previousnode ):
+        error = 0
         # Get the scenario with the closest demand
-        smallestdistance = 999999999
+        smallestdistance = Constants.Infinity
         bestnode = None
         #Traverse all scneario
         if previousnode.Time >= 0:
@@ -286,10 +288,14 @@ class MRPSolution:
              bestnode = previousnode.Branches[0]
 
 
-
-        #Return the decision taken in the closest scenrio
-        quantity = [ bestnode.QuantityToOrder[p] for p in self.MRPInstance.ProductSet ]
-        return quantity, bestnode
+        if bestnode == None:
+            error = 1
+            if Constants.Debug:
+                raise NameError(" Nearest neighbor returned Null ")
+        else:
+            #Return the decision taken in the closest scenrio
+            quantity = [ bestnode.QuantityToOrder[p] for p in self.MRPInstance.ProductSet ]
+            return quantity, bestnode, error
 
     #This function merge solution2 into self. Assume that solution2 has a single scenario
     def Merge( self, solution2 ):
