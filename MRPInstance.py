@@ -300,20 +300,6 @@ class MRPInstance:
         self.NrTimeBucketWithoutUncertainty = self.MaxLeadTime
         self.ComputeIndices()
 
-        self.YearlyAverageDemand = [10, 0, 0, 0, 0]
-        self.ForecastedAverageDemand = [[10, 0, 0, 0, 0],
-                                        [10, 0, 0, 0, 0],
-                                        [10, 0, 0, 0, 0],
-                                        [10, 0, 0, 0, 0],
-                                        [10, 0, 0, 0, 0]]
-        self.ForecastError = 0.5
-        self.RateOfKnownDemand = 0.0
-        self.YearlyStandardDevDemands = [5, 0, 0, 0, 0]
-        self.ForcastedStandardDeviation = [[5, 0, 0, 0, 0],
-                                           [5, 0, 0, 0, 0],
-                                           [5, 0, 0, 0, 0],
-                                           [5, 0, 0, 0, 0],
-                                           [5, 0, 0, 0, 0]]
 
         #Generate the sets of scenarios
         self.YearlyAverageDemand = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') for p in self.ProductSet ]
@@ -357,10 +343,10 @@ class MRPInstance:
                 dependentaveragedemand[p] = sum(dependentaveragedemand[q] * self.Requirements[q][p] for q in self.ProductSet) + \
                                                 dependentaveragedemand[p]
         # Assume a starting inventory is the average demand during the lead time
-        self.StartingInventories = [   int( random.uniform( 1, 1.25 ) * dependentaveragedemand[ p ] * (self.Leadtimes[ p ] )  )   for p in self.ProductSet ]
+        self.StartingInventories = [   int( random.uniform( 0.75, 1.5 ) * dependentaveragedemand[ p ] * (self.Leadtimes[ p ] )  )   for p in self.ProductSet ]
 
         #This set of instances assume no setup
-        self.SetupCosts =  [   ( ( ( dependentaveragedemand[ p ] / 2 ) * 2 * holdingcost ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
+        self.SetupCosts =  [   ( ( ( dependentaveragedemand[ p ] / 2 ) * 0.25 *  self.InventoryCosts[p]  ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
 
         self.ProcessingTime = [ [ randint( 1, 5 )
                                     if (p == k )   else 0.0

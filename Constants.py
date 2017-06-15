@@ -17,8 +17,8 @@ class Constants:
     Solve = "Solve"
     Evaluate = "Evaluate"
 
-    Debug = True
-    LauchEvalAfterSolve = False
+    Debug = False
+    LauchEvalAfterSolve = True
     Infinity = 999999999999.9
     AlgorithmTimeLimit = 3600.0
     AlgorithmOptimalityTolerence = 0.00001

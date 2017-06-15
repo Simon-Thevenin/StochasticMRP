@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # Path to a folder where you want your results to be
     output_folder = r"/home/thesim/TestFolder/stochasticmrp/"
 
-    for instance in ["01", "02", "03", "04", "05" ]:
+    for instance in ["01"]: #, "02", "03", "04", "05" ]:
         for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
             for model in ["YFix", "YQFix", "Average"]:
                 generationset = ["MC", "RQMC"]
@@ -75,7 +75,7 @@ file.write("""
 #
 """)
 
-for instance in ["01", "02", "03", "04", "05"]:
+for instance in ["01"]:
     for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
         for model in ["YFix", "YQFix", "Average"]:
             generationset = ["MC", "RQMC"]
@@ -95,5 +95,5 @@ for instance in ["01", "02", "03", "04", "05"]:
             for generation in generationset:
                 for nrscenar in scenarset:
                     for seed in range(5):
-                            file.write("job_solve_%s_%s_%s_%s_%s_%s \n" % (
+                            file.write("qsub job_solve_%s_%s_%s_%s_%s_%s \n" % (
                                     instance, distribution, model, nrscenar, generation, seed  ) )
