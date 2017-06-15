@@ -6,6 +6,7 @@ from RQMCGenerator import RQMCGenerator
 import os
 from Constants import Constants
 from ast import literal_eval
+from matplotlib import pyplot as PLT
 
 class ScenarioTree:
     #Constructor
@@ -46,7 +47,31 @@ class ScenarioTree:
              dimension = len( self.Instance.ProductWithExternalDemand ) * (nrtimebuckets)
              nrscenarion = self.NrBranches[1]
              rqmcpoint01 = RQMCGenerator.RQMC01( nrscenarion , dimension  )
+
+             for d in range(dimension):
+                 pts = [rqmcpoint01[p][d] for p in range(nrscenarion)]
+                 print "The point at dim %d at time : %r  " % (d, pts)
+                 with open('Histpoints%dt%d.csv' % (p, d), 'w+') as f:
+                     # v_hist = np.ravel(v)  # 'flatten' v
+                     fig = PLT.figure()
+                     ax1 = fig.add_subplot(111)
+
+                     n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
+                     PLT.show()
+
              rmcpoint = ScenarioTreeNode.TransformInverse( rqmcpoint01, nrscenarion, dimension, self.Instance.Distribution, avgvector, stdvector )
+
+             for d in range(dimension):
+                 pts = [rmcpoint[d][p] for p in range(nrscenarion)]
+                 print "The transformed point at dim %d at time : %r  " % (d, pts)
+                 with open('Histpoints%dt%d.csv' % (p, d), 'w+') as f:
+                     # v_hist = np.ravel(v)  # 'flatten' v
+                     fig = PLT.figure()
+                     ax1 = fig.add_subplot(111)
+
+                     n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
+                     PLT.show()
+
              self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebuckets + t ][s]
                                           if  self.Instance.HasExternalDemand[p]
                                           else 0.0

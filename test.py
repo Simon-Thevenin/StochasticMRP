@@ -1,5 +1,7 @@
 #from __future__ import absolute_import, division, print_function
 from __future__ import division
+from matplotlib import pyplot as PLT
+
 import cplex
 import pandas as pd
 import openpyxl as opxl
@@ -122,6 +124,19 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     if Constants.Debug:
         print "Start to solve instance %s with Cplex"% Instance.InstanceName;
 
+
+    scenario = mipsolver.Scenarios
+    demands = [ [ [ scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet ] for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
+    for t in Instance.TimeBucketSet:
+        for p in Instance.ProductWithExternalDemand:
+            print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
+            with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
+                #v_hist = np.ravel(v)  # 'flatten' v
+                fig = PLT.figure()
+                ax1 = fig.add_subplot(111)
+
+                n, bins, patches = ax1.hist(demands[t][p], bins=100, normed=1, facecolor='green')
+                PLT.show()
     solution = mipsolver.Solve()
    # result = solution.TotalCost, [ [ sum( solution.Production.get_value( Instance.ProductName[ p], t, w ) *  for w in Instance.ScenarioSet ) for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
 
@@ -585,15 +600,15 @@ if __name__ == "__main__":
         PrintScenarios = False
 
         #Instance.DefineAsSuperSmallIntance()
-        Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
-       # for InstanceName in ["01" ]:#, "02", "03", "04", "05"]:  # "06", "07", "08", "09",
+        #Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
+        #for InstanceName in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
             #			  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
             #			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
             #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
-       #     for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
-       #               "NonStationary"]:
-       #         Instance.ReadFromFile( InstanceName, Distribution )
-       #         Instance.SaveCompleteInstanceInExelFile()
+        #    for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
+        #              "NonStationary"]:
+        #        Instance.ReadFromFile( InstanceName, Distribution )
+        #        Instance.SaveCompleteInstanceInExelFile()
 
         #Instance.DefineAsSuperSmallIntance()
        # Instance.SaveCompleteInstanceInExelFile()

@@ -4,6 +4,7 @@ from Constants import Constants
 from Tool import Tool
 from RQMCGenerator import RQMCGenerator
 import scipy as scipy
+from matplotlib import pyplot as PLT
 
 class ScenarioTreeNode:
     NrNode = 0
@@ -96,7 +97,10 @@ class ScenarioTreeNode:
             avg = [ average[prod] for prod in idnonzero ]
             stddev = [std[prod] for prod in idnonzero ]
             pointsin01 = RQMCGenerator.RQMC01(nrpoints, nrnonzero)
+
             rqmcpoints = ScenarioTreeNode.TransformInverse( pointsin01, nrpoints, nrnonzero, distribution, avg, stddev )
+
+
 
             for p in range( nrnonzero ):  # instance.ProductWithExternalDemand:
                     for i in range(nrpoints):
