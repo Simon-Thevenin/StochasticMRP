@@ -5,15 +5,17 @@ import numpy as np
 from RQMCGenerator import RQMCGenerator
 import os
 from Constants import Constants
+from ast import literal_eval
 
 class ScenarioTree:
     #Constructor
-    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False, generateasYQfix = False, givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False ):
+    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False ):
         self.Seed = seed
         np.random.seed( seed )
         self.Nodes = []
         self.Owner = mipsolver
         self.Instance = instance
+        self.TreeStructure = branchperlevel
         self.NrBranches = branchperlevel
         self.EvaluationScenrio = evaluationscenario
         self.AverageScenarioTree = averagescenariotree
@@ -102,7 +104,13 @@ class ScenarioTree:
                                quantityvariable=s.QuanitityVariableOfScenario,
                                productionvariable=s.ProductionVariableOfScenario,
                                inventoryvariable=s.InventoryVariableOfScenario,
-                               backordervariable=s.BackOrderVariableOfScenario) for s in scenarioset ]
+                               backordervariable=s.BackOrderVariableOfScenario,
+                               nodesofscenario = s.NodesOfScenario) for s in scenarioset ]
+
+        id = 0
+        for s in scenarios:
+            s.ScenarioId = id
+            id = id +1
 
         return scenarios
 
@@ -120,5 +128,17 @@ class ScenarioTree:
     def FillQuantityToOrder(self, sol):
         for n in self.Nodes:
             if n.Time >= 0 and n.Time < self.Instance.NrTimeBucket :
-                 n.QuantityToOrder = sol.get_values( [ n.QuanitityVariable[ p ] for p in self.Instance.ProductSet ] )
+                 n.QuantityToOrder = sol.get_values( [ n.QuanitityVariable[ p ]for p in self.Instance.ProductSet ] )
                  n.QuantityToOrder = [ round( n.QuantityToOrder[p], 2)for p in self.Instance.ProductSet ]
+
+    #This function set the quantity to order at each node of the tree as found in the solution given in argument
+    def FillQuantityToOrderFromMRPSolution(self, sol, scenarios):
+        scenarionr = -1
+        for n in self.Nodes:
+            if n.Time >= 0 and n.Time < self.Instance.NrTimeBucket :
+                scenarionr = n.OneOfScenario.ScenarioId
+
+                n.QuantityToOrder =  [ sol.ProductionQuantity.ix[p, n.Time].get_value( scenarionr )
+                                        for p in self.Instance.ProductSet ]
+
+                n.QuantityToOrder = [ round( n.QuantityToOrder[p], 2)for p in self.Instance.ProductSet ]

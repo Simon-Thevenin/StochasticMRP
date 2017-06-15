@@ -5,14 +5,13 @@ import pandas as pd
 import glob as glob
 columnname = [
               "Instance name",
-              "Model",
-              "Scenario from YQFix",
-              "Policy generation",
               "Distribution",
+              "Model",
+              "Scenario Generation Method",
               "NrInSampleScenario",
-              "Scenario Geeration Method",
-              "Instance name",
-               "Method",
+              "Seed",
+              "Policy generation",
+              "NrOutSampleScenario",
                "Cplex solution value",
                "Solution cost",
                "Cplex_status",
@@ -50,6 +49,7 @@ for f in glob.glob("./Test/SolveInfo/*.csv"):
     df.columns = columnname
     all_data = all_data.append(df,  ignore_index = True)
 
+
 writer = pd.ExcelWriter( "./Test/SolveInfo/TestResultSolveInfo.xlsx", engine='openpyxl' )
 all_data.to_excel( writer, "Res" )
 writer.save( )
@@ -78,6 +78,7 @@ for f in glob.glob("./Test/Bounds/*.csv"):
     df = pd.read_csv(f, names=columnname)
     df.columns = columnname
     all_data = all_data.append(df, ignore_index=True)
+
 
 writer = pd.ExcelWriter("./Test/Bounds/TestResultBounds.xlsx", engine='openpyxl')
 all_data.to_excel(writer, "Res")
@@ -115,16 +116,18 @@ writer.save()
 
 
 columnname = ["Instance name",
-              "Model",
-              "Scenario from YQFix",
-              "Policy generation",
               "Distribution",
+              "Model",
+              "Scenario Generation Method",
               "NrInSampleScenario",
-              "Scenario Geeration Method",
+              "Seed",
+              "Policy generation",
+              "NrOutSampleScenario",
               "Expected In Sample",
               "CPLEX Time",
               "CPLEX Gap",
               "SetupCost",
+              "Inventory",
               "In Sample KPI On Time",
               "In Sample KPI Backorder",
               "In Sample KPI Lost sales",
@@ -140,6 +143,7 @@ columnname = ["Instance name",
               "Max Average",
               "Error",
               "SetupCost",
+              "Inventory",
               "Out Sample KPI On Time",
               "Out Sample KPI Backorder",
               "Out Sample KPI Lost sales",
@@ -156,6 +160,15 @@ for f in glob.glob("./Test/*.csv"):
     df = pd.read_csv(f, names=columnname)
     df.columns = columnname
     all_data = all_data.append(df, ignore_index=True)
+
+#all_data.sort_values(by=["Instance name",
+#                     "Distribution",
+#                     "Model",
+#                     "Scenario Generation Method",
+#                     "NrInSampleScenario",
+#                     "Seed",
+#                     "Policy generation",
+#                     "NrOutSampleScenario"])
 
 writer = pd.ExcelWriter("./Test/TestResult.xlsx", engine='openpyxl')
 all_data.to_excel(writer, "Res")

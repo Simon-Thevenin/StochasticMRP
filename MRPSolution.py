@@ -3,13 +3,21 @@ from Tool import Tool
 import csv
 from datetime import datetime
 import math
+from ScenarioTree import ScenarioTree
 from Constants import Constants
+from Tool import Tool
+from MRPInstance import MRPInstance
+import openpyxl as opxl
+from ast import literal_eval
 
 class MRPSolution:
 
+    def GetSolutionFileName(self, description):
+        result ="./Solutions/"+  description + "_Solution.xlsx"
+        return result
     #This function print the solution in an Excel file in the folde "Solutions"
     def PrintToExcel(self, description):
-        writer = pd.ExcelWriter("./Solutions/"+ self.MRPInstance.InstanceName + "_" + description + "_Solution.xlsx", engine='openpyxl')
+        writer = pd.ExcelWriter( self.GetSolutionFileName( description ), engine='openpyxl')
         #givenquantty = [[self.ProductionQuantity.ix[p, t].get_value(0) for p in self.MRPInstance.ProductSet]
         #                for t in self.MRPInstance.TimeBucketSet]
         #toprint = pd.DataFrame( givenquantty )
@@ -18,7 +26,60 @@ class MRPSolution:
         self.Production.to_excel(writer, 'Production')
         self.InventoryLevel.to_excel(writer, 'InventoryLevel')
         self.BackOrder.to_excel(writer, 'BackOrder')
+
+        general = [  self.MRPInstance.InstanceName, self.MRPInstance.Distribution, self.ScenarioTree.Owner.Model, self.CplexCost, self.CplexTime, self.CplexGap  ]
+        columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "CplexGap"]
+        generaldf = pd.DataFrame( general, index=columnstab )
+        generaldf.to_excel(writer, "Generic")
+
+        scenariotreeinfo = [self.MRPInstance.InstanceName, self.ScenarioTree.Seed, self.ScenarioTree.TreeStructure, self.ScenarioTree.AverageScenarioTree, self.ScenarioTree.ScenarioGenerationMethod]
+        columnstab = ["Name", "Seed", "TreeStructure", "AverageScenarioTree", "ScenarioGenerationMethod" ]
+        scenariotreeinfo = pd.DataFrame( scenariotreeinfo, index=columnstab)
+        scenariotreeinfo.to_excel(writer, "ScenarioTree")
+
+
         writer.save()
+
+    #This function read the instance from the excel file
+    def ReadFromExcel(self, description):
+        wb2 = opxl.load_workbook( self.GetSolutionFileName( description ))
+
+        # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
+        self.ProductionQuantity = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "ProductionQuantity")
+        self.Production = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "Production")
+        self.InventoryLevel = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "InventoryLevel")
+        self.BackOrder = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "BackOrder")
+        instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
+        scenariotreeinfo =  Tool.ReadDataFrame(wb2, "ScenarioTree")
+
+        self.MRPInstance = MRPInstance()
+        self.MRPInstance.ReadInstanceFromExelFile( instanceinfo.get_value( 'Name', 0 ), instanceinfo.get_value( 'Distribution', 0 ), )
+
+        scenariogenerationm = scenariotreeinfo.get_value('ScenarioGenerationMethod', 0)
+        model = instanceinfo.get_value( 'Model', 0 )
+        RQMCForYQfix = (model == Constants.ModelYQFix and scenariogenerationm == Constants.RQMC )
+
+        self.ScenarioTree = ScenarioTree ( instance = self.MRPInstance,
+                                           branchperlevel =  literal_eval(scenariotreeinfo.get_value( 'TreeStructure', 0 )),
+                                           seed = int( scenariotreeinfo.get_value( 'Seed', 0 ) ),
+                                           averagescenariotree =  scenariotreeinfo.get_value( 'AverageScenarioTree', 0 ),
+                                           scenariogenerationmethod =  scenariotreeinfo.get_value( 'ScenarioGenerationMethod', 0 ),
+                                           generateRQMCForYQfix = RQMCForYQfix )
+
+        self.CplexCost = instanceinfo.get_value( 'CplexCost', 0 )
+        self.CplexTime = instanceinfo.get_value( 'CplexTime', 0 )
+        self.CplexGap = instanceinfo.get_value( 'CplexGap', 0 )
+
+        self.Scenarioset = self.ScenarioTree.GetAllScenarios( False )
+
+        self.ComputeCost()
+
+        if model <> Constants.ModelYQFix:
+            self.ScenarioTree.FillQuantityToOrderFromMRPSolution(self, self.Scenarioset)
+            # for s in range( len(self.Scenarioset) ):
+            #     print "Scenario with demand:%r" % self.Scenarioset[s].Demands
+            #     print "quantity %r" % [ [ self.ProductionQuantity.loc[self.MRPInstance.ProductName[p], (time, s)] for p in
+            #                            self.MRPInstance.ProductSet ] for time in self.MRPInstance.TimeBucketSet]
 
     #This function prints a solution
     def Print(self):
@@ -45,10 +106,10 @@ class MRPSolution:
         lostsalecosttimeandscenar = lostsalevariable.transpose().dot( lostsalewithexternaldemand )
 
         #Reshap the vector to get matirces
-        inventorycostpertimeandscenar = inventorycostpertimeandscenar.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
-        setupcostpertimeandscenar = setupcostpertimeandscenar.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
-        backordercostpertimeandscenar = backordercostpertimeandscenar.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
-        lostsalecosttimeandscenar = lostsalecosttimeandscenar.reshape( 1, len(  self.Scenarioset ));
+        inventorycostpertimeandscenar = inventorycostpertimeandscenar.values.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
+        setupcostpertimeandscenar = setupcostpertimeandscenar.values.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
+        backordercostpertimeandscenar = backordercostpertimeandscenar.values.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
+        lostsalecosttimeandscenar = lostsalecosttimeandscenar.values.reshape( 1, len(  self.Scenarioset ));
 
 
         #multiply by the probability of each scenatio
@@ -72,8 +133,10 @@ class MRPSolution:
         self.LostsaleCost = netpresentvaluelostsalecostpertime
         self.TotalCost =  self.InventoryCost + self.BackOrderCost +  self.SetupCost + self.LostsaleCost
 
+
+
     #constructor
-    def __init__( self, instance, solquantity, solproduction, solinventory, solbackorder, scenarioset, scenriotree ):
+    def __init__( self, instance = None, solquantity= None, solproduction= None, solinventory= None, solbackorder= None, scenarioset= None, scenriotree= None ):
         self.MRPInstance = instance
 
 
@@ -82,22 +145,31 @@ class MRPSolution:
         self.ScenarioTree = scenriotree
 
         #Create a multi index to store the scenarios and time
-        iterables = [ self.MRPInstance.TimeBucketSet,   range( len( self.Scenarioset ) )  ]
-        multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
-        self.ProductionQuantity = pd.DataFrame( solquantity, index = instance.ProductName, columns = multiindex  )
-        self.ProductionQuantity.index.name = "Product"
-        self.InventoryLevel = pd.DataFrame( solinventory, index = instance.ProductName, columns = multiindex )
-        self.InventoryLevel.index.name = "Product"
-        self.Production = pd.DataFrame( solproduction, index = instance.ProductName, columns = multiindex  )
-        self.Production.index.name = "Product"
-        nameproductwithextternaldemand = [ instance.ProductName[p] for p in instance.ProductWithExternalDemand ]
-        self.BackOrder = pd.DataFrame( solbackorder,  index = nameproductwithextternaldemand, columns = multiindex  )
-        self.BackOrder.index.name = "Product"
+        if  instance is not  None:
+            iterables = [ self.MRPInstance.TimeBucketSet,   range( len( self.Scenarioset ) )  ]
+            multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
+            self.ProductionQuantity = pd.DataFrame( solquantity, index = instance.ProductName, columns = multiindex  )
+            self.ProductionQuantity.index.name = "Product"
+            self.InventoryLevel = pd.DataFrame( solinventory, index = instance.ProductName, columns = multiindex )
+            self.InventoryLevel.index.name = "Product"
+            self.Production = pd.DataFrame( solproduction, index = instance.ProductName, columns = multiindex  )
+            self.Production.index.name = "Product"
+            nameproductwithextternaldemand = [ instance.ProductName[p] for p in instance.ProductWithExternalDemand ]
+            self.BackOrder = pd.DataFrame( solbackorder,  index = nameproductwithextternaldemand, columns = multiindex  )
+            self.BackOrder.index.name = "Product"
+        else:
+            self.ProductionQuantity = None
+            self.InventoryLevel = None
+            self.Production = None
+            self.BackOrder = None
+
         self.InventoryCost = -1
         self.BackOrderCost = -1
         self.SetupCost = -1
         self.TotalCost =-1
-        self.ComputeCost()
+
+        if instance is not None:
+            self.ComputeCost()
         #The attribute below compute some statistic on the solution
         self.InSampleAverageInventory = []
         self.InSampleAverageBackOrder = []
@@ -109,6 +181,11 @@ class MRPSolution:
         self.InSampleAverageDemand = -1
         self.InSampleAverageBackOrder = -1
         self.InSampleAverageLostSale = -1
+
+        # The objecie value as outputed by CPLEx,
+        self.CplexCost =-1
+        self.CplexGap = -1
+        self.CplexTime = 0
 
     #This function compute some statistic on the current solution
     def ComputeStatistics( self ):
@@ -215,7 +292,7 @@ class MRPSolution:
 
 
         general = testidentifier+ [ self.InSampleAverageDemand, self.InSamplePercenBackOrder, self.InSamplePercentLostSale, offsetseed, nrevaluation, solutionseed ]
-        columnstab = [ "Instance", "Model", "Distribution", "Generate As YQFix", "Policy Generation methos", "NrInSampleScenario", "policy generation method", "Average demand", "avg back order", "avg lostsale", "offsetseed", "nrevaluation", "solutionseed" ]
+        columnstab = [ "Instance", "Distribution",  "Model",  "ScenarioGeneration", "NrScenario", "ScenarioSeed" , "Average demand", "avg back order", "avg lostsale", "offsetseed", "nrevaluation", "solutionseed" ]
         generaldf = pd.DataFrame(general, index=columnstab )
         generaldf.to_excel( writer, "General" )
         writer.save()
@@ -228,8 +305,13 @@ class MRPSolution:
                                     * self.MRPInstance.NrTimeBucket )
                                 for l in range( self.MRPInstance.NrLevel ) ]
 
+        self.ComputeCost()
 
-        kpistat = [ self.SetupCost,
+        kpistat = [ self.CplexCost,
+                    self.CplexTime,
+                    self.CplexGap,
+                    self.SetupCost,
+                    self.InventoryCost,
                     self.InSamplePercentOnTime,
                     self.InSamplePercenBackOrder,
                     self.InSamplePercentLostSale

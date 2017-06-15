@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import openpyxl as opxl
-import itertools as itools
+
 import math
 from ScenarioTree import ScenarioTree
 from ScenarioTreeNode import ScenarioTreeNode
@@ -9,6 +9,7 @@ from Scenario import Scenario
 import cPickle as pickle
 import os
 from random import randint
+from Tool import Tool
 import random
 import math
 from Constants import Constants
@@ -237,22 +238,7 @@ class MRPInstance:
         self.ResourceSet = range( self.NrResource )
         self.ProductSet = range( self.NrProduct )
 
-    #This function transform the sheet given in arguments into a dataframe
-    def ReadDataFrame( self, wb2, framename ):
-        sheet = wb2[framename];
-        data =  sheet.values
-        cols = next( data ) [ 1: ]
-        cols = list( cols )
-        #remove the None from the column names
-        for i in range( len( cols ) ):
-            if cols[i] == None :
-                cols[i] = i
 
-        data = list( data )
-        idx = [ r[ 0 ] for r in data ]
-        data = ( itools.islice(r, 1, None ) for r in data )
-        df = pd.DataFrame( data, index=idx, columns=cols )
-        return df;
 
     #This function load the scenario tree from a fil
     def LoadFromFile( self ):
@@ -269,8 +255,8 @@ class MRPInstance:
     def ReadFromFile( self, instancename, distribution):
         wb2 = opxl.load_workbook( "./Instances/MSOM-06-038-R2.xlsx" )
         #The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
-        supplychaindf = self.ReadDataFrame( wb2, instancename + "_LL" )
-        datasheetdf = self.ReadDataFrame( wb2, instancename + "_SD" )
+        supplychaindf = Tool.ReadDataFrame( wb2, instancename + "_LL" )
+        datasheetdf = Tool.ReadDataFrame( wb2, instancename + "_SD" )
         datasheetdf = datasheetdf.fillna(0)
         #read the data
         self.ProductName = list( datasheetdf.index.values )
@@ -293,7 +279,7 @@ class MRPInstance:
         for i, row in supplychaindf.iterrows():
             self.Requirements[ self.ProductName.index( row.get_value('destinationStage' ) ) ][ self.ProductName.index( i ) ] = 1
         #Assume an inventory holding cost of 0.1 per day for now
-        holdingcost = 0.1
+        holdingcost = 0.1 / 250
         self.InventoryCosts = [ 0.0 ] * self.NrProduct
         #The cost of the product is given by  added value per stage. The cost of the product at each stage must be computed
         addedvalueatstage = [ datasheetdf.get_value( self.ProductName[ p ], 'stageCost' ) for p in self.ProductSet ]
@@ -304,7 +290,7 @@ class MRPInstance:
             for p in prodinlevel:
                 addedvalueatstage[p] = sum(addedvalueatstage[ q ] * self.Requirements[p][q] for q in self.ProductSet ) + \
                                             addedvalueatstage[ p ]
-                self.InventoryCosts[p] = holdingcost / 250 *  addedvalueatstage[ p ]
+                self.InventoryCosts[p] = holdingcost *  addedvalueatstage[ p ]
 
 
         self.ComputeLevel()
@@ -350,7 +336,7 @@ class MRPInstance:
         else:
             self.ForecastError = [ 0.25 for p in self.ProductSet ]
             self.RateOfKnownDemand = [ math.pow( 0.9, t+1) for t in self.TimeBucketSet ]
-            self.ForecastedAverageDemand = [ [ np.floor( np.random.normal(self.YearlyAverageDemand[p], self.YearlyStandardDevDemands[p], 1.0).clip( min=0.0) ).tolist()[0]
+            self.ForecastedAverageDemand = [ [ np.floor( np.random.normal(self.YearlyAverageDemand[p], self.YearlyStandardDevDemands[p], 1).clip( min=0.0) ).tolist()[0]
                                                if self.YearlyStandardDevDemands[p] > 0 else float(self.YearlyAverageDemand[p])
                                                for p in self.ProductSet ] for t in self.TimeBucketSet ]
 
@@ -371,10 +357,10 @@ class MRPInstance:
                 dependentaveragedemand[p] = sum(dependentaveragedemand[q] * self.Requirements[q][p] for q in self.ProductSet) + \
                                                 dependentaveragedemand[p]
         # Assume a starting inventory is the average demand during the lead time
-        self.StartingInventories = [   int( random.uniform( 1, 2 ) * dependentaveragedemand[ p ] )   for p in self.ProductSet ]
+        self.StartingInventories = [   int( random.uniform( 1, 1.25 ) * dependentaveragedemand[ p ] * (self.Leadtimes[ p ] )  )   for p in self.ProductSet ]
 
         #This set of instances assume no setup
-        self.SetupCosts =  [  round( ( ( ( dependentaveragedemand[ p ] / 2 ) * 4 * 0.1 ) * random.uniform( 0.8, 1.2 ) ), 2)  for p in self.ProductSet ]
+        self.SetupCosts =  [   ( ( ( dependentaveragedemand[ p ] / 2 ) * 2 * holdingcost ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
 
         self.ProcessingTime = [ [ randint( 1, 5 )
                                     if (p == k )   else 0.0
@@ -440,11 +426,11 @@ class MRPInstance:
 
 
     #Save the Instance in an Excel  file
-    def ReadInstanceFromExelFile( self, instancename ):
-        wb2 = opxl.load_workbook("./Instances/" + instancename + ".xlsx")
+    def ReadInstanceFromExelFile( self, instancename, distribution ):
+        wb2 = opxl.load_workbook("./Instances/" + instancename+ "_" + distribution + ".xlsx")
 
         # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
-        Genericdf = self.ReadDataFrame(wb2, "Generic")
+        Genericdf = Tool.ReadDataFrame(wb2, "Generic")
         self.InstanceName = Genericdf.get_value( 'Name', 0 )
         self.NrProduct = Genericdf.get_value('NrProducts', 0)
         self.NrTimeBucket = Genericdf.get_value('NrBuckets', 0)
@@ -453,7 +439,7 @@ class MRPInstance:
         self.Gamma =  Genericdf.get_value('Gamma', 0)
         self.Distribution =  Genericdf.get_value('Distribution', 0)
 
-        Productdatadf = self.ReadDataFrame(wb2, "Productdata")
+        Productdatadf = Tool.ReadDataFrame(wb2, "Productdata")
         self.ProductName = list(Productdatadf.index.values)
         self.Leadtimes = Productdatadf[ 'Leadtimes' ].tolist()
         self.InventoryCosts = Productdatadf[ 'InventoryCosts' ].tolist()
@@ -464,19 +450,19 @@ class MRPInstance:
         self.SetupCosts = Productdatadf['SetupCosts'].tolist()
         self.LostSaleCost = Productdatadf['LostSale'].tolist()
         self.ComputeIndices()
-        Requirementdf = self.ReadDataFrame( wb2, "Requirement" )
+        Requirementdf = Tool.ReadDataFrame( wb2, "Requirement" )
         self.Requirements = [ [ Requirementdf.get_value( q, p ) for p in self.ProductName ] for q in self.ProductName ]
 
-        Capacitydf = self.ReadDataFrame(wb2, "Capacity")
+        Capacitydf = Tool.ReadDataFrame(wb2, "Capacity")
         self.Capacity = [ Capacitydf.get_value( k, 0 ) for k in self.ResourceSet ]
 
-        Processingdf = self.ReadDataFrame( wb2, "ProcessingTime" )
+        Processingdf = Tool.ReadDataFrame( wb2, "ProcessingTime" )
         self.ProcessingTime = [[Processingdf.get_value(p, k) for p in self.ProductName] for k in self.ResourceSet]
 
-        forecastedavgdemanddf = self.ReadDataFrame(wb2, "ForecastedAverageDemand")
+        forecastedavgdemanddf = Tool.ReadDataFrame(wb2, "ForecastedAverageDemand")
         self.ForecastedAverageDemand = [ [ forecastedavgdemanddf.get_value(t, p) for p in self.ProductName] for t in self.TimeBucketSet ]
 
-        forecastedstddf = self.ReadDataFrame(wb2, "ForcastedStandardDeviation")
+        forecastedstddf = Tool.ReadDataFrame(wb2, "ForcastedStandardDeviation")
         self.ForcastedStandardDeviation = [ [ forecastedstddf.get_value(t, p) for p in self.ProductName] for t in self.TimeBucketSet ]
 
 

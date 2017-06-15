@@ -365,10 +365,16 @@ class MIPSolver(object):
                         ub=[self.M] * nrinventoryvariable)
 
         # the variable production_prod_time_scenario_p_t_w equals 1 if a lot of product p is produced at time t in scneario w
-        self.Cplex.variables.add(obj=setupcosts,
-                                 #lb=[0.0] * nrproductionvariable,
-                                 #ub=[1.0] * nrproductionvariable,
-                                 types= ['B']*nrproductionvariable )
+        if self.EvaluateSolution:
+            self.Cplex.variables.add(obj=setupcosts,
+                                     lb=[0.0] * nrproductionvariable,
+                                     ub=[1.0] * nrproductionvariable
+                                     )
+        else:
+            self.Cplex.variables.add(obj=setupcosts,
+                                     #lb=[0.0] * nrproductionvariable,
+                                     #ub=[1.0] * nrproductionvariable,
+                                     types= ['B']*nrproductionvariable )
 
         # the variable backorder_prod_time_scenario_p_t_w gives the amount of product p backordered at time t in scneario w
         self.Cplex.variables.add(obj=backordercosts,
@@ -425,18 +431,22 @@ class MIPSolver(object):
                         vars = [indexvariable]
                         AlreadyAdded[indexvariable] = True
                         coeff = [1.0]
-                        righthandside =  [ float(  Decimal( "%r"%(self.GivenQuantity[t][p])  ).quantize(Decimal('0.0001'), rounding= ROUND_HALF_DOWN )  ) ]
-                         # PrintConstraint( vars, coeff, righthandside )
-                        righthandside[0] = righthandside[0]  + 0.1
+                        #righthandside =  [ float(  Decimal( "%r"%(self.GivenQuantity[t][p])  ).quantize(Decimal('0.0001'), rounding= ROUND_HALF_DOWN )  ) ]
+
+                        righthandside = [ self.GivenQuantity[t][p] ]
+                        #print "Value: %+18.16e" % self.GivenQuantity[t][p]
+                        # PrintConstraint( vars, coeff, righthandside )
+                        #righthandside[0] = righthandside[0]  + 0.1
+                        #righthandside[0] = righthandside[0]
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
-                                                           senses=["L"],
+                                                           senses=["E"],
                                                            rhs=righthandside ,
                                                            names = ["LQuantitya%da%da%d"%(p,t,w)])
-                        righthandside[0] = righthandside[0]  - 0.1
-                        self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
-                                                           senses=["G"],
-                                                           rhs=righthandside ,
-                                                           names = ["GQuantitya%da%da%d"%(p,t,w)])
+                        #righthandside[0] = righthandside[0]  - 0.1
+                        #self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
+                        #                                   senses=["G"],
+                        #                                   rhs=righthandside ,
+                        #                                   names = ["GQuantitya%da%da%d"%(p,t,w)])
                         self.QuantityConstraintNR[w][p][t] = "Quantitya%da%da%d"%(p,t,w)
 
     def CreateCopyGivenSetupConstraints(self):
@@ -651,6 +661,7 @@ class MIPSolver(object):
         #solve the problem
         self.Cplex.solve()
 
+
         buildtime = end_modeling - start_time;
         solvetime = time.time() - end_modeling;
 
@@ -663,31 +674,47 @@ class MIPSolver(object):
             objvalue = sol.get_objective_value()
             array = [ self.GetIndexQuantityVariable(p, t, w)
                      for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet ];
+            #testarray = [ "p:%st:%sw:%s"%(p, t, w)  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet ]
+
             solquantity = sol.get_values(array)
-            solquantity = np.array(solquantity, np.float32).reshape(
+            solquantity = np.array(solquantity, np.float64).reshape(
                                     (self.Instance.NrProduct, self.Instance.NrTimeBucket * self.NrScenario))
+
+            #reshaped = np.array(testarray, str).reshape(
+            #                        (self.Instance.NrProduct, self.Instance.NrTimeBucket * self.NrScenario))
+
+            #for s in self.ScenarioSet:
+            #    print "Scenario with demand:%r"%self.Scenarios[s].Demands
+               # print "order %r"%reshaped
+            #    print "quantity %r"%[  [ solquantity[p][ s + t *  self.NrScenario ]  for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet  ]
+
 
             array = [self.GetIndexProductionVariable(p, t, w)
                      for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
             solproduction = sol.get_values(array)
-            solproduction = np.array(solproduction, np.float32).reshape(
+            solproduction = np.array(solproduction, np.float64).reshape(
                 (self.Instance.NrProduct, self.Instance.NrTimeBucket * self.NrScenario))
             array = [self.GetIndexInventoryVariable(p, t, w)
                      for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
             solinventory = sol.get_values(array)
-            solinventory = np.array(solinventory, np.float32).reshape(
+            solinventory = np.array(solinventory, np.float64).reshape(
                 (self.Instance.NrProduct, self.Instance.NrTimeBucket * self.NrScenario))
 
             array = [self.GetIndexBackorderVariable(p, t, w)
                      for p in self.Instance.ProductWithExternalDemand for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
             solbackorder = sol.get_values(array)
-            solbackorder = np.array(solbackorder, np.float32).reshape(( len( self.Instance.ProductWithExternalDemand ),
+            solbackorder = np.array(solbackorder, np.float64).reshape(( len( self.Instance.ProductWithExternalDemand ),
                                                                         self.Instance.NrTimeBucket * self.NrScenario))
 
             if self.Model <> Constants.ModelYQFix:
                 self.DemandScenarioTree.FillQuantityToOrder( sol )
 
             Solution = MRPSolution( self.Instance,  solquantity, solproduction, solinventory, solbackorder, self.Scenarios, self.DemandScenarioTree )
+            Solution.CplexCost = objvalue
+            Solution.CplexGap = 0
+            if not self.EvaluateSolution:
+                Solution.CplexGap = sol.MIP.get_mip_relative_gap()
+            Solution.CplexTime = solvetime
 
             costperscenarios, averagecost, std_devcost = self.ComputeCostPerScenario()
 
@@ -698,10 +725,9 @@ class MIPSolver(object):
                             sol.status[sol.get_status()],
                             buildtime,
                             solvetime,
-                            sol.MIP.get_mip_relative_gap(),
-                            sol.progress.get_num_iterations(),
-                            sol.progress.get_num_nodes_processed(),
-                            sol.MIP.get_incumbent_node(),
+                            Solution.CplexGap,
+                            #sol.progress.get_num_iterations(),
+                            #sol.progress.get_num_nodes_processed(),
                             self.Cplex.variables.get_num(),
                             self.Cplex.linear_constraints.get_num(),
                             Solution.InventoryCost,
@@ -717,8 +743,8 @@ class MIPSolver(object):
                             self.Instance.MaxLeadTime,
                             self.Instance.BranchingStrategy,
                             self.DemandScenarioTree.Distribution ]
-
             return Solution
+
         else:
             print("No solution available.")
 
@@ -825,18 +851,19 @@ class MIPSolver(object):
                         if not AlreadyAdded[indexvariable]:
                             AlreadyAdded[indexvariable]= True
                             value =  "%f"%givenquanities[t][p]
+                            #print "Value: %+18.16e" %givenquanities[t][p]
                             righthandside = givenquanities[t][p]#
 
-                            value = float( righthandside + 0.1)
-                            righthandside1 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
+                            #value = float( righthandside + 0.1)
+                            #righthandside1 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
                             constrnr = "L"+self.QuantityConstraintNR[w][p][t]
-                            constrainttuples.append((constrnr, righthandside1))
+                            constrainttuples.append((constrnr, righthandside))
 
-                            value = max( float( righthandside - 0.1), 0.0)
+                            #value = max( float( righthandside - 0.1), 0.0)
 
-                            righthandside2 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
+                            #righthandside2 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
 
-                            constrnr = "G"+self.QuantityConstraintNR[w][p][t]
-                            constrainttuples.append((constrnr, righthandside2))
-
+                            #constrnr = "G"+self.QuantityConstraintNR[w][p][t]
+                            #constrainttuples.append((constrnr, righthandside2))
+            #print "constrainttuples %r"%constrainttuples
             self.Cplex.linear_constraints.set_rhs( constrainttuples )

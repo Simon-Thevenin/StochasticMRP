@@ -137,7 +137,7 @@ class ScenarioTreeNode:
     # This function create a node for the instance and time given in argument
     #The node is associated to the time given in paramter.
     #nr demand is the number of demand scenario fo
-    def __init__( self, owner = None, parent =None, firstbranchid = -1, instance = None, mipsolver = None, time = -1,  nrbranch = -1, demands = None, proabibilty = -1, averagescenariotree = False,  slowmoving = False  ):
+    def __init__( self, owner = None, parent =None, firstbranchid = -1, instance = None, mipsolver = None, time = -1,  nrbranch = -1, demands = None, proabibilty = -1, averagescenariotree = False  ):
         if owner is not None:
             owner.Nodes.append( self )
         self.Owner = owner;
@@ -178,8 +178,7 @@ class ScenarioTreeNode:
                                                 nrbranch = owner.NrBranches[ t +1 ],
                                                 demands = [ nextdemands[ p ][ b ]  for p in instance.ProductSet if t > 0 ],
                                                 proabibilty =   probabilities[ b ]  ,
-                                                averagescenariotree = usaverageforbranch,
-                                                slowmoving = slowmoving ) for b in range( nrbranch ) ]
+                                                averagescenariotree = usaverageforbranch ) for b in range( nrbranch ) ]
 
         self.Time = time
         # The probability associated with the node
@@ -200,8 +199,10 @@ class ScenarioTreeNode:
         self.ProductionVariableOfScenario = [] # will be built later
         self.InventoryVariableOfScenario = []# will be built later
         self.BackOrderVariableOfScenario = []# will be built later
+        self.NodesOfScenario =[]# will be built later
         self.QuantityToOrder = [] #After solving the MILP, the attribut contains the quantity to order at the node
 
+        self.Scenario = None
 
     #This function compute the indices of the variables associated wiht each node of the tree
     def ComputeVariableIndex( self ):
@@ -243,6 +244,7 @@ class ScenarioTreeNode:
             self.ProductionVariableOfScenario = self.Parent.ProductionVariableOfScenario[ : ]
             self.InventoryVariableOfScenario = self.Parent.InventoryVariableOfScenario[ : ]
             self.BackOrderVariableOfScenario = self.Parent.BackOrderVariableOfScenario[ : ]
+            self.NodesOfScenario = self.Parent.NodesOfScenario[:]
 
             # Add the demand of the the current node and update the probability
             Tool.AppendIfNotEmpty( self.DemandsInScenario, self.Demand )
@@ -250,6 +252,7 @@ class ScenarioTreeNode:
             Tool.AppendIfNotEmpty( self.ProductionVariableOfScenario, self.ProductionVariable )
             Tool.AppendIfNotEmpty( self.InventoryVariableOfScenario, self.InventoryVariable )
             Tool.AppendIfNotEmpty( self.BackOrderVariableOfScenario, self.BackOrderVariable )
+            self.NodesOfScenario.append(self)
             #Compute the probability of the scenario
             self.ProbabilityOfScenario = self.ProbabilityOfScenario * self.Probability
         else :

@@ -6,4 +6,5 @@ rm ./Test/SolveInfo/*
 rm ./Test/Statistic/*
 rm ./Test/*
 rm ./Solutions/*
+rm ./Evaluations/*
 rm ./job*
