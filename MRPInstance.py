@@ -267,7 +267,7 @@ class MRPInstance:
         self.NrTimeBucket = 0
         self.ComputeIndices()
 
-        self.Distribution =distribution
+        self.Distribution = distribution
 
         #Get the average demand, lead time
         self.Leadtimes = [randint( 1, 1 ) for p in self.ProductSet]
