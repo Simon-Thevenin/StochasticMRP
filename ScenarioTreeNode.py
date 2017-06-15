@@ -15,6 +15,18 @@ class ScenarioTreeNode:
             demandvector = [ [ self.Owner.DemandYQFixRQMC[firstbranchid + i][time][p]
                                  for i in range(nrdemand)]
                                       for p in self.Instance.ProductSet]
+            #print "firstbranchid + i][time][p] [%r][%r][%r] " %( firstbranchid , time, p )
+            # for p in self.Instance.ProductSet:
+            #
+            #         pts = [self.Owner.DemandYQFixRQMC[s][time][p] for s in range(nrdemand)]
+            #         print " CONSTRUCTING THE TREE The transformed point at dim %d at time %d : %r  " % (p, time, pts)
+            #         with open('Histpoints%dt%d.csv' % (p, time), 'w+') as f:
+            #             # v_hist = np.ravel(v)  # 'flatten' v
+            #             fig = PLT.figure()
+            #             ax1 = fig.add_subplot(111)
+            #
+            #             n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
+            #             PLT.show()
             return demandvector
 
     #This function is used when the demand to use are the one generated for YQFix, which are stored in an array DemandToFollow
@@ -174,9 +186,13 @@ class ScenarioTreeNode:
 
             usaverageforbranch = t >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ) or  self.Owner.AverageScenarioTree
 
+            nextfirstbranchid = [ self.FirstBranchID for b in range(nrbranch) ]
+            if t == 1:
+                nextfirstbranchid= [ b for b in range(nrbranch) ]
+
             self.Branches = [ ScenarioTreeNode( owner = owner,
                                                 parent = self,
-                                                firstbranchid =  b ,
+                                                firstbranchid =  nextfirstbranchid[b] ,
                                                 instance = instance,
                                                 time = t,
                                                 nrbranch = owner.NrBranches[ t +1 ],

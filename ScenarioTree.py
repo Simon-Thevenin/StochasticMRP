@@ -48,29 +48,29 @@ class ScenarioTree:
              nrscenarion = self.NrBranches[1]
              rqmcpoint01 = RQMCGenerator.RQMC01( nrscenarion , dimension  )
 
-             for d in range(dimension):
-                 pts = [rqmcpoint01[p][d] for p in range(nrscenarion)]
-                 print "The point at dim %d at time : %r  " % (d, pts)
-                 with open('Histpoints%dt%d.csv' % (p, d), 'w+') as f:
-                     # v_hist = np.ravel(v)  # 'flatten' v
-                     fig = PLT.figure()
-                     ax1 = fig.add_subplot(111)
-
-                     n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
-                     PLT.show()
+             # for d in range(dimension):
+             #     pts = [rqmcpoint01[p][d] for p in range(nrscenarion)]
+             #     print "The point at dim %d at time : %r  " % (d, pts)
+             #     with open('Histpoints%dt%d.csv' % (p, d), 'w+') as f:
+             #         # v_hist = np.ravel(v)  # 'flatten' v
+             #         fig = PLT.figure()
+             #         ax1 = fig.add_subplot(111)
+             #
+             #         n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
+             #         PLT.show()
 
              rmcpoint = ScenarioTreeNode.TransformInverse( rqmcpoint01, nrscenarion, dimension, self.Instance.Distribution, avgvector, stdvector )
 
-             for d in range(dimension):
-                 pts = [rmcpoint[d][p] for p in range(nrscenarion)]
-                 print "The transformed point at dim %d at time : %r  " % (d, pts)
-                 with open('Histpoints%dt%d.csv' % (p, d), 'w+') as f:
-                     # v_hist = np.ravel(v)  # 'flatten' v
-                     fig = PLT.figure()
-                     ax1 = fig.add_subplot(111)
 
-                     n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
-                     PLT.show()
+             # indices =  [[[self.Instance.ProductWithExternalDemandIndex[p] * nrtimebuckets + t
+             #    if self.Instance.HasExternalDemand[p]
+             #    else -1
+             #               for s in range(nrscenarion)   ]
+             #   for t in range(nrtimebuckets)]
+             #   for p in self.Instance.ProductSet]
+             #
+             # print "Used indices %r"%indices
+
 
              self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebuckets + t ][s]
                                           if  self.Instance.HasExternalDemand[p]
@@ -78,6 +78,18 @@ class ScenarioTree:
                                         for p in self.Instance.ProductSet ]
                                       for t in range( nrtimebuckets ) ]
                                      for s in range( nrscenarion )]
+
+             # for p in self.Instance.ProductSet:
+             #     for t in range(nrtimebuckets):
+             #        pts = [self.DemandYQFixRQMC[ s][t][p] for s in range( nrscenarion ) ]
+             #        print "The transformed point at dim %d at time %d : %r  " % (p,t, pts)
+             #        with open('Histpoints%dt%d.csv' % (p, t), 'w+') as f:
+             #            # v_hist = np.ravel(v)  # 'flatten' v
+             #            fig = PLT.figure()
+             #            ax1 = fig.add_subplot(111)
+             #
+             #            n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
+             #            PLT.show()
 
         self.RootNode =  ScenarioTreeNode( owner = self,
                                            instance = instance,

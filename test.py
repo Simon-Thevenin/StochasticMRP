@@ -127,16 +127,16 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
 
     scenario = mipsolver.Scenarios
     demands = [ [ [ scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet ] for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
-    for t in Instance.TimeBucketSet:
-        for p in Instance.ProductWithExternalDemand:
-            print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
-            with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
-                #v_hist = np.ravel(v)  # 'flatten' v
-                fig = PLT.figure()
-                ax1 = fig.add_subplot(111)
-
-                n, bins, patches = ax1.hist(demands[t][p], bins=100, normed=1, facecolor='green')
-                PLT.show()
+    # for t in Instance.TimeBucketSet:
+    #     for p in Instance.ProductWithExternalDemand:
+    #         print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
+    #         with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
+    #             #v_hist = np.ravel(v)  # 'flatten' v
+    #             fig = PLT.figure()
+    #             ax1 = fig.add_subplot(111)
+    #
+    #             n, bins, patches = ax1.hist(demands[t][p], bins=100, normed=1, facecolor='green')
+    #             PLT.show()
     solution = mipsolver.Solve()
    # result = solution.TotalCost, [ [ sum( solution.Production.get_value( Instance.ProductName[ p], t, w ) *  for w in Instance.ScenarioSet ) for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
 
