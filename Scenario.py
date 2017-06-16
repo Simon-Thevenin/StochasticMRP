@@ -4,7 +4,7 @@ class Scenario:
 
     NrScenario = 0
     #Constructor
-    def __init__( self, owner = None, demand = None, proabability = -1, quantityvariable = None,  productionvariable = None,  inventoryvariable = None,  backordervariable = None ):
+    def __init__( self, owner = None, demand = None, proabability = -1, quantityvariable = None,  productionvariable = None,  inventoryvariable = None,  backordervariable = None, nodesofscenario = None ):
         self.Owner = owner
         # The  demand in the scenario for each time period
         self.Demands= demand
@@ -16,6 +16,9 @@ class Scenario:
         self.InventoryVariable = inventoryvariable
         self.BackOrderVariable = backordervariable
         Scenario.NrScenario = Scenario.NrScenario +1
+        self.Nodes = nodesofscenario
+        for n in self.Nodes:
+            n.OneOfScenario = self
         self.ScenarioId =  Scenario.NrScenario
 
     def DisplayScenario( self ):

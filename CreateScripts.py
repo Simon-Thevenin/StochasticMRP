@@ -1,63 +1,99 @@
 #!/usr/bin/python
-#script de lancement pour les fichiers 
+# script de lancement pour les fichiers
 
 
 import os
 import subprocess
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
-	#Path to the program you want to run
-	exec_file=r"/home/thesim/TestFolder/stochasticmrp/"
+    # Path to the program you want to run
+    exec_file = r"/home/thesim/TestFolder/stochasticmrp/"
 
-	#Path to a folder containing the data set you want to run your program on.
-	#Your program will be run on every file in the folder but the files whose names start by '.' (hidden files)
-	data_folder=r"/home/isabel/Models/OneT/Data/no_trend"
-	
-	#Path to a folder where you want your results to be
-	output_folder=r"/home/thesim/TestFolder/stochasticmrp/"
+    # Path to a folder containing the data set you want to run your program on.
+    # Your program will be run on every file in the folder but the files whose names start by '.' (hidden files)
+    data_folder = r"/home/isabel/Models/OneT/Data/no_trend"
 
-	for f in ["01"  , "02", "03", "04", "05" ]:# "06", "07", "08", "09", 
-#			  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", 
-#			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", 
-#			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
+    # Path to a folder where you want your results to be
+    output_folder = r"/home/thesim/TestFolder/stochasticmrp/"
 
-		for b in [ "SlowMoving", "Normal" ]: #"02", "03", "04", "05", "06", "07", "08", "09", "10"]:
-   
-			for m in [ "YQFix" ]:#, "YFix", "_Fix" ]: 
-				for rep in ["01", "02", "03", "04", "05", "06"]: #, "07", "08", "09", "10"]: 
-					Param = "False"
-					if rep == "06":
-					  Param = "True"
-					qsub_filename = "job_%s_%s_%s_%s"%(f, b, m, rep)
-					qsub_file=open(qsub_filename, 'w')
-					qsub_file.write("""
+    for instance in ["01", "02", "03", "04", "05" ]:
+        for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
+            for model in ["YFix", "YQFix", "Average"]:
+                generationset = ["MC", "RQMC"]
+                scenarset = ["4", "512"]
+                policyset = [ "NearestNeighbor", "Re-solve"]
+                method = "MIP"
+                avg = False
+                if model == "YQFix":
+                    scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+                    policyset = [ "Fix" ]
+
+                if model == "Average":
+                    scenarset =  [ "1" ]
+                    avg = True
+                    policyset = ["Fix"]
+                    generationset = ["MC"]
+                for generation in generationset:
+                    for nrscenar in scenarset:
+                        for seed in range( 5 ):
+                                qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s" % (
+                                    instance, distribution, model, nrscenar, generation, seed  )
+                                qsub_file = open(qsub_filename, 'w')
+                                qsub_file.write("""
 #!/bin/bash -l
 #
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjob%s%s%s%s.txt
-ulimit -v 8000000
+#$ -o /home/thesim/outputjob%s%s%s%s%s%s.txt
+ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py %s %s %s 10000 %s %s
-""" %(f, rep, m , b, f, rep, m, Param, b) )
+python test.py Solve %s %s %s %s %s -s %s
+""" % ( instance, distribution, model, nrscenar, generation, seed,  instance, distribution, model, nrscenar, generation, seed  ))  # Create the sh file
+                                for Policy in policyset:
+                                    qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
+                                      instance, distribution, model, nrscenar, generation, Policy, seed)
+                                    qsub_file = open(qsub_filename, 'w')
+                                    qsub_file.write("""
+#!/bin/bash -l
+#
+#$ -cwd
+#$ -q idra
+#$ -j y
+#$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s.txt
+ulimit -v 16000000
+mkdir /tmp/thesim
+python test.py Evaluate %s %s %s %s %s  -s %s -p %s
+""" % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model,
+                               nrscenar, generation, seed, Policy) )
 
-
-#Create the sh file
 filename = "runalljobs.sh"
-file=open(filename, 'w')
+file = open(filename, 'w')
 file.write("""
 #!/bin/bash -l
 #
-""" ) 
-for f in ["01"  , "02", "03", "04", "05" ]:# "06", "07", "08", "09", 
-#			  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", 
-#			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", 
-#			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
+""")
 
-		for b in [ "07" ]: #"02", "03", "04", "05", "06", "07", "08", "09", "10"]:
-   
-			for m in [ "YQFix" ]:#, "YFix", "_Fix" ]: 
-				for rep in ["01", "02", "03", "04", "05", "06"]:#, "06", "07", "08", "09", "10"]: 
-						file.write("qsub job_%s_%s_%s_%s \n"%(f, b, m, rep) )
+for instance in ["01"]:#["02", "03", "04", "05" ]:
+    for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
+        for model in ["YFix", "YQFix", "Average"]:
+            generationset = ["RQMC",  "MC"]
+            scenarset = ["512"]
+            policyset = ["NearestNeighbor", "Re-solve"]
+            method = "MIP"
+            avg = False
+            if model == "YQFix":
+                scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+                policyset = ["Fix"]
+
+            if model == "Average":
+                scenarset = ["1"]
+                avg = True
+                policyset = ["Fix"]
+                generationset = ["MC"]
+            for generation in generationset:
+                for nrscenar in scenarset:
+                    for seed in range(5):
+                            file.write("qsub job_solve_%s_%s_%s_%s_%s_%s \n" % (
+                                    instance, distribution, model, nrscenar, generation, seed  ) )
