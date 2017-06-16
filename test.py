@@ -126,7 +126,7 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
 
 
     scenario = mipsolver.Scenarios
-    demands = [ [ [ scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet ] for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
+    #demands = [ [ [ scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet ] for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
     # for t in Instance.TimeBucketSet:
     #     for p in Instance.ProductWithExternalDemand:
     #         print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
