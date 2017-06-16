@@ -77,8 +77,8 @@ file.write("""
 
 for instance in ["01"]:#["02", "03", "04", "05" ]:
     for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
-        for model in ["YFix", "YQFix"]: #, "Average"]:
-            generationset = ["RQMC" ]#, "RQMC"]
+        for model in ["YFix", "YQFix", "Average"]:
+            generationset = ["RQMC",  "MC"]
             scenarset = ["512"]
             policyset = ["NearestNeighbor", "Re-solve"]
             method = "MIP"
