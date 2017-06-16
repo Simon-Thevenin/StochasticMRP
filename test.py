@@ -621,7 +621,7 @@ if __name__ == "__main__":
     if Action == Constants.Solve:
 
         if Model == Constants.ModelYQFix or Model == Constants.Average:
-            RunTestsAndEvaluation()
+            #RunTestsAndEvaluation()
             SolveYQFix()
         if Model == Constants.ModelYFix:
             #RunTestsAndEvaluation()
