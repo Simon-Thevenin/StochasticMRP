@@ -165,17 +165,29 @@ class ScenarioTree:
     def FillQuantityToOrder(self, sol):
         for n in self.Nodes:
             if n.Time >= 0 and n.Time < self.Instance.NrTimeBucket :
-                 n.QuantityToOrder = sol.get_values( [ n.QuanitityVariable[ p ]for p in self.Instance.ProductSet ] )
-                 n.QuantityToOrder = [ round( n.QuantityToOrder[p], 2)for p in self.Instance.ProductSet ]
+                n.QuantityToOrder = sol.get_values( [ n.QuanitityVariable[ p ]for p in self.Instance.ProductSet ] )
+                if n.Time >0:
+                    n.InventoryLevel = sol.get_values([n.InventoryVariable[p] for p in self.Instance.ProductSet])
+                    n.BackOrderLevel = sol.get_values([n.BackOrderVariable[ self.Instance.ProductWithExternalDemandIndex[p] ] for p in self.Instance.ProductWithExternalDemand])
+
 
     #This function set the quantity to order at each node of the tree as found in the solution given in argument
     def FillQuantityToOrderFromMRPSolution(self, sol, scenarios):
         scenarionr = -1
         for n in self.Nodes:
-            if n.Time >= 0 and n.Time < self.Instance.NrTimeBucket :
+            if n.Time >= 0 and  n.Time < self.Instance.NrTimeBucket :
                 scenarionr = n.OneOfScenario.ScenarioId
+                n.QuantityToOrderNextTime =  [ sol.ProductionQuantity.ix[p, n.Time ].get_value( scenarionr )
+                                            for p in self.Instance.ProductSet ]
 
-                n.QuantityToOrder =  [ sol.ProductionQuantity.ix[p, n.Time].get_value( scenarionr )
-                                        for p in self.Instance.ProductSet ]
+                n.InventoryLevelNextTime = [ sol.InventoryLevel.ix[p, n.Time  ].get_value( scenarionr ) if not self.Instance.HasExternalDemand[p] else float( 'nan' )
+                                            for p in self.Instance.ProductSet ]
 
-                n.QuantityToOrder = [ round( n.QuantityToOrder[p], 2)for p in self.Instance.ProductSet ]
+                if n.Time >= 1:
+                    n.BackOrderLevelTime = [ sol.BackOrder.ix[ self.Instance.ProductWithExternalDemandIndex[p], n.Time -1 ].get_value( scenarionr )
+                                            for p in self.Instance.ProductWithExternalDemand ]
+
+                    n.InventoryLevelTime = [ sol.InventoryLevel.ix[p, n.Time -1 ].get_value( scenarionr )
+                                             if  self.Instance.HasExternalDemand[p] else float( 'nan' )
+                                            for p in self.Instance.ProductSet ]
+

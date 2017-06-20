@@ -15,7 +15,7 @@ import cplex
 
 class Evaluator:
 
-    def __init__( self, instance, solutions, policy = "", scenariogenerationresolve = "", treestructure =[] ):
+    def __init__( self, instance, solutions, policy = "", scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "" ):
         self.Instance = instance
         self.Solutions = solutions
         self.NrSolutions = len( self.Solutions )
@@ -25,6 +25,7 @@ class Evaluator:
         self.MIPResolveTime = [ None for t in instance.TimeBucketSet  ]
         self.IsDefineMIPResolveTime = [False for t in instance.TimeBucketSet]
         self.ReferenceTreeStructure = treestructure
+        self.NearestNeighborStrategy = nearestneighborstrategy
 
     def GetQuantityByResolve( self, demanduptotimet, time, givenquantty, solution, givensetup, model ):
         result = [ 0  for p in self.Instance.ProductSet ]
@@ -85,7 +86,7 @@ class Evaluator:
 
     def EvaluateYQFixSolution( self, testidentifier, evaluateidentificator, model, saveevaluatetab = False, filename = ""):
         # Compute the average value of the demand
-        nrscenario = evaluateidentificator[1]
+        nrscenario = evaluateidentificator[2]
         start_time = time.time()
         Evaluated = [  -1  for e in range(nrscenario) ]
         index = 0
@@ -128,7 +129,7 @@ class Evaluator:
                             for ti in self.Instance.TimeBucketSet:
                                 demanduptotimet = [ [ scenario.Demands[t][p] for p in self.Instance.ProductSet ] for t in range(ti) ]
                                 if self.Policy == Constants.NearestNeighbor:
-                                    givenquantty[ti], previousnode, error = sol.GetQuantityToOrderAC( demanduptotimet, ti, previousnode )
+                                    givenquantty[ti], previousnode, error = sol.GetQuantityToOrder( self.NearestNeighborStrategy, ti, demanduptotimet, givenquantty, previousnode  )
                                 if self.Policy == Constants.Resolve:
                                     givenquantty[ti], error = self.GetQuantityByResolve( demanduptotimet, ti, givenquantty, sol, givensetup, model )
 
@@ -277,3 +278,5 @@ class Evaluator:
 
         # writer.save()
         return EvaluateInfo
+
+

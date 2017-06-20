@@ -50,6 +50,7 @@ ComputeAverageSolution = False
 
 #How to generate a policy from the solution of a scenario tree
 PolicyGeneration = "NearestNeighbor"
+NearestNeighborStrategy = ""
 NrEvaluation = 500
 ScenarioGeneration = "MC"
 #When a solution is obtained, it is recorded in Solution. This is used to compute VSS for instance.
@@ -238,7 +239,7 @@ def Evaluate():
     ComputeInSampleStatistis()
     global OutOfSampleTestResult
     solutions = GetPreviouslyFoundSolution()
-    evaluator = Evaluator( Instance, solutions, PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure() )
+    evaluator = Evaluator( Instance, solutions, PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  Model )
     PrintFinalResult()
 
@@ -255,13 +256,13 @@ def EvaluateSingleSol(  ):
     filedescription = GetTestDescription()
     solution = MRPSolution()
     solution.ReadFromExcel(filedescription)
-    evaluator = Evaluator( Instance, [solution], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure() )
+    evaluator = Evaluator( Instance, [solution], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
 
 
     MIPModel = Model
     if Model == Constants.Average:
         MIPModel = Constants.ModelYQFix
-    OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  MIPModel, saveevaluatetab= True, filename = GetEvaluationFileName() )
+    OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  MIPModel, saveevaluatetab= True, filename = GetEvaluationFileName()  )
    # PrintFinalResult()
     GatherEvaluation()
 
@@ -520,6 +521,7 @@ def parseArguments():
     global PolicyGeneration
     global NrEvaluation
     global SeedIndex
+    global NearestNeighborStrategy
 
     Action = args.Action
     InstanceName = args.Instance
@@ -530,9 +532,13 @@ def parseArguments():
     ScenarioSeed = SeedArray[ args.ScenarioSeed ]
     SeedIndex = args.ScenarioSeed
     PolicyGeneration = args.policy
+    NearestNeighborStrategy = ""
+    if PolicyGeneration in ["NNDAC", "NNSAC", "NND", "NNS" ]:
+        PolicyGeneration = "NN"
+        NearestNeighborStrategy = args.policy
     NrEvaluation = args.nrevaluation
     TestIdentifier = [ InstanceName, Distribution, Model, ScenarioGeneration, NrScenario, ScenarioSeed ]
-    EvaluatorIdentifier = [ PolicyGeneration, NrEvaluation]
+    EvaluatorIdentifier = [ PolicyGeneration, NearestNeighborStrategy, NrEvaluation]
     return args
 
 #Save the scenario tree in a file
@@ -550,7 +556,7 @@ def parseArguments():
 #This function runs the evaluation for the just completed test :
 def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve:
-        policyset = ["NearestNeighbor", "Re-solve"]
+        policyset = ["NNDAC", "NNSAC", "NND", "NNS", "Re-solve"]
         if Model == Constants.ModelYQFix or Model == Constants.Average:
                 policyset = ["Fix"]
         for policy in policyset:
@@ -564,7 +570,7 @@ def RunEvaluationIfAllSolve(  ):
     #Check among the available files, if one of the sceed is not solve
     solutions = GetPreviouslyFoundSolution()
     if len( solutions ) >= 5 :
-        policyset = ["NearestNeighbor", "Re-solve"]
+        policyset = ["NNDAC", "NNSAC", "NND", "NNS", "Re-solve"]
         if Model == Constants.ModelYQFix or Model == Constants.Average:
             policyset = ["Fix"]
         for policy in policyset:
@@ -579,7 +585,10 @@ def RunTestsAndEvaluation():
         SeedIndex = s
         ScenarioSeed = SeedArray[ s ]
         TestIdentifier[5] = ScenarioSeed
-        SolveYQFix()
+        if Model == Constants.ModelYQFix:
+            SolveYQFix()
+        if Model == Constants.ModelYFix:
+            SolveYFix()
         EvaluateSingleSol()
 
 
@@ -611,7 +620,7 @@ if __name__ == "__main__":
         #        Instance.SaveCompleteInstanceInExelFile()
 
         #Instance.DefineAsSuperSmallIntance()
-       # Instance.SaveCompleteInstanceInExelFile()
+        #Instance.SaveCompleteInstanceInExelFile()
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
       
@@ -621,11 +630,15 @@ if __name__ == "__main__":
     if Action == Constants.Solve:
 
         if Model == Constants.ModelYQFix or Model == Constants.Average:
-            #RunTestsAndEvaluation()
-            SolveYQFix()
+            if Constants.LauchEvalAfterSolve :
+                SolveYQFix()
+            else: RunTestsAndEvaluation()
+
         if Model == Constants.ModelYFix:
-            #RunTestsAndEvaluation()
-            SolveYFix()
+            if Constants.LauchEvalAfterSolve:
+                SolveYFix()
+            else:
+                RunTestsAndEvaluation()
     if Action == Constants.Evaluate:
         if ScenarioSeed == -1:
             Evaluate()

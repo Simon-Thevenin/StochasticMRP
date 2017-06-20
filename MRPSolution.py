@@ -328,47 +328,82 @@ class MRPSolution:
 
         return kpistat
 
-    #This function return the quantity to order a time t, given the first t-1 demands
-    def GetQuantityToOrder(self, demands, time):
-        # Get the scenario with the closest demand
-        smallestdistance = 999999999
-        bestscenario = None
-        #Traverse all scneario
-        for s in range( len( self.Scenarioset ) ):
-            #Compute the distance to the given demand vector
-            distance = 0
-            for t in range (time) :
-                for p in  self.MRPInstance.ProductSet:
-                     #If the distance is smaller than the best, the scenariio becomes the closest
-                    distance = distance + math.pow( self.Scenarioset[s].Demands[t][p] - demands[t][p], 2 )
-            if distance < smallestdistance :
-                smallestdistance = distance
-                bestscenario  = s
+    # This function return the current level of stock and back order based on the quantoty ordered and demands of previous perriod
+    def GetCurrentStatus(self, prevdemand, prevquanity, time):
+        currentbackorder = [ 0 for  p in self.MRPInstance.ProductWithExternalDemand ]
+        currrentstocklevel = [ 0 for p in self.MRPInstance.ProductSet ]
 
-        #Return the decision taken in the closest scenrio
-        quantity = [ self.ProductionQuantity.loc[  self.MRPInstance.ProductName[ p ], ( time, bestscenario ) ] for p in self.MRPInstance.ProductSet ]
-        return quantity
+        # sum of quantity and initial inventory minus demands
+        inventory = [ ( self.MRPInstance.StartingInventories[p]
+                      + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] +1, 0 ) ) )
+                      - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time) for q in self.MRPInstance.ProductSet)
+                      - sum( prevdemand[t][p] for t in range( time ) ) )
+                        for p in self.MRPInstance.ProductSet ]
+
+        for p in self.MRPInstance.ProductSet:
+             if inventory[p] > - 0.0001 : currrentstocklevel[p] = inventory[p]
+             else:
+                 if not self.MRPInstance.HasExternalDemand[p]:
+                     print "inventory: %r " % (inventory)
+                     raise NameError(" A product without external demand cannot have backorder")
+                 currentbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -inventory[p]
+
+        if Constants.Debug:
+            print "prevdemand: %r "%(prevdemand)
+            print "prevquanity: %r "%(prevquanity)
+            print "currentbackorder: %r "%(currentbackorder)
+            print "projected stock level in next period: %r "%(currrentstocklevel)
+
+        return currentbackorder, currrentstocklevel
+
+
+    def GetFeasibleNodesAtTime( self, time, currentlevelofinventory ):
+        result =[]
+
+        for n in self.ScenarioTree.Nodes:
+            if n.Time == time and n.IsQuantityFeasible( currentlevelofinventory ):
+                result.append(n)
+
+        if Constants.Debug:
+            nodesid = [ n.NodeNumber for n in result]
+            print "Feasible nodes : %r"%nodesid
+        return result
+
+    def GetConsideredNodes(self, strategy, time,  currentlevelofinventory, previousnode = None ):
+        result = []
+        if time >0 and ( strategy == Constants.NearestNeighborBasedOnStateAC or strategy == Constants.NearestNeighborBasedOnDemandAC ) :
+            result = previousnode.Branches
+        else:
+            result = self.GetFeasibleNodesAtTime( time, currentlevelofinventory)
+
+        if Constants.Debug:
+            nodesid = [n.NodeNumber for n in result]
+            print "Cosidered nodes : %r" % nodesid
+        return result
 
     #This function return the quantity to order a time t, given the first t-1 demands
-    def GetQuantityToOrderAC( self, demands, time, previousnode ):
+    def GetQuantityToOrder( self, strategy, time, previousdemands, previousquantity = [], previousnode = None ):
         error = 0
+        currentbackorder, currrentstocklevel = self.GetCurrentStatus( previousdemands, previousquantity, time )
+        considerednodes = self.GetConsideredNodes(strategy, time, currrentstocklevel, previousnode = previousnode )
+
+
         # Get the scenario with the closest demand
         smallestdistance = Constants.Infinity
         bestnode = None
         #Traverse all scneario
-        if previousnode.Time >= 0:
-            for n in previousnode.Branches:
-                #Compute the distance to the given demand vector
-                distance = 0
-                for p in  self.MRPInstance.ProductSet:
-                         #If the distance is smaller than the best, the scenariio becomes the closest
-                        distance = distance + math.pow( n.Demand[p] - demands[time-1][p], 2 )
-                if distance < smallestdistance :
-                    smallestdistance = distance
-                    bestnode  = n
-        else:
-             bestnode = previousnode.Branches[0]
+        for n in considerednodes:
+            #Compute the distance to the given demand vector
+            distance = 0
+            if strategy == Constants.NearestNeighborBasedOnStateAC or strategy == Constants.NearestNeighborBasedOnState:
+                distance = n.GetDistanceBasedOnStatus( currrentstocklevel, currentbackorder )
+            if strategy == Constants.NearestNeighborBasedOnDemand or strategy == Constants.NearestNeighborBasedOnDemandAC:
+                if time>0:
+                    distance = n.GetDistanceBasedOnDemand( previousdemands[time -1] )
 
+            if distance < smallestdistance :
+                smallestdistance = distance
+                bestnode  = n
 
         if bestnode == None:
             error = 1
@@ -376,7 +411,9 @@ class MRPSolution:
                 raise NameError(" Nearest neighbor returned Null ")
         else:
             #Return the decision taken in the closest scenrio
-            quantity = [ bestnode.QuantityToOrder[p] for p in self.MRPInstance.ProductSet ]
+            quantity = [ bestnode.QuantityToOrderNextTime[p] for p in self.MRPInstance.ProductSet ]
+            if Constants.Debug:
+                print "Chosen quantities for time %r : %r" %( time, quantity)
             return quantity, bestnode, error
 
     #This function merge solution2 into self. Assume that solution2 has a single scenario
