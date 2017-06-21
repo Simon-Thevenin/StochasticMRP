@@ -556,7 +556,7 @@ def parseArguments():
 #This function runs the evaluation for the just completed test :
 def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve:
-        policyset = ["NNDAC", "NNSAC", "NND", "NNS", "Re-solve"]
+        policyset = ["NNDAC", "NNSAC", "NND", "NNS" ]#, "Re-solve"]
         if Model == Constants.ModelYQFix or Model == Constants.Average:
                 policyset = ["Fix"]
         for policy in policyset:
@@ -570,7 +570,7 @@ def RunEvaluationIfAllSolve(  ):
     #Check among the available files, if one of the sceed is not solve
     solutions = GetPreviouslyFoundSolution()
     if len( solutions ) >= 5 :
-        policyset = ["NNDAC", "NNSAC", "NND", "NNS", "Re-solve"]
+        policyset = ["NNDAC", "NNSAC", "NND", "NNS"]#, "Re-solve"]
         if Model == Constants.ModelYQFix or Model == Constants.Average:
             policyset = ["Fix"]
         for policy in policyset:
