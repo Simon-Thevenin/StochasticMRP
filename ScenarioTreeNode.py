@@ -329,7 +329,7 @@ class ScenarioTreeNode:
 
     #Return true if the quantity proposed in the node are above the current level of inventory
     def IsQuantityFeasible(self, levelofinventory):
-        result = all( levelofinventory[q] + 0.1 >= sum( self.QuantityToOrderNextTime[p] * self.Instance.Requirements[p][q]  for p in self.Instance.ProductSet )
+        result = all( levelofinventory[q] + 0.1  >= sum( self.QuantityToOrderNextTime[p] * self.Instance.Requirements[p][q]  for p in self.Instance.ProductSet )
                        for q in self.Instance.ProductSet )
         if Constants.Debug:
             print "for node %r feasible: %r - Quanitties: %r" % (self.NodeNumber, result, self.QuantityToOrderNextTime)
