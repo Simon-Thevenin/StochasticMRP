@@ -333,6 +333,6 @@ class ScenarioTreeNode:
                                     for p in self.Instance.ProductSet )
                        for q in self.Instance.ProductSet )
         if Constants.Debug:
-            print "for node %r feasible: %r" % (self.NodeNumber, result, self.QuantityToOrderNextTime)
+            print "for node %r feasible: %r - Quanitties: %r" % (self.NodeNumber, result, self.QuantityToOrderNextTime)
 
         return result
