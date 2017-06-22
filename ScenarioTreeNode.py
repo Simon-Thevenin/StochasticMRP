@@ -333,6 +333,6 @@ class ScenarioTreeNode:
 
         result = all( levelofinventory[q] + 0.1  >= sumvector[q] for q in self.Instance.ProductSet )
         if Constants.Debug:
-            print "for node %r feasible: %r - Quanitties: %r - SumVect: %r" % (self.NodeNumber, result, self.QuantityToOrderNextTime, sumvector[q])
+            print "for node %r feasible: %r - Quanitties: %r - SumVect: %r" % (self.NodeNumber, result, self.QuantityToOrderNextTime, sumvector)
 
         return result
