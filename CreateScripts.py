@@ -121,5 +121,5 @@ for instance in ["01"]:#["02", "03", "04", "05" ]:
                 for nrscenar in scenarset:
                     for Policy in policyset:
                         for seed in range(5):
-                            file.write("job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
+                            file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
                                       instance, distribution, model, nrscenar, generation, Policy, seed)  )
