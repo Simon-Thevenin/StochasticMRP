@@ -330,31 +330,40 @@ class MRPSolution:
 
     # This function return the current level of stock and back order based on the quantoty ordered and demands of previous perriod
     def GetCurrentStatus(self, prevdemand, prevquanity, time):
+        projectedinventory = [ 0 for  p in self.MRPInstance.ProductSet ]
+        projectedbackorder = [ 0 for p in self.MRPInstance.ProductWithExternalDemand ]
         currentbackorder = [ 0 for  p in self.MRPInstance.ProductWithExternalDemand ]
         currrentstocklevel = [ 0 for p in self.MRPInstance.ProductSet ]
 
         # sum of quantity and initial inventory minus demands
-        inventory = [ ( self.MRPInstance.StartingInventories[p]
-                      + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] +2, 0 ) ) )
-                      - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time +1) for q in self.MRPInstance.ProductSet)
-                      - sum( prevdemand[t][p] for t in range( time +1) ) )
-                        for p in self.MRPInstance.ProductSet ]
+        projinventory = [ ( self.MRPInstance.StartingInventories[p]
+                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] +1, 0 ) ) )
+                                  - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time ) for q in self.MRPInstance.ProductSet)
+                                  - sum( prevdemand[t][p] for t in range( time ) ) )
+                                    for p in self.MRPInstance.ProductSet ]
+
+
+        currentinventory = [ ( self.MRPInstance.StartingInventories[p]
+                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] , 0 ) ) )
+                                  - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time ) for q in self.MRPInstance.ProductSet)
+                                  - sum( prevdemand[t][p] for t in range( time ) ) )
+                                    for p in self.MRPInstance.ProductSet ]
 
         for p in self.MRPInstance.ProductSet:
-             if inventory[p] > - 0.0001 : currrentstocklevel[p] = inventory[p]
+             if projinventory[p] > - 0.0001 : projectedinventory[p] = projinventory[p]
              else:
                  if not self.MRPInstance.HasExternalDemand[p]:
-                     print "inventory: %r " % (inventory)
+                     print "inventory: %r " % (currentinventory)
                      raise NameError(" A product without external demand cannot have backorder")
-                 currentbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -inventory[p]
+                     projectedbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
 
         if Constants.Debug:
             print "prevdemand: %r "%(prevdemand)
             print "prevquanity: %r "%(prevquanity)
-            print "currentbackorder: %r "%(currentbackorder)
-            print "projected stock level in next period: %r "%(currrentstocklevel)
+            print "currentbackorder: %r "%(NameError)
+            print "projected stock level in next period: %r "%(projectedinventory)
 
-        return currentbackorder, currrentstocklevel
+        return projectedbackorder, projectedinventory, currrentstocklevel
 
 
     def GetFeasibleNodesAtTime( self, time, currentlevelofinventory ):
@@ -384,8 +393,8 @@ class MRPSolution:
     #This function return the quantity to order a time t, given the first t-1 demands
     def GetQuantityToOrder( self, strategy, time, previousdemands, previousquantity = [], previousnode = None ):
         error = 0
-        currentbackorder, currrentstocklevel = self.GetCurrentStatus( previousdemands, previousquantity, time )
-        considerednodes = self.GetConsideredNodes(strategy, time, currrentstocklevel, previousnode = previousnode )
+        projectedbackorder, projectedstocklevel, currrentstocklevel = self.GetCurrentStatus( previousdemands, previousquantity, time )
+        considerednodes = self.GetConsideredNodes(strategy, time, projectedstocklevel, previousnode = previousnode )
 
 
         # Get the scenario with the closest demand
@@ -396,7 +405,7 @@ class MRPSolution:
             #Compute the distance to the given demand vector
             distance = 0
             if strategy == Constants.NearestNeighborBasedOnStateAC or strategy == Constants.NearestNeighborBasedOnState:
-                distance = n.GetDistanceBasedOnStatus( currrentstocklevel, currentbackorder )
+                distance = n.GetDistanceBasedOnStatus( projectedstocklevel, projectedbackorder )
             if strategy == Constants.NearestNeighborBasedOnDemand or strategy == Constants.NearestNeighborBasedOnDemandAC:
                 if time > 0:
                     distance = n.GetDistanceBasedOnDemand( previousdemands[time -1] )

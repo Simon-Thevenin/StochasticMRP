@@ -294,10 +294,11 @@ class ScenarioTreeNode:
         for b in self.Branches:
             b.CreateAllScenarioFromNode( );
 
-    def GetDistanceBasedOnStatus(self, inventory, backorder):
+    def GetDistanceBasedOnStatus(self, inventory, backorder ):
         distance = 0
         if self.Time >0:
             for p in self.Instance.ProductSet:
+
                 # If the distance is smaller than the best, the scenariio becomes the closest
                 nodeinventory = 0
                 realinventory =  0
@@ -308,6 +309,16 @@ class ScenarioTreeNode:
                 else:
                     nodeinventory = self.InventoryLevelNextTime[p]
                     realinventory = inventory[p]
+
+                nodeorderdeliverynext = self
+                for i in range(self.Instance.Leadtimes[p]):
+                    if  nodeorderdeliverynext.Time >= 0:
+                        nodeorderdeliverynext = nodeorderdeliverynext.Parent
+                    else:
+                        nodeorderdeliverynext = None
+
+                if not nodeorderdeliverynext is None:
+                    nodeinventory = nodeinventory+nodeorderdeliverynext.QuantityToOrderNextTime[p]
 
                 distance = distance + math.pow( nodeinventory - realinventory, 2)
 
