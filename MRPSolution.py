@@ -400,6 +400,8 @@ class MRPSolution:
             if strategy == Constants.NearestNeighborBasedOnDemand or strategy == Constants.NearestNeighborBasedOnDemandAC:
                 if time>0:
                     distance = n.GetDistanceBasedOnDemand( previousdemands[time -1] )
+                else :
+                    distance = 0
 
             if distance < smallestdistance :
                 smallestdistance = distance
