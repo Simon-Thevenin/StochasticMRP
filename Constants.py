@@ -26,4 +26,4 @@ class Constants:
     Infinity = 9999999999999.9
     AlgorithmTimeLimit = 3600.0
     AlgorithmOptimalityTolerence = 0.00001
-    SDDPIterationLimit = 2
+    SDDPIterationLimit = 10

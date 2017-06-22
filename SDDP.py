@@ -54,7 +54,8 @@ class SDDP:
 
         for t in reversed( range( 1, len( self.StagesSet ) ) ):
             #Build or update the MIP of stage t
-            self.Stage[t].GernerateCut();
+            if t < self.Instance.NrTimeBucket:
+                self.Stage[t].GernerateCut();
 
             if t>= 1:
                 # Re-run the MIP to take into account the just added cut
@@ -152,6 +153,7 @@ class SDDP:
         while not self.CheckStoppingCriterion():
             self.GenerateScenarios( self.CurrentNrScenario )
             self.ForwardPass()
+            self.ComputeCost()
             self.UpdateLowerBound()
             self.UpdateUpperBound()
             self.BackwardPass()
@@ -162,4 +164,4 @@ class SDDP:
 
     def ComputeCost(self):
         for stage in self.Stage:
-            stage.PassCost = sum( stage.StageCostPerScenario[w] for w in self.ScenarioNrSet  ) / s
+            stage.PassCost = sum( stage.StageCostPerScenario[w] for w in self.ScenarioNrSet  ) / len(self.ScenarioNrSet)

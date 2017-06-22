@@ -181,6 +181,33 @@ class SDDPStage:
             raise ValueError('Backorder variables are not defined for component')
         return result
 
+
+    def GetRHSFlowConst(self, p):
+        righthandside = 0
+        if self.Instance.HasExternalDemand[p] and not self.IsFirstStage():
+            righthandside = righthandside \
+                               + self.SDDPOwner.CurrentSetOfScenarios[self.CurrentScenarioNr].Demands[
+                                   self.GetTimePeriodAssociatedToInventoryVariable(p)][p]
+            if self.GetTimePeriodAssociatedToBackorderVariable(p) - 1 >= 0:
+                righthandside = righthandside \
+                                   + self.SDDPOwner.GetBackorderFixedEarlier(p,
+                                                                             self.GetTimePeriodAssociatedToBackorderVariable(
+                                                                                 p) - 1, self.CurrentScenarioNr)
+
+
+        productionstartedtime = self.GetTimePeriodAssociatedToQuantityVariable(p) - self.Instance.Leadtimes[p]
+        if productionstartedtime - 1 >= 0:
+            righthandside = righthandside \
+                               - self.SDDPOwner.GetQuantityFixedEarlier(p, productionstartedtime,
+                                                                        self.CurrentScenarioNr)
+
+        if self.GetTimePeriodAssociatedToInventoryVariable(p) - 1 >= -1:
+            righthandside = righthandside \
+                               - self.SDDPOwner.GetInventoryFixedEarlier(p,
+                                                                         self.GetTimePeriodAssociatedToInventoryVariable(
+                                                                             p) - 1, self.CurrentScenarioNr)
+        return righthandside
+
     def CreateFlowConstraints(self):
         self.FlowConstraintNR = [""  for p in self.Instance.ProductSet]
 
@@ -191,29 +218,14 @@ class SDDPStage:
                 quantityvar = []
                 dependentdemandvar = []
                 dependentdemandvarcoeff = []
-                righthandside = [0]
+                righthandside = [ self.GetRHSFlowConst( p )]
                 if self.Instance.HasExternalDemand[p] and not self.IsFirstStage():
-                     righthandside[0] = righthandside[0] \
-                                        + self.SDDPOwner.CurrentSetOfScenarios[ self.CurrentScenarioNr ].Demands[self.GetTimePeriodAssociatedToInventoryVariable(p)][p]
-                     if self.GetTimePeriodAssociatedToBackorderVariable(p) - 1 >= 0:
-                         righthandside[0] = righthandside[0] \
-                                            +  self.SDDPOwner.GetBackorderFixedEarlier(p, self.GetTimePeriodAssociatedToBackorderVariable( p) - 1, self.CurrentScenarioNr)
-
                      backordervar = [ self.GetIndexBackorderVariable(p) ]
 
                 else:
                      dependentdemandvar = [self.GetIndexQuantityVariable(q) for q in  self.Instance.RequieredProduct[p] ]
                      dependentdemandvarcoeff =  [-1 * self.Instance.Requirements[q][p] for q in self.Instance.RequieredProduct[p]]
 
-
-                productionstartedtime = self.GetTimePeriodAssociatedToQuantityVariable(p) - self.Instance.Leadtimes[p]
-                if productionstartedtime -1 >= 0:
-                    righthandside[0] = righthandside[0] \
-                                       - self.SDDPOwner.GetQuantityFixedEarlier(p,  productionstartedtime, self.CurrentScenarioNr)
-
-                if  self.GetTimePeriodAssociatedToInventoryVariable(p) - 1 >= -1 :
-                    righthandside[0] = righthandside[0] \
-                                        - self.SDDPOwner.GetInventoryFixedEarlier(p, self.GetTimePeriodAssociatedToInventoryVariable(p) - 1, self.CurrentScenarioNr)
 
                 inventoryvar = [self.GetIndexStockVariable(p)]
 
@@ -306,9 +318,6 @@ class SDDPStage:
 
                self.ConcernedResourceCapacityConstraint.append(p)
 
-
-
-
     #Define the variables
     def DefineVariables( self ):
         #The setups are decided at the first stage
@@ -351,7 +360,8 @@ class SDDPStage:
 
     #Add the name of each variable
     def AddVariableName(self):
-        print "Add the names of the variable"
+        if Constants.Debug:
+            print "Add the names of the variable"
         # Define the variable name.
         # Usefull for debuging purpose. Otherwise, disable it, it is time consuming.
         if Constants.Debug:
@@ -387,7 +397,6 @@ class SDDPStage:
     def DefineMIP( self, scenarionr ):
         if Constants.Debug:
             print "Define the MIP of stage %d" % self.DecisionStage
-
         self.DefineVariables()
         self.CurrentScenarioNr  = scenarionr
         self.CreateProductionConstraints()
@@ -398,7 +407,17 @@ class SDDPStage:
     #The function below update the constraint of the MIP to correspond to the new scenario
     def UpdateMIPForScenario( self, scenarionr ):
         self.CurrentScenarioNr  = scenarionr
-        print "TBD "
+        constraintuples = []
+
+        for i in range( len(self.IndexFlowConstraint) ):
+            constr = self.IndexFlowConstraint[i]
+            p = self.ConcernedProductFlowConstraint[i]
+            rhs = self.GetRHSFlowConst( p )
+            constraintuples.append( (constr, rhs)  )
+
+        self.Cplex.linear_constraints.set_rhs(constraintuples)
+    #    print "TBD "
+    #    self.M
 
 
 
@@ -480,15 +499,16 @@ class SDDPStage:
 
 
     def GetBigMValue( self, p ):
-        print "TBD"
+        print " Big M TBD"
         result = 999999999
         return result
 
     def IncreaseCutWithFlowDual(self, cut, sol):
-        print "Increase cut with flow dual"
+        if Constants.Debug:
+            print "Increase cut with flow dual"
         duals = sol.get_dual_values(  self.IndexFlowConstraint )
         for i in range( len( duals )):
-            p = self.ConcernedProductFlowConstraint[ self.IndexFlowConstraint[i] ]
+            p = self.ConcernedProductFlowConstraint[ i ]
             cut.IncreaseCoefficientQuantity( p, self.GetTimePeriodAssociatedToQuantityVariable( p ) - self.Instance.Leadtimes[p], -duals[i])
             cut.IncreaseCoefficientInventory( p, self.GetTimePeriodAssociatedToInventoryVariable( p ) - 1 , -duals[i])
             if self.Instance.HasExternalDemand[p]:
@@ -497,7 +517,8 @@ class SDDPStage:
 
     def IncreaseCutWithProductionDual(self, cut, sol):
         if not self.IsLastStage():
-            print "Increase cut with production dual"
+            if Constants.Debug:
+                print "Increase cut with production dual"
             duals = sol.get_dual_values(self.IndexProductionQuantityConstraint)
             for i in range(len(duals)):
                 p = self.ConcernedProductProductionQuantityConstraint[ self.IndexProductionQuantityConstraint[i] ]
@@ -514,10 +535,11 @@ class SDDPStage:
     def IncreaseCutWithCutDuals(self, cut, sol):
 
         if self.SDDPOwner.CurrentIteration > 0 :
-            print "Increase cut with cut duals"
+            if Constants.Debug:
+                print "Increase cut with cut duals"
             duals = sol.get_dual_values(self.IndexCutConstraint)
             for i in range(len(duals)):
-                c = self.ConcernedCutinConstraint[self.self.IndexCutConstraint[i]]
+                c = self.ConcernedCutinConstraint[i]
                 for tuple in cut.NonZeroFixedEarlierProductionVar:
                     p=tuple[0]; t=tuple[1]
                     cut.IncreaseCoefficientProduction(p,t, c.CoefficientProductionVariable[p][t] * duals[i])

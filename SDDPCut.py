@@ -1,4 +1,4 @@
-
+import cplex
 class SDDPCut:
 
     def __init__( self, owner = None   ):
@@ -22,8 +22,9 @@ class SDDPCut:
 
         self.DemandRHS = 0.0
         self.CPlexConstraint = None
+        #self.LastAddedConstraintIndex = 0
 
-    #This function add the cut to the MIP
+        #This function add the cut to the MIP
     def AddCut(self):
         print "Add the Cut %s" %self.Name
 
@@ -43,13 +44,13 @@ class SDDPCut:
 
         righthandside = [ self.ComputeCurrentRightHandSide() ]
 
-        self.Cplex.linear_constraints.add( lin_expr=[self.Stage.Cplex.SparsePair(vars, coeff)],
+        self.Stage.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                            senses=["G"],
                                            rhs=righthandside,
                                            names =[self.Name] )
 
-        self.Stage.IndexCutConstraint.append(self.LastAddedConstraintIndex)
-        self.Stage.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+        self.Stage.IndexCutConstraint.append( self.Stage.LastAddedConstraintIndex )
+        self.Stage.LastAddedConstraintIndex = self.Stage.LastAddedConstraintIndex + 1
 
         self.Stage.ConcernedCutinConstraint.append( self.Id)
 
@@ -67,30 +68,32 @@ class SDDPCut:
 
     def ComputeCurrentRightHandSide(self):
 
-        righthandside = [ self.DemandRHS ]
-
-
-        for t in range( self.Stage.GetTimePeriodAssociatedToQuantityVariable() ):
-            for p in self.Instance.ProductSet:
-                righthandside =  righthandside +  self.Stage.SDDPOwner.GetQuantityFixedEarlier(p,t, self.Stage.CurrentScenarioNr) \
-                                                  * self.CoefficientQuantityVariable[p][t]
+        righthandside =  self.DemandRHS
 
 
         for p in self.Instance.ProductSet:
-            for t in self.Instance.TimeBucketSet:
+            for t in range(1,self.Stage.GetTimePeriodAssociatedToQuantityVariable( p )):
+                righthandside =  righthandside +  self.Stage.SDDPOwner.GetQuantityFixedEarlier(p,t, self.Stage.CurrentScenarioNr) \
+                                                  * self.CoefficientQuantityVariable[t][p]
+
+
+        for p in self.Instance.ProductSet:
+            for t in self.Instance.TimeBucketSet[1:]:
                 righthandside = righthandside + self.Stage.SDDPOwner.GetSetupFixedEarlier(p, t, self.Stage.CurrentScenarioNr)\
-                                                * self.CoefficientProductionVariable[p][t]
+                                                * self.CoefficientProductionVariable[t][p]
 
-        for t in range(self.Stage.GetTimePeriodAssociatedToInventoryVariable() ):
-            for p in self.Instance.ProductSet:
+
+        for p in self.Instance.ProductSet:
+            for t in range(1, self.Stage.GetTimePeriodAssociatedToInventoryVariable(p)):
                 righthandside = righthandside + self.Stage.SDDPOwner.GetInventoryFixedEarlier(p, t, self.Stage.CurrentScenarioNr) \
-                                                * self.CoefficientStockVariable[p][t]
+                                                * self.CoefficientStockVariable[t][p]
 
-        for t in range(self.Stage.GetTimePeriodAssociatedToBackorderVariable()):
-            for p in self.Instance.ProductWithExternalDemand:
+        for p in self.Instance.ProductWithExternalDemand:
+            for t in range(1,self.Stage.GetTimePeriodAssociatedToBackorderVariable(p)):
+
                 indexp = self.Instance.ProductWithExternalDemandIndex[p]
                 righthandside = righthandside + self.Stage.SDDPOwner.GetBackorderFixedEarlier(p, t, self.Stage.CurrentScenarioNr) \
-                                                * self.CoefficientBackorderyVariable[indexp][t]
+                                                * self.CoefficientBackorderyVariable[t][indexp]
 
 
         return righthandside

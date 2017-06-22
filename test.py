@@ -196,7 +196,8 @@ def SolveYFix():
 
     PrintTestResult()
     testdescription = GetTestDescription()
-    solution.PrintToExcel( testdescription )
+    if   Method == "MIP" :
+        solution.PrintToExcel( testdescription )
     RunEvaluation()
 
 def GetPreviouslyFoundSolution():
@@ -493,7 +494,7 @@ def parseArguments():
     parser.add_argument("Action", help="Evaluate,/Solve", type=str)
     parser.add_argument("Instance", help="Cname of the instance.", type=str)
     parser.add_argument("Distribution", help="Considered didemand disdistribution.", type=str)
-    parser.add_argument("Model", help="Average,/YQFix/YFiz mom.", type=str)
+    parser.add_argument("Model", help="Average/YQFix/YFiz .", type=str)
     parser.add_argument("NrScenario", help="Average,/YQFix/YFiz mom.", type=int)
     parser.add_argument("ScenarioGeneration", help="MC,/RQMC.", type=str)
     parser.add_argument("-s", "--ScenarioSeed", help="The seed used for scenario generation", type=int, default= -1 )
@@ -501,7 +502,7 @@ def parseArguments():
     # Optional arguments
     parser.add_argument("-p", "--policy", help="NearestNeighbor", type=str, default="")
     parser.add_argument("-n", "--nrevaluation", help="nr scenario used for evaluation.", type=int, default=500)
-
+    parser.add_argument("-m", "--method", help="method used to solve", type=str, default="MIP")
     # Print version
     parser.add_argument("--version", action="version", version='%(prog)s - Version 1.0')
 
@@ -522,11 +523,13 @@ def parseArguments():
     global NrEvaluation
     global SeedIndex
     global NearestNeighborStrategy
+    global Method
 
     Action = args.Action
     InstanceName = args.Instance
     Distribution = args.Distribution
     Model = args.Model
+    Method = args.method
     NrScenario = args.NrScenario
     ScenarioGeneration = args.ScenarioGeneration
     ScenarioSeed = SeedArray[ args.ScenarioSeed ]
@@ -556,7 +559,7 @@ def parseArguments():
 #This function runs the evaluation for the just completed test :
 def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve:
-        policyset = ["NNDAC", "NNSAC", "NND", "NNS" ]#, "Re-solve"]
+        policyset = [ "NNSAC"] #"["NNDAC", "NNSAC", "NND", "NNS" ]#, "Re-solve"]
         if Model == Constants.ModelYQFix or Model == Constants.Average:
                 policyset = ["Fix"]
         for policy in policyset:
