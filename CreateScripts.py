@@ -109,7 +109,7 @@ for instance in ["01"]:#["02", "03", "04", "05" ]:
             method = "MIP"
             avg = False
             if model == "YQFix":
-                scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+                scenarset = ["2", "4", "8", "50", "100", "200",  "500"]
                 policyset = ["Fix"]
 
             if model == "Average":
