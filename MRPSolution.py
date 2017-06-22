@@ -398,7 +398,7 @@ class MRPSolution:
             if strategy == Constants.NearestNeighborBasedOnStateAC or strategy == Constants.NearestNeighborBasedOnState:
                 distance = n.GetDistanceBasedOnStatus( currrentstocklevel, currentbackorder )
             if strategy == Constants.NearestNeighborBasedOnDemand or strategy == Constants.NearestNeighborBasedOnDemandAC:
-                if time>0:
+                if time > 0:
                     distance = n.GetDistanceBasedOnDemand( previousdemands[time -1] )
                 else :
                     distance = 0
