@@ -313,7 +313,7 @@ class ScenarioTreeNode:
 
         if Constants.Debug:
             print "for node %r distance based on status %r"%(self.NodeNumber, distance)
-        return distance
+        return math.sqrt( distance )
 
 
     def GetDistanceBasedOnDemand(self, demands):
@@ -325,7 +325,7 @@ class ScenarioTreeNode:
 
         if Constants.Debug:
             print "for node %r distance based on demand %r" % (self.NodeNumber, distance)
-        return distance
+        return math.sqrt( distance )
 
     #Return true if the quantity proposed in the node are above the current level of inventory
     def IsQuantityFeasible(self, levelofinventory):
@@ -333,6 +333,6 @@ class ScenarioTreeNode:
                                     for p in self.Instance.ProductSet )
                        for q in self.Instance.ProductSet )
         if Constants.Debug:
-            print "for node %r feasible: %r" % (self.NodeNumber, result)
+            print "for node %r feasible: %r" % (self.NodeNumber, result, self.QuantityToOrderNextTime)
 
         return result
