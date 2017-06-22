@@ -129,6 +129,7 @@ class Evaluator:
                             for ti in self.Instance.TimeBucketSet:
                                 demanduptotimet = [ [ scenario.Demands[t][p] for p in self.Instance.ProductSet ] for t in range(ti) ]
                                 if self.Policy == Constants.NearestNeighbor:
+                                    print "seed %s time %s: "%(seed, ti)
                                     givenquantty[ti], previousnode, error = sol.GetQuantityToOrder( self.NearestNeighborStrategy, ti, demanduptotimet, givenquantty, previousnode  )
                                 if self.Policy == Constants.Resolve:
                                     givenquantty[ti], error = self.GetQuantityByResolve( demanduptotimet, ti, givenquantty, sol, givensetup, model )

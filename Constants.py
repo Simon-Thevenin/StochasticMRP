@@ -21,7 +21,7 @@ class Constants:
     Solve = "Solve"
     Evaluate = "Evaluate"
 
-    Debug = False
+    Debug = True
     LauchEvalAfterSolve = True
     Infinity = 999999999999.9
     AlgorithmTimeLimit = 3600.0
