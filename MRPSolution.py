@@ -335,7 +335,7 @@ class MRPSolution:
 
         # sum of quantity and initial inventory minus demands
         inventory = [ ( self.MRPInstance.StartingInventories[p]
-                      + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] +1, 0 ) ) )
+                      + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] +2, 0 ) ) )
                       - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time) for q in self.MRPInstance.ProductSet)
                       - sum( prevdemand[t][p] for t in range( time ) ) )
                         for p in self.MRPInstance.ProductSet ]
