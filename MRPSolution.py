@@ -400,8 +400,7 @@ class MRPSolution:
             if strategy == Constants.NearestNeighborBasedOnDemand or strategy == Constants.NearestNeighborBasedOnDemandAC:
                 if time > 0:
                     distance = n.GetDistanceBasedOnDemand( previousdemands[time -1] )
-                else :
-                    distance = 0
+
 
             if distance < smallestdistance :
                 smallestdistance = distance
@@ -410,7 +409,7 @@ class MRPSolution:
         if bestnode == None:
             error = 1
             if Constants.Debug:
-                raise NameError(" Nearest neighbor returned Null ")
+                raise NameError(" Nearest neighbor returned Null %r - %r "%(distance , smallestdistance))
         else:
             #Return the decision taken in the closest scenrio
             quantity = [ bestnode.QuantityToOrderNextTime[p] for p in self.MRPInstance.ProductSet ]
