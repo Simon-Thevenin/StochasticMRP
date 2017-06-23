@@ -181,7 +181,6 @@ class SDDPStage:
             raise ValueError('Backorder variables are not defined for component')
         return result
 
-
     def GetRHSFlowConst(self, p):
         righthandside = 0
         if self.Instance.HasExternalDemand[p] and not self.IsFirstStage():
@@ -194,14 +193,13 @@ class SDDPStage:
                                                                              self.GetTimePeriodAssociatedToBackorderVariable(
                                                                                  p) - 1, self.CurrentScenarioNr)
 
-
         productionstartedtime = self.GetTimePeriodAssociatedToQuantityVariable(p) - self.Instance.Leadtimes[p]
         if productionstartedtime - 1 >= 0:
             righthandside = righthandside \
                                - self.SDDPOwner.GetQuantityFixedEarlier(p, productionstartedtime,
                                                                         self.CurrentScenarioNr)
 
-        if self.GetTimePeriodAssociatedToInventoryVariable(p) - 1 >= -1:
+        if self.GetTimePeriodAssociatedToInventoryVariable(p) - 1 >= -1 and not ( self.IsFirstStage() and  self.Instance.HasExternalDemand[p] ):
             righthandside = righthandside \
                                - self.SDDPOwner.GetInventoryFixedEarlier(p,
                                                                          self.GetTimePeriodAssociatedToInventoryVariable(
@@ -459,7 +457,17 @@ class SDDPStage:
                 self.ProductionValue[self.CurrentScenarioNr] =  [ [ values[ t * self.Instance.NrProduct + p] for p in self.Instance.ProductSet ]  for t in self.Instance.TimeBucketSet ]
 
             indexarray = [self.GetIndexStockVariable(p) for p in self.GetProductWithStockVariable() ]
-            self.InventoryValue[ self.CurrentScenarioNr ] = sol.get_values( indexarray )
+            inventory = sol.get_values(indexarray)
+            if self.IsFirstStage():
+
+                self.InventoryValue[self.CurrentScenarioNr] = [ 0 for p in self.Instance.ProductSet ]
+                index = 0
+                for p in self.Instance.ProductWithoutExternalDemand:
+                    self.InventoryValue[self.CurrentScenarioNr][p] = inventory[index]
+                    index= index +1
+            else:
+                self.InventoryValue[self.CurrentScenarioNr] = inventory
+
 
             if not self.IsFirstStage():
                 indexarray = [self.GetIndexBackorderVariable(p) for p in self.GetProductWithBackOrderVariable() ]

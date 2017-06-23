@@ -96,7 +96,7 @@ class MRPInstance:
         self.Requirements = [ [ 0, 1 ],
                               [ 0, 0 ] ]
         self.Capacity = [ 15, 50 ]
-        self.Leadtimes = [ 0, 1 ]
+        self.Leadtimes = [ 1, 1 ]
         self.ProcessingTime = [ [ 1, 0 ],
                                 [ 0, 1 ] ]
 

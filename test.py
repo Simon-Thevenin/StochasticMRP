@@ -559,7 +559,7 @@ def parseArguments():
 #This function runs the evaluation for the just completed test :
 def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve:
-        policyset = [ "NNSAC"] #"["NNDAC", "NNSAC", "NND", "NNS" ]#, "Re-solve"]
+        policyset = [ "NNSAC", "NNDAC"]#, "NNSAC", "NND", "NNS" ]#, "Re-solve"]
         if Model == Constants.ModelYQFix or Model == Constants.Average:
                 policyset = ["Fix"]
         for policy in policyset:

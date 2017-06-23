@@ -307,17 +307,17 @@ class ScenarioTreeNode:
                     nodeinventory =   self.InventoryLevelTime[p] - self.BackOrderLevelTime[pindex]
                     realinventory = inventory[p] - backorder[pindex]
                 else:
-                    nodeinventory = self.InventoryLevelNextTime[p]
+                    nodeinventory = self.Parent.InventoryLevelNextTime[p]
                     realinventory = inventory[p]
 
                 nodeorderdeliverynext = self
-                for i in range(self.Instance.Leadtimes[p]):
+                for i in range(self.Instance.Leadtimes[p] ):
                     if  nodeorderdeliverynext.Time >= 0:
                         nodeorderdeliverynext = nodeorderdeliverynext.Parent
                     else:
                         nodeorderdeliverynext = None
 
-                if not nodeorderdeliverynext is None:
+                if not nodeorderdeliverynext is None and len(nodeorderdeliverynext.QuantityToOrderNextTime ) >0:
                     nodeinventory = nodeinventory+nodeorderdeliverynext.QuantityToOrderNextTime[p]
 
                 distance = distance + math.pow( nodeinventory - realinventory, 2)
