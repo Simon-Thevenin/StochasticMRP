@@ -228,7 +228,7 @@ class Evaluator:
        #  #writer.save()
        # EvaluateInfo = self.ComputeStatistic(  Evaluated, nrscenario, testidentifier, evaluateidentificator, KPIStat, nrerror, model )
         duration = time.time() - start_time
-        print "Duration od evaluation: %r"%duration
+        print "Duration od evaluation: %r, outofsampl error %r"%( duration, Evaluated )
         #return EvaluateInfo
 
 

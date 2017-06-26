@@ -355,7 +355,7 @@ class MRPSolution:
                  if not self.MRPInstance.HasExternalDemand[p]:
                      print "inventory: %r " % (currentinventory)
                      raise NameError(" A product without external demand cannot have backorder")
-                     projectedbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
+                 projectedbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
 
         if Constants.Debug:
             print "prevdemand: %r "%(prevdemand)

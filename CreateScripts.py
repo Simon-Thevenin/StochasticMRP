@@ -75,50 +75,50 @@ file.write("""
 #
 """)
 
-for instance in ["01", "02", "03", "04", "05" ]:
-     for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
-         for model in ["YFix" ]:#, "YQFix", "Average"]:
-             generationset = ["RQMC",  "MC"]
-             scenarset = ["512"]
-             policyset = [ "NNDAC", "NNSAC", "NND", "NNS" ]
-             method = "MIP"
-             avg = False
-             if model == "YQFix":
-                 scenarset = ["2", "4", "8", "50", "100", "200", "500"]
-                 policyset = ["Fix"]
+# for instance in ["01", "02", "03", "04", "05" ]:
+#      for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
+#          for model in ["YFix" ]:#, "YQFix", "Average"]:
+#              generationset = ["RQMC",  "MC"]
+#              scenarset = ["512"]
+#              policyset = [ "NNDAC", "NNSAC", "NND", "NNS" ]
+#              method = "MIP"
+#              avg = False
+#              if model == "YQFix":
+#                  scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+#                  policyset = ["Fix"]
+#
+#              if model == "Average":
+#                  scenarset = ["1"]
+#                  avg = True
+#                  policyset = ["Fix"]
+#                  generationset = ["MC"]
+#              for generation in generationset:
+#                  for nrscenar in scenarset:
+#                      for seed in range(5):
+#                              file.write("qsub job_solve_%s_%s_%s_%s_%s_%s \n" % (
+#                                      instance, distribution, model, nrscenar, generation, seed  ) )
 
-             if model == "Average":
+
+for instance in ["01"]:#["02", "03", "04", "05" ]:
+    for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
+        for model in ["YFix" ]:#, "YQFix", "Average"]:
+            generationset = ["RQMC",  "MC"]
+            scenarset = ["512"]
+            policyset = [ "NNSAC" ]
+            method = "MIP"
+            avg = False
+            if model == "YQFix":
+                scenarset = ["2", "4", "8", "50", "100", "200",  "500"]
+                policyset = ["Fix"]
+
+            if model == "Average":
                  scenarset = ["1"]
                  avg = True
                  policyset = ["Fix"]
                  generationset = ["MC"]
-             for generation in generationset:
+            for generation in generationset:
                  for nrscenar in scenarset:
-                     for seed in range(5):
-                             file.write("qsub job_solve_%s_%s_%s_%s_%s_%s \n" % (
-                                     instance, distribution, model, nrscenar, generation, seed  ) )
-
-
-#for instance in ["01"]:#["02", "03", "04", "05" ]:
-#    for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
-#        for model in ["YFix" ]:#, "YQFix", "Average"]:
-#            generationset = ["RQMC",  "MC"]
-#            scenarset = ["512"]
-##            policyset = [ "NNSAC" ]
-#            method = "MIP"
-#            avg = False
-#            if model == "YQFix":
-#                scenarset = ["2", "4", "8", "50", "100", "200",  "500"]
-#                policyset = ["Fix"]
-#
-#             if model == "Average":
-#                 scenarset = ["1"]
-#                 avg = True
-#                 policyset = ["Fix"]
-#                 generationset = ["MC"]
-#             for generation in generationset:
-#                 for nrscenar in scenarset:
-#                     for Policy in policyset:
-#                         for seed in range(5):
-#                             file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
-#                                       instance, distribution, model, nrscenar, generation, Policy, seed)  )
+                     for Policy in policyset:
+                         for seed in range(5):
+                             file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
+                                       instance, distribution, model, nrscenar, generation, Policy, seed)  )
