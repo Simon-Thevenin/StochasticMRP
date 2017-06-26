@@ -71,8 +71,6 @@ class SDDPCut:
 
     #This function modify the cut to take into account the Fixed variables
     def ModifyCut( self ):
-        if Constants.Debug:
-            print "Modify the Cut "
 
         righthandside = self.ComputeCurrentRightHandSide()
 
@@ -122,8 +120,6 @@ class SDDPCut:
 
     #Increase the coefficient of the quantity variable for product and time  by value
     def IncreaseCoefficientQuantity(self, product, time, value):
-        if Constants.Debug:
-            print "Increase the Coefficient Quanitty"
         self.CoefficientQuantityVariable[time][product] =self.CoefficientQuantityVariable[time][product] + value
 
         if time <> self.Stage.GetTimePeriodAssociatedToQuantityVariable( product ):
@@ -132,8 +128,6 @@ class SDDPCut:
 
     #Increase the coefficient of the quantity variable for product and time  by value
     def IncreaseCoefficientProduction(self, product, time, value):
-        if Constants.Debug:
-            print "Set Coefficient Production"
         self.CoefficientProductionVariable[time][product] =self.CoefficientProductionVariable[time][product] + value
 
         if not self.Stage.IsFirstStage():
@@ -142,15 +136,11 @@ class SDDPCut:
 
         #Increase the coefficient of the quantity variable for product and time  by value
     def IncreaseCoefficientInventory(self, product, time, value):
-        if Constants.Debug:
-            print "Set Coefficient Inventory"
         self.CoefficientStockVariable[time][product] =self.CoefficientStockVariable[time][product] + value
         if time <> self.Stage.GetTimePeriodAssociatedToInventoryVariable( product ):
             self.NonZeroFixedEarlierStockVar.append((product, time))
     #Increase the coefficient of the quantity variable for product and time  by value
     def IncreaseCoefficientBackorder(self, product, time, value):
-        if Constants.Debug:
-            print "Set Coefficient Backorder"
         indexp = self.Instance.ProductWithExternalDemandIndex[product]
         self.CoefficientBackorderyVariable[time][indexp] =self.CoefficientBackorderyVariable[time][indexp] + value
 
@@ -160,19 +150,13 @@ class SDDPCut:
         # Increase the coefficient of the quantity variable for product and time  by value
 
     def IncreaseDemandRHS(self, value):
-        if Constants.Debug:
-            print "Set Coefficient Demand"
-        self.DemandRHS = self.DemandRHS + value
+         self.DemandRHS = self.DemandRHS + value
 
     def IncreaseCapacityRHS(self, value):
-        if Constants.Debug:
-            print "Set Coefficient Capacity"
         self.CapacityRHS = self.CapacityRHS + value
 
     def IncreasePReviousCutRHS(self, value):
-        if Constants.Debug:
-            print "Set Coefficient Previous cut"
-        self.PreviousCutRHS = self.PreviousCutRHS + value
+       self.PreviousCutRHS = self.PreviousCutRHS + value
 
     def DivideAllCoeff (self, diviser ):
         self.DemandRHS = self.DemandRHS / diviser
