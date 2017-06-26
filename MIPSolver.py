@@ -535,7 +535,7 @@ class MIPSolver(object):
 
                         vars = [indexQ, self.GetIndexProductionVariable(p, t, w) ]
                         AlreadyAdded[indexP][indexQ] = True
-                        coeff = [ -1.0, self.GetBigMValue( p ) ]
+                        coeff = [ -1.0, MIPSolver.GetBigMValue(self.Instance, self.Scenarios, p ) ]
                         righthandside = [ 0.0 ]
                         # PrintConstraint( vars, coeff, righthandside )
                         self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
@@ -790,22 +790,24 @@ class MIPSolver(object):
         return costperscenarion, Average, std_dev
 
     #This function return the upperbound on hte quantities infered from the demand
-    def GetBigMDemValue( self, p ):
+    @staticmethod
+    def GetBigMDemValue( instance, scenarioset, p ):
         mdem = 0
-        if self.Instance.HasExternalDemand[ p ] :
-            mdem = ( sum( max( s.Demands[t][p] for s in self.Scenarios ) for t in self.Instance.TimeBucketSet ) )
+        if instance.HasExternalDemand[ p ] :
+            mdem = ( sum( max( s.Demands[t][p] for s in scenarioset ) for t in instance.TimeBucketSet ) )
         else :
-            mdem = sum( self.Instance.Requirements[q][p] * self.GetBigMDemValue( q ) for q in self.Instance.RequieredProduct[p] )
+            mdem = sum( instance.Requirements[q][p] * MIPSolver.GetBigMDemValue( instance, scenarioset, q ) for q in instance.RequieredProduct[p] )
 
 
         return mdem
 
     #This function return the value of the big M variable
-    def GetBigMValue( self, p ):
-        mdem = self.GetBigMDemValue( p)
+    @staticmethod
+    def GetBigMValue( instance, scenarioset, p ):
+        mdem = MIPSolver.GetBigMDemValue(instance, scenarioset, p)
 
         #compute m based on the capacity of the resource
-        mres = min( self.Instance.Capacity[k] / self.Instance.ProcessingTime[p][k] for k in range( self.Instance.NrResource ) if self.Instance.ProcessingTime[p][k] > 0 )
+        mres = min( instance.Capacity[k] / instance.ProcessingTime[p][k] for k in range( instance.NrResource ) if instance.ProcessingTime[p][k] > 0 )
         m = min( [ mdem, mres ] )
         return m
 

@@ -2,6 +2,7 @@ from Constants import Constants
 from MRPSolution import MRPSolution
 from SDDPStage import SDDPStage
 from ScenarioTree import ScenarioTree
+from MIPSolver import MIPSolver
 import numpy as np
 import math
 import time
@@ -37,11 +38,13 @@ class SDDP:
         self.Stage = [ SDDPStage( owner=self, decisionstage = t) for t in self.StagesSet ]
         self.LinkStages()
         self.CurrentNrScenario = 1;
+        self.CurrentBigM =[]
 
     #This function make the forward pass of SDDP
     def ForwardPass(self):
         if Constants.Debug:
             print "Start forward pass"
+        self.SetCurrentBigM()
         for t in self.StagesSet:
             #Run the forward pass at each stage t
             self.Stage[t].RunForwardPassMIP()
@@ -52,14 +55,14 @@ class SDDP:
         if Constants.Debug:
             print "Start Backward pass"
 
-        for t in reversed( range( 1, len( self.StagesSet ) ) ):
-            #Build or update the MIP of stage t
-            if t < self.Instance.NrTimeBucket:
-                self.Stage[t].GernerateCut();
+        for t in reversed( range( 1, len( self.StagesSet  ) -1  ) ):
 
-            if t>= 1:
-                # Re-run the MIP to take into account the just added cut
-                self.Stage[t].Cplex.solve();
+
+            #Build or update the MIP of stage t
+
+            self.Stage[t].GernerateCut();
+
+
 
 
     #This function generates the scenarios for the current iteration of the algorithm
@@ -78,6 +81,12 @@ class SDDP:
         #Modify the number of scenario at each stage
         for stage in self.StagesSet:
             self.Stage[ stage ].SetNrScenario( len(  self.CurrentSetOfScenarios ) )
+
+        if Constants.Debug:
+            print "********************Scenarios*********************"
+            for s in self.CurrentSetOfScenarios:
+                print "Demands: %r"%s.Demands
+            print "****************************************************"
 
     #This function return the quanity of product to produce at time which has been decided at an earlier stage
     def GetQuantityFixedEarlier(self, product, time, scenario):
@@ -133,8 +142,7 @@ class SDDP:
         optimalitygapreached = ( optimalitygap < Constants.AlgorithmOptimalityTolerence )
         iterationlimitreached = ( self.CurrentIteration > Constants.SDDPIterationLimit )
         result = optimalitygapreached or timalimiteached or iterationlimitreached
-        if Constants.Debug:
-            print "Iteration: %d, Duration: %d, LB: %d, UB: %d, Gap: %d " %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentUpperBound, optimalitygap)
+        print "Iteration: %d, Duration: %d, LB: %d, UB: %d, Gap: %d " %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentUpperBound, optimalitygap)
 
         return result
 
@@ -165,3 +173,6 @@ class SDDP:
     def ComputeCost(self):
         for stage in self.Stage:
             stage.PassCost = sum( stage.StageCostPerScenario[w] for w in self.ScenarioNrSet  ) / len(self.ScenarioNrSet)
+
+    def SetCurrentBigM(self ):
+       self.CurrentBigM =[ MIPSolver.GetBigMValue( self.Instance, self.CurrentSetOfScenarios , p) for p in self.Instance.ProductSet ]
