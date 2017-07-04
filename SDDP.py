@@ -140,7 +140,7 @@ class SDDP:
 #            expectedupperbound = sum( self.Stage[ s ].PassCost for s in self.StagesSet )
 #            variance = math.pow( np.std(  [ sum( self.Stage[ s ].PartialCostPerScenario[w] for s in self.StagesSet ) for w in self.ScenarioNrSet]  ), 2 )
             expectedupperbound =  self.Stage[ laststage ].PassCost
-            variance = math.pow( np.std(  self.Stage[ laststage ].PassCost  ), 2 )
+            variance = math.pow( np.std(  self.Stage[ laststage ].PartialCostPerScenario  ), 2 )
             self.CurrentUpperBound = expectedupperbound + 3.67 * math.sqrt( variance /   self.CurrentNrScenario )
             self.CurrentExpvalueUpperBound = expectedupperbound
 
