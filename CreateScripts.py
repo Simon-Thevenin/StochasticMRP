@@ -21,7 +21,7 @@ if __name__ == "__main__":
         for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
             model = "YFix"
             nrscenar = 500
-            generation = "MC"
+            generation = "RQMC"
             # for model in ["YFix", "YQFix", "Average"]:
             #     generationset = ["MC", "RQMC"]
             #     scenarset = ["4", "512"]
@@ -106,7 +106,7 @@ for instance in ["01", "02", "03", "04", "05"]:
     for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
         model = "YFix"
         nrscenar = 500
-        generation = "MC"
+        generation = "RQMC"
         # for model in ["YFix", "YQFix", "Average"]:
         #     generationset = ["MC", "RQMC"]
         #     scenarset = ["4", "512"]
