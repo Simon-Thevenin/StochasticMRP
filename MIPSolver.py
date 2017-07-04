@@ -1,18 +1,10 @@
 import cplex
 import pandas as pd
-import openpyxl as opxl
-from MRPInstance import MRPInstance
 from MRPSolution import MRPSolution
-from ScenarioTreeNode import ScenarioTreeNode
 import time
-import sys
 import numpy as np
-import csv
 import math
-from datetime import datetime
-import cPickle as pickle
 from Constants import Constants
-from decimal import Decimal, ROUND_HALF_DOWN, ROUND_HALF_UP
 
 class MIPSolver(object):
     M = cplex.infinity
@@ -307,8 +299,7 @@ class MIPSolver(object):
                 for t in self.Instance.TimeBucketSet:
                     for p in self.Instance.ProductSet:
                         # Add the cost of the cariable representing multiple scenarios
-                        inventorycostindex = self.Scenarios[w].InventoryVariable[t][
-                                                 p] - self.StartInventoryVariableWithoutNonAnticipativity
+                        inventorycostindex = self.Scenarios[w].InventoryVariable[t][p] - self.StartInventoryVariableWithoutNonAnticipativity
                         inventorycosts[inventorycostindex] = inventorycosts[inventorycostindex] \
                                                              + self.Instance.InventoryCosts[p] * self.Scenarios[
                             w].Probability * math.pow( self.Instance.Gamma, t )

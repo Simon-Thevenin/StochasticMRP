@@ -116,6 +116,8 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
 
     if Constants.Debug:
         Instance.PrintInstance()
+        for s in mipsolver.ScenarioSet:
+            print "demand scenario %d:%r"%( s,mipsolver.Scenarios[s].Demands)
     if PrintScenarios:
         mipsolver.PrintScenarioToFile(  )
 
@@ -183,6 +185,7 @@ def SolveYQFix( ):
 
 
 def SolveYFix():
+    global SolveInformation
     if Constants.Debug:
         Instance.PrintInstance()
 
@@ -191,14 +194,21 @@ def SolveYFix():
     if Method == "MIP" :
             solution, mipsolver = MRP(treestructure, averagescenario=False, recordsolveinfo=True)
     if Method == "SDDP":
-         sddpsolver = SDDP( Instance )
+         sddpsolver = SDDP( Instance, ScenarioSeed, nrscenarioperiteration = NrScenario, generationmethod = ScenarioGeneration  )
          sddpsolver.Run()
+         SolveInformation = sddpsolver.SolveInfo
+         evaluator = Evaluator(Instance, [], [sddpsolver], optimizationmethod = Constants.SDDP)
 
+
+         OutOfSampleTestResult = evaluator.EvaluateYQFixSolution(TestIdentifier, EvaluatorIdentifier, Model,
+                                                            saveevaluatetab=True, filename=GetEvaluationFileName())
+    # PrintFinalResult()
+    GatherEvaluation()
     PrintTestResult()
     testdescription = GetTestDescription()
     if   Method == "MIP" :
         solution.PrintToExcel( testdescription )
-    RunEvaluation()
+        RunEvaluation()
 
 def GetPreviouslyFoundSolution():
     result = []
@@ -216,6 +226,7 @@ def GetPreviouslyFoundSolution():
             #                           solution.MRPInstance.ProductSet ] for time in solution.MRPInstance.TimeBucketSet ]
 
         except IOError:
+            if Constants.Debug:
                 print "No solution found for seed %d"%s
 
 
@@ -240,7 +251,7 @@ def Evaluate():
     ComputeInSampleStatistis()
     global OutOfSampleTestResult
     solutions = GetPreviouslyFoundSolution()
-    evaluator = Evaluator( Instance, solutions, PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
+    evaluator = Evaluator( Instance, solutions, [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  Model )
     PrintFinalResult()
 
@@ -257,7 +268,7 @@ def EvaluateSingleSol(  ):
     filedescription = GetTestDescription()
     solution = MRPSolution()
     solution.ReadFromExcel(filedescription)
-    evaluator = Evaluator( Instance, [solution], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
+    evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
 
 
     MIPModel = Model
@@ -269,7 +280,7 @@ def EvaluateSingleSol(  ):
 
 def GatherEvaluation():
     global ScenarioSeed
-    evaluator = Evaluator(Instance, [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure())
+    evaluator = Evaluator(Instance, [], [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure())
     EvaluationTab = []
     KPIStats = []
     nrfile = 0
@@ -277,8 +288,9 @@ def GatherEvaluation():
     for seed in SeedArray:
         try:
             ScenarioSeed = seed
-            TestIdentifier[5] = seed
             filename =  GetEvaluationFileName()
+            TestIdentifier[5] = seed
+
             with open(filename + "Evaluator.txt", 'rb') as f:
                 list = pickle.load(f)
                 EvaluationTab.append( list )
@@ -287,7 +299,8 @@ def GatherEvaluation():
                 KPIStats.append( list )
                 nrfile =nrfile +1
         except IOError:
-            print "No evaluation file found for seed %d" % seed
+            if Constants.Debug:
+                print "No evaluation file found for seed %d" % seed
 
     if nrfile >= 1:
 
@@ -295,7 +308,8 @@ def GatherEvaluation():
 
         global OutOfSampleTestResult
         OutOfSampleTestResult =      evaluator.ComputeStatistic(EvaluationTab, NrEvaluation, TestIdentifier,EvaluatorIdentifier, KPIStat, -1, Model)
-        ComputeInSampleStatistis()
+        if Method == Constants.MIP:
+            ComputeInSampleStatistis()
         PrintFinalResult()
 # def SolveAndEvaluateYQFix( average = False, nrevaluation = 2, nrscenario = 100, nrsolve = 1):
 #     global ScenarioSeed
@@ -335,7 +349,7 @@ def GatherEvaluation():
 #
 
 def GetTreeStructure():
-    treestructure = [1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
+    treestructure = [1, 20, 20, 1, 1, 1, 0]
 
     if NrScenario == 8:
         if Instance.NrTimeBucket == 6:
@@ -540,7 +554,7 @@ def parseArguments():
         PolicyGeneration = "NN"
         NearestNeighborStrategy = args.policy
     NrEvaluation = args.nrevaluation
-    TestIdentifier = [ InstanceName, Distribution, Model, ScenarioGeneration, NrScenario, ScenarioSeed ]
+    TestIdentifier = [ InstanceName, Distribution, Model, Method, ScenarioGeneration, NrScenario, ScenarioSeed ]
     EvaluatorIdentifier = [ PolicyGeneration, NearestNeighborStrategy, NrEvaluation]
     return args
 

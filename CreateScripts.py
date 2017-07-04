@@ -19,25 +19,28 @@ if __name__ == "__main__":
 
     for instance in ["01", "02", "03", "04", "05" ]:
         for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
-            for model in ["YFix", "YQFix", "Average"]:
-                generationset = ["MC", "RQMC"]
-                scenarset = ["4", "512"]
-                policyset = [ "NNDAC", "NNSAC", "NND", "NNS" ] # "Re-solve"]
-                method = "MIP"
-                avg = False
-                if model == "YQFix":
-                    scenarset = ["2", "4", "8", "50", "100", "200", "500"]
-                    policyset = [ "Fix" ]
-
-                if model == "Average":
-                    scenarset =  [ "1" ]
-                    avg = True
-                    policyset = ["Fix"]
-                    generationset = ["MC"]
-                for generation in generationset:
-                    for nrscenar in scenarset:
-                        for seed in range( 5 ):
-                                qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s" % (
+            model = "YFix"
+            nrscenar = 500
+            generation = "MC"
+            # for model in ["YFix", "YQFix", "Average"]:
+            #     generationset = ["MC", "RQMC"]
+            #     scenarset = ["4", "512"]
+            #     policyset = [ "NNDAC", "NNSAC", "NND", "NNS" ] # "Re-solve"]
+            #     method = "MIP"
+            #     avg = False
+            #     if model == "YQFix":
+            #         scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+            #         policyset = [ "Fix" ]
+            #
+            #     if model == "Average":
+            #         scenarset =  [ "1" ]
+            #         avg = True
+            #         policyset = ["Fix"]
+            #         generationset = ["MC"]
+            #     for generation in generationset:
+            #         for nrscenar in scenarset:
+            for seed in range( 5 ):
+                                qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_SDDP" % (
                                     instance, distribution, model, nrscenar, generation, seed  )
                                 qsub_file = open(qsub_filename, 'w')
                                 qsub_file.write("""
@@ -49,31 +52,31 @@ if __name__ == "__main__":
 #$ -o /home/thesim/outputjob%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Solve %s %s %s %s %s -s %s
+python test.py Solve %s %s %s %s %s -s %s  -n 500 -m SDDP
 """ % ( instance, distribution, model, nrscenar, generation, seed,  instance, distribution, model, nrscenar, generation, seed  ))  # Create the sh file
-                                for Policy in policyset:
-                                    qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
-                                      instance, distribution, model, nrscenar, generation, Policy, seed)
-                                    qsub_file = open(qsub_filename, 'w')
-                                    qsub_file.write("""
-#!/bin/bash -l
+#                                 for Policy in policyset:
+#                                     qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
+#                                       instance, distribution, model, nrscenar, generation, Policy, seed)
+#                                     qsub_file = open(qsub_filename, 'w')
+#                                     qsub_file.write("""
+# #!/bin/bash -l
+# #
+# #$ -cwd
+# #$ -q idra
+# #$ -j y
+# #$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s.txt
+# ulimit -v 16000000
+# mkdir /tmp/thesim
+# python test.py Evaluate %s %s %s %s %s  -s %s -p %s
+# """ % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model,
+#                                nrscenar, generation, seed, Policy) )
 #
-#$ -cwd
-#$ -q idra
-#$ -j y
-#$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s.txt
-ulimit -v 16000000
-mkdir /tmp/thesim
-python test.py Evaluate %s %s %s %s %s  -s %s -p %s
-""" % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model,
-                               nrscenar, generation, seed, Policy) )
-
-filename = "runalljobs.sh"
-file = open(filename, 'w')
-file.write("""
-#!/bin/bash -l
-#
-""")
+# filename = "runalljobs.sh"
+# file = open(filename, 'w')
+# file.write("""
+# #!/bin/bash -l
+# #
+# """)
 
 # for instance in ["01", "02", "03", "04", "05" ]:
 #      for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
@@ -99,26 +102,28 @@ file.write("""
 #                                      instance, distribution, model, nrscenar, generation, seed  ) )
 
 
-for instance in ["02", "03", "04", "05" ]:
+for instance in ["01", "02", "03", "04", "05"]:
     for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
-        for model in ["YFix" ]:#, "YQFix", "Average"]:
-            generationset = ["RQMC",  "MC"]
-            scenarset = ["512"]
-            policyset = [ "NNSAC" ]
-            method = "MIP"
-            avg = False
-            if model == "YQFix":
-                scenarset = ["2", "4", "8", "50", "100", "200",  "500"]
-                policyset = ["Fix"]
-
-            if model == "Average":
-                 scenarset = ["1"]
-                 avg = True
-                 policyset = ["Fix"]
-                 generationset = ["MC"]
-            for generation in generationset:
-                 for nrscenar in scenarset:
-                     for Policy in policyset:
-                         for seed in range(5):
-                             file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
-                                       instance, distribution, model, nrscenar, generation, Policy, seed)  )
+        model = "YFix"
+        nrscenar = 500
+        generation = "MC"
+        # for model in ["YFix", "YQFix", "Average"]:
+        #     generationset = ["MC", "RQMC"]
+        #     scenarset = ["4", "512"]
+        #     policyset = [ "NNDAC", "NNSAC", "NND", "NNS" ] # "Re-solve"]
+        #     method = "MIP"
+        #     avg = False
+        #     if model == "YQFix":
+        #         scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+        #         policyset = [ "Fix" ]
+        #
+        #     if model == "Average":
+        #         scenarset =  [ "1" ]
+        #         avg = True
+        #         policyset = ["Fix"]
+        #         generationset = ["MC"]
+        #     for generation in generationset:
+        #         for nrscenar in scenarset:
+        for seed in range(5):
+                             file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_SDDP" % (
+                                    instance, distribution, model, nrscenar, generation, seed  ) )

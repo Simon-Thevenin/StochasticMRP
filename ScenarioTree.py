@@ -10,7 +10,7 @@ from matplotlib import pyplot as PLT
 
 class ScenarioTree:
     #Constructor
-    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False ):
+    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False, generateasYQfix = False ):
         self.Seed = seed
         np.random.seed( seed )
         self.Nodes = []
@@ -26,17 +26,17 @@ class ScenarioTree:
         self.GivenFirstPeriod = givenfirstperiod
         self.FollowGivenUntil = len(self.GivenFirstPeriod )
         #In case the scenario tree has to be the same aas the two stage (YQFix) scenario tree.
-        #self.GenerateasYQfix = generateasYQfix
+        self.GenerateasYQfix = generateasYQfix
         self.Distribution = instance.Distribution
         self.DemandToFollow = []
         #Generate the demand of YFix, then replicate them in the generation of the scenario tree
-        #if self.GenerateasYQfix :
-        #    treestructure = [1,8] + [1] * (instance.NrTimeBucket-1) + [0]
-        #    YQFixTree =   ScenarioTree( instance, treestructure, seed, scenariogenerationmethod=self.ScenarioGenerationMethod )
-        #    YQFixSceanrios =  YQFixTree.GetAllScenarios( computeindex= False)
-        #    self.DemandToFollow = [ [ [  YQFixSceanrios[w].Demands[t][p] for p in self.Instance.ProductSet ]
-        #                                                                    for t in self.Instance.TimeBucketSet ]
-        #                                                                       for w in range(len(YQFixSceanrios) )  ]
+        if self.GenerateasYQfix :
+            treestructure = [1,2] + [1] * (instance.NrTimeBucket-1) + [0]
+            YQFixTree =   ScenarioTree( instance, treestructure, seed, scenariogenerationmethod=self.ScenarioGenerationMethod )
+            YQFixSceanrios =  YQFixTree.GetAllScenarios( computeindex= False)
+            self.DemandToFollow = [ [ [  YQFixSceanrios[w].Demands[t][p] for p in self.Instance.ProductSet ]
+                                                                            for t in self.Instance.TimeBucketSet ]
+                                                                               for w in range(len(YQFixSceanrios) )  ]
 
         self.DemandYQFixRQMC = []
         self.GenerateRQMCForYQFix = generateRQMCForYQfix

@@ -20,10 +20,13 @@ class Constants:
     RQMC = "RQMC"
     Solve = "Solve"
     Evaluate = "Evaluate"
+    MIP = "MIP"
+    SDDP = "SDDP"
 
     Debug = False
+    PrintDebugLPFiles = False
     LauchEvalAfterSolve = True
     Infinity = 9999999999999.9
     AlgorithmTimeLimit = 3600.0
     AlgorithmOptimalityTolerence = 0.00001
-    SDDPIterationLimit = 10
+    SDDPIterationLimit = 500
