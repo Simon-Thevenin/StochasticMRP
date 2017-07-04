@@ -125,5 +125,5 @@ for instance in ["01", "02", "03", "04", "05"]:
         #     for generation in generationset:
         #         for nrscenar in scenarset:
         for seed in range(5):
-                             file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_SDDP" % (
+                             file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_SDDP \n" % (
                                     instance, distribution, model, nrscenar, generation, seed  ) )
