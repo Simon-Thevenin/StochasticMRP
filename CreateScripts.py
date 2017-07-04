@@ -71,12 +71,12 @@ python test.py Solve %s %s %s %s %s -s %s  -n 500 -m SDDP
 # """ % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model,
 #                                nrscenar, generation, seed, Policy) )
 #
-# filename = "runalljobs.sh"
-# file = open(filename, 'w')
-# file.write("""
-# #!/bin/bash -l
-# #
-# """)
+filename = "runalljobs.sh"
+file = open(filename, 'w')
+file.write("""
+#!/bin/bash -l
+#
+""")
 
 # for instance in ["01", "02", "03", "04", "05" ]:
 #      for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
