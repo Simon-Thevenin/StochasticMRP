@@ -25,7 +25,7 @@ class Constants:
 
     Debug = False
     PrintDebugLPFiles = False
-    LauchEvalAfterSolve = True
+    LauchEvalAfterSolve = False
     Infinity = 9999999999999.9
     AlgorithmTimeLimit = 3600.0
     AlgorithmOptimalityTolerence = 0.00001

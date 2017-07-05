@@ -3,11 +3,11 @@
 import openpyxl as opxl
 import pandas as pd
 import glob as glob
-columnname = [
-              "Instance name",
+columnname = ["Instance name",
               "Distribution",
               "Model",
-              "Scenario Generation Method",
+              "Method",
+              "Scenario Generation",
               "NrInSampleScenario",
               "Seed",
               "Policy generation",
@@ -118,11 +118,12 @@ writer.save()
 columnname = ["Instance name",
               "Distribution",
               "Model",
+              "Method",
               "Scenario Generation Method",
               "NrInSampleScenario",
               "Seed",
-              "Policy generation 1",
               "Policy generation",
+              "Policy generation2",
               "NrOutSampleScenario",
               "Expected In Sample",
               "CPLEX Time",

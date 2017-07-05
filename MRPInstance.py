@@ -342,11 +342,23 @@ class MRPInstance:
             for p in prodinlevel:
                 dependentaveragedemand[p] = sum(dependentaveragedemand[q] * self.Requirements[q][p] for q in self.ProductSet) + \
                                                 dependentaveragedemand[p]
+
+        dependentstd= [self.YearlyStandardDevDemands[p] for p in self.ProductSet]
+        levelset = sorted(set(level), reverse=False)
+        for l in levelset:
+            prodinlevel = [p for p in self.ProductSet if level[p] == l]
+            for p in prodinlevel:
+                dependentstd[p] = sum(
+                    dependentstd[q] * self.Requirements[q][p] for q in self.ProductSet) + \
+                                  dependentstd[p]
         # Assume a starting inventory is the average demand during the lead time
-        self.StartingInventories = [   int( random.uniform( 0.75, 1.5 ) * dependentaveragedemand[ p ] * (self.Leadtimes[ p ] )  )   for p in self.ProductSet ]
+        self.StartingInventories = [ ScenarioTreeNode.TransformInverse([[0.85]], 1, 1, distribution, [ dependentaveragedemand[ p ] * (self.Leadtimes[ p ] ) ] ,
+                                                                       [dependentstd[ p ] ] )[0][0]  for p in self.ProductSet ]
+
+        #self.StartingInventories = [   int( random.uniform( 0.75, 1.5 ) * dependentaveragedemand[ p ] * (self.Leadtimes[ p ] )  )   for p in self.ProductSet ]
 
         #This set of instances assume no setup
-        self.SetupCosts =  [   ( ( ( dependentaveragedemand[ p ] / 2 ) * 0.25 *  self.InventoryCosts[p]  ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
+        self.SetupCosts =  [   ( ( ( dependentaveragedemand[ p ] / 2 ) * 2 *  self.InventoryCosts[p]  ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
 
         self.ProcessingTime = [ [ randint( 1, 5 )
                                     if (p == k )   else 0.0

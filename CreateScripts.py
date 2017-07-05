@@ -19,31 +19,31 @@ if __name__ == "__main__":
 
     for instance in ["01", "02", "03", "04", "05" ]:
         for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
-            model = "YFix"
-            nrscenar = 500
-            generation = "RQMC"
-            # for model in ["YFix", "YQFix", "Average"]:
-            #     generationset = ["MC", "RQMC"]
-            #     scenarset = ["4", "512"]
-            #     policyset = [ "NNDAC", "NNSAC", "NND", "NNS" ] # "Re-solve"]
-            #     method = "MIP"
-            #     avg = False
-            #     if model == "YQFix":
-            #         scenarset = ["2", "4", "8", "50", "100", "200", "500"]
-            #         policyset = [ "Fix" ]
-            #
-            #     if model == "Average":
-            #         scenarset =  [ "1" ]
-            #         avg = True
-            #         policyset = ["Fix"]
-            #         generationset = ["MC"]
-            #     for generation in generationset:
-            #         for nrscenar in scenarset:
-            for seed in range( 5 ):
-                                qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_SDDP" % (
+            #model = "YFix"
+            #nrscenar = 500
+            #generation = "RQMC"
+            for model in ["YFix", "YQFix", "Average"]:
+                 generationset = ["MC", "RQMC"]
+                 scenarset = ["4", "512"]
+                 policyset = [ "NNDAC", "NNSAC", "NND", "NNS" ] # "Re-solve"]
+                 method = "MIP"
+                 avg = False
+                 if model == "YQFix":
+                     scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+                     policyset = [ "Fix" ]
+
+                 if model == "Average":
+                     scenarset =  [ "1" ]
+                     avg = True
+                     policyset = ["Fix"]
+                     generationset = ["MC"]
+                 for generation in generationset:
+                     for nrscenar in scenarset:
+                        for seed in range( 5 ):
+                            qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_SDDP" % (
                                     instance, distribution, model, nrscenar, generation, seed  )
-                                qsub_file = open(qsub_filename, 'w')
-                                qsub_file.write("""
+                            qsub_file = open(qsub_filename, 'w')
+                            qsub_file.write("""
 #!/bin/bash -l
 #
 #$ -cwd
@@ -54,11 +54,11 @@ ulimit -v 16000000
 mkdir /tmp/thesim
 python test.py Solve %s %s %s %s %s -s %s  -n 500 -m SDDP
 """ % ( instance, distribution, model, nrscenar, generation, seed,  instance, distribution, model, nrscenar, generation, seed  ))  # Create the sh file
-#                                 for Policy in policyset:
-#                                     qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
-#                                       instance, distribution, model, nrscenar, generation, Policy, seed)
-#                                     qsub_file = open(qsub_filename, 'w')
-#                                     qsub_file.write("""
+                            for Policy in policyset:
+                                     qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
+                                       instance, distribution, model, nrscenar, generation, Policy, seed)
+                                     qsub_file = open(qsub_filename, 'w')
+                                     qsub_file.write("""
 # #!/bin/bash -l
 # #
 # #$ -cwd
@@ -69,8 +69,8 @@ python test.py Solve %s %s %s %s %s -s %s  -n 500 -m SDDP
 # mkdir /tmp/thesim
 # python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 # """ % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model,
-#                                nrscenar, generation, seed, Policy) )
-#
+                                nrscenar, generation, seed, Policy) )
+
 filename = "runalljobs.sh"
 file = open(filename, 'w')
 file.write("""
@@ -104,7 +104,7 @@ file.write("""
 
 for instance in ["01", "02", "03", "04", "05"]:
     for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
-        model = "YFix"
+        model = "YQFix"
         nrscenar = 500
         generation = "RQMC"
         # for model in ["YFix", "YQFix", "Average"]:

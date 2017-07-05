@@ -214,7 +214,7 @@ def GetPreviouslyFoundSolution():
     result = []
     for s in SeedArray:
         try:
-            TestIdentifier[5] = s
+            TestIdentifier[6] = s
             filedescription = GetTestDescription()
             solution = MRPSolution()
             solution.ReadFromExcel( filedescription )
@@ -289,7 +289,7 @@ def GatherEvaluation():
         try:
             ScenarioSeed = seed
             filename =  GetEvaluationFileName()
-            TestIdentifier[5] = seed
+            TestIdentifier[6] = seed
 
             with open(filename + "Evaluator.txt", 'rb') as f:
                 list = pickle.load(f)
@@ -509,7 +509,7 @@ def parseArguments():
     parser.add_argument("Instance", help="Cname of the instance.", type=str)
     parser.add_argument("Distribution", help="Considered didemand disdistribution.", type=str)
     parser.add_argument("Model", help="Average/YQFix/YFiz .", type=str)
-    parser.add_argument("NrScenario", help="Average,/YQFix/YFiz mom.", type=int)
+    parser.add_argument("NrScenario", help="the number of scenario used for optimization", type=int)
     parser.add_argument("ScenarioGeneration", help="MC,/RQMC.", type=str)
     parser.add_argument("-s", "--ScenarioSeed", help="The seed used for scenario generation", type=int, default= -1 )
 
@@ -601,7 +601,7 @@ def RunTestsAndEvaluation():
     for s in range( 5 ):
         SeedIndex = s
         ScenarioSeed = SeedArray[ s ]
-        TestIdentifier[5] = ScenarioSeed
+        TestIdentifier[6] = ScenarioSeed
         if Model == Constants.ModelYQFix:
             SolveYQFix()
         if Model == Constants.ModelYFix:
@@ -626,15 +626,15 @@ if __name__ == "__main__":
         PrintScenarios = False
 
         #Instance.DefineAsSuperSmallIntance()
-        Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
+        #Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
         #for InstanceName in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
             #			  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
             #			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
             #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
         #    for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
         #              "NonStationary"]:
-        #        Instance.ReadFromFile( InstanceName, Distribution )
-        #        Instance.SaveCompleteInstanceInExelFile()
+        Instance.ReadFromFile( InstanceName, Distribution )
+        Instance.SaveCompleteInstanceInExelFile()
 
         #Instance.DefineAsSuperSmallIntance()
         #Instance.SaveCompleteInstanceInExelFile()
