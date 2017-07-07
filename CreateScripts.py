@@ -25,7 +25,7 @@ if __name__ == "__main__":
             for model in ["YFix", "YQFix", "Average"]:
                  generationset = ["MC", "RQMC"]
                  scenarset = [ "512"]
-                 policyset = [ "NNDAC", "NNSAC" ] # "Re-solve"]
+                 policyset = [ "NNDAC", "NNSAC", "Re-solve"]
                  method = "MIP"
                  avg = False
                  if model == "YQFix":
@@ -110,7 +110,7 @@ for instance in ["01", "02", "03", "04", "05"]:
         for model in ["YFix", "YQFix", "Average"]:
             generationset = ["MC", "RQMC"]
             scenarset = ["512"]
-            policyset = ["NNDAC", "NNSAC"]  # "Re-solve"]
+            policyset = ["NNDAC", "NNSAC", "Re-solve"]
             method = "MIP"
             avg = False
             if model == "YQFix":
