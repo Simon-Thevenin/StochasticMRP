@@ -63,3 +63,13 @@ class Tool:
                       sheetname=sheetname)
 
         return df;
+
+    #This function transform the sheet given in arguments into a dataframe
+    @staticmethod
+    def Transform3d( array, dimension1, dimension2, dimension3):
+        result = [ [ [ array[p * (dimension2 * dimension3) + t * dimension3 + w]
+                          for p in range(dimension1) ]
+                            for t in range(dimension2) ]
+                              for w in range(dimension3) ]
+
+        return result;

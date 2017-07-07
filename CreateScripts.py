@@ -107,23 +107,23 @@ for instance in ["01", "02", "03", "04", "05"]:
         model = "YQFix"
         nrscenar = 500
         generation = "RQMC"
-        # for model in ["YFix", "YQFix", "Average"]:
-        #     generationset = ["MC", "RQMC"]
-        #     scenarset = ["4", "512"]
-        #     policyset = [ "NNDAC", "NNSAC", "NND", "NNS" ] # "Re-solve"]
-        #     method = "MIP"
-        #     avg = False
-        #     if model == "YQFix":
-        #         scenarset = ["2", "4", "8", "50", "100", "200", "500"]
-        #         policyset = [ "Fix" ]
-        #
-        #     if model == "Average":
-        #         scenarset =  [ "1" ]
-        #         avg = True
-        #         policyset = ["Fix"]
-        #         generationset = ["MC"]
-        #     for generation in generationset:
-        #         for nrscenar in scenarset:
-        for seed in range(5):
+        for model in ["YFix", "YQFix", "Average"]:
+             generationset = ["MC", "RQMC"]
+             scenarset = ["4", "512"]
+             policyset = [ "NNDAC", "NNSAC"] # "Re-solve"]
+             method = "MIP"
+             avg = False
+             if model == "YQFix":
+                 scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+                 policyset = [ "Fix" ]
+
+             if model == "Average":
+                 scenarset =  [ "1" ]
+                 avg = True
+                 policyset = ["Fix"]
+                 generationset = ["MC"]
+             for generation in generationset:
+                 for nrscenar in scenarset:
+                        for seed in range(5):
                              file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_MIP \n" % (
                                     instance, distribution, model, nrscenar, generation, seed  ) )

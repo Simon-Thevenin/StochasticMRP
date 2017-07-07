@@ -17,15 +17,16 @@ class MRPSolution:
         return result
     #This function print the solution in an Excel file in the folde "Solutions"
     def PrintToExcel(self, description):
+        prodquantitydf, inventorydf, productiondf, bbackorderdf = self.DataFrameFromList()
         writer = pd.ExcelWriter( self.GetSolutionFileName( description ), engine='openpyxl')
         #givenquantty = [[self.ProductionQuantity.ix[p, t].get_value(0) for p in self.MRPInstance.ProductSet]
         #                for t in self.MRPInstance.TimeBucketSet]
         #toprint = pd.DataFrame( givenquantty )
 
-        self.ProductionQuantity.to_excel(writer, 'ProductionQuantity')
-        self.Production.to_excel(writer, 'Production')
-        self.InventoryLevel.to_excel(writer, 'InventoryLevel')
-        self.BackOrder.to_excel(writer, 'BackOrder')
+        prodquantitydf.to_excel(writer, 'ProductionQuantity')
+        productiondf.to_excel(writer, 'Production')
+        inventorydf.to_excel(writer, 'InventoryLevel')
+        bbackorderdf.to_excel(writer, 'BackOrder')
 
         general = [  self.MRPInstance.InstanceName, self.MRPInstance.Distribution, self.ScenarioTree.Owner.Model, self.CplexCost, self.CplexTime, self.CplexGap  ]
         columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "CplexGap"]
@@ -45,10 +46,12 @@ class MRPSolution:
         wb2 = opxl.load_workbook( self.GetSolutionFileName( description ))
 
         # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
-        self.ProductionQuantity = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "ProductionQuantity")
-        self.Production = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "Production")
-        self.InventoryLevel = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "InventoryLevel")
-        self.BackOrder = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "BackOrder")
+
+        prodquantitydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "ProductionQuantity")
+        productiondf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "Production")
+        inventorydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "InventoryLevel")
+        bbackorderdf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "BackOrder")
+
         instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
         scenariotreeinfo =  Tool.ReadDataFrame(wb2, "ScenarioTree")
 
@@ -71,7 +74,7 @@ class MRPSolution:
         self.CplexGap = instanceinfo.get_value( 'CplexGap', 0 )
 
         self.Scenarioset = self.ScenarioTree.GetAllScenarios( False )
-
+        self.ListFromDataFrame(prodquantitydf, inventorydf, productiondf, bbackorderdf)
         self.ComputeCost()
 
         if model <> Constants.ModelYQFix:
@@ -83,56 +86,77 @@ class MRPSolution:
 
     #This function prints a solution
     def Print(self):
-        print "production ( cost: %r): \n %r" % ( self.SetupCost , self.Production );
-        print "production quantities: \n %r" % self.ProductionQuantity ;
-        print "inventory levels at the end of the periods: ( cost: %r ) \n %r" % ( self.InventoryCost, self.InventoryLevel );
-        print "backorder quantities:  ( cost: %r ) \n %r" % ( self.BackOrderCost, self.BackOrder );
+        prodquantitydf, inventorydf, productiondf, bbackorderdf = self.DataFrameFromList()
+        print "production ( cost: %r): \n %r" % ( self.SetupCost , productiondf )
+        print "production quantities: \n %r" % prodquantitydf
+        print "inventory levels at the end of the periods: ( cost: %r ) \n %r" % ( self.InventoryCost, inventorydf )
+        print "backorder quantities:  ( cost: %r ) \n %r" % ( self.BackOrderCost, bbackorderdf )
 
     #This funciton conpute the different costs (inventory, backorder, setups) associated with the solution.
     def ComputeCost(self):
         #multiply by inventory cost per product -> get a vector with cost per time unit and scenario
-        inventorycostpertimeandscenar =  self.InventoryLevel.transpose().dot( self.MRPInstance.InventoryCosts )
-        setupcostpertimeandscenar = self.Production.transpose().dot( self.MRPInstance.SetupCosts )
-        backorderproductwithexternaldemand = [ self.MRPInstance.BackorderCosts[p]  for p in self.MRPInstance.ProductWithExternalDemand ]
+        self.InventoryCost = 0
+        self.BackOrderCost = 0
+        self.SetupCost = 0
+        self.LostsaleCost = 0
+        gammas = [math.pow(self.MRPInstance.Gamma, t) for t in self.MRPInstance.TimeBucketSet]
+        for w in  range( len(self.Scenarioset) ) :
+            for t in self.MRPInstance.TimeBucketSet:
+                for p in self.MRPInstance.ProductSet:
 
-        #backordervariable = self.BackOrder.loc[ 0 : ( self.MRPInstance.NrTimeBucket -1 ) ]
-        backordercostpertimeandscenar = self.BackOrder.transpose().dot(backorderproductwithexternaldemand)
-        #backordercostpertimeandscenar = backordervariable.transpose().dot( backorderproductwithexternaldemand )
+                    self.InventoryCost +=  self.InventoryLevel[w][t][p] \
+                                          * self.MRPInstance.InventoryCosts[p] \
+                                          * gammas[t] \
+                                          * self.Scenarioset[w].Probability
 
-        lostsalewithexternaldemand = [ self.MRPInstance.LostSaleCost[p] for p in
-                                              self.MRPInstance.ProductWithExternalDemand]
+                    self.SetupCost +=   self.Production[w][t][p] \
+                                   * self.MRPInstance.SetupCosts[p] \
+                                   * gammas[t] \
+                                   * self.Scenarioset[w].Probability
 
-        lostsalevariable = self.BackOrder.iloc[ :, self.BackOrder.columns.get_level_values(0) == ( self.MRPInstance.NrTimeBucket -1 ) ]
-        lostsalecosttimeandscenar = lostsalevariable.transpose().dot( lostsalewithexternaldemand )
+                    if self.MRPInstance.HasExternalDemand[p]:
+                        if t < self.MRPInstance.NrTimeBucket -1 :
+                            self.BackOrderCost += self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] \
+                                                  * self.MRPInstance.BackorderCosts[ p ] \
+                                                  * gammas[t] \
+                                                  * self.Scenarioset[w].Probability
+                        else:
+                            self.LostsaleCost +=  self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] \
+                                                 * self.MRPInstance.InventoryCosts[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] \
+                                                 * gammas[t] \
+                                                 * self.Scenarioset[w].Probability
 
-        #Reshap the vector to get matirces
-        inventorycostpertimeandscenar = inventorycostpertimeandscenar.values.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
-        setupcostpertimeandscenar = setupcostpertimeandscenar.values.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
-        backordercostpertimeandscenar = backordercostpertimeandscenar.values.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
-        lostsalecosttimeandscenar = lostsalecosttimeandscenar.values.reshape( 1, len(  self.Scenarioset ));
-
-
-        #multiply by the probability of each scenatio
-        proabailities = [ s.Probability for s in self.Scenarioset ]
-        inventorycostpertime = inventorycostpertimeandscenar.dot( proabailities )
-        setupcostpertime = setupcostpertimeandscenar.dot( proabailities )
-        backordercostpertime = backordercostpertimeandscenar.dot( proabailities )
-        lostsalecostpertime = lostsalecosttimeandscenar.dot( proabailities )
-        gammas = [ math.pow(self.MRPInstance.Gamma, t) for t in self.MRPInstance.TimeBucketSet ]
-        netpresentvalueinventorycostpertime = inventorycostpertime.transpose().dot( gammas )
-        netpresentvaluesetupcostpertime = setupcostpertime.transpose().dot( gammas )
-        gammadonotconsiderlastperiod = gammas
-        gammadonotconsiderlastperiod[ (  self.MRPInstance.NrTimeBucket -1 ) ] = 0
-        netpresentvaluebackordercostpertime = backordercostpertime.transpose().dot( gammadonotconsiderlastperiod )
-        lastgamma = [ math.pow( self.MRPInstance.Gamma, self.MRPInstance.NrTimeBucket -1 ) ]
-        netpresentvaluelostsalecostpertime = lostsalecostpertime.transpose().dot( lastgamma )
-
-        self.InventoryCost = netpresentvalueinventorycostpertime
-        self.BackOrderCost = netpresentvaluebackordercostpertime
-        self.SetupCost = netpresentvaluesetupcostpertime
-        self.LostsaleCost = netpresentvaluelostsalecostpertime
         self.TotalCost =  self.InventoryCost + self.BackOrderCost +  self.SetupCost + self.LostsaleCost
 
+
+    def DataFrameFromList(self):
+        scenarioset = range(len(self.Scenarioset) )
+        solquantity = [ [ self.ProductionQuantity[s][t][p]   for t in self.MRPInstance.TimeBucketSet for s in scenarioset] for p in self.MRPInstance.ProductSet ]
+        solinventory = [[self.InventoryLevel[s][t][p]  for t in self.MRPInstance.TimeBucketSet for s in scenarioset ] for p in self.MRPInstance.ProductSet ]
+        solproduction = [[self.Production[s][t][p]  for t in self.MRPInstance.TimeBucketSet for s in scenarioset ] for p in self.MRPInstance.ProductSet ]
+        solbackorder = [[self.BackOrder[s][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ]  for t in self.MRPInstance.TimeBucketSet for s in scenarioset ] for p in self.MRPInstance.ProductWithExternalDemand ]
+
+        iterables = [self.MRPInstance.TimeBucketSet, range(len(self.Scenarioset))]
+        multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
+        prodquantitydf = pd.DataFrame(solquantity, index=self.MRPInstance.ProductName, columns=multiindex)
+        prodquantitydf.index.name = "Product"
+        inventorydf = pd.DataFrame(solinventory, index=self.MRPInstance.ProductName, columns=multiindex)
+        inventorydf.index.name = "Product"
+        productiondf = pd.DataFrame(solproduction, index=self.MRPInstance.ProductName, columns=multiindex)
+        productiondf.index.name = "Product"
+        nameproductwithextternaldemand = [self.MRPInstance.ProductName[p] for p in self.MRPInstance.ProductWithExternalDemand]
+        bbackorderdf = pd.DataFrame(solbackorder, index=nameproductwithextternaldemand, columns=multiindex)
+        bbackorderdf.index.name = "Product"
+
+        return prodquantitydf, inventorydf, productiondf, bbackorderdf
+
+
+    def ListFromDataFrame(self, prodquantitydf, inventorydf, productiondf, bbackorderdf):
+        scenarioset = range(len(self.Scenarioset))
+        self.ProductionQuantity = [ [ [ prodquantitydf.loc[  self.MRPInstance.ProductName[ p ], (t,s)]  for p in self.MRPInstance.ProductSet ]  for t in self.MRPInstance.TimeBucketSet ]for s in scenarioset ]
+        self.InventoryLevel = [ [ [inventorydf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]
+        self.Production = [ [ [productiondf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]
+        self.BackOrder = [ [ [bbackorderdf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductWithExternalDemand]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]
 
 
     #constructor
@@ -145,24 +169,27 @@ class MRPSolution:
         self.ScenarioTree = scenriotree
 
         #Create a multi index to store the scenarios and time
-        if  instance is not  None:
-            iterables = [ self.MRPInstance.TimeBucketSet,   range( len( self.Scenarioset ) )  ]
-            multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
-            self.ProductionQuantity = pd.DataFrame( solquantity, index = instance.ProductName, columns = multiindex  )
-            self.ProductionQuantity.index.name = "Product"
-            self.InventoryLevel = pd.DataFrame( solinventory, index = instance.ProductName, columns = multiindex )
-            self.InventoryLevel.index.name = "Product"
-            self.Production = pd.DataFrame( solproduction, index = instance.ProductName, columns = multiindex  )
-            self.Production.index.name = "Product"
-            nameproductwithextternaldemand = [ instance.ProductName[p] for p in instance.ProductWithExternalDemand ]
-            self.BackOrder = pd.DataFrame( solbackorder,  index = nameproductwithextternaldemand, columns = multiindex  )
-            self.BackOrder.index.name = "Product"
-        else:
-            self.ProductionQuantity = None
-            self.InventoryLevel = None
-            self.Production = None
-            self.BackOrder = None
-
+        # if  instance is not  None:
+        #     iterables = [ self.MRPInstance.TimeBucketSet,   range( len( self.Scenarioset ) )  ]
+        #     multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
+        #     self.ProductionQuantity = pd.DataFrame( solquantity, index = instance.ProductName, columns = multiindex  )
+        #     self.ProductionQuantity.index.name = "Product"
+        #     self.InventoryLevel = pd.DataFrame( solinventory, index = instance.ProductName, columns = multiindex )
+        #     self.InventoryLevel.index.name = "Product"
+        #     self.Production = pd.DataFrame( solproduction, index = instance.ProductName, columns = multiindex  )
+        #     self.Production.index.name = "Product"
+        #     nameproductwithextternaldemand = [ instance.ProductName[p] for p in instance.ProductWithExternalDemand ]
+        #     self.BackOrder = pd.DataFrame( solbackorder,  index = nameproductwithextternaldemand, columns = multiindex  )
+        #     self.BackOrder.index.name = "Product"
+        # else:
+        #     self.ProductionQuantity = None
+        #     self.InventoryLevel = None
+        #     self.Production = None
+        #     self.BackOrder = None
+        self.ProductionQuantity = solquantity
+        self.InventoryLevel = solinventory
+        self.Production = solproduction
+        self.BackOrder = solbackorder
         self.InventoryCost = -1
         self.BackOrderCost = -1
         self.SetupCost = -1
@@ -192,31 +219,24 @@ class MRPSolution:
 
         scenarioset = range( len( self.Scenarioset ) )
 
-        self.InSampleAverageInventory = Tool.ComputeAverageOnIndex2( self.InventoryLevel,
-                                                                     self.MRPInstance.ProductSet,
-                                                                     self.MRPInstance.ProductName,
-                                                                     self.MRPInstance.TimeBucketSet,
-                                                                     scenarioset  )
+        self.InSampleAverageInventory = [ [ sum( self.InventoryLevel[w][t][p] for w in scenarioset)/  len( scenarioset )
+                                           for p in  self.MRPInstance.ProductSet ]
+                                            for t in self.MRPInstance.TimeBucketSet]
 
-        self.InSampleAverageBackOrder =  Tool.ComputeAverageOnIndex2( self.BackOrder,
-                                                                      self.MRPInstance.ProductWithExternalDemand,
-                                                                      self.MRPInstance.ProductName,
-                                                                      self.MRPInstance.TimeBucketSet,
-                                                                      scenarioset )
+        self.InSampleAverageBackOrder =   [ [ sum( self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] for w in scenarioset)/  len( scenarioset )
+                                              for p in self.MRPInstance.ProductWithExternalDemand]
+                                                for t in self.MRPInstance.TimeBucketSet]
 
-        self.InSampleAverageQuantity =  Tool.ComputeAverageOnIndex2( self.ProductionQuantity,
-                                                                     self.MRPInstance.ProductSet,
-                                                                     self.MRPInstance.ProductName,
-                                                                     self.MRPInstance.TimeBucketSet,
-                                                                     scenarioset  )
 
-        self.InSampleAverageSetup =  Tool.ComputeAverageOnIndex2(     self.Production,
-                                                                     self.MRPInstance.ProductSet,
-                                                                     self.MRPInstance.ProductName,
-                                                                     self.MRPInstance.TimeBucketSet,
-                                                                     scenarioset  )
+        self.InSampleAverageQuantity =  [ [ sum( self.ProductionQuantity[w][t][p] for w in scenarioset)/  len( scenarioset )
+                                            for p in self.MRPInstance.ProductSet]
+                                          for t in self.MRPInstance.TimeBucketSet]
 
-        self.InSampleAverageOnTime = [ [ ( sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder.loc[  self.MRPInstance.ProductName[ p ], (t,s)], 0 ] )
+        self.InSampleAverageSetup =  [ [ sum( self.Production[w][t][p] for w in scenarioset)/  len( scenarioset )
+                                         for p in self.MRPInstance.ProductSet]
+                                       for t in self.MRPInstance.TimeBucketSet]
+
+        self.InSampleAverageOnTime = [ [ ( sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder[s][t][ self.MRPInstance.ProductWithExternalDemandIndex[p]  ], 0 ] )
                                            for s in scenarioset )
                                              / len( scenarioset ) )
                                               for p in self.MRPInstance.ProductWithExternalDemand ]
@@ -229,21 +249,15 @@ class MRPSolution:
 
         backordertime = range( self.MRPInstance.NrTimeBucket - 1)
 
-        self.InSampleTotalOnTimePerScenario =  [  ( sum (  sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder.loc[  self.MRPInstance.ProductName[ p ], (t,s)], 0 ] )
+        self.InSampleTotalOnTimePerScenario =  [  ( sum (  sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder[s][t][ self.MRPInstance.ProductWithExternalDemandIndex[p]  ], 0 ] )
                                                     for p in self.MRPInstance.ProductWithExternalDemand )
                                                    for t in self.MRPInstance.TimeBucketSet  )
                                                    )
                                                 for s in scenarioset]
-        self.InSampleTotalBackOrderPerScenario = Tool.ComputeSumOnIndex1Column( self.BackOrder,
-                                                                                      self.MRPInstance.ProductWithExternalDemand,
-                                                                                      self.MRPInstance.ProductName,
-                                                                                      backordertime,
-                                                                                      scenarioset )
-        self.InSampleTotalLostSalePerScenario =    Tool.ComputeSumOnIndex1Column( self.BackOrder,
-                                                                                      self.MRPInstance.ProductWithExternalDemand,
-                                                                                      self.MRPInstance.ProductName,
-                                                                                      [ self.MRPInstance.NrTimeBucket -1  ],
-                                                                                      scenarioset  )
+        self.InSampleTotalBackOrderPerScenario = [  sum( self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ]  for t in backordertime  for p in self.MRPInstance.ProductWithExternalDemand) for w in  scenarioset ]
+
+        self.InSampleTotalLostSalePerScenario =  [  sum( self.BackOrder[w][self.MRPInstance.NrTimeBucket -1][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] for p in self.MRPInstance.ProductWithExternalDemand) for w in  scenarioset ]
+
         nrscenario = len( self.Scenarioset )
         self.InSampleAverageDemand = sum( self.InSampleTotalDemandPerScenario[s] for s in scenarioset ) / nrscenario
         self.InSamplePercenBackOrder =  100 * ( sum( self.InSampleTotalBackOrderPerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
@@ -437,57 +451,62 @@ class MRPSolution:
         #self.Production = pd.DataFrame(solproduction, index=instance.ProductName, columns=multiindex)
         #nameproductwithextternaldemand = [instance.ProductName[p] for p in instance.ProductWithExternalDemand]
         #self.BackOrder = pd.DataFrame(solbackorder, index=nameproductwithextternaldemand, columns=multiindex)
-        solution2.ProductionQuantity.columns = newindex
-        self.ProductionQuantity = pd.merge(    self.ProductionQuantity.reset_index(),
-                                           solution2.ProductionQuantity.reset_index(),
-                                           on=['Product'],
-                                           how='outer'
-                                           ).set_index(["Product"])
+        self.ProductionQuantity = self.ProductionQuantity + solution2.ProductionQuantity
+        self.InventoryLevel = self.InventoryLevel + solution2.InventoryLevel
+        self.Production = self.Production + solution2.Production
+        self.BackOrder = self.BackOrder + solution2.BackOrder
 
-        self.ProductionQuantity.columns = pd.MultiIndex.from_product(
-            [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet], names=['scenario', 'time'])
-
-
-        solution2.InventoryLevel.columns = newindex
-        self.InventoryLevel = pd.merge(    self.InventoryLevel.reset_index(),
-                                           solution2.InventoryLevel.reset_index(),
-                                           on=['Product'],
-                                           how='outer'
-                                           ).set_index(["Product"])
-
-        self.InventoryLevel.columns = pd.MultiIndex.from_product(
-            [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet], names=['scenario', 'time'])
-    #    self.InventoryLevel.columns =  self.InventoryLevel.columns.swaplevel()
-    #    self.InventoryLevel.sortlevel(0, axis=1, inplace=True)
-
-        solution2.Production.columns = newindex
-        self.Production = pd.merge(self.Production.reset_index(),
-                                           solution2.Production.reset_index(),
-                                           on=['Product'],
-                                           how='outer'
-                                           ).set_index(["Product"])
-
-        self.Production.columns = pd.MultiIndex.from_product(
-            [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet ], names=['scenario', 'time'])
-
-
-        solution2.BackOrder.columns = newindex
-        self.BackOrder = pd.merge(self.BackOrder.reset_index(),
-                                   solution2.BackOrder.reset_index(),
-                                   on=['Product'],
-                                   how='outer'
-                                   ).set_index(["Product"])
-
-        self.BackOrder.columns = pd.MultiIndex.from_product(
-            [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet ], names=['scenario', 'time'])
+    #     solution2.ProductionQuantity.columns = newindex
+    #     self.ProductionQuantity = pd.merge(    self.ProductionQuantity.reset_index(),
+    #                                        solution2.ProductionQuantity.reset_index(),
+    #                                        on=['Product'],
+    #                                        how='outer'
+    #                                        ).set_index(["Product"])
+    #
+    #     self.ProductionQuantity.columns = pd.MultiIndex.from_product(
+    #         [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet], names=['scenario', 'time'])
+    #
+    #
+    #     solution2.InventoryLevel.columns = newindex
+    #     self.InventoryLevel = pd.merge(    self.InventoryLevel.reset_index(),
+    #                                        solution2.InventoryLevel.reset_index(),
+    #                                        on=['Product'],
+    #                                        how='outer'
+    #                                        ).set_index(["Product"])
+    #
+    #     self.InventoryLevel.columns = pd.MultiIndex.from_product(
+    #         [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet], names=['scenario', 'time'])
+    # #    self.InventoryLevel.columns =  self.InventoryLevel.columns.swaplevel()
+    # #    self.InventoryLevel.sortlevel(0, axis=1, inplace=True)
+    #
+    #     solution2.Production.columns = newindex
+    #     self.Production = pd.merge(self.Production.reset_index(),
+    #                                        solution2.Production.reset_index(),
+    #                                        on=['Product'],
+    #                                        how='outer'
+    #                                        ).set_index(["Product"])
+    #
+    #     self.Production.columns = pd.MultiIndex.from_product(
+    #         [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet ], names=['scenario', 'time'])
+    #
+    #
+    #     solution2.BackOrder.columns = newindex
+    #     self.BackOrder = pd.merge(self.BackOrder.reset_index(),
+    #                                solution2.BackOrder.reset_index(),
+    #                                on=['Product'],
+    #                                how='outer'
+    #                                ).set_index(["Product"])
+    #
+    #     self.BackOrder.columns = pd.MultiIndex.from_product(
+    #         [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet ], names=['scenario', 'time'])
 
     #After having merged two solution, this function reshape the dataframe to have them in 3 dimension
-    def ReshapeAfterMerge( self ):
-        self.InventoryLevel.columns =  self.InventoryLevel.columns.swaplevel()
-        self.InventoryLevel.sortlevel(0, axis=1, inplace=True)
-        self.BackOrder.columns = self.BackOrder.columns.swaplevel()
-        self.BackOrder.sortlevel(0, axis=1, inplace=True)
-        self.Production.columns = self.Production.columns.swaplevel()
-        self.Production.sortlevel(0, axis=1, inplace=True)
-        self.ProductionQuantity.columns =  self.ProductionQuantity.columns.swaplevel()
-        self.ProductionQuantity.sortlevel(0, axis=1, inplace=True)
+    # def ReshapeAfterMerge( self ):
+    #     self.InventoryLevel.columns =  self.InventoryLevel.columns.swaplevel()
+    #     self.InventoryLevel.sortlevel(0, axis=1, inplace=True)
+    #     self.BackOrder.columns = self.BackOrder.columns.swaplevel()
+    #     self.BackOrder.sortlevel(0, axis=1, inplace=True)
+    #     self.Production.columns = self.Production.columns.swaplevel()
+    #     self.Production.sortlevel(0, axis=1, inplace=True)
+    #     self.ProductionQuantity.columns =  self.ProductionQuantity.columns.swaplevel()
+    #     self.ProductionQuantity.sortlevel(0, axis=1, inplace=True)

@@ -104,9 +104,6 @@ class Evaluator:
                 firstscenario = False
 
                 if firstsolution:
-                    if nrscenario > 1:
-                        OutOfSampleSolution.ReshapeAfterMerge()
-
                     for s in OutOfSampleSolution.Scenarioset:
                         s.Probability = 1.0/ len(  OutOfSampleSolution.Scenarioset )
 
@@ -128,12 +125,12 @@ class Evaluator:
     def GetDecisionFromSolutionForScenario(self, sol, model, scenario):
 
         # The setups are fixed in the first stage
-        givensetup = [[sol.Production.ix[p, t].get_value(0) for p in self.Instance.ProductSet]
+        givensetup = [[sol.Production[0][t][p] for p in self.Instance.ProductSet]
                         for t in self.Instance.TimeBucketSet]
 
         # For model YQFix, the quatities are fixed, and can be taken from the solution
         if model == Constants.ModelYQFix or model == Constants.Average:
-            givenquantty = [[sol.ProductionQuantity.ix[p, t].get_value(0)
+            givenquantty = [[sol.ProductionQuantity[0][t][p]
                                      for p in self.Instance.ProductSet]
                                      for t in self.Instance.TimeBucketSet]
 

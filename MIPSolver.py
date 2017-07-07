@@ -5,6 +5,7 @@ import time
 import numpy as np
 import math
 from Constants import Constants
+from Tool import Tool
 
 class MIPSolver(object):
     M = cplex.infinity
@@ -668,34 +669,22 @@ class MIPSolver(object):
             #testarray = [ "p:%st:%sw:%s"%(p, t, w)  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet ]
 
             solquantity = sol.get_values(array)
-            solquantity = np.array(solquantity, np.float64).reshape(
-                                    (self.Instance.NrProduct, self.Instance.NrTimeBucket * self.NrScenario))
-
-            #reshaped = np.array(testarray, str).reshape(
-            #                        (self.Instance.NrProduct, self.Instance.NrTimeBucket * self.NrScenario))
-
-            #for s in self.ScenarioSet:
-            #    print "Scenario with demand:%r"%self.Scenarios[s].Demands
-               # print "order %r"%reshaped
-            #    print "quantity %r"%[  [ solquantity[p][ s + t *  self.NrScenario ]  for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet  ]
-
+            solquantity = Tool.Transform3d(solquantity, self.Instance.NrProduct, self.Instance.NrTimeBucket,self.NrScenario)
 
             array = [self.GetIndexProductionVariable(p, t, w)
                      for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
             solproduction = sol.get_values(array)
-            solproduction = np.array(solproduction, np.float64).reshape(
-                (self.Instance.NrProduct, self.Instance.NrTimeBucket * self.NrScenario))
+            solproduction = Tool.Transform3d( solproduction, self.Instance.NrProduct, self.Instance.NrTimeBucket, self.NrScenario)
             array = [self.GetIndexInventoryVariable(p, t, w)
                      for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
             solinventory = sol.get_values(array)
-            solinventory = np.array(solinventory, np.float64).reshape(
-                (self.Instance.NrProduct, self.Instance.NrTimeBucket * self.NrScenario))
+
+            solinventory = Tool.Transform3d( solinventory, self.Instance.NrProduct, self.Instance.NrTimeBucket, self.NrScenario)
 
             array = [self.GetIndexBackorderVariable(p, t, w)
                      for p in self.Instance.ProductWithExternalDemand for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
             solbackorder = sol.get_values(array)
-            solbackorder = np.array(solbackorder, np.float64).reshape(( len( self.Instance.ProductWithExternalDemand ),
-                                                                        self.Instance.NrTimeBucket * self.NrScenario))
+            solbackorder = Tool.Transform3d( solbackorder, len( self.Instance.ProductWithExternalDemand), self.Instance.NrTimeBucket, self.NrScenario)
 
             if self.Model <> Constants.ModelYQFix:
                 self.DemandScenarioTree.FillQuantityToOrder( sol )
@@ -710,7 +699,7 @@ class MIPSolver(object):
             costperscenarios, averagecost, std_devcost = self.ComputeCostPerScenario()
 
             self.SolveInfo = [ self.Instance.InstanceName,
-                            self.Model,
+                               self.Model,
                             objvalue,
                             Solution.TotalCost,
                             sol.status[sol.get_status()],
