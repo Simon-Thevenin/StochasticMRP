@@ -55,8 +55,8 @@ mkdir /tmp/thesim
 python test.py Solve %s %s %s %s %s -s %s  -n 500 -m MIP
 """ % ( instance, distribution, model, nrscenar, generation, seed,  instance, distribution, model, nrscenar, generation, seed  ))  # Create the sh file
                             for Policy in policyset:
-                                     qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
-                                       instance, distribution, model, nrscenar, generation, Policy, seed)
+                                     qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
+                                       instance, distribution, model, nrscenar, generation, method, Policy, seed)
                                      qsub_file = open(qsub_filename, 'w')
                                      qsub_file.write("""
 # #!/bin/bash -l

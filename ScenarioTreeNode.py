@@ -213,6 +213,21 @@ class ScenarioTreeNode:
                 for i in range(nrpoints):
                     points[idnonzero[p]][i] = nonzeropoints[p][i]
 
+        if method == "all" and distribution == Constants.Binomial:
+            points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
+            nrnonzero = sum(1 for p in range(dimensionpoint) if average[p] > 0)
+            idnonzero = [p for p in range(dimensionpoint) if average[p] > 0]
+            if nrnonzero > 1 or nrpoints <> 8:
+                raise NameError( "binomial implemented only for dimension 1 and 8 points")
+
+            nonzeropoints = range(0,7 )
+            n = 7
+            prob = 0.5
+            proability = [ scipy.stats.binom.pmf(p, n, prob) for p in nonzeropoints]
+            for p in range(nrnonzero):  # instance.ProductWithExternalDemand:
+                for i in range(nrpoints):
+                    points[idnonzero[p]][i] = nonzeropoints[p][i]
+
         return points, proability
 
 #Create the demand in a node following a normal distribution

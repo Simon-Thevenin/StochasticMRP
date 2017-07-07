@@ -5,6 +5,7 @@ class Constants:
     SlowMoving = "SlowMoving"
     Normal = "Normal"
     Uniform = "Uniform"
+    Binomial = "Binomial"
     NearestNeighbor = "NN"
     NearestNeighborBasedOnDemandAC = "NNDAC"
     NearestNeighborBasedOnStateAC = "NNSAC"
