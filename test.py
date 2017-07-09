@@ -70,7 +70,7 @@ SeedArray = [ 2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788 ]
 #This list contain the information obtained after solving the problem
 SolveInformation = []
 OutOfSampleTestResult = []
-InSampleKPIStat= [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ]
+InSampleKPIStat= [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ]
 EvaluateInfo = []
 
 def PrintTestResult():
@@ -203,12 +203,13 @@ def SolveYFix():
          OutOfSampleTestResult = evaluator.EvaluateYQFixSolution(TestIdentifier, EvaluatorIdentifier, Model,
                                                             saveevaluatetab=True, filename=GetEvaluationFileName())
     # PrintFinalResult()
-    GatherEvaluation()
+
     PrintTestResult()
     testdescription = GetTestDescription()
     if   Method == "MIP" :
         solution.PrintToExcel( testdescription )
         RunEvaluation()
+    GatherEvaluation()
 
 def GetPreviouslyFoundSolution():
     result = []
@@ -236,15 +237,15 @@ def GetPreviouslyFoundSolution():
 def ComputeInSampleStatistis():
     global InSampleKPIStat
     solutions = GetPreviouslyFoundSolution()
-    for i in range(8 + Instance.NrLevel):
+    for i in range(8 + Instance.NrLevel + 11):
         InSampleKPIStat[i] =0
     for solution in solutions:
         solution.ComputeStatistics()
         insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample", -1, 0, ScenarioSeed)
-        for i in range(8 + Instance.NrLevel):
+        for i in range(8 + Instance.NrLevel + 11):
             InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
 
-    for i in range(8 + Instance.NrLevel):
+    for i in range(8 + Instance.NrLevel + 11):
         InSampleKPIStat[i] = InSampleKPIStat[i] / len( solutions )
 
 def Evaluate():
@@ -280,6 +281,7 @@ def EvaluateSingleSol(  ):
 
 def GatherEvaluation():
     global ScenarioSeed
+    currentseedvalue = ScenarioSeed
     evaluator = Evaluator(Instance, [], [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure())
     EvaluationTab = []
     KPIStats = []
@@ -302,7 +304,7 @@ def GatherEvaluation():
             if Constants.Debug:
                 print "No evaluation file found for seed %d" % seed
 
-    if nrfile >= 1:
+    if nrfile >= 5:
 
         KPIStat = [sum(e) / len(e) for e in zip(*KPIStats)]
 
@@ -311,6 +313,8 @@ def GatherEvaluation():
         if Method == Constants.MIP:
             ComputeInSampleStatistis()
         PrintFinalResult()
+    ScenarioSeed = currentseedvalue
+    TestIdentifier[6] = currentseedvalue
 # def SolveAndEvaluateYQFix( average = False, nrevaluation = 2, nrscenario = 100, nrsolve = 1):
 #     global ScenarioSeed
 #     global Model
@@ -353,7 +357,7 @@ def GetTreeStructure():
 
     if NrScenario == 8:
         if Instance.NrTimeBucket == 6:
-            treestructure = [1, 2, 2, 2, 1, 1, 1, 0]
+            treestructure = [1, 8, 8, 8, 1, 1, 1, 0]
             # treestructure = [1, 8, 4, 2, 1, 1, 1, 0 ]
         if Instance.NrTimeBucket == 8:
             treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 0]
@@ -632,9 +636,10 @@ if __name__ == "__main__":
             #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
         #for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
         #         "NonStationary"]:
-        #       Instance.ReadFromFile( InstanceName, Distribution )
-        #        Instance.SaveCompleteInstanceInExelFile()
-
+        #Instance.ReadFromFile( InstanceName, Distribution )
+        #Instance.SaveCompleteInstanceInExelFile()
+        #Instance.ReadFromFile(InstanceName, Distribution)
+        #Instance.SaveCompleteInstanceInExelFile()
         #Instance.DefineAsSuperSmallIntance()
         #Instance.SaveCompleteInstanceInExelFile()
     except KeyError:

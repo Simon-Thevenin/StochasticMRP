@@ -74,6 +74,7 @@ class MRPSolution:
         self.CplexGap = instanceinfo.get_value( 'CplexGap', 0 )
 
         self.Scenarioset = self.ScenarioTree.GetAllScenarios( False )
+        self.SenarioNrset = range(len(self.Scenarioset))
         self.ListFromDataFrame(prodquantitydf, inventorydf, productiondf, bbackorderdf)
         self.ComputeCost()
 
@@ -110,9 +111,9 @@ class MRPSolution:
                                           * self.Scenarioset[w].Probability
 
                     self.SetupCost +=   self.Production[w][t][p] \
-                                   * self.MRPInstance.SetupCosts[p] \
-                                   * gammas[t] \
-                                   * self.Scenarioset[w].Probability
+                                       * self.MRPInstance.SetupCosts[p] \
+                                       * gammas[t] \
+                                       * self.Scenarioset[w].Probability
 
                     if self.MRPInstance.HasExternalDemand[p]:
                         if t < self.MRPInstance.NrTimeBucket -1 :
@@ -122,7 +123,7 @@ class MRPSolution:
                                                   * self.Scenarioset[w].Probability
                         else:
                             self.LostsaleCost +=  self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] \
-                                                 * self.MRPInstance.InventoryCosts[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] \
+                                                 * self.MRPInstance.LostSaleCost[ p ] \
                                                  * gammas[t] \
                                                  * self.Scenarioset[w].Probability
 
@@ -167,6 +168,8 @@ class MRPSolution:
         #The set of scenario on which the solution is found
         self.Scenarioset = scenarioset
         self.ScenarioTree = scenriotree
+        if not  self.Scenarioset is None:
+            self.SenarioNrset = range(len(self.Scenarioset))
 
         #Create a multi index to store the scenarios and time
         # if  instance is not  None:
@@ -217,28 +220,27 @@ class MRPSolution:
     #This function compute some statistic on the current solution
     def ComputeStatistics( self ):
 
-        scenarioset = range( len( self.Scenarioset ) )
 
-        self.InSampleAverageInventory = [ [ sum( self.InventoryLevel[w][t][p] for w in scenarioset)/  len( scenarioset )
+        self.InSampleAverageInventory = [ [ sum( self.InventoryLevel[w][t][p] for w in self.SenarioNrset)/  len( self.SenarioNrset )
                                            for p in  self.MRPInstance.ProductSet ]
                                             for t in self.MRPInstance.TimeBucketSet]
 
-        self.InSampleAverageBackOrder =   [ [ sum( self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] for w in scenarioset)/  len( scenarioset )
+        self.InSampleAverageBackOrder =   [ [ sum( self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] for w in self.SenarioNrset)/  len( self.SenarioNrset )
                                               for p in self.MRPInstance.ProductWithExternalDemand]
                                                 for t in self.MRPInstance.TimeBucketSet]
 
 
-        self.InSampleAverageQuantity =  [ [ sum( self.ProductionQuantity[w][t][p] for w in scenarioset)/  len( scenarioset )
+        self.InSampleAverageQuantity =  [ [ sum( self.ProductionQuantity[w][t][p] for w in self.SenarioNrset)/  len( self.SenarioNrset )
                                             for p in self.MRPInstance.ProductSet]
                                           for t in self.MRPInstance.TimeBucketSet]
 
-        self.InSampleAverageSetup =  [ [ sum( self.Production[w][t][p] for w in scenarioset)/  len( scenarioset )
+        self.InSampleAverageSetup =  [ [ sum( self.Production[w][t][p] for w in self.SenarioNrset)/  len( self.SenarioNrset )
                                          for p in self.MRPInstance.ProductSet]
                                        for t in self.MRPInstance.TimeBucketSet]
 
         self.InSampleAverageOnTime = [ [ ( sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder[s][t][ self.MRPInstance.ProductWithExternalDemandIndex[p]  ], 0 ] )
-                                           for s in scenarioset )
-                                             / len( scenarioset ) )
+                                           for s in self.SenarioNrset )
+                                             / len( self.SenarioNrset ) )
                                               for p in self.MRPInstance.ProductWithExternalDemand ]
                                               for t in self.MRPInstance.TimeBucketSet ]
 
@@ -247,22 +249,24 @@ class MRPSolution:
                                                          for t in self.MRPInstance.TimeBucketSet   )
                                                     for s in self.Scenarioset ]
 
+        totaldemand = sum( self.InSampleTotalDemandPerScenario )
+
         backordertime = range( self.MRPInstance.NrTimeBucket - 1)
 
         self.InSampleTotalOnTimePerScenario =  [  ( sum (  sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder[s][t][ self.MRPInstance.ProductWithExternalDemandIndex[p]  ], 0 ] )
                                                     for p in self.MRPInstance.ProductWithExternalDemand )
                                                    for t in self.MRPInstance.TimeBucketSet  )
                                                    )
-                                                for s in scenarioset]
-        self.InSampleTotalBackOrderPerScenario = [  sum( self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ]  for t in backordertime  for p in self.MRPInstance.ProductWithExternalDemand) for w in  scenarioset ]
+                                                for s in self.SenarioNrset]
+        self.InSampleTotalBackOrderPerScenario = [  sum( self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ]  for t in backordertime  for p in self.MRPInstance.ProductWithExternalDemand) for w in  self.SenarioNrset ]
 
-        self.InSampleTotalLostSalePerScenario =  [  sum( self.BackOrder[w][self.MRPInstance.NrTimeBucket -1][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] for p in self.MRPInstance.ProductWithExternalDemand) for w in  scenarioset ]
+        self.InSampleTotalLostSalePerScenario =  [  sum( self.BackOrder[w][self.MRPInstance.NrTimeBucket -1][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] for p in self.MRPInstance.ProductWithExternalDemand) for w in  self.SenarioNrset ]
 
         nrscenario = len( self.Scenarioset )
-        self.InSampleAverageDemand = sum( self.InSampleTotalDemandPerScenario[s] for s in scenarioset ) / nrscenario
-        self.InSamplePercenBackOrder =  100 * ( sum( self.InSampleTotalBackOrderPerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
-        self.InSamplePercentLostSale = 100 * ( sum( self.InSampleTotalLostSalePerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
-        self.InSamplePercentOnTime = 100 * ( sum( self.InSampleTotalOnTimePerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
+        self.InSampleAverageDemand = sum( self.InSampleTotalDemandPerScenario[s] for s in self.SenarioNrset ) / nrscenario
+        self.InSamplePercenBackOrder =  100 * ( sum( self.InSampleTotalBackOrderPerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
+        self.InSamplePercentLostSale = 100 * ( sum( self.InSampleTotalLostSalePerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
+        self.InSamplePercentOnTime = 100 * ( sum( self.InSampleTotalOnTimePerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
 
     #This function print hthe statistic in an Excel file
     def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed):
@@ -319,6 +323,69 @@ class MRPSolution:
                                     * self.MRPInstance.NrTimeBucket )
                                 for l in range( self.MRPInstance.NrLevel ) ]
 
+        demandofstagetstillbackorder = [[[[0 for p in self.MRPInstance.ProductWithExternalDemand] for nrperiodago in range(currentperiod+1)]  for currentperiod in self.MRPInstance.TimeBucketSet] for s in self.Scenarioset]
+
+        #Compute the back order per period, and also how long the demand has been backordered
+        #The portion $\tilde{B}_{p,t}^{n,\omega}$ of the demand due $n$ time periods ago, which is still back-ordered at time $t$ is computed as:
+        #\tilde{B}_{p,t}^{n,\omega} = Max(\tilde{B}_{p,t-1}^{n-1,\omega}, B_{p,t}^{\omega} - \tilde{B}_{p,t}^{n-1,\omega})
+        for s in  self.SenarioNrset:
+            for p in self.MRPInstance.ProductWithExternalDemand:
+                 for currentperiod in self.MRPInstance.TimeBucketSet:
+                     for nrperiodago in range(currentperiod+1):
+                         if nrperiodago == 0:
+                             demandprevinprev = self.Scenarioset[s].Demands[currentperiod][p]
+                         elif currentperiod == 0:
+                             demandprevinprev = 0
+                         else:
+                             demandprevinprev = demandofstagetstillbackorder[s][currentperiod - 1][nrperiodago - 1][p]
+
+                         if nrperiodago == 0:
+                             demandprevincurrent = 0
+                         else:
+                             demandprevincurrent = demandofstagetstillbackorder[s][currentperiod][nrperiodago == 0 - 1][p]
+
+                         demandofstagetstillbackorder[s][currentperiod ][nrperiodago][p] = min( demandprevinprev,
+                                                                                                max( self.BackOrder[s][currentperiod][p] - demandprevincurrent, 0 ) )
+
+
+        #The lostsales $\bar{L}_{p,t}^{\omega}$ among the demand due at time $t$ is $\tilde{B}_{p,T}^{n,\omega}$.
+        lostsaleamongdemandofstage = [[[ demandofstagetstillbackorder[s][self.MRPInstance.NrTimeBucket -1][nrperiodago ][p]
+                                         for p in self.MRPInstance.ProductWithExternalDemand]
+                                       for nrperiodago in range( self.MRPInstance.NrTimeBucket) ]
+                                      for s in self.SenarioNrset]
+
+        #The quantity $\bar{B}_{p,t}^{n,\omega}$  of demand of stage $t$ which is backordered during n periods can be computed by:
+        #\bar{B}_{p,t}^{n,\omega} =\bar{B}_{p,t + n}^{n,\omega} -\bar{B}_{p,t+ n+ 1}^{n+1,\omega}
+        portionbackoredduringtime = [[[[ demandofstagetstillbackorder[s][currentperiod + nrperiod][nrperiod][p] \
+                                       - demandofstagetstillbackorder[s][currentperiod + nrperiod +1][nrperiod +1][p]
+                                         if currentperiod + nrperiod + 1 < self.MRPInstance.NrTimeBucket
+                                         else demandofstagetstillbackorder[s][currentperiod + nrperiod][nrperiod][p]
+                                       for p in self.MRPInstance.ProductWithExternalDemand]
+                                      for nrperiod in range( self.MRPInstance.NrTimeBucket - currentperiod )]
+                                     for currentperiod in self.MRPInstance.TimeBucketSet]
+                                    for s in self.SenarioNrset]
+
+        #Avergae on the senario, product, period
+
+        totaldemand = sum( self.Scenarioset[s].Demands[t][p]
+                           for s in self.SenarioNrset
+                           for p in self.MRPInstance.ProductWithExternalDemand
+                           for t in self.MRPInstance.TimeBucketSet )
+
+        nrbackorerxperiod = [  100 * ( sum( portionbackoredduringtime[s][currentperiod][t][p]
+                                            for p in self.MRPInstance.ProductWithExternalDemand
+                                                 for currentperiod in range(self.MRPInstance.NrTimeBucket )
+                                                     for s in self.SenarioNrset
+                                                        if (t < self.MRPInstance.NrTimeBucket -1 - currentperiod )  )\
+                                             / totaldemand )
+                                             for t in self.MRPInstance.TimeBucketSet ]
+
+        nrlostsale = 100 * sum( lostsaleamongdemandofstage[s][currentperiod][p]
+                                    for p in self.MRPInstance.ProductWithExternalDemand
+                                      for currentperiod in self.MRPInstance.TimeBucketSet
+                                        for s in self.SenarioNrset) \
+                            / totaldemand
+
         self.ComputeCost()
 
         kpistat = [ self.CplexCost,
@@ -327,9 +394,10 @@ class MRPSolution:
                     self.SetupCost,
                     self.InventoryCost,
                     self.InSamplePercentOnTime,
-                    self.InSamplePercenBackOrder,
-                    self.InSamplePercentLostSale
-                    ] + AverageStockAtLevel
+                    self.BackOrderCost,
+                    self.LostsaleCost
+                    ] \
+                  + AverageStockAtLevel + [0]*(5- self.MRPInstance.NrLevel) + nrbackorerxperiod + [0]*(10 - self.MRPInstance.NrTimeBucket)+[nrlostsale]
 
         data = testidentifier + [  filepostscript, len( self.Scenarioset ) ] + kpistat
         d = datetime.now()
@@ -443,6 +511,7 @@ class MRPSolution:
     #This function merge solution2 into self. Assume that solution2 has a single scenario
     def Merge( self, solution2 ):
         self.Scenarioset.append( solution2.Scenarioset[0] )
+        self.SenarioNrset = range(len(self.Scenarioset))
 
         newindex = pd.MultiIndex.from_product( [ self.MRPInstance.TimeBucketSet, [ len( self.Scenarioset ) -1 ] ], names = ['time', 'scenario'] )
 

@@ -141,6 +141,12 @@ class ScenarioTreeNode:
         if distribution == Constants.Normal or distribution == Constants.NonStationary:
             result = [[ float( max( np.floor( scipy.stats.norm.ppf( points[i][p], average[p], std[p]) ), 0.0) ) if average[p] > 0 else 0.0 for i in range(nrpoints) ] for p in range(dimensionpoint) ]
 
+        if distribution == Constants.Binomial:
+            n = 7
+            prob = 0.5
+            result = [[scipy.stats.binom.pmf(points[i][p], n, prob) for i in range(nrpoints)] for p in range(dimensionpoint)]
+
+
         if distribution == Constants.SlowMoving:
             result = [[scipy.stats.poisson.ppf(points[i][p], average[p]) for i in range(nrpoints)] for p in range(dimensionpoint)]
 
@@ -167,6 +173,17 @@ class ScenarioTreeNode:
                     for i in range(nrpoints):
                         if average[p] > 0:
                             points[p][i] = np.round(  np.random.poisson(average[p], 1)[0], 0 );
+
+            elif distribution == Constants.Binomial:
+                n = 7
+                prob = 0.5
+                points = [[0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
+                for p in range(dimensionpoint):  # instance.ProductWithExternalDemand:
+                    for i in range(nrpoints):
+                        if average[p] > 0:
+                            points[p][i] = np.round(np.random.binomial(n, prob,1)[0], 0);
+
+
             elif distribution == Constants.Lumpy:
                 points = [ [ 0  for pt in range(nrpoints)] for p in range(dimensionpoint) ]
                 for p in range(dimensionpoint):
@@ -203,7 +220,7 @@ class ScenarioTreeNode:
                     for i in range(nrpoints):
                         points[idnonzero[p]] [i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
 
-        if method == "all":
+        if method == "all" and distribution <> Constants.Binomial:
             points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
             nrnonzero = sum(1 for p in range(dimensionpoint) if average[p] > 0)
             idnonzero = [p for p in range(dimensionpoint) if average[p] > 0]
@@ -220,10 +237,10 @@ class ScenarioTreeNode:
             if nrnonzero > 1 or nrpoints <> 8:
                 raise NameError( "binomial implemented only for dimension 1 and 8 points")
 
-            nonzeropoints = range(0,7 )
+            nonzeropoints = [range(0,8 )]
             n = 7
             prob = 0.5
-            proability = [ scipy.stats.binom.pmf(p, n, prob) for p in nonzeropoints]
+            proability = [ scipy.stats.binom.pmf(p, n, prob) for p in nonzeropoints[0]]
             for p in range(nrnonzero):  # instance.ProductWithExternalDemand:
                 for i in range(nrpoints):
                     points[idnonzero[p]][i] = nonzeropoints[p][i]

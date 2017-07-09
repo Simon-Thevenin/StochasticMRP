@@ -17,13 +17,20 @@ if __name__ == "__main__":
     # Path to a folder where you want your results to be
     output_folder = r"/home/thesim/TestFolder/stochasticmrp/"
 
-    for instance in ["01", "02", "03", "04", "05" ]:
-        for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
+    for instance in ["00", "01", "02", "03", "04", "05" ]:
+        distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
+        if instance == "00":
+            distributionset = "Binomial"
+        if instance == "01":
+            distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
+        for distribution in distributionset:
             #model = "YFix"
             #nrscenar = 500
             #generation = "RQMC"
             for model in ["YFix", "YQFix", "Average"]:
                  generationset = ["MC", "RQMC"]
+                 if instance == "00" or instance == "01":
+                     generationset = ["MC", "RQMC", "all"]
                  scenarset = [ "512"]
                  policyset = [ "NNDAC", "NNSAC", "Re-solve"]
                  method = "MIP"
@@ -102,13 +109,20 @@ file.write("""
 #                                      instance, distribution, model, nrscenar, generation, seed  ) )
 
 
-for instance in ["01", "02", "03", "04", "05"]:
-    for distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]:
+for instance in ["00", "01"]:#, "02", "03", "04", "05"]:
+    distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
+    if instance == "00":
+        distributionset = "Binomial"
+    if instance == "01":
+        distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
+    for distribution in distributionset:
         # model = "YFix"
         # nrscenar = 500
         # generation = "RQMC"
         for model in ["YFix", "YQFix", "Average"]:
             generationset = ["MC", "RQMC"]
+            if instance == "00" or instance == "01":
+                generationset = ["MC", "RQMC", "all"]
             scenarset = ["512"]
             policyset = ["NNDAC", "NNSAC", "Re-solve"]
             method = "MIP"
