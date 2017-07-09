@@ -20,7 +20,7 @@ if __name__ == "__main__":
     for instance in ["00", "01", "02", "03", "04", "05" ]:
         distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
         if instance == "00":
-            distributionset = "Binomial"
+            distributionset = ["Binomial"]
         if instance == "01":
             distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
         for distribution in distributionset:
@@ -112,7 +112,7 @@ file.write("""
 for instance in ["00", "01"]:#, "02", "03", "04", "05"]:
     distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
     if instance == "00":
-        distributionset = "Binomial"
+        distributionset = ["Binomial"]
     if instance == "01":
         distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
     for distribution in distributionset:
