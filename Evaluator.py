@@ -252,7 +252,7 @@ class Evaluator:
         error = 0
 
         if time == 0:  # return the quantity at the root of the node
-            result = [solution.ScenarioTree.RootNode.Branches[0].QuantityToOrder[p] for p in self.Instance.ProductSet]
+            result = [solution.ScenarioTree.RootNode.Branches[0].QuantityToOrderNextTime[p] for p in self.Instance.ProductSet]
         else:
             treestructure = [1] + [self.ReferenceTreeStructure[t - time + 1] if (
             t >= time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty))) else 1 for
