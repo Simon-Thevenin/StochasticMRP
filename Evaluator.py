@@ -285,7 +285,7 @@ class Evaluator:
 
             # Get the corresponding node:
             if not solution is None:
-                result = [solution.ProductionQuantity.loc[self.Instance.ProductName[p], (time, 0)] for p in
+                result = [solution.ProductionQuantity[0][t][p] for p in
                           self.Instance.ProductSet]
             else:
                 if Constants.Debug:
