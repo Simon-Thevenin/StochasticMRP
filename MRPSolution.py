@@ -332,34 +332,35 @@ class MRPSolution:
             for p in self.MRPInstance.ProductWithExternalDemand:
                  for currentperiod in self.MRPInstance.TimeBucketSet:
                      for nrperiodago in range(currentperiod+1):
+                         indexp = self.MRPInstance.ProductWithExternalDemandIndex[p]
                          if nrperiodago == 0:
                              demandprevinprev = self.Scenarioset[s].Demands[currentperiod][p]
                          elif currentperiod == 0:
                              demandprevinprev = 0
                          else:
-                             demandprevinprev = demandofstagetstillbackorder[s][currentperiod - 1][nrperiodago - 1][p]
+                             demandprevinprev = demandofstagetstillbackorder[s][currentperiod - 1][nrperiodago - 1][indexp]
 
                          if nrperiodago == 0:
                              demandprevincurrent = 0
                          else:
-                             demandprevincurrent = demandofstagetstillbackorder[s][currentperiod][nrperiodago == 0 - 1][p]
+                             demandprevincurrent = demandofstagetstillbackorder[s][currentperiod][nrperiodago == 0 - 1][indexp]
 
                          demandofstagetstillbackorder[s][currentperiod ][nrperiodago][p] = min( demandprevinprev,
-                                                                                                max( self.BackOrder[s][currentperiod][p] - demandprevincurrent, 0 ) )
+                                                                                                max( self.BackOrder[s][currentperiod][indexp] - demandprevincurrent, 0 ) )
 
 
         #The lostsales $\bar{L}_{p,t}^{\omega}$ among the demand due at time $t$ is $\tilde{B}_{p,T}^{n,\omega}$.
-        lostsaleamongdemandofstage = [[[ demandofstagetstillbackorder[s][self.MRPInstance.NrTimeBucket -1][nrperiodago ][p]
+        lostsaleamongdemandofstage = [[[ demandofstagetstillbackorder[s][self.MRPInstance.NrTimeBucket -1][nrperiodago ][self.MRPInstance.ProductWithExternalDemandIndex[p] ]
                                          for p in self.MRPInstance.ProductWithExternalDemand]
                                        for nrperiodago in range( self.MRPInstance.NrTimeBucket) ]
                                       for s in self.SenarioNrset]
 
         #The quantity $\bar{B}_{p,t}^{n,\omega}$  of demand of stage $t$ which is backordered during n periods can be computed by:
         #\bar{B}_{p,t}^{n,\omega} =\bar{B}_{p,t + n}^{n,\omega} -\bar{B}_{p,t+ n+ 1}^{n+1,\omega}
-        portionbackoredduringtime = [[[[ demandofstagetstillbackorder[s][currentperiod + nrperiod][nrperiod][p] \
-                                       - demandofstagetstillbackorder[s][currentperiod + nrperiod +1][nrperiod +1][p]
+        portionbackoredduringtime = [[[[ demandofstagetstillbackorder[s][currentperiod + nrperiod][nrperiod][self.MRPInstance.ProductWithExternalDemandIndex[p] ] \
+                                       - demandofstagetstillbackorder[s][currentperiod + nrperiod +1][nrperiod +1][self.MRPInstance.ProductWithExternalDemandIndex[p] ]
                                          if currentperiod + nrperiod + 1 < self.MRPInstance.NrTimeBucket
-                                         else demandofstagetstillbackorder[s][currentperiod + nrperiod][nrperiod][p]
+                                         else demandofstagetstillbackorder[s][currentperiod + nrperiod][nrperiod][self.MRPInstance.ProductWithExternalDemandIndex[p] ]
                                        for p in self.MRPInstance.ProductWithExternalDemand]
                                       for nrperiod in range( self.MRPInstance.NrTimeBucket - currentperiod )]
                                      for currentperiod in self.MRPInstance.TimeBucketSet]
@@ -372,7 +373,7 @@ class MRPSolution:
                            for p in self.MRPInstance.ProductWithExternalDemand
                            for t in self.MRPInstance.TimeBucketSet )
 
-        nrbackorerxperiod = [  100 * ( sum( portionbackoredduringtime[s][currentperiod][t][p]
+        nrbackorerxperiod = [  100 * ( sum( portionbackoredduringtime[s][currentperiod][t][self.MRPInstance.ProductWithExternalDemandIndex[p] ]
                                             for p in self.MRPInstance.ProductWithExternalDemand
                                                  for currentperiod in range(self.MRPInstance.NrTimeBucket )
                                                      for s in self.SenarioNrset
@@ -380,7 +381,7 @@ class MRPSolution:
                                              / totaldemand )
                                              for t in self.MRPInstance.TimeBucketSet ]
 
-        nrlostsale = 100 * sum( lostsaleamongdemandofstage[s][currentperiod][p]
+        nrlostsale = 100 * sum( lostsaleamongdemandofstage[s][currentperiod][self.MRPInstance.ProductWithExternalDemandIndex[p] ]
                                     for p in self.MRPInstance.ProductWithExternalDemand
                                       for currentperiod in self.MRPInstance.TimeBucketSet
                                         for s in self.SenarioNrset) \
