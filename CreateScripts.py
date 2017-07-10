@@ -139,6 +139,5 @@ for instance in ["00", "01"]:#, "02", "03", "04", "05"]:
             for generation in generationset:
                 for nrscenar in scenarset:
                     for seed in range(5):
-                        for Policy in policyset:
-                            file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
-                                       instance, distribution, model, nrscenar, generation, method, Policy, seed) )
+                            file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_MIP \n" % (
+                                    instance, distribution, model, nrscenar, generation, seed  ))
