@@ -345,7 +345,7 @@ class MRPSolution:
                          else:
                              demandprevincurrent = demandofstagetstillbackorder[s][currentperiod][nrperiodago == 0 - 1][indexp]
 
-                         demandofstagetstillbackorder[s][currentperiod ][nrperiodago][p] = min( demandprevinprev,
+                         demandofstagetstillbackorder[s][currentperiod ][nrperiodago][indexp] = min( demandprevinprev,
                                                                                                 max( self.BackOrder[s][currentperiod][indexp] - demandprevincurrent, 0 ) )
 
 
