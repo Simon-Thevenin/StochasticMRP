@@ -473,6 +473,17 @@ class MRPSolution:
             print "Cosidered nodes : %r" % nodesid
         return result
 
+    #This function adjust the quantities, to respect the flow constraint
+    def RepairQuantityToOrder(self, suggestedquantities):
+        #Compute the viiolation of the flow constraint for each component
+        violations = self.ComputeViolation( suggestedquantities )
+
+        maxviolation = max( violations )
+
+        #While some flow constraints are violated, adjust the quantity to repect the most violated constraint
+
+
+
     #This function return the quantity to order a time t, given the first t-1 demands
     def GetQuantityToOrder( self, strategy, time, previousdemands, previousquantity = [], previousnode = None ):
         error = 0

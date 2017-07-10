@@ -55,12 +55,14 @@ all_data.to_excel( writer, "Res" )
 writer.save( )
 
 columnname = ["Instance name",
-              "Model",
-              "Scenario from YQFix",
-              "Policy generation",
               "Distribution",
+              "Model",
+              "Method",
+              "Scenario Generation",
               "NrInSampleScenario",
-              "Scenario Geeration Method",
+              "Seed",
+              "Policy generation",
+              "NrOutSampleScenario",
               "Identificator",
               "Mean",
               "Variance",
