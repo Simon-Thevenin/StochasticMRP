@@ -66,15 +66,15 @@ python test.py Solve %s %s %s %s %s -s %s  -n 500 -m MIP
                                        instance, distribution, model, nrscenar, generation, method, Policy, seed)
                                      qsub_file = open(qsub_filename, 'w')
                                      qsub_file.write("""
- #!/bin/bash -l
- #
- #$ -cwd
- #$ -q idra
- #$ -j y
- #$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s.txt
- ulimit -v 16000000
- mkdir /tmp/thesim
- python test.py Evaluate %s %s %s %s %s  -s %s -p %s
+#!/bin/bash -l
+#
+#$ -cwd
+#$ -q idra
+#$ -j y
+#$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s.txt
+ulimit -v 16000000
+mkdir /tmp/thesim
+python test.py Evaluate %s %s %s %s %s  -s %s -p %s
  """ % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model,
                                 nrscenar, generation, seed, Policy) )
 
