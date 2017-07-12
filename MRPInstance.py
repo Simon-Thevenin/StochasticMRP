@@ -371,23 +371,21 @@ class MRPInstance:
                     actualstd[t][p] = sum( actualstd[t][q] * self.Requirements[q][p] * self.Requirements[q][p] for q in self.ProductSet) + actualstd[t][p]
         # Assume a starting inventory is the average demand during the lead time
         L= max(self.Level)
-        print self.Level
-        print L
+        #print self.Level
+        #print L
         #T = 1.0 + 2.0 / (L )
         T = 3
-        #T3=2
-        T2 = 3
-        sumdemand = [ sum( actualdepdemand[t][p] for t in range(T2))  if self.YearlyAverageDemand[p]>0
-                  else sum( actualdepdemand[t][p] for t in range(T2, 2*T2)) for p in self.ProductSet  ]
+        sumdemand = [ sum( actualdepdemand[t][p] for t in range(T))  if self.YearlyAverageDemand[p]>0
+                  else sum( actualdepdemand[t][p] for t in range(T, 2*T)) for p in self.ProductSet  ]
 
-        sumstd = [sum(actualstd[t][p] for t in range(T2))  if self.YearlyAverageDemand[p]>0
-                  else sum(actualstd[t][p] for t in range(T2, 2*T2)) for p in   self.ProductSet]
+        sumstd = [sum(actualstd[t][p] for t in range(T))  if self.YearlyAverageDemand[p]>0
+                  else sum(actualstd[t][p] for t in range(T, 2*T)) for p in   self.ProductSet]
 
 
 
         self.StartingInventories = [ ScenarioTreeNode.TransformInverse([[0.6]], 1, 1, distribution, [sumdemand[p]] ,
                                                                        [sumstd[p] ] )[0][0]
-                                     if ( (self.Level[p]) % T2 == 1)
+                                     if ( (self.Level[p]) % T == 1)
                                      #if self.YearlyAverageDemand[p] == 0 and ( self.Level[p]%T2== 1 )
                                      else 0.0
                                      #ScenarioTreeNode.TransformInverse([[0.90]], 1, 1, distribution, [ actualavgdemand[ p ] * (self.Leadtimes[ p ] ) ] ,
