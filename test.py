@@ -70,7 +70,7 @@ SeedArray = [ 2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788 ]
 #This list contain the information obtained after solving the problem
 SolveInformation = []
 OutOfSampleTestResult = []
-InSampleKPIStat= [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ]
+InSampleKPIStat= [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ]
 EvaluateInfo = []
 
 def PrintTestResult():
@@ -237,15 +237,15 @@ def GetPreviouslyFoundSolution():
 def ComputeInSampleStatistis():
     global InSampleKPIStat
     solutions = GetPreviouslyFoundSolution()
-    for i in range(8 + Instance.NrLevel + 11):
+    for i in range(11 + Instance.NrLevel + 11):
         InSampleKPIStat[i] =0
     for solution in solutions:
         solution.ComputeStatistics()
         insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample", -1, 0, ScenarioSeed)
-        for i in range(8 + Instance.NrLevel + 11):
+        for i in range(11 + Instance.NrLevel + 11):
             InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
 
-    for i in range(8 + Instance.NrLevel + 11):
+    for i in range(11 + Instance.NrLevel + 11):
         InSampleKPIStat[i] = InSampleKPIStat[i] / len( solutions )
 
 def Evaluate():
@@ -255,8 +255,6 @@ def Evaluate():
     evaluator = Evaluator( Instance, solutions, [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  Model )
     PrintFinalResult()
-
-
 
 def GetEvaluationFileName():
     result = "./Evaluations/" + GetTestDescription() + GetEvaluateDescription()
@@ -270,7 +268,6 @@ def EvaluateSingleSol(  ):
     solution = MRPSolution()
     solution.ReadFromExcel(filedescription)
     evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
-
 
     MIPModel = Model
     if Model == Constants.Average:

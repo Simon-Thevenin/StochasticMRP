@@ -312,7 +312,11 @@ class MRPInstance:
 
         self.YearlyStandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
 
-        stationarydistribution = ( self.Distribution == Constants.Normal ) or ( self.Distribution == Constants.SlowMoving ) or ( self.Distribution == Constants.Lumpy ) or ( self.Distribution == Constants.Uniform )
+        stationarydistribution = ( self.Distribution == Constants.Normal ) \
+                                 or ( self.Distribution == Constants.SlowMoving ) \
+                                 or ( self.Distribution == Constants.Lumpy ) \
+                                 or ( self.Distribution == Constants.Uniform ) \
+                                 or ( self.Distribution ==Constants.Binomial )
 
         if stationarydistribution:
             self.ForecastedAverageDemand = [ self.YearlyAverageDemand  for t in self.TimeBucketSet ]
@@ -335,38 +339,55 @@ class MRPInstance:
         # The data below are generated a according to the method given in "multi-item capacited lot-sizing with demand uncertainty, P Brandimarte, IJPR, 2006"
 
         actualavgdemand = [ sum( self.ForecastedAverageDemand[t][p] for t in self.TimeBucketSet)/  self.NrTimeBucket for p in self.ProductSet  ]
+        actualdepdemand = [ [ self.ForecastedAverageDemand[t][p] for p in self.ProductSet] for t in self.TimeBucketSet ]
+
         #dependentaveragedemand = [ self.YearlyAverageDemand[p] for p in self.ProductSet ]
         dependentaveragedemand = [ actualavgdemand[p] for p in self.ProductSet ]
         levelset = sorted(set(level), reverse=False)
         for l in levelset:
             prodinlevel = [p for p in self.ProductSet if level[p] == l]
             for p in prodinlevel:
-                dependentaveragedemand[p] = sum(dependentaveragedemand[q] * self.Requirements[q][p] for q in self.ProductSet) + \
-                                                dependentaveragedemand[p]
+                dependentaveragedemand[p] = sum(dependentaveragedemand[q] * self.Requirements[q][p] for q in self.ProductSet) + dependentaveragedemand[p]
+               # actualavgdemand[p] = sum( actualavgdemand[q] * self.Requirements[q][p] for q in self.ProductSet) + actualavgdemand[p]
+                for t in self.TimeBucketSet:
+                    actualdepdemand[t][p] = sum( actualdepdemand[t][q] * self.Requirements[q][p] for q in self.ProductSet) + actualdepdemand[t][p]
+
 
         dependentstd= [self.YearlyStandardDevDemands[p] for p in self.ProductSet]
         levelset = sorted(set(level), reverse=False)
         for l in levelset:
             prodinlevel = [p for p in self.ProductSet if level[p] == l]
             for p in prodinlevel:
-                dependentstd[p] = sum(
-                    dependentstd[q] * self.Requirements[q][p] for q in self.ProductSet) + \
-                                  dependentstd[p]
+                dependentstd[p] = sum( dependentstd[q] * self.Requirements[q][p] * self.Requirements[q][p] for q in self.ProductSet) + dependentstd[p]
+
+
+
+        actualstd = [ [ self.ForcastedStandardDeviation[t][p] for p in self.ProductSet ] for t in self.TimeBucketSet ]
+        levelset = sorted(set(level), reverse=False)
+        for l in levelset:
+            prodinlevel = [p for p in self.ProductSet if level[p] == l]
+            for t in self.TimeBucketSet:
+                for p in prodinlevel:
+                    actualstd[t][p] = sum( actualstd[t][q] * self.Requirements[q][p] * self.Requirements[q][p] for q in self.ProductSet) + actualstd[t][p]
         # Assume a starting inventory is the average demand during the lead time
-        L= max(level)
-        T = 1.0 + 2.0 / (L )
+        L= max(self.Level)
+        print self.Level
+        print L
+        #T = 1.0 + 2.0 / (L )
+        T = 3
         #T3=2
         T2 = 3
-        sumdemand = [ sum( self.ForecastedAverageDemand[t][p] for t in range(T2))  if self.YearlyAverageDemand[p]>0
-                  else sum( self.ForecastedAverageDemand[t][p] for t in range(T2, 2*T2)) for p in self.ProductSet  ]
-        sumstd = [sum(self.ForcastedStandardDeviation[t][p] for t in range(T2))  if self.YearlyAverageDemand[p]>0
-                  else sum(self.ForcastedStandardDeviation[t][p] for t in range(T2, 2*T2)) for p in   self.ProductSet]
+        sumdemand = [ sum( actualdepdemand[t][p] for t in range(T2))  if self.YearlyAverageDemand[p]>0
+                  else sum( actualdepdemand[t][p] for t in range(T2, 2*T2)) for p in self.ProductSet  ]
+
+        sumstd = [sum(actualstd[t][p] for t in range(T2))  if self.YearlyAverageDemand[p]>0
+                  else sum(actualstd[t][p] for t in range(T2, 2*T2)) for p in   self.ProductSet]
 
 
 
-        self.StartingInventories = [ ScenarioTreeNode.TransformInverse([[0.9]], 1, 1, distribution, [sumdemand[p]] ,
+        self.StartingInventories = [ ScenarioTreeNode.TransformInverse([[0.6]], 1, 1, distribution, [sumdemand[p]] ,
                                                                        [sumstd[p] ] )[0][0]
-                                     if (self.Level[p] % T2 == 1)
+                                     if ( (self.Level[p]) % T2 == 1)
                                      #if self.YearlyAverageDemand[p] == 0 and ( self.Level[p]%T2== 1 )
                                      else 0.0
                                      #ScenarioTreeNode.TransformInverse([[0.90]], 1, 1, distribution, [ actualavgdemand[ p ] * (self.Leadtimes[ p ] ) ] ,
@@ -379,7 +400,7 @@ class MRPInstance:
         #This set of instances assume no setup
         #self.SetupCosts =  [   ( ( ( dependentaveragedemand[ p ] /  2  ) * 0.25 *  self.InventoryCosts[p]  ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
 
-        self.SetupCosts = [ (dependentaveragedemand[p] * self.InventoryCosts[p] *0.5* (T  )* (T )* random.uniform( 1, 1)) for p in  self.ProductSet]
+        self.SetupCosts = [ (dependentaveragedemand[p] * self.InventoryCosts[p] *0.5* (T  )* (T -1) *(1.0/L)* random.uniform( 1, 1)) for p in  self.ProductSet]
 
         self.ProcessingTime = [ [ randint( 1, 5 )
                                     if (p == k )   else 0.0

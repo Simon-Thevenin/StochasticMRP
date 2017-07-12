@@ -95,40 +95,47 @@ class MRPSolution:
 
     #This funciton conpute the different costs (inventory, backorder, setups) associated with the solution.
     def ComputeCost(self):
-        #multiply by inventory cost per product -> get a vector with cost per time unit and scenario
-        self.InventoryCost = 0
-        self.BackOrderCost = 0
-        self.SetupCost = 0
-        self.LostsaleCost = 0
+             self.TotalCost, self.InventoryCost, self.BackOrderCost,  self.SetupCost, self.LostsaleCost = self.GetCostInInterval(  self.MRPInstance.TimeBucketSet )
+
+
+    #This function return the costs encountered in a specific time interval
+    def GetCostInInterval(self, timerange):
+
+        inventorycost = 0
+        backordercost = 0
+        setupcost = 0
+        lostsalecost = 0
         gammas = [math.pow(self.MRPInstance.Gamma, t) for t in self.MRPInstance.TimeBucketSet]
-        for w in  range( len(self.Scenarioset) ) :
-            for t in self.MRPInstance.TimeBucketSet:
+        for w in range(len(self.Scenarioset)):
+            for t in timerange:
                 for p in self.MRPInstance.ProductSet:
 
-                    self.InventoryCost +=  self.InventoryLevel[w][t][p] \
+                    inventorycost += self.InventoryLevel[w][t][p] \
                                           * self.MRPInstance.InventoryCosts[p] \
                                           * gammas[t] \
                                           * self.Scenarioset[w].Probability
 
-                    self.SetupCost +=   self.Production[w][t][p] \
-                                       * self.MRPInstance.SetupCosts[p] \
-                                       * gammas[t] \
-                                       * self.Scenarioset[w].Probability
+                    setupcost += self.Production[w][t][p] \
+                                      * self.MRPInstance.SetupCosts[p] \
+                                      * gammas[t] \
+                                      * self.Scenarioset[w].Probability
 
                     if self.MRPInstance.HasExternalDemand[p]:
-                        if t < self.MRPInstance.NrTimeBucket -1 :
-                            self.BackOrderCost += self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] \
-                                                  * self.MRPInstance.BackorderCosts[ p ] \
+                        if t < self.MRPInstance.NrTimeBucket - 1:
+                            backordercost += self.BackOrder[w][t][
+                                                      self.MRPInstance.ProductWithExternalDemandIndex[p]] \
+                                                  * self.MRPInstance.BackorderCosts[p] \
                                                   * gammas[t] \
                                                   * self.Scenarioset[w].Probability
                         else:
-                            self.LostsaleCost +=  self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] \
-                                                 * self.MRPInstance.LostSaleCost[ p ] \
+                            lostsalecost += self.BackOrder[w][t][
+                                                     self.MRPInstance.ProductWithExternalDemandIndex[p]] \
+                                                 * self.MRPInstance.LostSaleCost[p] \
                                                  * gammas[t] \
                                                  * self.Scenarioset[w].Probability
 
-        self.TotalCost =  self.InventoryCost + self.BackOrderCost +  self.SetupCost + self.LostsaleCost
-
+                totalcost = inventorycost + backordercost + setupcost + lostsalecost
+        return totalcost, inventorycost, backordercost, setupcost, lostsalecost
 
     def DataFrameFromList(self):
         scenarioset = range(len(self.Scenarioset) )
@@ -264,8 +271,8 @@ class MRPSolution:
 
         nrscenario = len( self.Scenarioset )
         self.InSampleAverageDemand = sum( self.InSampleTotalDemandPerScenario[s] for s in self.SenarioNrset ) / nrscenario
-        self.InSamplePercenBackOrder =  100 * ( sum( self.InSampleTotalBackOrderPerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
-        self.InSamplePercentLostSale = 100 * ( sum( self.InSampleTotalLostSalePerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
+        #self.InSamplePercenBackOrder =  100 * ( sum( self.InSampleTotalBackOrderPerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
+        #self.InSamplePercentLostSale = 100 * ( sum( self.InSampleTotalLostSalePerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
         self.InSamplePercentOnTime = 100 * ( sum( self.InSampleTotalOnTimePerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
 
     #This function print hthe statistic in an Excel file
@@ -309,8 +316,8 @@ class MRPSolution:
         perscenariodf.to_excel(writer, "Info Per scenario" )
 
 
-        general = testidentifier+ [ self.InSampleAverageDemand, self.InSamplePercenBackOrder, self.InSamplePercentLostSale, offsetseed, nrevaluation, solutionseed ]
-        columnstab = [ "Instance", "Distribution",  "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed" , "Average demand", "avg back order", "avg lostsale", "offsetseed", "nrevaluation", "solutionseed" ]
+        general = testidentifier+ [ self.InSampleAverageDemand,  offsetseed, nrevaluation, solutionseed ]
+        columnstab = [ "Instance", "Distribution",  "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed" , "Average demand",  "offsetseed", "nrevaluation", "solutionseed" ]
         generaldf = pd.DataFrame(general, index=columnstab )
         generaldf.to_excel( writer, "General" )
         writer.save()
@@ -388,7 +395,12 @@ class MRPSolution:
                             / totaldemand
 
         self.ComputeCost()
-
+        stochasticperiod = range(self.MRPInstance.NrTimeBucket - self.MRPInstance.NrTimeBucketWithoutUncertainty )
+        totalcoststochasticperiod, \
+        inventorycoststochasticperiod, \
+        backordercoststochasticperiod, \
+        setupcoststochasticperiod,\
+        lostsalecoststochasticperiod = self.GetCostInInterval( stochasticperiod )
         kpistat = [ self.CplexCost,
                     self.CplexTime,
                     self.CplexGap,
@@ -396,7 +408,10 @@ class MRPSolution:
                     self.InventoryCost,
                     self.InSamplePercentOnTime,
                     self.BackOrderCost,
-                    self.LostsaleCost
+                    self.LostsaleCost,
+                    inventorycoststochasticperiod,
+                    setupcoststochasticperiod,
+                    backordercoststochasticperiod
                     ] \
                   + AverageStockAtLevel + [0]*(5- self.MRPInstance.NrLevel) + nrbackorerxperiod + [0]*(10 - self.MRPInstance.NrTimeBucket)+[nrlostsale]
 
