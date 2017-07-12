@@ -144,7 +144,7 @@ class ScenarioTreeNode:
         if distribution == Constants.Binomial:
             n = 7
             prob = 0.5
-            result = [[scipy.stats.binom.pmf(points[i][p], n, prob) for i in range(nrpoints)] for p in range(dimensionpoint)]
+            result = [[scipy.stats.binom.ppf(points[i][p], n, prob) for i in range(nrpoints)] for p in range(dimensionpoint)]
 
 
         if distribution == Constants.SlowMoving:

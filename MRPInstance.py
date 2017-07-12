@@ -334,8 +334,9 @@ class MRPInstance:
 
         # The data below are generated a according to the method given in "multi-item capacited lot-sizing with demand uncertainty, P Brandimarte, IJPR, 2006"
 
-
-        dependentaveragedemand = [ self.YearlyAverageDemand[p] for p in self.ProductSet ]
+        actualavgdemand = [ sum( self.ForecastedAverageDemand[t][p] for t in self.TimeBucketSet)/  self.NrTimeBucket for p in self.ProductSet  ]
+        #dependentaveragedemand = [ self.YearlyAverageDemand[p] for p in self.ProductSet ]
+        dependentaveragedemand = [ actualavgdemand[p] for p in self.ProductSet ]
         levelset = sorted(set(level), reverse=False)
         for l in levelset:
             prodinlevel = [p for p in self.ProductSet if level[p] == l]
@@ -352,19 +353,39 @@ class MRPInstance:
                     dependentstd[q] * self.Requirements[q][p] for q in self.ProductSet) + \
                                   dependentstd[p]
         # Assume a starting inventory is the average demand during the lead time
-        self.StartingInventories = [ ScenarioTreeNode.TransformInverse([[0.85]], 1, 1, distribution, [ dependentaveragedemand[ p ] * (self.Leadtimes[ p ] ) ] ,
-                                                                       [dependentstd[ p ] ] )[0][0]  for p in self.ProductSet ]
+        L= max(level)
+        T = 1.0 + 2.0 / (L )
+        #T3=2
+        T2 = 3
+        sumdemand = [ sum( self.ForecastedAverageDemand[t][p] for t in range(T2))  if self.YearlyAverageDemand[p]>0
+                  else sum( self.ForecastedAverageDemand[t][p] for t in range(T2, 2*T2)) for p in self.ProductSet  ]
+        sumstd = [sum(self.ForcastedStandardDeviation[t][p] for t in range(T2))  if self.YearlyAverageDemand[p]>0
+                  else sum(self.ForcastedStandardDeviation[t][p] for t in range(T2, 2*T2)) for p in   self.ProductSet]
+
+
+
+        self.StartingInventories = [ ScenarioTreeNode.TransformInverse([[0.9]], 1, 1, distribution, [sumdemand[p]] ,
+                                                                       [sumstd[p] ] )[0][0]
+                                     if (self.Level[p] % T2 == 1)
+                                     #if self.YearlyAverageDemand[p] == 0 and ( self.Level[p]%T2== 1 )
+                                     else 0.0
+                                     #ScenarioTreeNode.TransformInverse([[0.90]], 1, 1, distribution, [ actualavgdemand[ p ] * (self.Leadtimes[ p ] ) ] ,
+                                     #                                  [dependentstd[ p ]  * (self.Leadtimes[ p ] ) ] )[0][0]
+                                     for p in self.ProductSet
+                                     ]
 
         #self.StartingInventories = [   int( random.uniform( 0.75, 1.5 ) * dependentaveragedemand[ p ] * (self.Leadtimes[ p ] )  )   for p in self.ProductSet ]
 
         #This set of instances assume no setup
-        self.SetupCosts =  [   ( ( ( dependentaveragedemand[ p ] / 2 ) * 2 *  self.InventoryCosts[p]  ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
+        #self.SetupCosts =  [   ( ( ( dependentaveragedemand[ p ] /  2  ) * 0.25 *  self.InventoryCosts[p]  ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
+
+        self.SetupCosts = [ (dependentaveragedemand[p] * self.InventoryCosts[p] *0.5* (T  )* (T )* random.uniform( 1, 1)) for p in  self.ProductSet]
 
         self.ProcessingTime = [ [ randint( 1, 5 )
                                     if (p == k )   else 0.0
                                     for p in self.ProductSet ]
                                 for k in range(self.NrResource) ]
-        capacityfactor = 1.8;
+        capacityfactor = 10;
         self.Capacity =  [ capacityfactor * sum ( dependentaveragedemand[ p ] * self.ProcessingTime[ p ][k] for p in self.ProductSet ) for k in range( self.NrResource ) ]
 
         # Gamma is set to 0.9 which is a common value (find reference!!!)

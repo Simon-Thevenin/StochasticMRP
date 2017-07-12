@@ -119,7 +119,7 @@ class Evaluator:
                 pickle.dump(KPIStat, fp)
 
         duration = time.time() - start_time
-        print "Duration od evaluation: %r, outofsampl error %r"%( duration, Evaluated )
+        print "Duration od evaluation: %r, outofsampl error"%duration# %r"%( duration, Evaluated )
 
     #This function return the setup decision and quantity to produce for the scenario given in argument
     def GetDecisionFromSolutionForScenario(self, sol, model, scenario):

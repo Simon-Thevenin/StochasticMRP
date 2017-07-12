@@ -109,17 +109,17 @@ file.write("""
 #                                      instance, distribution, model, nrscenar, generation, seed  ) )
 
 
-for instance in ["00", "01"]:#, "02", "03", "04", "05"]:
+for instance in ["00", "01", "02", "03", "04", "05"]:
     distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
     if instance == "00":
         distributionset = ["Binomial"]
-    if instance == "01":
+    else:#if instance == "01":
         distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
     for distribution in distributionset:
         # model = "YFix"
         # nrscenar = 500
         # generation = "RQMC"
-        for model in ["YFix", "YQFix", "Average"]:
+        for model in ["YQFix"]: #"YFix", "YQFix", "Average"]:
             generationset = ["MC", "RQMC"]
             if instance == "00" or instance == "01":
                 generationset = ["MC", "RQMC", "all"]
@@ -128,7 +128,7 @@ for instance in ["00", "01"]:#, "02", "03", "04", "05"]:
             method = "MIP"
             avg = False
             if model == "YQFix":
-                scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+                scenarset = ["500"] #["2", "4", "8", "50", "100", "200", "500"]
                 policyset = ["Fix"]
 
             if model == "Average":
