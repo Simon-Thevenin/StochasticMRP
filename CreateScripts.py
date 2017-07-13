@@ -124,7 +124,7 @@ for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH
         # model = "YFix"
         # nrscenar = 500
         # generation = "RQMC"
-        for model in ["YFix", "YQFix", "Average"]:
+        for model in ["YQFix"]:
             generationset = ["MC", "RQMC"]
             if instance == "00" or instance == "01":
                 generationset = ["MC", "RQMC", "all"]
