@@ -531,6 +531,7 @@ class MRPSolution:
         else:
             #Return the decision taken in the closest scenrio
             quantity = [ bestnode.QuantityToOrderNextTime[p] for p in self.MRPInstance.ProductSet ]
+            print "distance %r quantity %r"%(smallestdistance,quantity)
             if Constants.Debug:
                 print "Chosen quantities for time %r : %r" %( time, quantity)
             return quantity, bestnode, error

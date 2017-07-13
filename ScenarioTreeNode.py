@@ -235,7 +235,7 @@ class ScenarioTreeNode:
             nrnonzero = sum(1 for p in range(dimensionpoint) if average[p] > 0)
             idnonzero = [p for p in range(dimensionpoint) if average[p] > 0]
             if nrnonzero > 1 or nrpoints <> 8:
-                raise NameError( "binomial implemented only for dimension 1 and 8 points")
+                raise NameError( "binomial implemented only for dimension 1 and 8 points not %r -%r" %(nrnonzero, nrpoints) )
 
             nonzeropoints = [range(0,8 )]
             n = 7

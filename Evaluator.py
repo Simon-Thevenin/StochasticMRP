@@ -142,7 +142,9 @@ class Evaluator:
             #At each time period the quantity to produce is decided based on the demand known up to now
             for ti in self.Instance.TimeBucketSet:
                 demanduptotimet = [[scenario.Demands[t][p] for p in self.Instance.ProductSet] for t in range(ti)]
+                print self.Policy
                 if self.Policy == Constants.NearestNeighbor:
+                    print "use NN"
                     givenquantty[ti], previousnode, error = sol.GetQuantityToOrder(self.NearestNeighborStrategy, ti,
                                                                                     demanduptotimet, givenquantty,
                                                                                     previousnode)
