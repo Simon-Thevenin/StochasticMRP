@@ -296,7 +296,7 @@ class MRPInstance:
         self.ComputeLevel()
         self.ComputeMaxLeadTime( )
         # Consider a time horizon of 20 days plus the total lead time
-        self.NrTimeBucket =  2 * self.MaxLeadTime
+        self.NrTimeBucket =  4 * self.MaxLeadTime
         self.NrTimeBucketWithoutUncertainty = self.MaxLeadTime
         self.ComputeIndices()
 
@@ -382,8 +382,14 @@ class MRPInstance:
                   else sum(actualstd[t][p] for t in range(T, 2*T)) for p in   self.ProductSet]
 
 
+        servicelevel = 0.6
+        #if ( self.Distribution == Constants.Lumpy ):
+        #    servicelevel = 0.81
 
-        self.StartingInventories = [ ScenarioTreeNode.TransformInverse([[0.6]], 1, 1, distribution, [sumdemand[p]] ,
+        #if (self.Distribution == Constants.Binomial):
+        #    servicelevel = 0.7
+
+        self.StartingInventories = [ ScenarioTreeNode.TransformInverse([[servicelevel]], 1, 1, distribution, [sumdemand[p]] ,
                                                                        [sumstd[p] ] )[0][0]
                                      if ( (self.Level[p]) % T == 1)
                                      #if self.YearlyAverageDemand[p] == 0 and ( self.Level[p]%T2== 1 )
@@ -431,7 +437,7 @@ class MRPInstance:
 
     #Save the Instance in an Excel  file
     def SaveCompleteInstanceInExelFile( self ):
-        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_" + self.Distribution + ".xlsx",  engine='openpyxl' )
+        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_LTH_" + self.Distribution + ".xlsx",  engine='openpyxl' )
 
         general = [ self.InstanceName, self.NrProduct, self.NrTimeBucket, self.NrResource, self.Gamma, self.Distribution,  self.NrTimeBucketWithoutUncertainty  ]
         columnstab = [ "Name", "NrProducts", "NrBuckets", "NrResources", "Gamma", "Distribution", "NrTimeBucketWithoutUncertainty" ]

@@ -17,12 +17,14 @@ if __name__ == "__main__":
     # Path to a folder where you want your results to be
     output_folder = r"/home/thesim/TestFolder/stochasticmrp/"
 
-    for instance in ["00", "01", "02", "03", "04", "05" ]:
-        distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
+    for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH" ]:
+        distributionset = [ "NonStationary"]
+        #distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
         if instance == "00":
             distributionset = ["Binomial"]
         if instance == "01":
-            distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
+            distributionset = [ "Uniform", "NonStationary"]
+       #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
         for distribution in distributionset:
             #model = "YFix"
             #nrscenar = 500
@@ -36,7 +38,8 @@ if __name__ == "__main__":
                  method = "MIP"
                  avg = False
                  if model == "YQFix":
-                     scenarset = ["2", "4", "8", "50", "100", "200", "500"]
+                     scenarset = [ "1000" ]
+                     #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      policyset = [ "Fix" ]
 
                  if model == "Average":
@@ -109,17 +112,19 @@ file.write("""
 #                                      instance, distribution, model, nrscenar, generation, seed  ) )
 
 
-for instance in ["00", "01", "02", "03", "04", "05"]:
-    distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
+for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH"]:
+    distributionset = ["NonStationary"]
+    # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
     if instance == "00":
         distributionset = ["Binomial"]
-    else:#if instance == "01":
-        distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
+    if instance == "01":
+        distributionset = ["Uniform", "NonStationary"]
+        #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
     for distribution in distributionset:
         # model = "YFix"
         # nrscenar = 500
         # generation = "RQMC"
-        for model in ["YQFix"]: #"YFix", "YQFix", "Average"]:
+        for model in ["YFix", "YQFix", "Average"]:
             generationset = ["MC", "RQMC"]
             if instance == "00" or instance == "01":
                 generationset = ["MC", "RQMC", "all"]
@@ -128,7 +133,8 @@ for instance in ["00", "01", "02", "03", "04", "05"]:
             method = "MIP"
             avg = False
             if model == "YQFix":
-                scenarset = ["500"] #["2", "4", "8", "50", "100", "200", "500"]
+                scenarset = ["1000"]
+                # scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                 policyset = ["Fix"]
 
             if model == "Average":
