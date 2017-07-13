@@ -143,6 +143,8 @@ for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH
                 policyset = ["Fix"]
                 generationset = ["MC"]
             for generation in generationset:
+                if generation == "all":
+                    scenarset = "8"
                 for nrscenar in scenarset:
                     for seed in range(5):
                             file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_MIP \n" % (
