@@ -111,8 +111,8 @@ file.write("""
 #                              file.write("qsub job_solve_%s_%s_%s_%s_%s_%s \n" % (
 #                                      instance, distribution, model, nrscenar, generation, seed  ) )
 
-
-for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH"]:
+for instance in ["01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH"]:
+#for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH"]:
     distributionset = ["NonStationary"]
     # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
     if instance == "00":
@@ -147,5 +147,7 @@ for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH
                     scenarset = "8"
                 for nrscenar in scenarset:
                     for seed in range(5):
-                            file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_MIP \n" % (
-                                    instance, distribution, model, nrscenar, generation, seed  ))
+                        for Policy in policyset:
+                            file.write("job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
+                                       instance, distribution, model, nrscenar, generation, method, Policy, seed)
+                            )

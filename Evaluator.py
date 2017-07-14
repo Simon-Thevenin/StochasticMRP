@@ -52,7 +52,7 @@ class Evaluator:
                 sddp = self.SDDPs[n]
                 seed = sddp.StartingSeed
             evaluatoinscenarios, scenariotrees =self.GetScenarioSet(seed, nrscenario)
-
+            self.ForwardPassOnScenarios( sddp, evaluatoinscenarios)
             firstscenario = True
             self.IsDefineMIPResolveTime = [False for t in self.Instance.TimeBucketSet]
 
@@ -63,7 +63,7 @@ class Evaluator:
                     givensetup, givenquantty = self.GetDecisionFromSolutionForScenario(sol, model, scenario)
 
                 if self.OptimizationMethod == Constants.SDDP:
-                    givensetup, givenquantty = self.GetDecisionFromSDDPForScenario(sddp, scenario)
+                    givensetup, givenquantty = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
 
                 #Solve the MIP and fix the decision to the one given.
                 if firstscenario:
@@ -153,25 +153,28 @@ class Evaluator:
                                                                         givensetup, model)
         return givensetup, givenquantty
 
-    # This function return the setup decision and quantity to produce for the scenario given in argument
-    def GetDecisionFromSDDPForScenario(self, sddp, scenario):
+    #This method run a forward pass of the SDDP algorithm on the considered set of scenarios
+    def ForwardPassOnScenarios(self, sddp, scenarios):
         sddp.EvaluationMode = True
-        #Make a forward pass on the
-        #Get the set of scenarios
-        sddp.CurrentSetOfScenarios = [scenario]
-        sddp.ScenarioNrSet = 1
-        #Modify the number of scenario at each stage
+        # Make a forward pass on the
+        # Get the set of scenarios
+        sddp.CurrentSetOfScenarios = scenarios
+        sddp.ScenarioNrSet = len( scenarios )
+        # Modify the number of scenario at each stage
         for stage in sddp.StagesSet:
-            sddp.Stage[ stage ].SetNrScenario( 1 )
-            sddp.Stage[stage].CurrentScenarioNr = 0
+            sddp.Stage[stage].SetNrScenario( len( scenarios ))
+            #sddp.Stage[stage].CurrentScenarioNr = 0
 
         sddp.ForwardPass()
 
+    # This function return the setup decision and quantity to produce for the scenario given in argument
+    def GetDecisionFromSDDPForScenario(self, sddp, scenario):
+
         #Get the setup quantitities associated with the solultion
-        givensetup = [[sddp.GetSetupFixedEarlier(p,t,0) for p in self.Instance.ProductSet]
+        givensetup = [[sddp.GetSetupFixedEarlier(p,t,scenario) for p in self.Instance.ProductSet]
                       for t in self.Instance.TimeBucketSet]
 
-        givenquantty = [[sddp.GetQuantityFixedEarlier(p,t,0) for p in self.Instance.ProductSet]
+        givenquantty = [[sddp.GetQuantityFixedEarlier(p,t,scenario) for p in self.Instance.ProductSet]
                       for t in range( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty )]
 
         #Copy the quantity from the last stage

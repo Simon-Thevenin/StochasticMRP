@@ -341,7 +341,9 @@ class SDDPStage:
                                               * self.Instance.SetupCosts[p]
                                                 for p in self.Instance.ProductSet
                                                 for t in self.Instance.TimeBucketSet],
-                                            types=['B'] * self.NrProductionVariable )
+                                            lb=[0.0] * self.NrProductionVariable,
+                                             ub=[1.0] * self.NrProductionVariable)
+                                           # types=['B'] * self.NrProductionVariable )
 
         #Variable for the production quanitity
         self.Cplex.variables.add( obj = [0.0] * self.NrQuantityVariable,
@@ -548,8 +550,10 @@ class SDDPStage:
                           self.Instance.ProductSet]
             values = sol.get_values(indexarray)
             self.ProductionValue[self.CurrentScenarioNr] = [
-                [round( values[t * self.Instance.NrProduct + p], 0) for p in self.Instance.ProductSet] for t in
-                self.Instance.TimeBucketSet]
+                 [values[t * self.Instance.NrProduct + p] for p in self.Instance.ProductSet] for t in
+                 self.Instance.TimeBucketSet]
+                #[round( values[t * self.Instance.NrProduct + p], 0) for p in self.Instance.ProductSet] for t in
+                #self.Instance.TimeBucketSet]
 
         prductwithstock = self.GetProductWithStockVariable()
         indexarray = [self.GetIndexStockVariable(p) for p in prductwithstock]
