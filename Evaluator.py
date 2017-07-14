@@ -52,7 +52,8 @@ class Evaluator:
                 sddp = self.SDDPs[n]
                 seed = sddp.StartingSeed
             evaluatoinscenarios, scenariotrees =self.GetScenarioSet(seed, nrscenario)
-            self.ForwardPassOnScenarios( sddp, evaluatoinscenarios)
+            if self.OptimizationMethod == Constants.SDDP:
+                self.ForwardPassOnScenarios( sddp, evaluatoinscenarios)
             firstscenario = True
             self.IsDefineMIPResolveTime = [False for t in self.Instance.TimeBucketSet]
 

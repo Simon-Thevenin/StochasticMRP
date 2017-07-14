@@ -79,7 +79,7 @@ class SDDPCut:
 
         #multiply by -1 because the variable goes on the left hand side
         coeff =  self.GetCutVariablesCoefficientAtStage()
-        self.RHSConstantValue = self.DemandRHS + self.CapacityRHS + self.PreviousCutRHS + self.InitialInventoryRHS
+
         righthandside = [ self.ComputeCurrentRightHandSide() ]
 
         self.Stage.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
@@ -225,7 +225,7 @@ class SDDPCut:
         self.CapacityRHS = self.CapacityRHS / diviser
         self.PreviousCutRHS = self.PreviousCutRHS / diviser
         self.InitialInventoryRHS = self.InitialInventoryRHS / diviser
-
+        self.RHSConstantValue = self.DemandRHS + self.CapacityRHS + self.PreviousCutRHS + self.InitialInventoryRHS
         for p in self.Instance.ProductSet:
             for t in self.Instance.TimeBucketSet:
                 self.CoefficientQuantityVariable[t][p] =  self.CoefficientQuantityVariable[t][p] / diviser

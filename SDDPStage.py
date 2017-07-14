@@ -341,9 +341,9 @@ class SDDPStage:
                                               * self.Instance.SetupCosts[p]
                                                 for p in self.Instance.ProductSet
                                                 for t in self.Instance.TimeBucketSet],
-                                            lb=[0.0] * self.NrProductionVariable,
-                                             ub=[1.0] * self.NrProductionVariable)
-                                           # types=['B'] * self.NrProductionVariable )
+                                            #lb=[0.0] * self.NrProductionVariable,
+                                            # ub=[1.0] * self.NrProductionVariable)
+                                            types=['B'] * self.NrProductionVariable )
 
         #Variable for the production quanitity
         self.Cplex.variables.add( obj = [0.0] * self.NrQuantityVariable,
