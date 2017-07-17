@@ -25,6 +25,7 @@ class Constants:
     SDDP = "SDDP"
 
     Debug = False
+    PrintSolutionFileToExcel = False
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = True
     Infinity = 9999999999999.9

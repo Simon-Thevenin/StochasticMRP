@@ -15,6 +15,32 @@ class MRPSolution:
     def GetSolutionFileName(self, description):
         result ="./Solutions/"+  description + "_Solution.xlsx"
         return result
+
+    def GetSolutionPickleFileNameStart(self, description, dataframename):
+        result ="./Solutions/"+  description + "_" + dataframename
+        return result
+
+    # This function print the solution different pickle files
+    def PrintToPickle(self, description):
+            prodquantitydf, inventorydf, productiondf, bbackorderdf = self.DataFrameFromList()
+
+            prodquantitydf.to_pickle( self.GetSolutionPickleFileNameStart(description, 'ProductionQuantity') )
+            productiondf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'Production') )
+            inventorydf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'InventoryLevel') )
+            bbackorderdf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'BackOrder') )
+
+            general = [self.MRPInstance.InstanceName, self.MRPInstance.Distribution, self.ScenarioTree.Owner.Model,
+                       self.CplexCost, self.CplexTime, self.CplexGap]
+            columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "CplexGap"]
+            generaldf = pd.DataFrame(general, index=columnstab)
+            generaldf.to_pickle( self.GetSolutionPickleFileNameStart(description, "Generic") )
+
+            scenariotreeinfo = [self.MRPInstance.InstanceName, self.ScenarioTree.Seed, self.ScenarioTree.TreeStructure,
+                                self.ScenarioTree.AverageScenarioTree, self.ScenarioTree.ScenarioGenerationMethod]
+            columnstab = ["Name", "Seed", "TreeStructure", "AverageScenarioTree", "ScenarioGenerationMethod"]
+            scenariotreeinfo = pd.DataFrame(scenariotreeinfo, index=columnstab)
+            scenariotreeinfo.to_pickle( self.GetSolutionPickleFileNameStart(description,  "ScenarioTree") )
+
     #This function print the solution in an Excel file in the folde "Solutions"
     def PrintToExcel(self, description):
         prodquantitydf, inventorydf, productiondf, bbackorderdf = self.DataFrameFromList()
@@ -41,32 +67,55 @@ class MRPSolution:
 
         writer.save()
 
-    #This function read the instance from the excel file
-    def ReadFromExcel(self, description):
-        wb2 = opxl.load_workbook( self.GetSolutionFileName( description ))
-
+    def ReadExcelFiles(self, description):
         # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
+        prodquantitydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "ProductionQuantity")
+        productiondf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "Production")
+        inventorydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "InventoryLevel")
+        bbackorderdf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "BackOrder")
 
-        prodquantitydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "ProductionQuantity")
-        productiondf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "Production")
-        inventorydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "InventoryLevel")
-        bbackorderdf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "BackOrder")
-
+        wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
         instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
-        scenariotreeinfo =  Tool.ReadDataFrame(wb2, "ScenarioTree")
+        scenariotreeinfo = Tool.ReadDataFrame(wb2, "ScenarioTree")
+
+        return prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo
+
+    def ReadPickleFiles(self, description):
+        # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
+        prodquantitydf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'ProductionQuantity' ) )
+        productiondf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'Production' ) )
+        inventorydf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'InventoryLevel' ) )
+        bbackorderdf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'BackOrder' ) )
+
+        instanceinfo = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, "Generic") )
+        scenariotreeinfo = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, "ScenarioTree"))
+
+        return prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo
+
+
+    #This function read the instance from the excel file
+    def ReadFromFile(self, description):
+
+        if Constants.PrintSolutionFileToExcel:
+            prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadExcelFiles( description )
+        else:
+            prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadPickleFiles( description )
 
         self.MRPInstance = MRPInstance()
         self.MRPInstance.ReadInstanceFromExelFile( instanceinfo.get_value( 'Name', 0 ), instanceinfo.get_value( 'Distribution', 0 ), )
 
         scenariogenerationm = scenariotreeinfo.get_value('ScenarioGenerationMethod', 0)
+        avgscenariotree = scenariotreeinfo.get_value( 'AverageScenarioTree', 0 )
+        scenariotreeseed = int( scenariotreeinfo.get_value( 'Seed', 0 ) )
+        branchingstructure  =  literal_eval( str( scenariotreeinfo.get_value( 'TreeStructure', 0 ) ) )
         model = instanceinfo.get_value( 'Model', 0 )
         RQMCForYQfix = (model == Constants.ModelYQFix and scenariogenerationm == Constants.RQMC )
 
         self.ScenarioTree = ScenarioTree ( instance = self.MRPInstance,
-                                           branchperlevel =  literal_eval(scenariotreeinfo.get_value( 'TreeStructure', 0 )),
-                                           seed = int( scenariotreeinfo.get_value( 'Seed', 0 ) ),
-                                           averagescenariotree =  scenariotreeinfo.get_value( 'AverageScenarioTree', 0 ),
-                                           scenariogenerationmethod =  scenariotreeinfo.get_value( 'ScenarioGenerationMethod', 0 ),
+                                           branchperlevel = branchingstructure,
+                                           seed = scenariotreeseed,
+                                           averagescenariotree =  avgscenariotree,
+                                           scenariogenerationmethod =  scenariogenerationm,
                                            generateRQMCForYQfix = RQMCForYQfix )
 
         self.CplexCost = instanceinfo.get_value( 'CplexCost', 0 )
@@ -413,7 +462,7 @@ class MRPSolution:
                     setupcoststochasticperiod,
                     backordercoststochasticperiod
                     ] \
-                  + AverageStockAtLevel + [0]*(5- self.MRPInstance.NrLevel) + nrbackorerxperiod + [0]*(10 - self.MRPInstance.NrTimeBucket)+[nrlostsale]
+                  + AverageStockAtLevel + [0]*(5- self.MRPInstance.NrLevel) + nrbackorerxperiod + [0]*(50 - self.MRPInstance.NrTimeBucket)+[nrlostsale]
 
         data = testidentifier + [  filepostscript, len( self.Scenarioset ) ] + kpistat
         d = datetime.now()

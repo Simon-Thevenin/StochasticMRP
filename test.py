@@ -70,7 +70,7 @@ SeedArray = [ 2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788 ]
 #This list contain the information obtained after solving the problem
 SolveInformation = []
 OutOfSampleTestResult = []
-InSampleKPIStat= [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ]
+InSampleKPIStat= [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ]
 EvaluateInfo = []
 
 def PrintTestResult():
@@ -178,11 +178,17 @@ def SolveYQFix( ):
     treestructure = [1, nrscenario] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
     solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
     PrintTestResult()
-    testdescription = GetTestDescription()
-    solution.PrintToExcel( testdescription )
+    PrintSolutionToFile( solution )
     RunEvaluation()
 
 
+def PrintSolutionToFile( solution  ):
+    testdescription = GetTestDescription()
+
+    if Constants.PrintSolutionFileToExcel:
+        solution.PrintToExcel(testdescription)
+    else:
+        solution.PrintToPickle(testdescription)
 
 def SolveYFix():
     global SolveInformation
@@ -205,9 +211,8 @@ def SolveYFix():
     # PrintFinalResult()
 
     PrintTestResult()
-    testdescription = GetTestDescription()
     if   Method == "MIP" :
-        solution.PrintToExcel( testdescription )
+        PrintSolutionToFile( solution )
         RunEvaluation()
     GatherEvaluation()
 
@@ -218,7 +223,7 @@ def GetPreviouslyFoundSolution():
             TestIdentifier[6] = s
             filedescription = GetTestDescription()
             solution = MRPSolution()
-            solution.ReadFromExcel( filedescription )
+            solution.ReadFromFile( filedescription )
             result.append( solution )
 
             #for s in range(len(solution.Scenarioset)):
@@ -237,15 +242,15 @@ def GetPreviouslyFoundSolution():
 def ComputeInSampleStatistis():
     global InSampleKPIStat
     solutions = GetPreviouslyFoundSolution()
-    for i in range(11 + Instance.NrLevel + 11):
+    for i in range(11 + Instance.NrLevel + 51):
         InSampleKPIStat[i] =0
     for solution in solutions:
         solution.ComputeStatistics()
         insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample", -1, 0, ScenarioSeed)
-        for i in range(11 + Instance.NrLevel + 11):
+        for i in range(11 + Instance.NrLevel + 51):
             InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
 
-    for i in range(11 + Instance.NrLevel + 11):
+    for i in range(11 + Instance.NrLevel + 51):
         InSampleKPIStat[i] = InSampleKPIStat[i] / len( solutions )
 
 def Evaluate():
@@ -266,7 +271,7 @@ def EvaluateSingleSol(  ):
    # solutions = GetPreviouslyFoundSolution()
     filedescription = GetTestDescription()
     solution = MRPSolution()
-    solution.ReadFromExcel(filedescription)
+    solution.ReadFromFile(filedescription)
     evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
 
     MIPModel = Model
