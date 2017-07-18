@@ -29,7 +29,12 @@ if __name__ == "__main__":
             #model = "YFix"
             #nrscenar = 500
             #generation = "RQMC"
-            for model in ["YFix", "YQFix", "Average"]:
+            if instance in ["00", "01", "02", "03", "04", "05"]:
+                modelset = ["YFix", "YQFix", "Average"]
+            else:
+                modelset = [  "YQFix", "Average"]
+
+            for model in modelset:
                  generationset = ["MC", "RQMC"]
                  if instance == "00" or instance == "01":
                      generationset = ["MC", "RQMC", "all"]
@@ -38,8 +43,8 @@ if __name__ == "__main__":
                  method = "MIP"
                  avg = False
                  if model == "YQFix":
-                     scenarset = [ "1000" ]
-                     #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                     #scenarset = [ "1000" ]
+                     scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      policyset = [ "Fix" ]
 
                  if model == "Average":
@@ -124,7 +129,12 @@ for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH
         # model = "YFix"
         # nrscenar = 500
         # generation = "RQMC"
-        for model in ["YQFix"]:
+        if instance in ["00", "01", "02", "03", "04", "05"]:
+            modelset = ["YFix", "YQFix", "Average"]
+        else:
+            modelset = ["YQFix", "Average"]
+
+        for model in modelset:
             generationset = ["MC", "RQMC"]
             if instance == "00" or instance == "01":
                 generationset = ["MC", "RQMC", "all"]
@@ -133,8 +143,8 @@ for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH
             method = "MIP"
             avg = False
             if model == "YQFix":
-                scenarset = ["1000"]
-                # scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                # scenarset = [ "1000" ]
+                scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                 policyset = ["Fix"]
 
             if model == "Average":
@@ -143,8 +153,6 @@ for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH
                 policyset = ["Fix"]
                 generationset = ["MC"]
             for generation in generationset:
-                if generation == "all":
-                    scenarset = "8"
                 for nrscenar in scenarset:
                     for seed in range(5):
                             file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_MIP \n" % (

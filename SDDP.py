@@ -48,6 +48,7 @@ class SDDP:
         self.ScenarioGenerationMethod = generationmethod
         self.CurrentExpvalueUpperBound = Constants.Infinity
         self.EvaluationMode = False
+        self.UseCorePoint = False
 
     #This function make the forward pass of SDDP
     def ForwardPass(self):
@@ -58,15 +59,24 @@ class SDDP:
             #Run the forward pass at each stage t
             self.Stage[t].RunForwardPassMIP()
 
+            #try to use core point method, remove if it does not work
+            if self.Stage[t].IsFirstStage():
+                self.Stage[t].UpdateCorePoint()
+
 
     #This function make the backward pass of SDDP
     def BackwardPass(self):
         if Constants.Debug:
             print "Start Backward pass"
 
+        #self.UseCorePoint = True
+
         for t in reversed( range( 1, len( self.StagesSet  ) -1  ) ):
             #Build or update the MIP of stage t
+
             self.Stage[t].GernerateCut();
+
+        self.UseCorePoint = False
 
 
 
@@ -93,8 +103,11 @@ class SDDP:
 
 
     #This function return the quanity of product to produce at time which has been decided at an earlier stage
-    def GetQuantityFixedEarlier(self, product, time, scenario):
-        result = self.Stage[ time ].QuantityValues[ scenario][product]
+    def GetQuantityFixedEarlier(self, product, time, scenario ):
+        if self.UseCorePoint and time == 0:
+            result = self.Stage[time].CorePointQuantityValues[scenario][product]
+        else:
+            result = self.Stage[time].QuantityValues[scenario][product]
 
         return result
 
@@ -108,20 +121,32 @@ class SDDP:
                 decisiontime= time + 1
             else:
                 decisiontime = time
-            result = self.Stage[ decisiontime ].InventoryValue[ scenario ][ product ]
+
+            if self.UseCorePoint and decisiontime == 0:
+                result = self.Stage[ decisiontime ].CorePointInventoryValue[ scenario ][ product ]
+            else:
+                result = self.Stage[ decisiontime ].InventoryValue[ scenario ][ product ]
+
         return result
 
         # This function return the backordered quantity of product which has been decided at an earlier stage
-    def GetBackorderFixedEarlier(self, product, time, scenario):
+    def GetBackorderFixedEarlier(self, product, time, scenario ):
         if time == -1:
             result = 0
         else:
-            result = self.Stage[ time  +1 ].BackorderValue[ scenario ][ self.Instance.ProductWithExternalDemandIndex[product] ]
+            #if self.UseCorePoint:
+            #    result = self.Stage[time + 1].CorePointBackorderValue[scenario][self.Instance.ProductWithExternalDemandIndex[product]]
+            #else:
+                result = self.Stage[time + 1].BackorderValue[scenario][self.Instance.ProductWithExternalDemandIndex[product]]
+
         return result
 
     #This function return the value of the setup variable of product to produce at time which has been decided at an earlier stage
-    def GetSetupFixedEarlier(self, product, time, scenario):
-        result = self.Stage[0].ProductionValue[scenario][time][product]
+    def GetSetupFixedEarlier(self, product, time, scenario ):
+        if self.UseCorePoint:
+            result = self.Stage[0].CorePointProductionValue[scenario][time][product]
+        else:
+            result = self.Stage[0].ProductionValue[scenario][time][product]
         return result
 
     #This function return the demand of product at time in scenario

@@ -52,6 +52,16 @@ class SDDPStage:
         self.InventoryValue = []
         #The value of the backorder variable (filled after having solve the MIPs for all scenario)
         self.BackorderValue = []
+
+        # Try to use the corepoint method of papadakos, remove if it doesn't work
+        self.CorePointQuantityValues = []
+        # The value of the production variables (filled after having solve the MIPs for all scenario)
+        self.CorePointProductionValue = []
+        # The value of the inventory variables (filled after having solve the MIPs for all scenario)
+        self.CorePointInventoryValue = []
+        # The value of the backorder variable (filled after having solve the MIPs for all scenario)
+        self.CorePointBackorderValue = []
+
         #The cost of each scenario
         self.StageCostPerScenarioWithoutCostoGo = []
         self.StageCostPerScenarioWithCostoGo = []
@@ -341,9 +351,9 @@ class SDDPStage:
                                               * self.Instance.SetupCosts[p]
                                                 for p in self.Instance.ProductSet
                                                 for t in self.Instance.TimeBucketSet],
-                                            #lb=[0.0] * self.NrProductionVariable,
-                                            # ub=[1.0] * self.NrProductionVariable)
-                                            types=['B'] * self.NrProductionVariable )
+                                             #lb=[0.0] * self.NrProductionVariable,
+                                             #ub=[1.0] * self.NrProductionVariable)
+                                              types=['B'] * self.NrProductionVariable )
 
         #Variable for the production quanitity
         self.Cplex.variables.add( obj = [0.0] * self.NrQuantityVariable,
@@ -550,7 +560,7 @@ class SDDPStage:
                           self.Instance.ProductSet]
             values = sol.get_values(indexarray)
             self.ProductionValue[self.CurrentScenarioNr] = [
-                 [values[t * self.Instance.NrProduct + p] for p in self.Instance.ProductSet] for t in
+                 [ max( values[t * self.Instance.NrProduct + p], 0.0) for p in self.Instance.ProductSet] for t in
                  self.Instance.TimeBucketSet]
                 #[round( values[t * self.Instance.NrProduct + p], 0) for p in self.Instance.ProductSet] for t in
                 #self.Instance.TimeBucketSet]
@@ -565,7 +575,7 @@ class SDDPStage:
                 self.InventoryValue[self.CurrentScenarioNr][p] = inventory[index]
                 index = index + 1
         else:
-            self.InventoryValue[self.CurrentScenarioNr] = inventory
+           self.InventoryValue[self.CurrentScenarioNr] = inventory
 
         if not self.IsFirstStage():
             indexarray = [self.GetIndexBackorderVariable(p) for p in self.GetProductWithBackOrderVariable()]
@@ -602,6 +612,11 @@ class SDDPStage:
                 if self.IsFirstStage():
                     print " Production: %r "%self.ProductionValue
                 print "*************************************************************"
+        else:
+            self.Cplex.write("InfeasibleLP_stage_%d_iter_%d_scenar_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, self.CurrentScenarioNr) )
+            raise NameError("Infeasible sub-problem!!!!")
+
+
 
     def ImproveCutFromSolution(self, cut, solution):
         self.IncreaseCutWithFlowDual(cut, solution)
@@ -755,8 +770,33 @@ class SDDPStage:
                         p = tuple[0];                t = tuple[1]
                         cut.IncreaseCoefficientInventory(p,t, c.CoefficientStockVariable[t][p] * duals[i])
 
+    # Try to use the corepoint method of papadakos, remove if it doesn't work
+    # average current solution with last core point
+    def UpdateCorePoint(self):
 
-
-
-
-
+        if self.SDDPOwner.CurrentIteration > 1 :
+            # Try to use the corepoint method of papadakos, remove if it doesn't work
+            self.CorePointQuantityValues = [ [ 0.5 * self.QuantityValues[w][p] + 0.5 * self.CorePointQuantityValues[w][p]
+                                             for p in self.Instance.ProductSet ] for w in self.ScenarioNrSet ]
+            self.CorePointProductionValue = [ [ [ max( 0.5 * self.ProductionValue[w][t][p] + 0.5 * self.CorePointProductionValue[w][t][p], 0.0)
+                                             for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet ] for w in self.ScenarioNrSet ]
+            # The value of the inventory variables (filled after having solve the MIPs for all scenario)
+            self.CorePointInventoryValue =  [ [ 0.5 * self.InventoryValue[w][p] + 0.5 * self.CorePointInventoryValue[w][p] if not self.Instance.HasExternalDemand[p] else 'nan'
+                                             for p in self.Instance.ProductSet ] for w in self.ScenarioNrSet ]
+            # The value of the backorder variable (filled after having solve the MIPs for all scenario)
+            #self.CorePointBackorderValue =  [ [ 0.5 * self.BackorderValue[w][p] + 0.5 * self.CorePointBackorderValue[w][p]
+            #                                 for p in self.Instance.ProductSet ] for w in self.ScenarioNrSet ]
+        else:
+            # Try to use the corepoint method of papadakos, remove if it doesn't work
+            self.CorePointQuantityValues = [[ self.QuantityValues[w][p]
+                                             for p in self.Instance.ProductSet] for w in self.ScenarioNrSet]
+            self.CorePointProductionValue = [[[ self.ProductionValue[w][t][p]
+                                               for p in self.Instance.ProductSet]
+                                              for t in self.Instance.TimeBucketSet]
+                                             for w in self.ScenarioNrSet]
+            # The value of the inventory variables (filled after having solve the MIPs for all scenario)
+            self.CorePointInventoryValue = [[ self.InventoryValue[w][p]
+                                             for p in self.Instance.ProductSet] for w in self.ScenarioNrSet]
+            # The value of the backorder variable (filled after having solve the MIPs for all scenario)
+            #self.CorePointBackorderValue = [[ self.BackorderValue[w][p]
+            #                                 for p in self.Instance.ProductSet] for w in self.ScenarioNrSet]

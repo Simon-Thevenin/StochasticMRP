@@ -39,6 +39,7 @@ class SDDPLastStage( SDDPStage ):
         result = self.Instance.NrTimeBucketWithoutUncertainty
         return result
 
+    #The last stage has multiple inventory variable (for all time period without uncertainty) return the earliest time period with invenotry variabele
     def GetStartStageTimeRangeStock(self, p):
         if self.Instance.HasExternalDemand[p]:
             result = (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty - 1)
@@ -238,15 +239,13 @@ class SDDPLastStage( SDDPStage ):
     def GetRHSFlowConst(self, p, t):
         righthandside = 0
         # Get the level of inventory computed in the previsous stage
-        if t == self.GetStartStageTimeRangeStock( p ):
+        if t == self.GetStartStageTimeRangeStock( p ): #if this t is the first time period with inventory variable
+            previousperiod = t - 1
             if self.Instance.HasExternalDemand[p]:
-                previousperiod = self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty -2
                 righthandside = righthandside - 1 * self.SDDPOwner.GetInventoryFixedEarlier(p, previousperiod, self.CurrentScenarioNr)
                 righthandside = righthandside + self.SDDPOwner.GetBackorderFixedEarlier(p, previousperiod, self.CurrentScenarioNr)
             else:
-                righthandside = -1 * self.SDDPOwner.GetInventoryFixedEarlier(p,
-                                                                              self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty-1,
-                                                                              self.CurrentScenarioNr)
+                righthandside = -1 * self.SDDPOwner.GetInventoryFixedEarlier(p,previousperiod, self.CurrentScenarioNr)
 
       #  for t2 in range(self.GetStartStageTimeRangeStock(p), t ):
         righthandside= righthandside + self.SDDPOwner.CurrentSetOfScenarios[self.CurrentScenarioNr].Demands[t][p]
