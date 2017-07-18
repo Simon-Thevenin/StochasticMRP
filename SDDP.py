@@ -60,8 +60,8 @@ class SDDP:
             self.Stage[t].RunForwardPassMIP()
 
             #try to use core point method, remove if it does not work
-            if self.Stage[t].IsFirstStage():
-                self.Stage[t].UpdateCorePoint()
+            #if self.Stage[t].IsFirstStage():
+             #   self.Stage[t].UpdateCorePoint()
 
 
     #This function make the backward pass of SDDP
@@ -76,7 +76,7 @@ class SDDP:
 
             self.Stage[t].GernerateCut();
 
-        self.UseCorePoint = False
+        #self.UseCorePoint = False
 
 
 
@@ -86,7 +86,7 @@ class SDDP:
         if Constants.Debug:
             print "Start generation of new scenarios"
 
-        #Generate a scenario tree
+         #Generate a scenario tree
         treestructure = [ 1, nrscenario ] + [1] * ( self.Instance.NrTimeBucket - 1 ) + [0]
         scenariotree = ScenarioTree( self.Instance, treestructure, self.CurrentScenarioSeed, scenariogenerationmethod= self.ScenarioGenerationMethod, generateasYQfix=False )
 
@@ -97,7 +97,6 @@ class SDDP:
         #Modify the number of scenario at each stage
         for stage in self.StagesSet:
             self.Stage[ stage ].SetNrScenario( len(  self.CurrentSetOfScenarios ) )
-
 
         self.CurrentScenarioSeed = self.CurrentScenarioSeed +1
 

@@ -29,18 +29,18 @@ if __name__ == "__main__":
             #model = "YFix"
             #nrscenar = 500
             #generation = "RQMC"
-            if instance in ["00", "01", "02", "03", "04", "05"]:
-                modelset = ["YFix", "YQFix", "Average"]
-            else:
-                modelset = [  "YQFix", "Average"]
+            #if instance in ["00", "01", "02", "03", "04", "05"]:
+            #    modelset = ["YFix", "YQFix", "Average"]
+            #else:
+            modelset = [ "YFix" ]
 
             for model in modelset:
                  generationset = ["MC", "RQMC"]
-                 if instance == "00" or instance == "01":
-                     generationset = ["MC", "RQMC", "all"]
-                 scenarset = [ "512"]
-                 policyset = [ "NNDAC", "NNSAC", "Re-solve"]
-                 method = "MIP"
+                 #if instance == "00" or instance == "01":
+                 #    generationset = ["MC", "RQMC", "all"]
+                 scenarset = [ "10", "50", "100", "500"]
+                 policyset = [ "" ]#"NNDAC", "NNSAC", "Re-solve"]
+                 method = "SDDP"
                  avg = False
                  if model == "YQFix":
                      #scenarset = [ "1000" ]
@@ -55,8 +55,8 @@ if __name__ == "__main__":
                  for generation in generationset:
                      for nrscenar in scenarset:
                         for seed in range( 5 ):
-                            qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_MIP" % (
-                                    instance, distribution, model, nrscenar, generation, seed  )
+                            qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
+                                    instance, distribution, model, nrscenar, generation, seed, method  )
                             qsub_file = open(qsub_filename, 'w')
                             qsub_file.write("""
 #!/bin/bash -l
@@ -64,11 +64,11 @@ if __name__ == "__main__":
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjob%s%s%s%s%s%s.txt
+#$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Solve %s %s %s %s %s -s %s  -n 500 -m MIP
-""" % ( instance, distribution, model, nrscenar, generation, seed,  instance, distribution, model, nrscenar, generation, seed  ))  # Create the sh file
+python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s
+""" % ( instance, distribution, model, nrscenar, generation, seed, method, instance, distribution, model, nrscenar, generation, seed, method  ))  # Create the sh file
                             for Policy in policyset:
                                      qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
                                        instance, distribution, model, nrscenar, generation, method, Policy, seed)
@@ -129,18 +129,18 @@ for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH
         # model = "YFix"
         # nrscenar = 500
         # generation = "RQMC"
-        if instance in ["00", "01", "02", "03", "04", "05"]:
-            modelset = ["YFix", "YQFix", "Average"]
-        else:
-            modelset = ["YQFix", "Average"]
+        # if instance in ["00", "01", "02", "03", "04", "05"]:
+        #    modelset = ["YFix", "YQFix", "Average"]
+        # else:
+        modelset = ["YFix"]
 
         for model in modelset:
             generationset = ["MC", "RQMC"]
-            if instance == "00" or instance == "01":
-                generationset = ["MC", "RQMC", "all"]
-            scenarset = ["512"]
-            policyset = ["NNDAC", "NNSAC", "Re-solve"]
-            method = "MIP"
+            # if instance == "00" or instance == "01":
+            #    generationset = ["MC", "RQMC", "all"]
+            scenarset = ["10", "50", "100", "500"]
+            policyset = [""]  # "NNDAC", "NNSAC", "Re-solve"]
+            method = "SDDP"
             avg = False
             if model == "YQFix":
                 # scenarset = [ "1000" ]
@@ -155,6 +155,5 @@ for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH
             for generation in generationset:
                 for nrscenar in scenarset:
                     for seed in range(5):
-                            file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_MIP \n" % (
-                                    instance, distribution, model, nrscenar, generation, seed  )
-                            )
+                        file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
+                            instance, distribution, model, nrscenar, generation, seed, method) )

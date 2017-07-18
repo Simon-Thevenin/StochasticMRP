@@ -95,14 +95,14 @@ class Evaluator:
                 else:
                     Evaluated[ indexscenario ] = solution.TotalCost
 
-                #Record the obtain solution in an MRPsolution  OutOfSampleSolution
-                if firstsolution:
-                    if firstscenario:
-                        OutOfSampleSolution = solution
-                    else:
-                        OutOfSampleSolution.Merge( solution )
+                    #Record the obtain solution in an MRPsolution  OutOfSampleSolution
+                    if firstsolution:
+                        if firstscenario:
+                            OutOfSampleSolution = solution
+                        else:
+                            OutOfSampleSolution.Merge( solution )
 
-                firstscenario = False
+                    firstscenario = False
 
                 if firstsolution:
                     for s in OutOfSampleSolution.Scenarioset:
@@ -159,6 +159,7 @@ class Evaluator:
         sddp.EvaluationMode = True
         # Make a forward pass on the
         # Get the set of scenarios
+
         sddp.CurrentSetOfScenarios = scenarios
         sddp.ScenarioNrSet = len( scenarios )
         # Modify the number of scenario at each stage
