@@ -9,6 +9,7 @@ from Tool import Tool
 from MRPInstance import MRPInstance
 import openpyxl as opxl
 from ast import literal_eval
+import numpy as np
 
 class MRPSolution:
 
@@ -267,6 +268,8 @@ class MRPSolution:
         self.InSampleAverageDemand = -1
         self.InSampleAverageBackOrder = -1
         self.InSampleAverageLostSale = -1
+
+        self.SValue = []
 
         # The objecie value as outputed by CPLEx,
         self.CplexCost =-1
@@ -537,16 +540,41 @@ class MRPSolution:
             print "Cosidered nodes : %r" % nodesid
         return result
 
-    #This function adjust the quantities, to respect the flow constraint
-    def RepairQuantityToOrder(self, suggestedquantities):
-        #Compute the viiolation of the flow constraint for each component
-        violations = self.ComputeViolation( suggestedquantities )
+    def ComputeViolation( self, suggestedquantities, previousstocklevel ):
+        result = [max( sum( self.MRPInstance.Requirements[q][p] * suggestedquantities[q] for q in self.MRPInstance.ProductSet ) - previousstocklevel[p]
+                         , 0.0 )
+                  for p in self.MRPInstance.ProductSet]
 
-        maxviolation = max( violations )
+
+        return result
+
+
+    #This function adjust the quantities, to respect the flow constraint
+    def RepairQuantityToOrder(self, suggestedquantities, previousstocklevel):
+        #Compute the viiolation of the flow constraint for each component
+        violations = self.ComputeViolation( suggestedquantities, previousstocklevel )
+
+        productmaxvioalation = np.argmax( violations )
+        maxviolation =  violations[ productmaxvioalation ]
 
         #While some flow constraints are violated, adjust the quantity to repect the most violated constraint
+        while( maxviolation > 0.00000000000000001 ) :
+            if Constants.Debug:
+                print " the max violation %r is from %r " %( maxviolation, productmaxvioalation )
+            producyqithrequirement = [ p for p in self.MRPInstance.ProductSet if self.MRPInstance.Requirements[p][productmaxvioalation] > 0]
+            nrproductrequiringcomponent = len(producyqithrequirement )
+            totaldemand = sum( self.MRPInstance.Requirements[q][productmaxvioalation] * suggestedquantities[q] for q in self.MRPInstance.ProductSet )
+            ratiodemande = [ self.MRPInstance.Requirements[q][productmaxvioalation] * suggestedquantities[q] / totaldemand for q in self.MRPInstance.ProductSet ]
+            for p in producyqithrequirement:
+                quantitytoremove =  (1.0*maxviolation) * ratiodemande[p]
+                suggestedquantities[ p ] = max( suggestedquantities[ p ]  - quantitytoremove, 0 )
 
+            if Constants.Debug:
+                print " new quantities: %r " %( suggestedquantities )
 
+            violations    = self.ComputeViolation(suggestedquantities, previousstocklevel)
+            productmaxvioalation = np.argmax(violations)
+            maxviolation = violations[productmaxvioalation]
 
     #This function return the quantity to order a time t, given the first t-1 demands
     def GetQuantityToOrder( self, strategy, time, previousdemands, previousquantity = [], previousnode = None ):
@@ -580,79 +608,60 @@ class MRPSolution:
         else:
             #Return the decision taken in the closest scenrio
             quantity = [ bestnode.QuantityToOrderNextTime[p] for p in self.MRPInstance.ProductSet ]
-            print "distance %r quantity %r"%(smallestdistance,quantity)
+            #print "distance %r quantity %r"%(smallestdistance,quantity)
             if Constants.Debug:
                 print "Chosen quantities for time %r : %r" %( time, quantity)
+
+            #Make sure the chosen quantity is feasible:
+            self.RepairQuantityToOrder( quantity , projectedstocklevel )
+            if Constants.Debug:
+                print "Quantities after repair for time %r : %r" % (time, quantity)
             return quantity, bestnode, error
+
+            # This function return the quantity to order a time t, given the first t-1 demands
+
+    def GetQuantityToOrderS(self, time, previousdemands, previousquantity=[]):
+
+        projectedbackorder, projectedstocklevel, currrentstocklevel = self.GetCurrentStatus(previousdemands, previousquantity, time)
+
+        quantity = [ 0  for p in self.MRPInstance.ProductSet]
+        for p in self.MRPInstance.ProductSet:
+            if self.Production[0][time][p] == 1:
+                quantity[p] = self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
+                                                   - sum( previousquantity[t][p]
+                                                          - previousdemands[t][p]
+                                                          - sum(previousquantity[t][q] * self.MRPInstance.Requirements[q][p] for q in self.MRPInstance.ProductSet )
+                                                          for t in range( time ) )
+
+        if Constants.Debug:
+            print "Chosen quantities for time %r : %r" % (time, quantity)
+        self.RepairQuantityToOrder(quantity, projectedstocklevel)
+        if Constants.Debug:
+            print "Quantities after repair for time %r : %r" % (time, quantity)
+
+        error = 0
+        return quantity, error
 
     #This function merge solution2 into self. Assume that solution2 has a single scenario
     def Merge( self, solution2 ):
         self.Scenarioset.append( solution2.Scenarioset[0] )
         self.SenarioNrset = range(len(self.Scenarioset))
-
-        newindex = pd.MultiIndex.from_product( [ self.MRPInstance.TimeBucketSet, [ len( self.Scenarioset ) -1 ] ], names = ['time', 'scenario'] )
-
-        #self.ProductionQuantity = pd.DataFrame(solquantity, index=instance.ProductName, columns=multiindex)
-        #self.InventoryLevel = pd.DataFrame(solinventory, index=instance.ProductName, columns=multiindex)
-        #self.Production = pd.DataFrame(solproduction, index=instance.ProductName, columns=multiindex)
-        #nameproductwithextternaldemand = [instance.ProductName[p] for p in instance.ProductWithExternalDemand]
-        #self.BackOrder = pd.DataFrame(solbackorder, index=nameproductwithextternaldemand, columns=multiindex)
         self.ProductionQuantity = self.ProductionQuantity + solution2.ProductionQuantity
         self.InventoryLevel = self.InventoryLevel + solution2.InventoryLevel
         self.Production = self.Production + solution2.Production
         self.BackOrder = self.BackOrder + solution2.BackOrder
 
-    #     solution2.ProductionQuantity.columns = newindex
-    #     self.ProductionQuantity = pd.merge(    self.ProductionQuantity.reset_index(),
-    #                                        solution2.ProductionQuantity.reset_index(),
-    #                                        on=['Product'],
-    #                                        how='outer'
-    #                                        ).set_index(["Product"])
-    #
-    #     self.ProductionQuantity.columns = pd.MultiIndex.from_product(
-    #         [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet], names=['scenario', 'time'])
-    #
-    #
-    #     solution2.InventoryLevel.columns = newindex
-    #     self.InventoryLevel = pd.merge(    self.InventoryLevel.reset_index(),
-    #                                        solution2.InventoryLevel.reset_index(),
-    #                                        on=['Product'],
-    #                                        how='outer'
-    #                                        ).set_index(["Product"])
-    #
-    #     self.InventoryLevel.columns = pd.MultiIndex.from_product(
-    #         [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet], names=['scenario', 'time'])
-    # #    self.InventoryLevel.columns =  self.InventoryLevel.columns.swaplevel()
-    # #    self.InventoryLevel.sortlevel(0, axis=1, inplace=True)
-    #
-    #     solution2.Production.columns = newindex
-    #     self.Production = pd.merge(self.Production.reset_index(),
-    #                                        solution2.Production.reset_index(),
-    #                                        on=['Product'],
-    #                                        how='outer'
-    #                                        ).set_index(["Product"])
-    #
-    #     self.Production.columns = pd.MultiIndex.from_product(
-    #         [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet ], names=['scenario', 'time'])
-    #
-    #
-    #     solution2.BackOrder.columns = newindex
-    #     self.BackOrder = pd.merge(self.BackOrder.reset_index(),
-    #                                solution2.BackOrder.reset_index(),
-    #                                on=['Product'],
-    #                                how='outer'
-    #                                ).set_index(["Product"])
-    #
-    #     self.BackOrder.columns = pd.MultiIndex.from_product(
-    #         [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet ], names=['scenario', 'time'])
+    def ComputeAverageS( self ):
+        S = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
-    #After having merged two solution, this function reshape the dataframe to have them in 3 dimension
-    # def ReshapeAfterMerge( self ):
-    #     self.InventoryLevel.columns =  self.InventoryLevel.columns.swaplevel()
-    #     self.InventoryLevel.sortlevel(0, axis=1, inplace=True)
-    #     self.BackOrder.columns = self.BackOrder.columns.swaplevel()
-    #     self.BackOrder.sortlevel(0, axis=1, inplace=True)
-    #     self.Production.columns = self.Production.columns.swaplevel()
-    #     self.Production.sortlevel(0, axis=1, inplace=True)
-    #     self.ProductionQuantity.columns =  self.ProductionQuantity.columns.swaplevel()
-    #     self.ProductionQuantity.sortlevel(0, axis=1, inplace=True)
+        for w in range( len(self.Scenarioset) ):
+            s =self.Scenarioset[w]
+            for n in s.Nodes:
+                    t= n.Time
+                    for p in self.MRPInstance.ProductSet:
+                        if   t< self.MRPInstance.NrTimeBucket and  (self.Production[ w][ t ][ p ] == 1 ):
+                            S[t][p] = S[t][p] + n.GetS( p) * s.Probability
+
+
+        self.SValue = S
+

@@ -11,6 +11,7 @@ class Constants:
     NearestNeighborBasedOnStateAC = "NNSAC"
     NearestNeighborBasedOnDemand = "NND"
     NearestNeighborBasedOnState = "NNS"
+    InferS = "S"
     NonStationary = "NonStationary"
     Resolve = "Re-solve"
     ModelYQFix = "YQFix"

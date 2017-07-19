@@ -94,6 +94,7 @@ class ScenarioTreeNode:
 
         self.Scenario = None
 
+        self.OneOfScenario = None
     #This function is used when the demand is gereqated using RQMC for YQFix
     #Return the demands  at time at position nrdemand in array DemandYQFixRQMC
     def GetDemandRQMCForYQFix( self, time, nrdemand, firstbranchid ):
@@ -380,5 +381,25 @@ class ScenarioTreeNode:
 
         if Constants.Debug:
             print "for node %r feasible: %r - SumVect: %r" % (self.NodeNumber, result, differencevector)
+
+        return result
+
+    #return the quantity to which the stock is brought
+    def GetS(self, p):
+
+        result = 0
+        node = self
+        # plus initial inventory
+        result += self.Instance.StartingInventories[p]
+
+        while node is not None and node.Time >= 0:
+
+            result += node.QuantityToOrderNextTime[p]
+              # minus internal  demand
+            result -= sum( node.QuantityToOrderNextTime[q] * self.Instance.Requirements[q][p] for q in self.Instance.ProductSet )
+            #minus external demand
+            if node.Time > 0:
+                result -= node.Demand[p]
+            node = node.Parent
 
         return result

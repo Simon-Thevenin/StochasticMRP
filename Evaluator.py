@@ -46,6 +46,7 @@ class Evaluator:
         for n in range( self.NrSolutions ):
             if self.OptimizationMethod == Constants.MIP:
                 sol = self.Solutions[n]
+                sol.ComputeAverageS()
                 seed = sol.ScenarioTree.Seed
 
             if self.OptimizationMethod == Constants.SDDP:
@@ -143,12 +144,14 @@ class Evaluator:
             #At each time period the quantity to produce is decided based on the demand known up to now
             for ti in self.Instance.TimeBucketSet:
                 demanduptotimet = [[scenario.Demands[t][p] for p in self.Instance.ProductSet] for t in range(ti)]
-                print self.Policy
+
                 if self.Policy == Constants.NearestNeighbor:
-                    print "use NN"
                     givenquantty[ti], previousnode, error = sol.GetQuantityToOrder(self.NearestNeighborStrategy, ti,
                                                                                     demanduptotimet, givenquantty,
                                                                                     previousnode)
+                if self.Policy == Constants.InferS:
+                    givenquantty[ti], error = sol.GetQuantityToOrderS( ti,demanduptotimet, givenquantty )
+
                 if self.Policy == Constants.Resolve:
                     givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,
                                                                         givensetup, model)
@@ -292,7 +295,7 @@ class Evaluator:
 
             # Get the corresponding node:
             if not solution is None:
-                result = [solution.ProductionQuantity[0][t][p] for p in
+                result = [solution.ProductionQuantity[0][time][p] for p in
                           self.Instance.ProductSet]
             else:
                 if Constants.Debug:

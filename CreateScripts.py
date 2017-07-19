@@ -38,9 +38,9 @@ if __name__ == "__main__":
                  generationset = ["MC", "RQMC"]
                  #if instance == "00" or instance == "01":
                  #    generationset = ["MC", "RQMC", "all"]
-                 scenarset = [ "10", "50", "100", "500"]
-                 policyset = [ "" ]#"NNDAC", "NNSAC", "Re-solve"]
-                 method = "SDDP"
+                 scenarset = [ "512" ]# "10", "50", "100", "500"]
+                 policyset = [ "NNS", "NND"] # "NNDAC", "NNSAC", "Re-solve"]
+                 method = "MIP"
                  avg = False
                  if model == "YQFix":
                      #scenarset = [ "1000" ]
@@ -138,9 +138,9 @@ for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH
             generationset = ["MC", "RQMC"]
             # if instance == "00" or instance == "01":
             #    generationset = ["MC", "RQMC", "all"]
-            scenarset = ["10", "50", "100", "500"]
-            policyset = [""]  # "NNDAC", "NNSAC", "Re-solve"]
-            method = "SDDP"
+            scenarset = ["512"]  # "10", "50", "100", "500"]
+            policyset = ["NNS", "NND"]  # "NNDAC", "NNSAC", "Re-solve"]
+            method = "MIP"
             avg = False
             if model == "YQFix":
                 # scenarset = [ "1000" ]
@@ -155,5 +155,6 @@ for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH
             for generation in generationset:
                 for nrscenar in scenarset:
                     for seed in range(5):
-                        file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
-                            instance, distribution, model, nrscenar, generation, seed, method) )
+                        for Policy in policyset:
+                            file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
+                                       instance, distribution, model, nrscenar, generation, method, Policy, seed) )
