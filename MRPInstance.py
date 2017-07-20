@@ -13,6 +13,7 @@ from Tool import Tool
 import random
 import math
 from Constants import Constants
+import scipy as scipy
 
 class MRPInstance:
 
@@ -296,7 +297,7 @@ class MRPInstance:
         self.ComputeLevel()
         self.ComputeMaxLeadTime( )
         # Consider a time horizon of 20 days plus the total lead time
-        self.NrTimeBucket =  4 * self.MaxLeadTime
+        self.NrTimeBucket =  2 * self.MaxLeadTime
         self.NrTimeBucketWithoutUncertainty = self.MaxLeadTime
         self.ComputeIndices()
 
@@ -399,6 +400,18 @@ class MRPInstance:
                                      for p in self.ProductSet
                                      ]
 
+        if distribution == Constants.Binomial or distribution == Constants.Uniform:
+            self.StartingInventories = [
+                scipy.stats.binom.ppf(0.6, 2 * sumdemand[p], 0.5)
+                if ((self.Level[p]) % T == 1)
+                # if self.YearlyAverageDemand[p] == 0 and ( self.Level[p]%T2== 1 )
+                else 0.0
+                # ScenarioTreeNode.TransformInverse([[0.90]], 1, 1, distribution, [ actualavgdemand[ p ] * (self.Leadtimes[ p ] ) ] ,
+                #                                  [dependentstd[ p ]  * (self.Leadtimes[ p ] ) ] )[0][0]
+                for p in self.ProductSet
+                ]
+
+
         #self.StartingInventories = [   int( random.uniform( 0.75, 1.5 ) * dependentaveragedemand[ p ] * (self.Leadtimes[ p ] )  )   for p in self.ProductSet ]
 
         #This set of instances assume no setup
@@ -437,7 +450,7 @@ class MRPInstance:
 
     #Save the Instance in an Excel  file
     def SaveCompleteInstanceInExelFile( self ):
-        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_LTH_" + self.Distribution + ".xlsx",  engine='openpyxl' )
+        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_" + self.Distribution + ".xlsx",  engine='openpyxl' )
 
         general = [ self.InstanceName, self.NrProduct, self.NrTimeBucket, self.NrResource, self.Gamma, self.Distribution,  self.NrTimeBucketWithoutUncertainty  ]
         columnstab = [ "Name", "NrProducts", "NrBuckets", "NrResources", "Gamma", "Distribution", "NrTimeBucketWithoutUncertainty" ]
