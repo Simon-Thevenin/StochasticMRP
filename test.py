@@ -559,6 +559,8 @@ def parseArguments():
     if PolicyGeneration in ["NNDAC", "NNSAC", "NND", "NNS" ]:
         PolicyGeneration = "NN"
         NearestNeighborStrategy = args.policy
+    else:
+        NearestNeighborStrategy = PolicyGeneration #to have something in the table of results
     NrEvaluation = args.nrevaluation
     TestIdentifier = [ InstanceName, Distribution, Model, Method, ScenarioGeneration, NrScenario, ScenarioSeed ]
     EvaluatorIdentifier = [ PolicyGeneration, NearestNeighborStrategy, NrEvaluation]

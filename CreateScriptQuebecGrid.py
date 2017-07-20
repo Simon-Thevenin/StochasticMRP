@@ -36,8 +36,8 @@ if __name__ == "__main__":
 
             for model in modelset:
                  generationset = ["MC", "RQMC"]
-                 #if instance == "00" or instance == "01":
-                 #    generationset = ["MC", "RQMC", "all"]
+                 if instance == "00" or instance == "01":
+                     generationset = ["MC", "RQMC", "all"]
                  scenarset = [ "512" ]# "10", "50", "100", "500"]
                  policyset = [ "S","NNS", "NND", "NNDAC", "NNSAC", "Re-solve"]
                  methodset = ["MIP"]
@@ -47,6 +47,7 @@ if __name__ == "__main__":
                          methodset = ["MIP", "SDDP" ]
                      else:
                          methodset = ["MIP"]
+
                  if model == "YQFix":
                      #scenarset = [ "1000" ]
                      scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
@@ -57,11 +58,13 @@ if __name__ == "__main__":
                      avg = True
                      policyset = ["Fix"]
                      generationset = ["MC"]
+
                  for generation in generationset:
                      for method in methodset:
                          if method == "SDDP":
                              scenarset = ["10",  "50", "100", "200", "500", "1000"]
                              policyset = [ "SDDP" ]
+
                          for nrscenar in scenarset:
                               for seed in range( 5 ):
                                     qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
@@ -102,7 +105,6 @@ file.write("""
 #!/bin/bash -l
 #
 """)
-# for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH" ]:
 for instance in ["00", "01", "01_LTH"]:
     distributionset = ["NonStationary"]
     # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
@@ -119,8 +121,8 @@ for instance in ["00", "01", "01_LTH"]:
 
         for model in modelset:
             generationset = ["MC", "RQMC"]
-            # if instance == "00" or instance == "01":
-            #    generationset = ["MC", "RQMC", "all"]
+            if instance == "00" or instance == "01":
+                generationset = ["MC", "RQMC", "all"]
             scenarset = ["512"]  # "10", "50", "100", "500"]
             policyset = ["S", "NNS", "NND", "NNDAC", "NNSAC", "Re-solve"]
             methodset = ["MIP"]
@@ -130,6 +132,7 @@ for instance in ["00", "01", "01_LTH"]:
                     methodset = ["MIP", "SDDP"]
                 else:
                     methodset = ["MIP"]
+
             if model == "YQFix":
                 # scenarset = [ "1000" ]
                 scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
@@ -140,11 +143,13 @@ for instance in ["00", "01", "01_LTH"]:
                 avg = True
                 policyset = ["Fix"]
                 generationset = ["MC"]
+
             for generation in generationset:
                 for method in methodset:
                     if method == "SDDP":
                         scenarset = ["10", "50", "100", "200", "500", "1000"]
                         policyset = ["SDDP"]
+
                     for nrscenar in scenarset:
                         for seed in range(5):
                             file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
