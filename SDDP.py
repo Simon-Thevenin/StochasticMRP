@@ -176,7 +176,7 @@ class SDDP:
         optimalitygapreached = ( optimalitygap < Constants.AlgorithmOptimalityTolerence )
         iterationlimitreached = ( self.CurrentIteration > Constants.SDDPIterationLimit )
         result = optimalitygapreached or timalimiteached or iterationlimitreached
-        print "Iteration: %d, Duration: %d, LB: %d, UB: %d (exp:%d), Gap: %d " %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentUpperBound,  self.CurrentExpvalueUpperBound, optimalitygap)
+        print "Iteration: %d, Duration: %d, LB: %r, UB: %r (exp:%r), Gap: %r " %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentUpperBound,  self.CurrentExpvalueUpperBound, optimalitygap)
 
         return result
 

@@ -85,7 +85,7 @@ python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s
                                           qsub_file.write("""
 #!/bin/bash
 #PBS -A abc-123-aa
-#PBS -l walltime=3:00:00
+#PBS -l walltime=30:00:00
 #PBS -l nodes=1:ppn=1
 #PBS -r n
 ulimit -v 16000000

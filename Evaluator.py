@@ -46,7 +46,8 @@ class Evaluator:
         for n in range( self.NrSolutions ):
             if self.OptimizationMethod == Constants.MIP:
                 sol = self.Solutions[n]
-                sol.ComputeAverageS()
+                if model == Constants.ModelYFix:
+                    sol.ComputeAverageS()
                 seed = sol.ScenarioTree.Seed
 
             if self.OptimizationMethod == Constants.SDDP:
@@ -183,7 +184,7 @@ class Evaluator:
                       for t in range( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty )]
 
         #Copy the quantity from the last stage
-        givenquantty = givenquantty + sddp.Stage[self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ].QuantityValues[0]
+        givenquantty = givenquantty + sddp.Stage[self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty ].QuantityValues[scenario]
 
         return givensetup, givenquantty
 

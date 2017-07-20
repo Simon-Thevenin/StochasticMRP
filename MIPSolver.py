@@ -727,6 +727,14 @@ class MIPSolver(object):
 
         else:
             print("No solution available.")
+            self.Cplex.conflict.refine(self.Cplex.conflict.all_constraints());
+            conflict = self.Cplex.conflict.get()
+            conflicting = [ i for i in range( len( conflict ) ) if conflict[i] == 3 ]
+            groups = self.Cplex.conflict.get_groups(conflicting )
+            print "Conflicts: %r"% groups, conflicting
+            for i in groups:
+                (a,((b,c),)) =i
+                print "Constraint %r, %r:"%(c,self.Cplex.linear_constraints.get_names([c]) )
 
     #This function print the scenario of the instance in an excel file
     def PrintScenarioToFile( self ):

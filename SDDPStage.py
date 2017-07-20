@@ -495,7 +495,7 @@ class SDDPStage:
         if generatecut:
             cut = SDDPCut(self.PreviousSDDPStage)
 
-
+        averagecostofthesubproblem = 0
 
         if self.MIPDefined:
             self.UpdateMIPForStage()
@@ -527,12 +527,22 @@ class SDDPStage:
                  print "Solution status:%r"%self.Cplex.solution.get_status()
 
             if self.IsFirstStage():
-                for w2 in  range( len( self.SDDPOwner.CurrentSetOfScenarios ) ):
+                self.CurrentScenarioNr = 0
+                self.SaveSolutionForScenario()
+                for w2 in  range( 1, len( self.SDDPOwner.CurrentSetOfScenarios ) ):
                     self.CurrentScenarioNr = w2
-                    self.SaveSolutionForScenario()
+                    #
 
+                    self.StageCostPerScenarioWithCostoGo[self.CurrentScenarioNr] = self.StageCostPerScenarioWithCostoGo[0]
+                    self.PartialCostPerScenario[self.CurrentScenarioNr] = self.PartialCostPerScenario[0]
+                    self.QuantityValues[self.CurrentScenarioNr] = self.QuantityValues[0]
+                    self.ProductionValue[self.CurrentScenarioNr] = self.ProductionValue[0]
+                    self.InventoryValue[self.CurrentScenarioNr] = self.InventoryValue[0]
+                    self.BackorderValue[self.CurrentScenarioNr] = self.BackorderValue[0]
             else:
                 self.SaveSolutionForScenario(  )
+
+            averagecostofthesubproblem += self.Cplex.solution.get_objective_value() * self.SDDPOwner.CurrentSetOfScenarios[w].Probability
 
             if generatecut:
                 sol = self.Cplex.solution
@@ -542,7 +552,7 @@ class SDDPStage:
                 # Average by the number of scenario
             cut.DivideAllCoeff(len(self.SDDPOwner.CurrentSetOfScenarios))
             if Constants.Debug:
-                self.checknewcut(cut)
+                self.checknewcut(cut, averagecostofthesubproblem)
 
             cut.AddCut()
 
@@ -605,7 +615,7 @@ class SDDPStage:
             self.GetVariableValue(sol)
 
             if Constants.Debug:
-                print "******************** Solutionat stage %d cost: %d *********************"%(self.DecisionStage, sol.get_objective_value() )
+                print "******************** Solutionat stage %d cost: %r *********************"%(self.DecisionStage, sol.get_objective_value() )
                 print " Quantities: %r"%self.QuantityValues
                 print " Inventory: %r"%self.InventoryValue
                 print " BackOrder: %r"%self.BackorderValue
@@ -636,7 +646,7 @@ class SDDPStage:
 
         # Create a cute for the previous stage problem
         cut = SDDPCut(self.PreviousSDDPStage)
-
+        averagecostofthesubproblem = 0
         if not self.IsLastStage() and not self.IsFirstStage():
             # Re-run the MIP to take into account the just added cut
             # Solve the problem for each scenario
@@ -658,6 +668,7 @@ class SDDPStage:
 
                 if Constants.Debug:
                     print "cost of subproblem: %r"%sol.get_objective_value()
+                averagecostofthesubproblem += sol.get_objective_value() * self.SDDPOwner.CurrentSetOfScenarios[w].Probability
 
                 if Constants.PrintDebugLPFiles:
                     sol.write("mrpsolution.sol")
@@ -669,11 +680,11 @@ class SDDPStage:
             cut.DivideAllCoeff( len(self.SDDPOwner.CurrentSetOfScenarios) )
 
             if Constants.Debug:
-                self.checknewcut(cut)
+                self.checknewcut(cut, averagecostofthesubproblem)
 
             cut.AddCut()
 
-    def checknewcut(self, cut):
+    def checknewcut(self, cut, averagecostofthesubproblem):
         currentosttogo = sum( self.SDDPOwner.Stage[t].StageCostPerScenarioWithoutCostoGo[w]
                               for w in range(self.SDDPOwner.CurrentNrScenario)
                               for t in range( self.DecisionStage , len(self.SDDPOwner.StagesSet) ) ) / self.SDDPOwner.CurrentNrScenario
@@ -682,8 +693,8 @@ class SDDPStage:
             self.PreviousSDDPStage.UpdateMIPForScenario(w)
             self.PreviousSDDPStage.Cplex.solve()
             #sol = self.Cplex.solution
-            print "Cut added, the value of the cost to go with current sol is: %r (actual: %r)" % (
-                cut.GetCostToGoLBInCUrrentSolution(self.PreviousSDDPStage.Cplex.solution), currentosttogo)
+            print "Cut added, the value of the cost to go with current sol is: %r (actual: %r, avg of subproblems : %r)" % (
+                cut.GetCostToGoLBInCUrrentSolution(self.PreviousSDDPStage.Cplex.solution), currentosttogo, averagecostofthesubproblem)
 
 
     def GetBigMValue( self, p ):
