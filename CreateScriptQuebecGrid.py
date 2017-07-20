@@ -62,7 +62,7 @@ if __name__ == "__main__":
                              scenarset = ["10",  "50", "100", "200", "500", "1000"]
                              policyset = [ "SDDP" ]
 
-                         if model == "YFix":
+                         if model == "YFix" and method == "MIP":
                              scenarset = ["512"]
 
                          for nrscenar in scenarset:
