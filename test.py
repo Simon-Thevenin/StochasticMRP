@@ -72,6 +72,7 @@ SolveInformation = []
 OutOfSampleTestResult = []
 InSampleKPIStat= [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ]
 EvaluateInfo = []
+OptimizationInfo = [0,0]
 
 def PrintTestResult():
     Parameter =  [ UseNonAnticipativity, Model, ComputeAverageSolution, ScenarioSeed ]
@@ -84,7 +85,7 @@ def PrintTestResult():
     myfile.close()
 
 def PrintFinalResult():
-    data = TestIdentifier + EvaluatorIdentifier +  InSampleKPIStat + OutOfSampleTestResult
+    data = TestIdentifier + EvaluatorIdentifier + OptimizationInfo+  InSampleKPIStat + OutOfSampleTestResult
     d = datetime.now()
     date = d.strftime('%m_%d_%Y_%H_%M_%S')
     myfile = open(r'./Test/TestResult_%s_%s.csv' % (GetTestDescription(), GetEvaluateDescription()), 'wb')
@@ -166,6 +167,8 @@ def GetEvaluateDescription():
     return result
 
 def SolveYQFix( ):
+    global OptimizationInfo
+
     if Constants.Debug:
         Instance.PrintInstance()
 
@@ -177,6 +180,8 @@ def SolveYQFix( ):
 
     treestructure = [1, nrscenario] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
     solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
+    OptimizationInfo[0] = solution.CplexTime
+    OptimizationInfo[1] = solution.CplexGap
     PrintTestResult()
     PrintSolutionToFile( solution )
     RunEvaluation()
@@ -192,6 +197,7 @@ def PrintSolutionToFile( solution  ):
 
 def SolveYFix():
     global SolveInformation
+    global OptimizationInfo
     if Constants.Debug:
         Instance.PrintInstance()
 
@@ -199,10 +205,15 @@ def SolveYFix():
 
     if Method == "MIP" :
             solution, mipsolver = MRP(treestructure, averagescenario=False, recordsolveinfo=True)
+            OptimizationInfo[0] = solution.CplexTime
+            OptimizationInfo[1] = solution.CplexGap
     if Method == "SDDP":
          sddpsolver = SDDP( Instance, ScenarioSeed, nrscenarioperiteration = NrScenario, generationmethod = ScenarioGeneration  )
          sddpsolver.Run()
+
          SolveInformation = sddpsolver.SolveInfo
+         OptimizationInfo[0] = SolveInformation[5]
+         OptimizationInfo[1] = sddpsolver.CurrentUpperBound() - sddpsolver.CurrentLowerBound()
          evaluator = Evaluator(Instance, [], [sddpsolver], optimizationmethod = Constants.SDDP)
 
 

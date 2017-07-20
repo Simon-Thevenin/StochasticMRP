@@ -53,13 +53,14 @@ if __name__ == "__main__":
 
 
                  for method in methodset:
+
                      if (instance == "00" or instance == "01") and (model == "YFix" and method == "MIP"):
                         generationset = ["MC", "RQMC", "all"]
 
                      for generation in generationset:
 
                          if method == "SDDP":
-                             scenarset = ["10",  "50", "100", "200", "500", "1000"]
+                             scenarset = ["10",  "50", "100", "200"]
                              policyset = [ "SDDP" ]
 
                          if model == "YFix" and method == "MIP":
