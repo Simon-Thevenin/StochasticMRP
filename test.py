@@ -213,7 +213,7 @@ def SolveYFix():
 
          SolveInformation = sddpsolver.SolveInfo
          OptimizationInfo[0] = SolveInformation[5]
-         OptimizationInfo[1] = sddpsolver.CurrentUpperBound() - sddpsolver.CurrentLowerBound()
+         OptimizationInfo[1] = sddpsolver.CurrentUpperBound - sddpsolver.CurrentLowerBound
          evaluator = Evaluator(Instance, [], [sddpsolver], optimizationmethod = Constants.SDDP)
 
 
@@ -305,7 +305,7 @@ def GatherEvaluation():
             ScenarioSeed = seed
             filename =  GetEvaluationFileName()
             TestIdentifier[6] = seed
-
+            print "open file %rEvaluator.txt"%filename
             with open(filename + "Evaluator.txt", 'rb') as f:
                 list = pickle.load(f)
                 EvaluationTab.append( list )
