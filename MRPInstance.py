@@ -297,7 +297,7 @@ class MRPInstance:
         self.ComputeLevel()
         self.ComputeMaxLeadTime( )
         # Consider a time horizon of 20 days plus the total lead time
-        self.NrTimeBucket =  2 * self.MaxLeadTime
+        self.NrTimeBucket =  4 * self.MaxLeadTime
         self.NrTimeBucketWithoutUncertainty = self.MaxLeadTime
         self.ComputeIndices()
 
@@ -460,7 +460,7 @@ class MRPInstance:
 
     #Save the Instance in an Excel  file
     def SaveCompleteInstanceInExelFile( self ):
-        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_" + self.Distribution + ".xlsx",  engine='openpyxl' )
+        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_LTH_" + self.Distribution + ".xlsx",  engine='openpyxl' )
 
         general = [ self.InstanceName, self.NrProduct, self.NrTimeBucket, self.NrResource, self.Gamma, self.Distribution,  self.NrTimeBucketWithoutUncertainty  ]
         columnstab = [ "Name", "NrProducts", "NrBuckets", "NrResources", "Gamma", "Distribution", "NrTimeBucketWithoutUncertainty" ]

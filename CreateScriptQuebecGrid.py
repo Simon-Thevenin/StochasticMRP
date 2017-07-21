@@ -7,7 +7,7 @@ import subprocess
 
 if __name__ == "__main__":
 
-    for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH" ]:
+    for instance in ["00", "01", "02", "03", "04", "05" ]:
     #for instance in ["00", "01", "01_LTH"]:
          distributionset = ["NonStationary"]
          # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
@@ -104,7 +104,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 #!/bin/bash -l
 #
 """)
-    for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH"]:
+    for instance in ["00", "01", "02", "03", "04", "05"]:
         # for instance in ["00", "01", "01_LTH"]:
         distributionset = ["NonStationary"]
         # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
@@ -178,7 +178,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 #!/bin/bash -l
 #
 """)
-    for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH"]:
+    for instance in ["00", "01", "02", "03", "04", "05"]:
         # for instance in ["00", "01", "01_LTH"]:
         distributionset = ["NonStationary"]
         # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
