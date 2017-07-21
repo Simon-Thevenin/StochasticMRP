@@ -163,5 +163,6 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 
                          for nrscenar in scenarset:
                               for seed in range( 5 ):
-                                file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
-                                                instance, distribution, model, nrscenar, generation, seed, method  ))
+                                  for Policy in policyset:
+                                        file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
+                                                      instance, distribution, model, nrscenar, generation,method, Policy, seed))
