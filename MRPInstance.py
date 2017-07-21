@@ -372,10 +372,20 @@ class MRPInstance:
                     actualstd[t][p] = sum( actualstd[t][q] * self.Requirements[q][p] * self.Requirements[q][p] for q in self.ProductSet) + actualstd[t][p]
         # Assume a starting inventory is the average demand during the lead time
         L= max(self.Level)
+
+        componentsperfinishproduct = len( self.ProductSet ) / sum( 1.0 for p in self.ProductSet if self.YearlyAverageDemand[p]>0 )
+        print "componentsperfinishproduct %r"%componentsperfinishproduct
+        #nrcomponents = [ 0 for p in self.ProductSet]
+        #levelset = sorted(set(level), reverse=True)
+        #for l in levelset:
+        #    prodinlevel = [p for p in self.ProductSet if level[p] == l]
+        #    for p in prodinlevel:
+        #        nrcomponents[p] = sum( nrcomponents[q]  for q in self.ProductSet if  self.Requirements[p][q] >0 ) +1
+
         #print self.Level
         #print L
         #T = 1.0 + 2.0 / (L )
-        T = 3
+        T = 2
         sumdemand = [ sum( actualdepdemand[t][p] for t in range(T))  if self.YearlyAverageDemand[p]>0
                   else sum( actualdepdemand[t][p] for t in range(T, 2*T)) for p in self.ProductSet  ]
 
@@ -417,7 +427,7 @@ class MRPInstance:
         #This set of instances assume no setup
         #self.SetupCosts =  [   ( ( ( dependentaveragedemand[ p ] /  2  ) * 0.25 *  self.InventoryCosts[p]  ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
 
-        self.SetupCosts = [ (dependentaveragedemand[p] * self.InventoryCosts[p] *0.5* (T  )* (T -1) *(1.0/L)* random.uniform( 1, 1)) for p in  self.ProductSet]
+        self.SetupCosts = [ (dependentaveragedemand[p] * self.InventoryCosts[p] *0.5* (T  )* (T -1) *(1.0/componentsperfinishproduct)* random.uniform( 1, 1)) for p in  self.ProductSet]
 
         self.ProcessingTime = [ [ randint( 1, 5 )
                                     if (p == k )   else 0.0

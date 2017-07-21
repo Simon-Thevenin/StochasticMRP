@@ -7,8 +7,8 @@ import subprocess
 
 if __name__ == "__main__":
 
-     #for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH" ]:
-    for instance in ["00", "01", "01_LTH"]:
+    for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH" ]:
+    #for instance in ["00", "01", "01_LTH"]:
          distributionset = ["NonStationary"]
          # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
          if instance == "00":
@@ -20,7 +20,8 @@ if __name__ == "__main__":
              # model = "YFix"
              # nrscenar = 500
              # generation = "RQMC"
-             modelset = ["YFix", "YQFix", "Average"]
+             #modelset = ["YFix", "YQFix", "Average"]
+             modelset = [ "YQFix", "Average"]
 
              for model in modelset:
                  generationset = ["MC", "RQMC"]
@@ -97,25 +98,27 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 
 
     # Create the sh file
-    filename = "runalljobs.sh"
+    filename = "runalljobeval.sh"
     file = open(filename, 'w')
     file.write("""
 #!/bin/bash -l
 #
 """)
-    for instance in ["00", "01", "01_LTH" ]:
-        distributionset = [ "NonStationary"]
-        #distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
+    for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH"]:
+        # for instance in ["00", "01", "01_LTH"]:
+        distributionset = ["NonStationary"]
+        # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
         if instance == "00":
             distributionset = ["Binomial"]
         if instance == "01":
-            distributionset = [ "Uniform", "NonStationary"]
-       #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
+            distributionset = ["Uniform", "NonStationary"]
+            #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
         for distribution in distributionset:
-            #model = "YFix"
-            #nrscenar = 500
-            #generation = "RQMC"
-            modelset = ["YFix", "YQFix", "Average"]
+            # model = "YFix"
+            # nrscenar = 500
+            # generation = "RQMC"
+            # modelset = ["YFix", "YQFix", "Average"]
+            modelset = ["YQFix", "Average"]
 
 
 
@@ -166,3 +169,76 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                                   for Policy in policyset:
                                         file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
                                                       instance, distribution, model, nrscenar, generation,method, Policy, seed))
+
+
+  # Create the sh file
+    filename = "runalljobsolve.sh"
+    file = open(filename, 'w')
+    file.write("""
+#!/bin/bash -l
+#
+""")
+    for instance in ["00", "01", "02", "03", "04", "05", "01_LTH", "02_LTH", "03_LTH", "04_LTH", "05_LTH"]:
+        # for instance in ["00", "01", "01_LTH"]:
+        distributionset = ["NonStationary"]
+        # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
+        if instance == "00":
+            distributionset = ["Binomial"]
+        if instance == "01":
+            distributionset = ["Uniform", "NonStationary"]
+            #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
+        for distribution in distributionset:
+            # model = "YFix"
+            # nrscenar = 500
+            # generation = "RQMC"
+            # modelset = ["YFix", "YQFix", "Average"]
+            modelset = ["YQFix", "Average"]
+
+
+
+            for model in modelset:
+                 generationset = ["MC", "RQMC"]
+
+
+                 scenarset = [ "512" ]
+
+                 policyset = [ "S","NNS", "NND", "NNDAC", "NNSAC", "Re-solve"]
+                 methodset = ["MIP"]
+                 avg = False
+                 if model == "YFix":
+                     scenarset = ["512"]
+                     if instance in ["00", "01", "02", "03", "04", "05"]:
+                         methodset = ["MIP", "SDDP" ]
+                     else:
+                         methodset = ["SDDP"]
+
+                 if model == "YQFix":
+                     #scenarset = [ "1000" ]
+                     scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                     policyset = [ "Fix" ]
+
+                 if model == "Average":
+                     scenarset =  [ "1" ]
+                     avg = True
+                     policyset = ["Fix"]
+                     generationset = ["MC"]
+
+
+                 for method in methodset:
+
+                     if (instance == "00" or instance == "01") and (model == "YFix" and method == "MIP") and (distribution == "Binomial" or distribution == "Uniform"):
+                        generationset = ["MC", "RQMC", "all"]
+
+                     for generation in generationset:
+
+                         if method == "SDDP":
+                             scenarset = ["10",  "50", "100", "200"]
+                             policyset = [ "SDDP" ]
+
+                         if model == "YFix" and method == "MIP":
+                             scenarset = ["512"]
+
+                         for nrscenar in scenarset:
+                              for seed in range( 5 ):
+                                        file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
+                                            instance, distribution, model, nrscenar, generation, seed, method  ) )
