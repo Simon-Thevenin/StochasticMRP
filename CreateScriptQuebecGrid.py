@@ -20,8 +20,8 @@ if __name__ == "__main__":
              # model = "YFix"
              # nrscenar = 500
              # generation = "RQMC"
-             #modelset = ["YFix", "YQFix", "Average"]
-             modelset = [ "YFix" ]
+             modelset = ["YFix", "YQFix", "Average"]
+             #modelset = [ "YFix" ]
 
              for model in modelset:
                  generationset = ["MC", "RQMC"]
@@ -34,7 +34,8 @@ if __name__ == "__main__":
                  if model == "YFix":
                      scenarset = ["512"]
                      if instance in ["00", "01", "02", "03", "04", "05"]:
-                         methodset = ["MIP", "SDDP"]
+                         #methodset = ["MIP", "SDDP"]
+                         methodset = ["MIP"]
                      else:
                          methodset = ["SDDP"]
 
@@ -117,8 +118,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
             # model = "YFix"
             # nrscenar = 500
             # generation = "RQMC"
-            # modelset = ["YFix", "YQFix", "Average"]
-            modelset = ["YFix"]
+            modelset = ["YFix", "YQFix", "Average"]
+            #modelset = ["YFix"]
 
 
 
@@ -134,7 +135,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  if model == "YFix":
                      scenarset = ["512"]
                      if instance in ["00", "01", "02", "03", "04", "05"]:
-                         methodset = ["MIP", "SDDP" ]
+                         #methodset = ["MIP", "SDDP" ]
+                         methodset = ["MIP"]
                      else:
                          methodset = ["SDDP"]
 
@@ -191,8 +193,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
             # model = "YFix"
             # nrscenar = 500
             # generation = "RQMC"
-            # modelset = ["YFix", "YQFix", "Average"]
-            modelset = ["YFix"]
+            modelset = ["YFix", "YQFix", "Average"]
+            #modelset = ["YFix"]
 
 
 
@@ -208,7 +210,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  if model == "YFix":
                      scenarset = ["512"]
                      if instance in ["00", "01", "02", "03", "04", "05"]:
-                         methodset = ["MIP", "SDDP" ]
+                         methodset = ["MIP" ]
+                         #methodset = ["MIP", "SDDP" ]
                      else:
                          methodset = ["SDDP"]
 
