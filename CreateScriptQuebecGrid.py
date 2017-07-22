@@ -21,7 +21,7 @@ if __name__ == "__main__":
              # nrscenar = 500
              # generation = "RQMC"
              #modelset = ["YFix", "YQFix", "Average"]
-             modelset = [ "YQFix", "Average"]
+             modelset = [ "YFix" ]
 
              for model in modelset:
                  generationset = ["MC", "RQMC"]
@@ -118,7 +118,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
             # nrscenar = 500
             # generation = "RQMC"
             # modelset = ["YFix", "YQFix", "Average"]
-            modelset = ["YQFix", "Average"]
+            modelset = ["YFix"]
 
 
 
@@ -192,7 +192,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
             # nrscenar = 500
             # generation = "RQMC"
             # modelset = ["YFix", "YQFix", "Average"]
-            modelset = ["YQFix", "Average"]
+            modelset = ["YFix"]
 
 
 
