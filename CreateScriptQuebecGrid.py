@@ -118,8 +118,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
             # model = "YFix"
             # nrscenar = 500
             # generation = "RQMC"
-            modelset = ["YFix", "YQFix", "Average"]
-            #modelset = ["YFix"]
+            #modelset = ["YFix", "YQFix", "Average"]
+            modelset = ["YFix"]
 
 
 
@@ -130,6 +130,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  scenarset = [ "512" ]
 
                  policyset = [ "S","NNS", "NND", "NNDAC", "NNSAC", "Re-solve"]
+                 policyset = ["S", "NNS", "NND", "NNDAC", "NNSAC"]
+
                  methodset = ["MIP"]
                  avg = False
                  if model == "YFix":

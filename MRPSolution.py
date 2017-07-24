@@ -503,7 +503,7 @@ class MRPSolution:
              if projinventory[p] > - 0.0001 : projectedinventory[p] = projinventory[p]
              else:
                  if not self.MRPInstance.HasExternalDemand[p]:
-                     print "inventory: %r " % (currentinventory)
+                     print "inventory: %r " % (projinventory)
                      raise NameError(" A product without external demand cannot have backorder")
                  projectedbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
 
@@ -558,7 +558,7 @@ class MRPSolution:
         maxviolation =  violations[ productmaxvioalation ]
 
         #While some flow constraints are violated, adjust the quantity to repect the most violated constraint
-        while( maxviolation > 0.00000000000000001 ) :
+        while( maxviolation > 0.0000000000000001 ) :
             if Constants.Debug:
                 print " the max violation %r is from %r " %( maxviolation, productmaxvioalation )
             producyqithrequirement = [ p for p in self.MRPInstance.ProductSet if self.MRPInstance.Requirements[p][productmaxvioalation] > 0]
@@ -600,7 +600,7 @@ class MRPSolution:
             if distance < smallestdistance :
                 smallestdistance = distance
                 bestnode  = n
-
+        #print smallestdistance
         if bestnode == None:
             error = 1
             if Constants.Debug:
@@ -625,13 +625,20 @@ class MRPSolution:
         projectedbackorder, projectedstocklevel, currrentstocklevel = self.GetCurrentStatus(previousdemands, previousquantity, time)
 
         quantity = [ 0  for p in self.MRPInstance.ProductSet]
-        for p in self.MRPInstance.ProductSet:
-            if self.Production[0][time][p] == 1:
-                quantity[p] = self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
-                                                   - sum( previousquantity[t][p]
-                                                          - previousdemands[t][p]
-                                                          - sum(previousquantity[t][q] * self.MRPInstance.Requirements[q][p] for q in self.MRPInstance.ProductSet )
-                                                          for t in range( time ) )
+
+        level = [ self.MRPInstance.Level[p] for p in self.MRPInstance.ProductSet]
+        levelset = sorted(set(level), reverse=False)
+        for l in levelset:
+            prodinlevel = [p for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p]== l]
+            for p in prodinlevel:
+                if self.Production[0][time][p] == 1:
+                    quantity[p] = max( self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
+                                                       - sum( previousquantity[t][p]
+                                                              - previousdemands[t][p]
+                                                              - sum(previousquantity[t][q] * self.MRPInstance.Requirements[q][p] for q in self.MRPInstance.ProductSet ) #external demand
+                                                              for t in range( time ) ) \
+                                                        + sum(quantity[q] * self.MRPInstance.Requirements[q][p] for q in
+                                                              self.MRPInstance.ProductSet) , 0)  # external demand of the current period
 
         if Constants.Debug:
             print "Chosen quantities for time %r : %r" % (time, quantity)

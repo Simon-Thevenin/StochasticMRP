@@ -177,17 +177,17 @@ class ScenarioTree:
         for n in self.Nodes:
             if n.Time >= 0 and  n.Time < self.Instance.NrTimeBucket :
                 scenarionr = n.OneOfScenario.ScenarioId
-                n.QuantityToOrderNextTime =  [ sol.ProductionQuantity[scenarionr][n.Time ][p]
+                n.QuantityToOrderNextTime =  [ sol.ProductionQuantity[scenarionr][n.Time  ][p]
                                             for p in self.Instance.ProductSet ]
 
                 n.InventoryLevelNextTime = [ sol.InventoryLevel[scenarionr][n.Time ][p] if not self.Instance.HasExternalDemand[p] else float( 'nan' )
                                             for p in self.Instance.ProductSet ]
 
                 if n.Time >= 1:
-                    n.BackOrderLevelTime = [ sol.BackOrder[scenarionr][n.Time ][self.Instance.ProductWithExternalDemandIndex[p]]
+                    n.BackOrderLevelTime = [ sol.BackOrder[scenarionr][n.Time -1 ][self.Instance.ProductWithExternalDemandIndex[p]]
                                             for p in self.Instance.ProductWithExternalDemand ]
 
-                    n.InventoryLevelTime = [ sol.InventoryLevel[scenarionr][n.Time ][p]
+                    n.InventoryLevelTime = [ sol.InventoryLevel[scenarionr][n.Time -1 ][p]
                                              if  self.Instance.HasExternalDemand[p] else float( 'nan' )
                                             for p in self.Instance.ProductSet ]
 
