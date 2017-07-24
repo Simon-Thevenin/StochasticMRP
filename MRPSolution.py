@@ -558,7 +558,7 @@ class MRPSolution:
         maxviolation =  violations[ productmaxvioalation ]
 
         #While some flow constraints are violated, adjust the quantity to repect the most violated constraint
-        while( maxviolation > 0.0000000000000001 ) :
+        while( maxviolation > 0.00000000001 ) :
             if Constants.Debug:
                 print " the max violation %r is from %r " %( maxviolation, productmaxvioalation )
             producyqithrequirement = [ p for p in self.MRPInstance.ProductSet if self.MRPInstance.Requirements[p][productmaxvioalation] > 0]
@@ -631,7 +631,7 @@ class MRPSolution:
         for l in levelset:
             prodinlevel = [p for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p]== l]
             for p in prodinlevel:
-                if self.Production[0][time][p] == 1:
+                if self.Production[0][time][p] >= 0.99:
                     quantity[p] = max( self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
                                                        - sum( previousquantity[t][p]
                                                               - previousdemands[t][p]
@@ -660,15 +660,17 @@ class MRPSolution:
 
     def ComputeAverageS( self ):
         S = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
+        probatime = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
         for w in range( len(self.Scenarioset) ):
             s =self.Scenarioset[w]
             for n in s.Nodes:
                     t= n.Time
                     for p in self.MRPInstance.ProductSet:
-                        if   t< self.MRPInstance.NrTimeBucket and  (self.Production[ w][ t ][ p ] == 1 ):
+                        if   t< self.MRPInstance.NrTimeBucket and  (self.Production[ w][ t ][ p ] >=0.9 ):
                             S[t][p] = S[t][p] + n.GetS( p) * s.Probability
+                            probatime[t][p] = probatime[t][p] + s.Probability
 
 
-        self.SValue = S
+        self.SValue = [ [ S[t][p] / probatime[t][p] if probatime[t][p] > 0 else 0.0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
