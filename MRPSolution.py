@@ -528,12 +528,25 @@ class MRPSolution:
             print "Feasible nodes : %r"%nodesid
         return result
 
+    def GetNodesAtTime( self, time, currentlevelofinventory ):
+        result =[]
+
+        for n in self.ScenarioTree.Nodes:
+            if n.Time == time :
+                result.append(n)
+
+        if Constants.Debug:
+            nodesid = [ n.NodeNumber for n in result]
+            print "Nodes at time t : %r"%nodesid
+        return result
+
+
     def GetConsideredNodes(self, strategy, time,  currentlevelofinventory, previousnode = None ):
         result = []
         if time >0 and ( strategy == Constants.NearestNeighborBasedOnStateAC or strategy == Constants.NearestNeighborBasedOnDemandAC ) :
             result = previousnode.Branches
         else:
-            result = self.GetFeasibleNodesAtTime( time, currentlevelofinventory)
+            result = self.GetNodesAtTime( time, currentlevelofinventory)
 
         if Constants.Debug:
             nodesid = [n.NodeNumber for n in result]
@@ -558,7 +571,7 @@ class MRPSolution:
         maxviolation =  violations[ productmaxvioalation ]
 
         #While some flow constraints are violated, adjust the quantity to repect the most violated constraint
-        while( maxviolation > 0.00000000001 ) :
+        while( maxviolation > 0.000001 ) :
             if Constants.Debug:
                 print " the max violation %r is from %r " %( maxviolation, productmaxvioalation )
             producyqithrequirement = [ p for p in self.MRPInstance.ProductSet if self.MRPInstance.Requirements[p][productmaxvioalation] > 0]
