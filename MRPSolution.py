@@ -687,3 +687,5 @@ class MRPSolution:
 
         self.SValue = [ [ S[t][p] / probatime[t][p] if probatime[t][p] > 0 else 0.0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
+        if Constants.Debug:
+            print "The value of S is: %r" % (self.SValue)

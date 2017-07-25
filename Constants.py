@@ -30,6 +30,6 @@ class Constants:
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = True
     Infinity = 9999999999999.9
-    AlgorithmTimeLimit = 3600.0
+    AlgorithmTimeLimit = 36000.0
     AlgorithmOptimalityTolerence = 0.00001
     SDDPIterationLimit = 10000
