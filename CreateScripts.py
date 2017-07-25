@@ -82,7 +82,7 @@ if __name__ == "__main__":
 ulimit -v 16000000
 mkdir /tmp/thesim
 python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s
-""" % ( instance, distribution, model, nrscenar, generation, seed, method  ))
+""" % ( instance, distribution, model, nrscenar, generation, seed, method, instance, distribution, model, nrscenar, generation, seed, method  ))
                                     for Policy in policyset:
                                           qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
                                               instance, distribution, model, nrscenar, generation,method, Policy, seed)
@@ -97,7 +97,7 @@ python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s
 ulimit -v 16000000
 mkdir /tmp/thesim
 python test.py Evaluate %s %s %s %s %s  -s %s -p %s
- """ % (instance, distribution, model, nrscenar, generation, seed, Policy) )
+ """ % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model, nrscenar, generation, seed, Policy) )
 
 
     # Create the sh file
