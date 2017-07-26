@@ -345,6 +345,7 @@ class MRPInstance:
         #dependentaveragedemand = [ self.YearlyAverageDemand[p] for p in self.ProductSet ]
         dependentaveragedemand = [ actualavgdemand[p] for p in self.ProductSet ]
         levelset = sorted(set(level), reverse=False)
+        #self.NrResource = len(levelset)
         for l in levelset:
             prodinlevel = [p for p in self.ProductSet if level[p] == l]
             for p in prodinlevel:
@@ -387,10 +388,10 @@ class MRPInstance:
         #T = 1.0 + 2.0 / (L )
         T = 2
         sumdemand = [ sum( actualdepdemand[t][p] for t in range(T))  if self.YearlyAverageDemand[p]>0
-                  else sum( actualdepdemand[t][p] for t in range(T, 2*T)) for p in self.ProductSet  ]
+                  else sum( actualdepdemand[t][p] for t in range(T, min( 2*T, self.NrTimeBucket))) for p in self.ProductSet  ]
 
         sumstd = [sum(actualstd[t][p] for t in range(T))  if self.YearlyAverageDemand[p]>0
-                  else sum(actualstd[t][p] for t in range(T, 2*T)) for p in   self.ProductSet]
+                  else sum(actualstd[t][p] for t in range(T, min( 2*T, self.NrTimeBucket))  )for p in   self.ProductSet]
 
 
         servicelevel = 0.6
@@ -428,12 +429,13 @@ class MRPInstance:
         #self.SetupCosts =  [   ( ( ( dependentaveragedemand[ p ] /  2  ) * 0.25 *  self.InventoryCosts[p]  ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
 
         self.SetupCosts = [ (dependentaveragedemand[p] * self.InventoryCosts[p] *0.5* (T  )* (T -1) *(1.0/componentsperfinishproduct)* random.uniform( 1, 1)) for p in  self.ProductSet]
-
+        self.NrResource = self.NrLevel
         self.ProcessingTime = [ [ randint( 1, 5 )
-                                    if (p == k )   else 0.0
-                                    for p in self.ProductSet ]
+                                    if (level[p] == k )   else 0.0
+
                                 for k in range(self.NrResource) ]
-        capacityfactor = 10;
+                                for p in self.ProductSet]
+        capacityfactor = 1;
         self.Capacity =  [ capacityfactor * sum ( dependentaveragedemand[ p ] * self.ProcessingTime[ p ][k] for p in self.ProductSet ) for k in range( self.NrResource ) ]
 
         # Gamma is set to 0.9 which is a common value (find reference!!!)
@@ -460,7 +462,7 @@ class MRPInstance:
 
     #Save the Instance in an Excel  file
     def SaveCompleteInstanceInExelFile( self ):
-        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_" + self.Distribution + ".xlsx",  engine='openpyxl' )
+        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_01_OneResourcePerLevelC=1_" + self.Distribution + ".xlsx",  engine='openpyxl' )
 
         general = [ self.InstanceName, self.NrProduct, self.NrTimeBucket, self.NrResource, self.Gamma, self.Distribution,  self.NrTimeBucketWithoutUncertainty  ]
         columnstab = [ "Name", "NrProducts", "NrBuckets", "NrResources", "Gamma", "Distribution", "NrTimeBucketWithoutUncertainty" ]
@@ -524,7 +526,7 @@ class MRPInstance:
         self.Capacity = [ Capacitydf.get_value( k, 0 ) for k in self.ResourceSet ]
 
         Processingdf = Tool.ReadDataFrame( wb2, "ProcessingTime" )
-        self.ProcessingTime = [[Processingdf.get_value(p, k) for p in self.ProductName] for k in self.ResourceSet]
+        self.ProcessingTime = [[Processingdf.get_value(p, k) for k in self.ResourceSet] for p in self.ProductName]
 
         forecastedavgdemanddf = Tool.ReadDataFrame(wb2, "ForecastedAverageDemand")
         self.ForecastedAverageDemand = [ [ forecastedavgdemanddf.get_value(t, p) for p in self.ProductName] for t in self.TimeBucketSet ]
