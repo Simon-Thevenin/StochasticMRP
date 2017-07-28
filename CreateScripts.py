@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
 
     #modelset = ["YFix", "YQFix", "Average"]
-    modelset = [ "YQFix"]
+    modelset = [ "YQFix", "Average"]
 
     for instance in InstanceSet :
     #for instance in ["00", "01", "01_LTH"]:
@@ -55,8 +55,8 @@ if __name__ == "__main__":
                          methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "200" ]
-                     #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                     #scenarset = [ "200" ]
+                     scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      policyset = ["Fix", "Re-solve"]
 
                  if model == "Average":
@@ -158,8 +158,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                          methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "200" ]
-                     #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                     #scenarset = [ "200" ]
+                     scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      policyset = [ "Fix", "Re-solve" ]
 
                  if model == "Average":
@@ -232,8 +232,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                          methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "200" ]
-                     #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                     #scenarset = [ "200" ]
+                     scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      policyset = [ "Fix", "Re-solve" ]
 
                  if model == "Average":
