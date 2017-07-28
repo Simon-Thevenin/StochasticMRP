@@ -9,13 +9,13 @@ import subprocess
 
 if __name__ == "__main__":
 
-    InstanceSet = ["00", "01", "02", "03", "04", "05",
-                   "01_Theta4", "02_Theta4", "03_Theta4", "04_Theta4", "05_Theta4",
-                   "00_b=2h", "01_b=2h", "02_b=2h", "03_b=2h", "04_b=2h", "05_b=2h",
-                   "00_b=50h", "01_b=50h", "02_b=50h", "03_b=50h", "04_b=50h", "05_b=50h",
-                   "00_C=2", "01_C=2", "02_C=2", "03_C=2", "04_C=2", "05_C=2",
-                   "00_OneResourcePerLevelC=2", "01_OneResourcePerLevelC=2", "02_OneResourcePerLevelC=2", "03_OneResourcePerLevelC=2", "04_OneResourcePerLevelC=2", "05_OneResourcePerLevelC=2" ]
-                   #"00_OneResourcePerLevelC=1", "01_OneResourcePerLevelC=1", "02_OneResourcePerLevelC=1", "03_OneResourcePerLevelC=1", "04_OneResourcePerLevelC=1", "05_OneResourcePerLevelC=1" ]
+    InstanceSet = ["00", "01", "02", "03", "04", "05" ]
+               #    "01_Theta4", "02_Theta4", "03_Theta4", "04_Theta4", "05_Theta4",
+               #    "00_b=2h", "01_b=2h", "02_b=2h", "03_b=2h", "04_b=2h", "05_b=2h",
+               #    "00_b=50h", "01_b=50h", "02_b=50h", "03_b=50h", "04_b=50h", "05_b=50h",
+               #    "00_C=2", "01_C=2", "02_C=2", "03_C=2", "04_C=2", "05_C=2",
+               #    "00_OneResourcePerLevelC=2", "01_OneResourcePerLevelC=2", "02_OneResourcePerLevelC=2", "03_OneResourcePerLevelC=2", "04_OneResourcePerLevelC=2", "05_OneResourcePerLevelC=2"
+               #    "00_OneResourcePerLevelC=1", "01_OneResourcePerLevelC=1", "02_OneResourcePerLevelC=1", "03_OneResourcePerLevelC=1", "04_OneResourcePerLevelC=1", "05_OneResourcePerLevelC=1" ]
 
 
     #modelset = ["YFix", "YQFix", "Average"]
@@ -53,8 +53,8 @@ if __name__ == "__main__":
                          methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "1000" ]
-                     #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                     #scenarset = [ "200" ]
+                     scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      policyset = ["Fix", "Re-solve"]
 
                  if model == "Average":
@@ -156,8 +156,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                          methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "1000" ]
-                     #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                     #scenarset = [ "1000" ]
+                     scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      policyset = [ "Fix", "Re-solve" ]
 
                  if model == "Average":
@@ -230,8 +230,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                          methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "1000" ]
-                     #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                     #scenarset = [ "1000" ]
+                     scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      policyset = [ "Fix", "Re-solve" ]
 
                  if model == "Average":

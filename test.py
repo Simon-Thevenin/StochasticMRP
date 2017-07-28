@@ -536,7 +536,7 @@ def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve:
         policyset = [ "NNSAC", "NNDAC", "Re-solve"]
         if Model == Constants.ModelYQFix or Model == Constants.Average:
-                policyset = ["Fix"]
+                policyset = ["Fix", "Re-solve"]
         for policy in policyset:
                 jobname = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
                     TestIdentifier[0],  TestIdentifier[1],  TestIdentifier[2],  TestIdentifier[5], TestIdentifier[4], TestIdentifier[3],  policy, SeedIndex)
