@@ -35,7 +35,7 @@ Instance = MRPInstance()
 AverageInstance = MRPInstance()
 
 #If UseNonAnticipativity is set to true a variable per scenario is generated, otherwise only the required variable a created.
-UseNonAnticipativity = False
+EVPI = False
 #ActuallyUseAnticipativity is set to False to compute the EPVI, otherwise, it is set to true to add the non anticipativity constraints
 #UseInmplicitAnticipativity = False
 #PrintScenarios is set to true if the scenario tree is printed in a file, this is usefull if the same scenario must be reloaded in a ater test.
@@ -108,13 +108,13 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     MIPModel = Model
     if Model == Constants.Average:
         MIPModel = Constants.ModelYQFix
-    mipsolver = MIPSolver(Instance, MIPModel, scenariotree, UseNonAnticipativity,
-                          implicitnonanticipativity=True,
+
+    mipsolver = MIPSolver(Instance, MIPModel, scenariotree, evpi = EVPI,
+                          implicitnonanticipativity=(not EVPI),
                           evaluatesolution = EvaluateSolution,
                           givenquantities = GivenQuantities,
                           givensetups = GivenSetup,
                           fixsolutionuntil = FixUntilTime )
-
     if Constants.Debug:
         Instance.PrintInstance()
         for s in mipsolver.ScenarioSet:
@@ -189,7 +189,6 @@ def SolveYQFix( ):
 
 def PrintSolutionToFile( solution  ):
     testdescription = GetTestDescription()
-
     if Constants.PrintSolutionFileToExcel:
         solution.PrintToExcel(testdescription)
     else:
@@ -283,7 +282,7 @@ def EvaluateSingleSol(  ):
     filedescription = GetTestDescription()
     solution = MRPSolution()
     solution.ReadFromFile(filedescription)
-    evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
+    evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, evpi=EVPI, scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
 
     MIPModel = Model
     if Model == Constants.Average:
@@ -328,155 +327,89 @@ def GatherEvaluation():
         PrintFinalResult()
     ScenarioSeed = currentseedvalue
     TestIdentifier[6] = currentseedvalue
-# def SolveAndEvaluateYQFix( average = False, nrevaluation = 2, nrscenario = 100, nrsolve = 1):
-#     global ScenarioSeed
-#     global Model
-#     global Methode
-#     global OutOfSampleTestResult
-#     global InSampleKPIStat
-#
-#     if Constants.Debug:
-#         Instance.PrintInstance()
-#
-#     treestructure = [1, nrscenario] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
-#     method = "TwoStageYQFix"
-#     if average:
-#         treestructure = [1] + [1] * Instance.NrTimeBucket + [0]
-#         method = "Average"
-#         Methode = "Average"
-#
-#     solutions = []
-#
-#     for k in range( nrsolve ):
-#         ScenarioSeed = SeedArray[ k ]
-#         solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
-#         PrintResult()
-#         solutions.append( solution )
-#         solution.ComputeStatistics()
-#         insamplekpisstate = solution.PrintStatistics( TestIdentifier, "InSample" , -1, 0, ScenarioSeed)
-#
-#         for i in range(4 + Instance.NrLevel):
-#             InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
-#
-#     for i in range(4 + Instance.NrLevel):
-#         InSampleKPIStat[i] = InSampleKPIStat[i] / nrsolve
-#
-#     evaluator = Evaluator( Instance, solutions  )
-#     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, nrevaluation,  method, Constants.ModelYQFix )
-#
+
+
 
 def GetTreeStructure():
-    treestructure = [1, 20, 20, 1, 1, 1, 0]
+    if Model == Constants.Average:
+        treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
 
-    if NrScenario == 8:
-        if Instance.NrTimeBucket == 6:
-            treestructure = [1, 8, 8, 8, 1, 1, 1, 0]
-            # treestructure = [1, 8, 4, 2, 1, 1, 1, 0 ]
-        if Instance.NrTimeBucket == 8:
-            treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 9:
-            treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 10:
-            treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 12:
-            treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 15:
-            treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
+    if Model == Constants.ModelYQFix:
+        treestructure = [1, NrScenario] + [1] * (Instance.NrTimeBucket - 1) + [0]
 
-    if NrScenario == 64:
-        if Instance.NrTimeBucket == 6:
-            treestructure = [1, 4, 4, 4, 1, 1, 1, 0]
-            # treestructure = [1, 8, 4, 2, 1, 1, 1, 0 ]
-        if Instance.NrTimeBucket == 8:
-            treestructure = [1, 4, 4, 4, 4, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 9:
-            treestructure = [1, 4, 4, 4, 4, 1, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 10:
-            treestructure = [1, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 12:
-            treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 15:
-            treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
+    if Model == Constants.ModelYFix:
+        treestructure = [1, 20, 20, 1, 1, 1, 0]
 
-    if NrScenario == 512:
-        if Instance.NrTimeBucket == 6:
-            # treestructure = [1, 2, 2, 2, 1, 1, 1, 0]
-            treestructure = [1, 8, 8, 8, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 8:
-            treestructure = [1, 8, 8, 4, 2, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 9:
-            treestructure = [1, 8, 8, 4, 2, 1, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 10:
-            treestructure = [1, 8, 8, 2, 2, 2, 1, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 12:
-            treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 15:
-            treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
+        if NrScenario == 8:
+            if Instance.NrTimeBucket == 6:
+                treestructure = [1, 8, 8, 8, 1, 1, 1, 0]
+                # treestructure = [1, 8, 4, 2, 1, 1, 1, 0 ]
+            if Instance.NrTimeBucket == 8:
+                treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 9:
+                treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 10:
+                treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 12:
+                treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 15:
+                treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
 
-    if NrScenario == 1024:
-        if Instance.NrTimeBucket == 6:
-            # treestructure = [1, 2, 2, 2, 1, 1, 1, 0]
-            treestructure = [1, 32, 8, 4, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 9:
-            treestructure = [1, 8, 4, 4, 2, 2, 2, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 12:
-            treestructure = [1, 4, 4, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 15:
-            treestructure = [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0]
+        if NrScenario == 64:
+            if Instance.NrTimeBucket == 6:
+                treestructure = [1, 4, 4, 4, 1, 1, 1, 0]
+                # treestructure = [1, 8, 4, 2, 1, 1, 1, 0 ]
+            if Instance.NrTimeBucket == 8:
+                treestructure = [1, 4, 4, 4, 4, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 9:
+                treestructure = [1, 4, 4, 4, 4, 1, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 10:
+                treestructure = [1, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 12:
+                treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 15:
+                treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
 
-    if NrScenario == 8192:
-        if Instance.NrTimeBucket == 6:
-            treestructure = [1, 25, 25, 25, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 9:
-            treestructure = [1, 8, 4, 4, 4, 4, 4, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 12:
-            treestructure = [1, 8, 4, 4, 4, 2, 2, 2, 2, 1, 1, 1, 1, 0]
-        if Instance.NrTimeBucket == 15:
-            treestructure = [1, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0]
+        if NrScenario == 512:
+            if Instance.NrTimeBucket == 6:
+                # treestructure = [1, 2, 2, 2, 1, 1, 1, 0]
+                treestructure = [1, 8, 8, 8, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 8:
+                treestructure = [1, 8, 8, 4, 2, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 9:
+                treestructure = [1, 8, 8, 4, 2, 1, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 10:
+                treestructure = [1, 8, 8, 2, 2, 2, 1, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 12:
+                treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 15:
+                treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
+
+        if NrScenario == 1024:
+            if Instance.NrTimeBucket == 6:
+                # treestructure = [1, 2, 2, 2, 1, 1, 1, 0]
+                treestructure = [1, 32, 8, 4, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 9:
+                treestructure = [1, 8, 4, 4, 2, 2, 2, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 12:
+                treestructure = [1, 4, 4, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 15:
+                treestructure = [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0]
+
+        if NrScenario == 8192:
+            if Instance.NrTimeBucket == 6:
+                treestructure = [1, 25, 25, 25, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 9:
+                treestructure = [1, 8, 4, 4, 4, 4, 4, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 12:
+                treestructure = [1, 8, 4, 4, 4, 2, 2, 2, 2, 1, 1, 1, 1, 0]
+            if Instance.NrTimeBucket == 15:
+                treestructure = [1, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0]
 
     return treestructure
 
 
-# def SolveAndEvaluateYFix( method = "MIP", nrevaluation = 2, nrscenario = 1, nrsolve = 1):
-#     global GivenSetup
-#     global GivenQuantities
-#     global ScenarioSeed
-#     global Model
-#     global Methode
-#     global InSampleKPIStat
-#     global OutOfSampleTestResult
-#
-#     if Constants.Debug:
-#         Instance.PrintInstance()
-#
-#
-#
-#     treestructure = GetTreeStructure()
-#
-#     solutions = []
-#     for k in range(nrsolve):
-#         ScenarioSeed = SeedArray[k]
-#         if method == "MIP" or method == "Avergae":
-#             solution, mipsolver = MRP( treestructure, averagescenario=False, recordsolveinfo=True )
-#             solutions.append(solution)
-#             PrintTestResult()
-#             solution.ComputeStatistics()
-#             insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample", -1, 0, ScenarioSeed)
-#
-#             for i in range(3 + Instance.NrLevel):
-#                 InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
-#         if method == "SDDP":
-#             sddpsolver = SDDP( Instance )
-#             sddpsolver.Run()
-#
-#
-#     for i in range(3 + Instance.NrLevel):
-#         InSampleKPIStat[i] = InSampleKPIStat[i] / nrsolve
-#
-#     print "%d Start evaluation..."%time.time()
-#
-#     evaluator = Evaluator( Instance, solutions, PolicyGeneration, ScenarioGeneration, treestructure=treestructure )
-#     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier,nrevaluation, Methode, Constants.ModelYFix )
+
 
 #This function compute some statistic about the genrated trees. It is usefull to check if the generator works as expected.
 def ComputeAverageGeneraor():
@@ -522,7 +455,7 @@ def parseArguments():
     # Create argument parser
     parser = argparse.ArgumentParser()
     # Positional mandatory arguments
-    parser.add_argument("Action", help="Evaluate,/Solve", type=str)
+    parser.add_argument("Action", help="Evaluate, Solve, VSS, EVPI", type=str)
     parser.add_argument("Instance", help="Cname of the instance.", type=str)
     parser.add_argument("Distribution", help="Considered didemand disdistribution.", type=str)
     parser.add_argument("Model", help="Average/YQFix/YFiz .", type=str)
@@ -534,6 +467,8 @@ def parseArguments():
     parser.add_argument("-p", "--policy", help="NearestNeighbor", type=str, default="")
     parser.add_argument("-n", "--nrevaluation", help="nr scenario used for evaluation.", type=int, default=500)
     parser.add_argument("-m", "--method", help="method used to solve", type=str, default="MIP")
+    parser.add_argument("-f", "--fixuntil", help="Use with VSS action, howmany periods are fixed", type=int, default=0)
+    parser.add_argument("-e", "--evpi", help="if true the evpi model is consdiered",  default=False, action='store_true')
     # Print version
     parser.add_argument("--version", action="version", version='%(prog)s - Version 1.0')
 
@@ -555,6 +490,8 @@ def parseArguments():
     global SeedIndex
     global NearestNeighborStrategy
     global Method
+    global FixUntilTime
+    global EVPI
 
     Action = args.Action
     InstanceName = args.Instance
@@ -566,6 +503,8 @@ def parseArguments():
     ScenarioSeed = SeedArray[ args.ScenarioSeed ]
     SeedIndex = args.ScenarioSeed
     PolicyGeneration = args.policy
+    FixUntilTime = args.fixuntil
+    EVPI = args.evpi
     NearestNeighborStrategy = ""
     if PolicyGeneration in ["NNDAC", "NNSAC", "NND", "NNS" ]:
         PolicyGeneration = "NN"
@@ -573,8 +512,11 @@ def parseArguments():
     else:
         NearestNeighborStrategy = PolicyGeneration #to have something in the table of results
     NrEvaluation = args.nrevaluation
-    TestIdentifier = [ InstanceName, Distribution, Model, Method, ScenarioGeneration, NrScenario, ScenarioSeed ]
+    TestIdentifier = [ InstanceName, Distribution, Model, Method, ScenarioGeneration, NrScenario, ScenarioSeed, EVPI ]
     EvaluatorIdentifier = [ PolicyGeneration, NearestNeighborStrategy, NrEvaluation]
+
+
+
     return args
 
 #Save the scenario tree in a file
@@ -626,7 +568,72 @@ def RunTestsAndEvaluation():
             SolveYFix()
         EvaluateSingleSol()
 
+# Compute the value of VSS as  defined in the paper: "The value of the stochastic solution in multistage problems" Laureano F. Escudero  Araceli Garin  Maria Merino  Gloria Perez
+def ComputeVSS( ):
 
+    global GivenQuantities
+    global GivenSetup
+    global EvaluateSolution
+    global FixUntilTime
+
+    print "Compute VSS"
+    # Get the YQFix solution
+    #TestIdentifier[2] = Constants.ModelYQFix
+    filedescription = GetTestDescription()
+    yqfixsolution = MRPSolution()
+    yqfixsolution.ReadFromFile(filedescription)
+    oldtest2 = TestIdentifier[2]
+    oldtest3 = TestIdentifier[3]
+    oldtest4 = TestIdentifier[4]
+    oldtest5 = TestIdentifier[5]
+
+    # Get the average value solution
+    TestIdentifier[2] = Constants.Average
+    TestIdentifier[3] = Constants.MIP
+    TestIdentifier[4] = Constants.MonteCarlo
+    TestIdentifier[5] = 1
+    filedescription = GetTestDescription()
+    averagesolution = MRPSolution()
+    averagesolution.ReadFromFile(filedescription)
+
+
+    TestIdentifier[2] = oldtest2
+    TestIdentifier[3] = oldtest3
+    TestIdentifier[4] = oldtest4
+    TestIdentifier[5] = oldtest5
+    EvaluateSolution = True
+    # Run the MIP with the additional constraint to fix the average solution up to the first fixuntiltime stages
+    treestructure = GetTreeStructure()
+
+    # Get the setup quantitities associated with the solultion
+
+    GivenSetup = [[averagesolution.Production[0][t][p]  for p in averagesolution.MRPInstance.ProductSet] for t in averagesolution.MRPInstance.TimeBucketSet]
+
+    GivenQuantities = [[averagesolution.ProductionQuantity[0][t][p] for p in averagesolution.MRPInstance.ProductSet]
+                        for t in averagesolution.MRPInstance.TimeBucketSet ]
+
+
+    if FixUntilTime == 0:
+        GivenSetup = []
+        GivenQuantities = []
+        EvaluateSolution = False
+
+    if TestIdentifier[2] == Constants.ModelYQFix and  FixUntilTime > 0:
+        FixUntilTime = Instance.NrTimeBucket
+
+    solution, mipsolver = MRP(treestructure, False, recordsolveinfo=True)
+
+    # Something need to be printed....
+    Parameter =  [ UseNonAnticipativity, Model, ComputeAverageSolution, ScenarioSeed]
+    data = TestIdentifier + SolveInformation +  Parameter + [ FixUntilTime , solution.TotalCost - yqfixsolution.TotalCost ]
+    d = datetime.now()
+    date = d.strftime('%m_%d_%Y_%H_%M_%S')
+    myfile = open(r'./Test/VSS/TestResult_%s_%s.csv' % (GetTestDescription(), FixUntilTime  ), 'wb')
+    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+    wr.writerow( data )
+    myfile.close()
+   # PrintTestResult()
+   # PrintFinalResult()
 
 if __name__ == "__main__":
     instancename = ""
@@ -647,16 +654,16 @@ if __name__ == "__main__":
         #
 
 
-        #Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
-        for InstanceName in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
+        Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
+        #for InstanceName in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
             #			  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
             #			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
             #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
         #    Distribution = "NonStationary"
         #    for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
         #         "NonStationary"]:
-            Instance.ReadFromFile( InstanceName, Distribution )
-            Instance.SaveCompleteInstanceInExelFile()
+        #    Instance.ReadFromFile( InstanceName, Distribution )
+        #    Instance.SaveCompleteInstanceInExelFile()
         #Instance.ReadFromFile(InstanceName, Distribution)
         #Instance.SaveCompleteInstanceInExelFile()
         #Instance.DefineAsSuperSmallIntance()
@@ -676,9 +683,15 @@ if __name__ == "__main__":
 
         if Model == Constants.ModelYFix:
             if Constants.LauchEvalAfterSolve:
-                SolveYFix()
+                SolveYFix(  )
+
             else:
                 RunTestsAndEvaluation()
+
+    if Action == Constants.VSS:
+        ComputeVSS( )
+
+
     if Action == Constants.Evaluate:
         if ScenarioSeed == -1:
             Evaluate()

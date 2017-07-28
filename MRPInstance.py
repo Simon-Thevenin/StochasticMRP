@@ -435,7 +435,7 @@ class MRPInstance:
 
                                 for k in range(self.NrResource) ]
                                 for p in self.ProductSet]
-        capacityfactor = 1;
+        capacityfactor = 10;
         self.Capacity =  [ capacityfactor * sum ( dependentaveragedemand[ p ] * self.ProcessingTime[ p ][k] for p in self.ProductSet ) for k in range( self.NrResource ) ]
 
         # Gamma is set to 0.9 which is a common value (find reference!!!)
@@ -462,7 +462,7 @@ class MRPInstance:
 
     #Save the Instance in an Excel  file
     def SaveCompleteInstanceInExelFile( self ):
-        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_01_OneResourcePerLevelC=1_" + self.Distribution + ".xlsx",  engine='openpyxl' )
+        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_" + self.Distribution + ".xlsx",  engine='openpyxl' )
 
         general = [ self.InstanceName, self.NrProduct, self.NrTimeBucket, self.NrResource, self.Gamma, self.Distribution,  self.NrTimeBucketWithoutUncertainty  ]
         columnstab = [ "Name", "NrProducts", "NrBuckets", "NrResources", "Gamma", "Distribution", "NrTimeBucketWithoutUncertainty" ]

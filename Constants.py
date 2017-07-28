@@ -14,6 +14,7 @@ class Constants:
     InferS = "S"
     NonStationary = "NonStationary"
     Resolve = "Re-solve"
+    Fix = "Fix"
     ModelYQFix = "YQFix"
     ModelYFix = "YFix"
     Model_Fix = "_Fix"
@@ -22,11 +23,12 @@ class Constants:
     RQMC = "RQMC"
     Solve = "Solve"
     Evaluate = "Evaluate"
+    VSS= "VSS"
     MIP = "MIP"
     SDDP = "SDDP"
 
-    Debug = False
-    PrintSolutionFileToExcel = False
+    Debug = True
+    PrintSolutionFileToExcel = True
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = True
     Infinity = 9999999999999.9

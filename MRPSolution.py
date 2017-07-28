@@ -322,6 +322,7 @@ class MRPSolution:
         self.InSampleTotalLostSalePerScenario =  [  sum( self.BackOrder[w][self.MRPInstance.NrTimeBucket -1][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] for p in self.MRPInstance.ProductWithExternalDemand) for w in  self.SenarioNrset ]
 
         nrscenario = len( self.Scenarioset )
+
         self.InSampleAverageDemand = sum( self.InSampleTotalDemandPerScenario[s] for s in self.SenarioNrset ) / nrscenario
         #self.InSamplePercenBackOrder =  100 * ( sum( self.InSampleTotalBackOrderPerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
         #self.InSamplePercentLostSale = 100 * ( sum( self.InSampleTotalLostSalePerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
@@ -369,7 +370,7 @@ class MRPSolution:
 
 
         general = testidentifier+ [ self.InSampleAverageDemand,  offsetseed, nrevaluation, solutionseed ]
-        columnstab = [ "Instance", "Distribution",  "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed" , "Average demand",  "offsetseed", "nrevaluation", "solutionseed" ]
+        columnstab = [ "Instance", "Distribution",  "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed" , "EVPI", "Average demand",  "offsetseed", "nrevaluation", "solutionseed" ]
         generaldf = pd.DataFrame(general, index=columnstab )
         generaldf.to_excel( writer, "General" )
         writer.save()

@@ -14,8 +14,8 @@ if __name__ == "__main__":
                    "00_b=2h", "01_b=2h", "02_b=2h", "03_b=2h", "04_b=2h", "05_b=2h",
                    "00_b=50h", "01_b=50h", "02_b=50h", "03_b=50h", "04_b=50h", "05_b=50h",
                    "00_C=2", "01_C=2", "02_C=2", "03_C=2", "04_C=2", "05_C=2",
-                   "00_OneResourcePerLevelC=2", "01_OneResourcePerLevelC=2", "02_OneResourcePerLevelC=2", "03_OneResourcePerLevelC=2", "04_OneResourcePerLevelC=2", "05_OneResourcePerLevelC=2",
-                   "00_OneResourcePerLevelC=1", "01_OneResourcePerLevelC=1", "02_OneResourcePerLevelC=1", "03_OneResourcePerLevelC=1", "04_OneResourcePerLevelC=1", "05_OneResourcePerLevelC=1" ]
+                   "00_OneResourcePerLevelC=2", "01_OneResourcePerLevelC=2", "02_OneResourcePerLevelC=2", "03_OneResourcePerLevelC=2", "04_OneResourcePerLevelC=2", "05_OneResourcePerLevelC=2" ]
+                   #"00_OneResourcePerLevelC=1", "01_OneResourcePerLevelC=1", "02_OneResourcePerLevelC=1", "03_OneResourcePerLevelC=1", "04_OneResourcePerLevelC=1", "05_OneResourcePerLevelC=1" ]
 
 
     #modelset = ["YFix", "YQFix", "Average"]
@@ -55,12 +55,12 @@ if __name__ == "__main__":
                  if model == "YQFix":
                      scenarset = [ "1000" ]
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
-                     policyset = ["Fix"]
+                     policyset = ["Fix", "Re-solve"]
 
                  if model == "Average":
                      scenarset = ["1"]
                      avg = True
-                     policyset = ["Fix"]
+                     policyset = ["Fix", "Re-solve"]
                      generationset = ["MC"]
 
                  for method in methodset:
@@ -158,12 +158,12 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  if model == "YQFix":
                      scenarset = [ "1000" ]
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
-                     policyset = [ "Fix" ]
+                     policyset = [ "Fix", "Re-solve" ]
 
                  if model == "Average":
                      scenarset =  [ "1" ]
                      avg = True
-                     policyset = ["Fix"]
+                     policyset = ["Fix", "Re-solve"]
                      generationset = ["MC"]
 
 
@@ -232,12 +232,12 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  if model == "YQFix":
                      scenarset = [ "1000" ]
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
-                     policyset = [ "Fix" ]
+                     policyset = [ "Fix", "Re-solve" ]
 
                  if model == "Average":
                      scenarset =  [ "1" ]
                      avg = True
-                     policyset = ["Fix"]
+                     policyset = [ "Fix", "Re-solve" ]
                      generationset = ["MC"]
 
 

@@ -15,7 +15,7 @@ import cplex
 
 class Evaluator:
 
-    def __init__( self, instance, solutions=None, sddps=None, policy = "", scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP" ):
+    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP" ):
         self.Instance = instance
         self.Solutions = solutions
         self.SDDPs = sddps
@@ -23,6 +23,7 @@ class Evaluator:
         self.Policy = policy
         self.StartSeedResolve = 84752390
         self.ScenarioGenerationResolvePolicy = scenariogenerationresolve
+        self.EVPI = evpi
         self.MIPResolveTime = [ None for t in instance.TimeBucketSet  ]
         self.IsDefineMIPResolveTime = [False for t in instance.TimeBucketSet]
         self.ReferenceTreeStructure = treestructure
@@ -72,7 +73,7 @@ class Evaluator:
                 if firstscenario:
                     #Defin the MIP
                     mipsolver = MIPSolver(self.Instance, model, scenariotree,
-                                                      True,
+                                                      evpi=False,
                                                       implicitnonanticipativity=False,
                                                       evaluatesolution=True,
                                                       givenquantities=givenquantty,
@@ -82,7 +83,7 @@ class Evaluator:
                 else:
                     #update the MIP
                     mipsolver.ModifyMipForScenario( scenariotree )
-                    if model == Constants.ModelYFix:
+                    if not self.Policy == Constants.Fix:
                         mipsolver.ModifyMipForFixQuantity( givenquantty )
 
                 mipsolver.Cplex.parameters.advance = 0
@@ -132,13 +133,13 @@ class Evaluator:
                         for t in self.Instance.TimeBucketSet]
 
         # For model YQFix, the quatities are fixed, and can be taken from the solution
-        if model == Constants.ModelYQFix or model == Constants.Average:
+        if self.Policy == "Fix":
             givenquantty = [[sol.ProductionQuantity[0][t][p]
                                      for p in self.Instance.ProductSet]
                                      for t in self.Instance.TimeBucketSet]
 
         # For model YFix, the quantities depend on the scenarion
-        if model == Constants.ModelYFix:
+        else:#if model == Constants.ModelYFix:
             givenquantty = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
 
             previousnode = sol.ScenarioTree.RootNode
@@ -263,11 +264,15 @@ class Evaluator:
         error = 0
 
         if time == 0:  # return the quantity at the root of the node
-            result = [solution.ScenarioTree.RootNode.Branches[0].QuantityToOrderNextTime[p] for p in self.Instance.ProductSet]
+           # result = [solution.ScenarioTree.RootNode.Branches[0].QuantityToOrderNextTime[p] for p in self.Instance.ProductSet]
+
+            result = [solution.ProductionQuantity[0][time][p]  for p in self.Instance.ProductSet]
         else:
             treestructure = [1] + [self.ReferenceTreeStructure[t - time + 1] if (
             t >= time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty))) else 1 for
                                    t in range(self.Instance.NrTimeBucket)] + [0]
+
+
 
             self.StartSeedResolve = self.StartSeedResolve + 1
             scenariotree = ScenarioTree(self.Instance, treestructure, self.StartSeedResolve,
@@ -276,12 +281,15 @@ class Evaluator:
             quantitytofix = [[givenquantty[t][p] for p in self.Instance.ProductSet] for t in range(time)]
             if not self.IsDefineMIPResolveTime[time]:
                 mipsolver = MIPSolver(self.Instance, model, scenariotree,
-                                      True,
-                                      implicitnonanticipativity=True,
+                                      self.EVPI,
+                                      implicitnonanticipativity=( not self.EVPI),
                                       evaluatesolution=True,
                                       givenquantities=quantitytofix,
                                       givensetups=givensetup,
-                                      fixsolutionuntil=(time - 1))
+                                      fixsolutionuntil=(time - 1),
+                                      demandknownuntil =  time)
+
+
 
                 mipsolver.BuildModel()
                 self.MIPResolveTime[time] = mipsolver
@@ -306,3 +314,6 @@ class Evaluator:
                 error = 1
 
         return result, error
+
+
+
