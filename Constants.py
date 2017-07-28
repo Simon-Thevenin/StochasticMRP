@@ -27,8 +27,8 @@ class Constants:
     MIP = "MIP"
     SDDP = "SDDP"
 
-    Debug = True
-    PrintSolutionFileToExcel = True
+    Debug = False
+    PrintSolutionFileToExcel = False
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = True
     Infinity = 9999999999999.9
