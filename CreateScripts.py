@@ -91,7 +91,7 @@ if __name__ == "__main__":
                                  #    maxvss = 11
 
                                  #for vss in range(1, maxvss):
-                                    qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s_%s" % (
+                                    qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
                                             instance, distribution, model, nrscenar, generation, seed, method  )
                                     qsub_file = open(qsub_filename, 'w')
                                     qsub_file.write("""
