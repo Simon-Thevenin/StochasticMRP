@@ -40,7 +40,7 @@ if __name__ == "__main__":
              #modelset = [ "YFix" ]
 
              for model in modelset:
-                 generationset = ["MC", "RQMC"]
+                 #generationset = ["MC", "RQMC"]
 
                  scenarset = ["512"]
 
@@ -61,7 +61,7 @@ if __name__ == "__main__":
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      #policyset = ["Fix", "Re-solve"]
                      policyset = ["Fix"]
-                     generationset = ["RQMC"]
+                     #generationset = ["RQMC"]
                  if model == "Average":
                      scenarset = ["1"]
                      avg = True
@@ -149,7 +149,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
 
 
             for model in modelset:
-                 generationset = ["MC", "RQMC"]
+                #generationset = ["MC", "RQMC"]
 
 
                  scenarset = [ "512" ]
@@ -253,7 +253,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
                  for method in methodset:
                      #if (instance == "00" or instance == "01") and (model == "YFix" and method == "MIP") and (distribution == "Binomial" or distribution == "Uniform"):
                      #   generationset = ["MC", "RQMC", "all"]
-
+                     print generationset
                      for generation in generationset:
 
                          if method == "SDDP":
