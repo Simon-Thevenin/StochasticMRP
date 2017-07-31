@@ -29,9 +29,9 @@ if __name__ == "__main__":
     #for instance in ["00", "01", "01_LTH"]:
          distributionset = ["NonStationary"]
          # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
-         if instance == "00":
+         if instance == "00_C=2":
              distributionset = ["Binomial"]
-         if instance == "01":
+         if instance == "01_C=2":
              #distributionset = ["Uniform"]
             distributionset = ["Uniform", "NonStationary"]
              #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
@@ -94,6 +94,8 @@ if __name__ == "__main__":
                                  #    maxvss = 11
 
                                  #for vss in range(1, maxvss):
+                                    print "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
+                                            instance, distribution, model, nrscenar, generation, seed, method  )
                                     qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
                                             instance, distribution, model, nrscenar, generation, seed, method  )
                                     qsub_file = open(qsub_filename, 'w')
