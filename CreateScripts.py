@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
 
     #modelset = ["YFix", "YQFix", "Average"]
-    modelset = [ "YFix"]
+    modelset = [ "YQFix"]
 
     for instance in InstanceSet :
     #for instance in ["00", "01", "01_LTH"]:
@@ -56,10 +56,11 @@ if __name__ == "__main__":
                      #    methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     #scenarset = [ "200" ]
-                     scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
-                     policyset = ["Fix", "Re-solve"]
-
+                     scenarset = [ "200" ]
+                     #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                     #policyset = ["Fix", "Re-solve"]
+                     policyset = ["Fix"]
+                     generationset = ["RQMC"]
                  if model == "Average":
                      scenarset = ["1"]
                      avg = True
@@ -158,9 +159,11 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  #    methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     #scenarset = [ "200" ]
-                     scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
-                     policyset = [ "Fix", "Re-solve" ]
+                     scenarset = [ "200" ]
+                     #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                     #policyset = ["Fix", "Re-solve"]
+                     policyset = ["Fix"]
+                     generationset = ["RQMC"]
 
                  if model == "Average":
                      scenarset =  [ "1" ]
@@ -231,9 +234,11 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  #    methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     #scenarset = [ "200" ]
-                     scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
-                     policyset = [ "Fix", "Re-solve" ]
+                     scenarset = [ "200" ]
+                     #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
+                     #policyset = ["Fix", "Re-solve"]
+                     policyset = ["Fix"]
+                     generationset = ["RQMC"]
 
                  if model == "Average":
                      scenarset =  [ "1" ]
