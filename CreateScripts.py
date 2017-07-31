@@ -84,11 +84,11 @@ if __name__ == "__main__":
 
                          for nrscenar in scenarset:
                              for seed in range(5):
-                                 maxvss = 6
+                                 maxvss = 7
                                  if  instance ==  "02_C=2" or  instance ==  "04_C=2":
-                                     maxvss = 8
+                                     maxvss = 9
                                  if instance == "05_C=2" or instance == "03_C=2":
-                                     maxvss = 10
+                                     maxvss = 11
 
                                  for vss in range(1, maxvss):
                                     qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s_%s" % (
