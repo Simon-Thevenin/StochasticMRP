@@ -96,7 +96,7 @@ if __name__ == "__main__":
 #$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s
+python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s -e
 """ % ( instance, distribution, model, nrscenar, generation, seed, method, instance, distribution, model, nrscenar, generation, seed, method  ))
                                     for Policy in policyset:
                                           qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
