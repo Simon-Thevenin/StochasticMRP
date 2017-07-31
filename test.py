@@ -99,11 +99,21 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     global SolveInformation
     global CompactSolveInformation
 
+    if Model == Constants.ModelYQFix and ScenarioGeneration == "all" and NrScenario == 512:
+        treestructur = [1, 8, 8, 8, 1, 1, 0]
+        scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed,
+                                     averagescenariotree=averagescenario,
+                                     scenariogenerationmethod = ScenarioGeneration,
+                                     generateRQMCForYQfix = False )
+        treestructur = [1, 512, 1, 1, 1, 1, 0]
 
-    scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed,
-                                 averagescenariotree=averagescenario,
-                                 scenariogenerationmethod = ScenarioGeneration,
-                                 generateRQMCForYQfix = ( Model  == Constants.ModelYQFix and ScenarioGeneration == Constants.RQMC ) )
+    else:
+        scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed,
+                                     averagescenariotree=averagescenario,
+                                     scenariogenerationmethod = ScenarioGeneration,
+                                     generateRQMCForYQfix = ( Model  == Constants.ModelYQFix and ScenarioGeneration == Constants.RQMC ) )
+
+
 
     MIPModel = Model
     if Model == Constants.Average:
