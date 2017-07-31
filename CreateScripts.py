@@ -22,6 +22,7 @@ if __name__ == "__main__":
 
     #modelset = ["YFix", "YQFix", "Average"]
     modelset = [ "YFix"]
+    generationset = ["RQMC"]
 
     for instance in InstanceSet :
     #for instance in ["00", "01", "01_LTH"]:
@@ -69,9 +70,9 @@ if __name__ == "__main__":
 
                  for method in methodset:
 
-                     if (instance == "00" or instance == "01") and (model == "YFix" and method == "MIP") and (
-                             distribution == "Binomial" or distribution == "Uniform"):
-                         generationset = ["MC", "RQMC", "all"]
+                     # if (instance == "00" or instance == "01") and (model == "YFix" and method == "MIP") and (
+                     #        distribution == "Binomial" or distribution == "Uniform"):
+                     #    generationset = ["MC", "RQMC", "all"]
 
                      for generation in generationset:
 
@@ -91,7 +92,7 @@ if __name__ == "__main__":
                                  #    maxvss = 11
 
                                  #for vss in range(1, maxvss):
-                                    qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
+                                    qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s_evpi" % (
                                             instance, distribution, model, nrscenar, generation, seed, method  )
                                     qsub_file = open(qsub_filename, 'w')
                                     qsub_file.write("""
@@ -103,10 +104,10 @@ if __name__ == "__main__":
 #$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py VSS %s %s %s %s %s -s %s  -n 500 -m %s
+python test.py VSS %s %s %s %s %s -s %s  -n 500 -m %s -e
 """ % ( instance, distribution, model, nrscenar, generation, seed, method,  instance, distribution, model, nrscenar, generation, seed, method  ))
                                     for Policy in policyset:
-                                          qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
+                                          qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s_evpi" % (
                                               instance, distribution, model, nrscenar, generation,method, Policy, seed)
                                           qsub_file = open(qsub_filename, 'w')
                                           qsub_file.write("""
@@ -118,7 +119,7 @@ python test.py VSS %s %s %s %s %s -s %s  -n 500 -m %s
 #$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Evaluate %s %s %s %s %s  -s %s -p %s
+python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
  """ % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model, nrscenar, generation, seed, Policy) )
 
 
@@ -170,7 +171,6 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      #policyset = ["Fix", "Re-solve"]
                      policyset = ["Fix"]
-                     generationset = ["RQMC"]
 
                  if model == "Average":
                      scenarset =  [ "1" ]
@@ -180,10 +180,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 
 
                  for method in methodset:
-
-                     if (instance == "00" or instance == "01") and (model == "YFix" and method == "MIP") and (distribution == "Binomial" or distribution == "Uniform"):
-                        generationset = ["MC", "RQMC", "all"]
-
+                     #if (instance == "00" or instance == "01") and (model == "YFix" and method == "MIP") and (distribution == "Binomial" or distribution == "Uniform"):
+                     #  generationset = ["MC", "RQMC", "all"]
                      for generation in generationset:
 
                          if method == "SDDP":
@@ -196,7 +194,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                          for nrscenar in scenarset:
                               for seed in range( 5 ):
                                   for Policy in policyset:
-                                        file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
+                                        file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s_evpi \n" % (
                                                       instance, distribution, model, nrscenar, generation,method, Policy, seed))
 
 
@@ -225,7 +223,6 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 
 
             for model in modelset:
-                 generationset = ["MC", "RQMC"]
 
 
                  scenarset = [ "512" ]
@@ -245,7 +242,6 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      #policyset = ["Fix", "Re-solve"]
                      policyset = ["Fix"]
-                     generationset = ["RQMC"]
 
                  if model == "Average":
                      scenarset =  [ "1" ]
@@ -255,9 +251,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 
 
                  for method in methodset:
-
-                     if (instance == "00" or instance == "01") and (model == "YFix" and method == "MIP") and (distribution == "Binomial" or distribution == "Uniform"):
-                        generationset = ["MC", "RQMC", "all"]
+                     #if (instance == "00" or instance == "01") and (model == "YFix" and method == "MIP") and (distribution == "Binomial" or distribution == "Uniform"):
+                     #   generationset = ["MC", "RQMC", "all"]
 
                      for generation in generationset:
 
@@ -269,13 +264,6 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                              scenarset = ["512"]
 
                          for nrscenar in scenarset:
-                             maxvss = 6
-                             if instance == "02_C=2" or instance == "04_C=2":
-                                 maxvss = 8
-                             if instance == "05_C=2" or instance == "03_C=2":
-                                 maxvss = 10
-
-                             for vss in range(1, maxvss):
                                 for seed in range( 5 ):
-                                        file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
-                                            instance, distribution, model, nrscenar, generation, seed, method, vss  ) )
+                                        file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s_%s_evpi \n" % (
+                                            instance, distribution, model, nrscenar, generation, seed, method ) )
