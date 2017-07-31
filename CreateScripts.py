@@ -138,9 +138,9 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
         # for instance in ["00", "01", "01_LTH"]:
         distributionset = ["NonStationary"]
         # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
-        if instance == "00":
+        if instance == "00_C=2":
             distributionset = ["Binomial"]
-        if instance == "01":
+        if instance == "01_C=2":
             distributionset = ["Uniform"]
             #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
         for distribution in distributionset:
@@ -213,10 +213,10 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
         # for instance in ["00", "01", "01_LTH"]:
         distributionset = ["NonStationary"]
         # distributionset = ["SlowMoving", "Normal", "Lumpy", "NonStationary"]
-        if instance == "00":
+        if instance == "00_C=2":
             distributionset = ["Binomial"]
-        if instance == "01":
-            distributionset = ["Uniform" ]
+        if instance == "01_C=2":
+            distributionset = ["Uniform"]
             #distributionset = ["Uniform", "NonStationary"]
             #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
         for distribution in distributionset:
