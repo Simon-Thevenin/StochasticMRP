@@ -13,7 +13,7 @@ class ScenarioTreeNode:
     # This function create a node for the instance and time given in argument
     # The node is associated to the time given in paramter.
     # nr demand is the number of demand scenario fo
-    def __init__(self, owner=None, parent=None, firstbranchid=-1, instance=None, mipsolver=None, time=-1, nrbranch=-1,
+    def __init__(self, owner=None, parent=None, firstbranchid=0, instance=None, mipsolver=None, time=-1, nrbranch=-1,
                  demands=None, proabibilty=-1, averagescenariotree=False):
         if owner is not None:
             owner.Nodes.append(self)
@@ -38,8 +38,9 @@ class ScenarioTreeNode:
             else:
                 # if self.Owner.GenerateasYQfix:
                 #    nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
-                if self.Owner.ScenarioGenerationMethod == Constants.RQMC and self.Owner.GenerateRQMCForYQFix and not time >= (
-                    self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty):
+                if (self.Owner.ScenarioGenerationMethod == Constants.RQMC and self.Owner.GenerateRQMCForYQFix and not time >= (
+                    self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty)) \
+                    or ( self.Owner.ScenarioGenerationMethod == Constants.All and self.Owner.Model == Constants.ModelYQFix ):
                     nextdemands = self.GetDemandRQMCForYQFix(t - 1, nrbranch, firstbranchid)
                 elif t <= self.Owner.FollowGivenUntil:
                     nextdemands = self.GetDemandToFollowFirstPeriods(t - 1)

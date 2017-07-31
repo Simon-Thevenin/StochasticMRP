@@ -10,7 +10,7 @@ from matplotlib import pyplot as PLT
 
 class ScenarioTree:
     #Constructor
-    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False, generateasYQfix = False ):
+    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False, generateasYQfix = False, model = "YFix" ):
         self.Seed = seed
         np.random.seed( seed )
         self.Nodes = []
@@ -40,6 +40,22 @@ class ScenarioTree:
 
         self.DemandYQFixRQMC = []
         self.GenerateRQMCForYQFix = generateRQMCForYQfix
+        self.Model = model
+        if self.ScenarioGenerationMethod == Constants.All and model == Constants.ModelYQFix:
+
+            temporarytreestructur = [1, 8, 8, 8, 1, 1, 1, 0]
+            temporaryscenariotree = ScenarioTree(self.Instance, temporarytreestructur, self.Seed,
+                                        averagescenariotree=False,
+                                        scenariogenerationmethod=Constants.All,
+                                        generateRQMCForYQfix=False)
+            temporaryscenarios = temporaryscenariotree.GetAllScenarios( False )
+            self.DemandYQFixRQMC = [[[temporaryscenarios[s].Demands[t][p]
+                                      if self.Instance.HasExternalDemand[p]
+                                      else 0.0
+                                      for p in self.Instance.ProductSet]
+                                     for t in self.Instance.TimeBucketSet]
+                                    for s in range(512)]
+
         if self.ScenarioGenerationMethod == Constants.RQMC and generateRQMCForYQfix:
              nrtimebuckets = self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty
              avgvector = [  self.Instance.ForecastedAverageDemand[t][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
@@ -90,6 +106,7 @@ class ScenarioTree:
              #
              #            n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
              #            PLT.show()
+
 
         self.RootNode =  ScenarioTreeNode( owner = self,
                                            instance = instance,

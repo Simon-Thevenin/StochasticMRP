@@ -117,7 +117,8 @@ class MRPSolution:
                                            seed = scenariotreeseed,
                                            averagescenariotree =  avgscenariotree,
                                            scenariogenerationmethod =  scenariogenerationm,
-                                           generateRQMCForYQfix = RQMCForYQfix )
+                                           generateRQMCForYQfix = RQMCForYQfix,
+                                           model = model)
 
         self.CplexCost = instanceinfo.get_value( 'CplexCost', 0 )
         self.CplexTime = instanceinfo.get_value( 'CplexTime', 0 )

@@ -21,6 +21,7 @@ class Constants:
     Average = "Average"
     MonteCarlo = "MC"
     RQMC = "RQMC"
+    All = "all"
     Solve = "Solve"
     Evaluate = "Evaluate"
     VSS= "VSS"
@@ -30,7 +31,7 @@ class Constants:
     Debug = False
     PrintSolutionFileToExcel = False
     PrintDebugLPFiles = False
-    LauchEvalAfterSolve = False
+    LauchEvalAfterSolve = True
     Infinity = 9999999999999.9
     AlgorithmTimeLimit = 36000.0
     AlgorithmOptimalityTolerence = 0.00001
