@@ -23,7 +23,7 @@ if __name__ == "__main__":
     #modelset = ["YFix", "YQFix", "Average"]
     modelset = [ "YFix"]
     generationset = ["RQMC"]
-    Nrseed = 1
+    Nrseed = 5
 
     for instance in InstanceSet :
     #for instance in ["00", "01", "01_LTH"]:
