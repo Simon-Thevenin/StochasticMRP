@@ -59,7 +59,7 @@ if __name__ == "__main__":
                      #    methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "200" ]
+                     scenarset = [ "512" ]
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      #policyset = ["Fix", "Re-solve"]
                      policyset = ["Fix"]
@@ -171,7 +171,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
                  #    methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "200" ]
+                     scenarset = [ "512" ]
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      #policyset = ["Fix", "Re-solve"]
                      policyset = ["Fix"]
@@ -243,7 +243,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
                  #    methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "200" ]
+                     scenarset = [ "512" ]
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      #policyset = ["Fix", "Re-solve"]
                      policyset = ["Fix"]
