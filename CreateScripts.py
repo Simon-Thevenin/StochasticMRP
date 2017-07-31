@@ -21,8 +21,8 @@ if __name__ == "__main__":
 
 
     #modelset = ["YFix", "YQFix", "Average"]
-    modelset = [ "YFix", "YQFix", "Average"]
-    generationset = ["RQMC", "MC"]
+    modelset = [ "YFix", "YQFix"]
+    generationset = ["RQMC", "all", "MC"]
     Nrseed = 5
 
     for instance in InstanceSet :
@@ -68,7 +68,7 @@ if __name__ == "__main__":
                      scenarset = ["1"]
                      avg = True
                      policyset = ["Fix", "Re-solve"]
-                     generationset = ["MC"]
+                     #generationset = ["MC"]
 
                  for method in methodset:
 
@@ -141,7 +141,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
         if instance == "00":
             distributionset = ["Binomial"]
         if instance == "01":
-            distributionset = ["Uniform", "NonStationary"]
+            distributionset = ["Uniform"]
             #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
         for distribution in distributionset:
             # model = "YFix"
