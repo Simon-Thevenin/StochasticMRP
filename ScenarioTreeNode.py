@@ -408,4 +408,12 @@ class ScenarioTreeNode:
                 result -= node.Demand[p]
             node = node.Parent
 
+        if node.Time >= 0:
+            print "ATTTENTION REMOVE tAHT if IT DOESNOT WORK %r %r" % ( node.InventoryLevelTime, self.Instance.TotalRequirement)
+
+            result = node.QuantityToOrderNextTime[p]
+
+            result += sum( node.InventoryLevelTime[q] * self.Instance.TotalRequirement[q][p]
+                           for q in self.Instance.ProductSet if self.Instance.HasExternalDemand[q]) #self.Instance.StartingInventories[p]
+
         return result

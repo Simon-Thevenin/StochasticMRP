@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
 
     #modelset = ["YFix", "YQFix", "Average"]
-    modelset = [ "YQFix", "Average"]
+    modelset = [ "YFix"]
 
     for instance in InstanceSet :
     #for instance in ["00", "01", "01_LTH"]:

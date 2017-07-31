@@ -134,6 +134,7 @@ class MRPInstance:
         self.RequieredProduct = [ [ q for q in self.ProductSet  if self.Requirements[ q ][ p ] > 0.0 ]
                                                                     for p in self.ProductSet ]
         self.ComputeHasExternalDemand()
+        self.ComputeUseForFabrication()
     #Constructor
     def __init__( self ):
         self.InstanceName = ""
@@ -158,6 +159,7 @@ class MRPInstance:
         self.RateOfKnownDemand = -1
         self.ForcastedStandardDeviation = []
         self.Requirements = []
+        self.TotalRequirement = []
         self.Leadtimes = []
         self.StartingInventories = []
         self.InventoryCosts = []
@@ -193,6 +195,21 @@ class MRPInstance:
                     self.MaxLeadTimeProduct[ p ] = max( [ self.MaxLeadTimeProduct [ q ] for q in parents ] );
                 self.MaxLeadTimeProduct[p] =  self.MaxLeadTimeProduct[p] + self.Leadtimes[ p ]
         self.MaxLeadTime = max( self.MaxLeadTimeProduct[p] for p in self.ProductSet )
+
+    #Fill the array UseForFabrication which is equal to 1 if component p is used to produce r (even not directely)
+    def ComputeUseForFabrication( self ):
+        self.TotalRequirement = [ [ 0 for p in self.ProductSet ] for q in self.ProductSet ]
+        maxlevl = max( self.Level )
+        levelset = sorted(set(self.Level), reverse=True)
+        for l in levelset:
+            prodinlevel = [p for p in self.ProductSet if self.Level[p] == l]
+            for p in prodinlevel:
+                for q in self.ProductSet:
+                    if l == maxlevl:
+                        self.TotalRequirement[q][p] = self.Requirements[q][p]
+                    else:
+                        for c in self.ProductSet:
+                                self.TotalRequirement[q][p] =  self.TotalRequirement[q][p] + self.Requirements[c][p] *  self.TotalRequirement[q][c]
 
     #This function compute at which level each node is in the supply chain
     def ComputeLevel( self ) :
