@@ -48,11 +48,12 @@ if __name__ == "__main__":
                  avg = False
                  if model == "YFix":
                      scenarset = ["512"]
-                     if instance in ["00", "01", "02", "03", "04", "05"]:
+                     methodset = ["MIP"]
+                     #if instance in ["00", "01", "02", "03", "04", "05"]:
                          #methodset = ["MIP", "SDDP"]
-                         methodset = ["MIP"]
-                     else:
-                         methodset = ["SDDP"]
+                     #    methodset = ["MIP"]
+                     #else:
+                     #    methodset = ["SDDP"]
 
                  if model == "YQFix":
                      #scenarset = [ "200" ]
@@ -149,13 +150,12 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 
                  methodset = ["MIP"]
                  avg = False
-                 if model == "YFix":
-                     scenarset = ["512"]
-                     if instance in ["00", "01", "02", "03", "04", "05"]:
-                         #methodset = ["MIP", "SDDP" ]
-                         methodset = ["MIP"]
-                     else:
-                         methodset = ["SDDP"]
+                 methodset = ["MIP"]
+                 # if instance in ["00", "01", "02", "03", "04", "05"]:
+                 # methodset = ["MIP", "SDDP"]
+                 #    methodset = ["MIP"]
+                 # else:
+                 #    methodset = ["SDDP"]
 
                  if model == "YQFix":
                      #scenarset = [ "200" ]
@@ -223,13 +223,12 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  policyset = [ "S","NNS", "NND", "NNDAC", "NNSAC", "Re-solve"]
                  methodset = ["MIP"]
                  avg = False
-                 if model == "YFix":
-                     scenarset = ["512"]
-                     if instance in ["00", "01", "02", "03", "04", "05"]:
-                         methodset = ["MIP" ]
-                         #methodset = ["MIP", "SDDP" ]
-                     else:
-                         methodset = ["SDDP"]
+                 methodset = ["MIP"]
+                 # if instance in ["00", "01", "02", "03", "04", "05"]:
+                 # methodset = ["MIP", "SDDP"]
+                 #    methodset = ["MIP"]
+                 # else:
+                 #    methodset = ["SDDP"]
 
                  if model == "YQFix":
                      #scenarset = [ "200" ]
