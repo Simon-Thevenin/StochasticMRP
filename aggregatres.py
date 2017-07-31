@@ -299,3 +299,53 @@ for f in glob.glob("./Test/*.csv"):
 writer = pd.ExcelWriter("./Test/TestResult.xlsx", engine='openpyxl')
 all_data.to_excel(writer, "Res")
 writer.save()
+
+columnname = ["Instance name",
+              "Distribution",
+              "Model",
+              "Method",
+              "Scenario Generation",
+              "NrInSampleScenario",
+              "Seed",
+              "Policy generation",
+              "NrOutSampleScenario",
+              "Cplex solution value",
+              "Solution cost",
+              "Cplex_status",
+              "Build time",
+              "Solve time",
+              "Cplex gap",
+              "Cplex Nr iteration",
+              "Cplex Nr nodes",
+              "Cplex best node nr",
+              "Cplex Nr Variable",
+              "Cplex Nr constraint",
+              "Inventory Cost",
+              "BackOrder cost",
+              "Setup cost",
+              "In sample Average",
+              "In Sample Standard deviation",
+              "Nr level",
+              "Nr product",
+              "Nr time Period",
+              "Demand Tree Seed",
+              "Nr Scenario",
+              "Max lead time",
+              "BranchingStrategy",
+              "Demand Distribuion",
+              "UseNonAnticipativity",
+              "Model",
+              "UseSlowMoving",
+              "ScenarioSeed"
+              ]
+
+all_data = pd.DataFrame(columns=columnname)
+# Add the content of each csv file at the end of the dataframe
+for f in glob.glob("./Test/VSS/*.csv"):
+    df = pd.read_csv(f, names=columnname)
+    df.columns = columnname
+    all_data = all_data.append(df, ignore_index=True)
+
+writer = pd.ExcelWriter("./Test/VSS/VSS.xlsx", engine='openpyxl')
+all_data.to_excel(writer, "Res")
+writer.save()
