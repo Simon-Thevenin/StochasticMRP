@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     #modelset = ["YFix", "YQFix", "Average"]
     modelset = [ "YFix"]
-    generationset = ["RQMC"]
+    generationset = ["RQMC, MC"]
     Nrseed = 5
 
     for instance in InstanceSet :
@@ -32,7 +32,8 @@ if __name__ == "__main__":
          if instance == "00":
              distributionset = ["Binomial"]
          if instance == "01":
-             distributionset = ["Uniform", "NonStationary"]
+             #distributionset = ["Uniform"]
+            distributionset = ["Uniform", "NonStationary"]
              #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
          for distribution in distributionset:
              # model = "YFix"
@@ -105,10 +106,10 @@ if __name__ == "__main__":
 #$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s -e
+python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s
 """ % ( instance, distribution, model, nrscenar, generation, seed, method,  instance, distribution, model, nrscenar, generation, seed, method  ))
                                     for Policy in policyset:
-                                          qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s_evpi" % (
+                                          qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
                                               instance, distribution, model, nrscenar, generation,method, Policy, seed)
                                           qsub_file = open(qsub_filename, 'w')
                                           qsub_file.write("""
@@ -195,7 +196,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
                          for nrscenar in scenarset:
                               for seed in range( Nrseed ):
                                   for Policy in policyset:
-                                        file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s_evpi \n" % (
+                                        file.write("qsub job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
                                                       instance, distribution, model, nrscenar, generation,method, Policy, seed))
 
 
@@ -266,5 +267,5 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
 
                          for nrscenar in scenarset:
                                 for seed in range( Nrseed ):
-                                        file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s_evpi \n" % (
+                                        file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
                                             instance, distribution, model, nrscenar, generation, seed, method ) )
