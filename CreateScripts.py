@@ -9,7 +9,7 @@ import subprocess
 
 if __name__ == "__main__":
 
-    InstanceSet = [ "00_C=2", "01_C=2"]#, "02_C=2", "03_C=2", "04_C=2", "05_C=2" ]
+    InstanceSet = [ "00_C=2", "01_C=2", "02_C=2", "03_C=2", "04_C=2", "05_C=2" ]
 
                #["00", "01", "02", "03", "04", "05" ]
                #    "01_Theta4", "02_Theta4", "03_Theta4", "04_Theta4", "05_Theta4",
@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
 
     #modelset = ["YFix", "YQFix", "Average"]
-    modelset = [ "YFix", "YQFix"]
+    modelset = [ "YFix"]#, "YQFix"]
     generationset = ["RQMC", "all", "MC"]
     Nrseed = 5
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
          if instance == "00_C=2":
              distributionset = ["Binomial"]
          if instance == "01_C=2":
-             distributionset = ["Uniform"]
+             distributionset = ["Uniform", "NonStationary"]
             #distributionset = ["Uniform", "NonStationary"]
              #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
          for distribution in distributionset:
@@ -141,7 +141,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
         if instance == "00_C=2":
             distributionset = ["Binomial"]
         if instance == "01_C=2":
-            distributionset = ["Uniform"]
+            distributionset = ["Uniform", "NonStationary"]
             #     distributionset = ["SlowMoving", "Normal", "Lumpy", "Uniform", "NonStationary"]
         for distribution in distributionset:
             # model = "YFix"
