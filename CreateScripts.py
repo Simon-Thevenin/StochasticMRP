@@ -45,7 +45,7 @@ if __name__ == "__main__":
              for model in modelset:
                  #generationset = ["MC", "RQMC"]
 
-                 scenarset = ["512"]
+                 #scenarset = ["512"]
 
                  policyset = [ "Re-solve"]
                  methodset = ["MIP"]
@@ -157,7 +157,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                 #generationset = ["MC", "RQMC"]
 
 
-                 scenarset = [ "512" ]
+                 #scenarset = [ "512" ]
 
                  policyset = [ "S","NNS", "NND", "NNDAC", "NNSAC", "Re-solve"]
                  policyset = ["Re-solve"]
@@ -172,7 +172,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  #    methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "512" ]
+                     scenarset = [ "200" ]
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      #policyset = ["Fix", "Re-solve"]
                      policyset = ["Fix"]
