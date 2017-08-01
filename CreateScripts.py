@@ -9,9 +9,10 @@ import subprocess
 
 if __name__ == "__main__":
 
-    InstanceSet = [ "00_C=2", "01_C=2", "02_C=2", "03_C=2", "04_C=2", "05_C=2" ]
+    #InstanceSet = [ "00_C=2", "01_C=2", "02_C=2", "03_C=2", "04_C=2", "05_C=2" ]
+    InstanceSet = ["05_C=2"]
 
-               #["00", "01", "02", "03", "04", "05" ]
+    #["00", "01", "02", "03", "04", "05" ]
                #    "01_Theta4", "02_Theta4", "03_Theta4", "04_Theta4", "05_Theta4",
                #    "00_b=2h", "01_b=2h", "02_b=2h", "03_b=2h", "04_b=2h", "05_b=2h",
                #    "00_b=50h", "01_b=50h", "02_b=50h", "03_b=50h", "04_b=50h", "05_b=50h",
@@ -59,7 +60,7 @@ if __name__ == "__main__":
                      #    methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "512" ]
+                     scenarset = [ "200" ]
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      #policyset = ["Fix", "Re-solve"]
                      policyset = ["Fix"]
@@ -96,7 +97,7 @@ if __name__ == "__main__":
                                  #for vss in range(1, maxvss):
                                     print "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
                                             instance, distribution, model, nrscenar, generation, seed, method  )
-                                    qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
+                                    qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s_evpi" % (
                                             instance, distribution, model, nrscenar, generation, seed, method  )
                                     qsub_file = open(qsub_filename, 'w')
                                     qsub_file.write("""
@@ -108,7 +109,7 @@ if __name__ == "__main__":
 #$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s
+python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s -e
 """ % ( instance, distribution, model, nrscenar, generation, seed, method,  instance, distribution, model, nrscenar, generation, seed, method  ))
                                     for Policy in policyset:
                                           qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
@@ -243,7 +244,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  #    methodset = ["SDDP"]
 
                  if model == "YQFix":
-                     scenarset = [ "512" ]
+                     scenarset = [ "200" ]
                      #scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
                      #policyset = ["Fix", "Re-solve"]
                      policyset = ["Fix"]
@@ -270,5 +271,5 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 
                          for nrscenar in scenarset:
                                 for seed in range( Nrseed ):
-                                        file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
+                                        file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s_evpi \n" % (
                                             instance, distribution, model, nrscenar, generation, seed, method ) )

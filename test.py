@@ -88,6 +88,7 @@ def PrintFinalResult():
     data = TestIdentifier + EvaluatorIdentifier + OptimizationInfo+  InSampleKPIStat + OutOfSampleTestResult
     d = datetime.now()
     date = d.strftime('%m_%d_%Y_%H_%M_%S')
+    print "print the test result ./Test/TestResult_%s_%s.csv" % (GetTestDescription(), GetEvaluateDescription())
     myfile = open(r'./Test/TestResult_%s_%s.csv' % (GetTestDescription(), GetEvaluateDescription()), 'wb')
     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
     wr.writerow( data )
@@ -187,6 +188,8 @@ def SolveYQFix( ):
     OptimizationInfo[1] = solution.CplexGap
     PrintTestResult()
     PrintSolutionToFile( solution )
+    if EVPI:
+        PrintFinalResult()
     RunEvaluation()
 
 
@@ -224,7 +227,9 @@ def SolveYFix():
     # PrintFinalResult()
 
     PrintTestResult()
-    if   Method == "MIP" :
+    if EVPI:
+        PrintFinalResult()
+    elif   Method == "MIP" :
         PrintSolutionToFile( solution )
         RunEvaluation()
     GatherEvaluation()
