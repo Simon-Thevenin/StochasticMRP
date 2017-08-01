@@ -659,6 +659,8 @@ class MIPSolver(object):
         self.Cplex.parameters.timelimit.set( Constants.AlgorithmTimeLimit )
         self.Cplex.parameters.mip.limits.treememory.set( 7000.0 )
         self.Cplex.parameters.threads.set(1)
+        #self.Cplex.parameters.mip.tolerances.mipgap.set(0.00000001)
+        #self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00000001)
 
         end_modeling = time.time();
 

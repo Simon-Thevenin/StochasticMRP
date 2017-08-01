@@ -228,6 +228,8 @@ def SolveYFix():
 
     PrintTestResult()
     if EVPI:
+        PrintSolutionToFile(solution)
+        ComputeInSampleStatistis()
         PrintFinalResult()
     elif   Method == "MIP" :
         PrintSolutionToFile( solution )
