@@ -123,7 +123,7 @@ python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s
 #$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Evaluate %s %s %s %s %s  -s %s -p %s -e
+python test.py Evaluate %s %s %s %s %s  -s %s -p %s
  """ % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model, nrscenar, generation, seed, Policy) )
 
 
