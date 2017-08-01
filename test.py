@@ -680,16 +680,16 @@ if __name__ == "__main__":
     if Action == Constants.Solve:
 
         if Model == Constants.ModelYQFix or Model == Constants.Average:
-            if Constants.LauchEvalAfterSolve :
+            #if Constants.LauchEvalAfterSolve :
                 SolveYQFix()
-            else: RunTestsAndEvaluation()
+            #else: RunTestsAndEvaluation()
 
         if Model == Constants.ModelYFix:
-            if Constants.LauchEvalAfterSolve:
+            #if Constants.LauchEvalAfterSolve:
                 SolveYFix(  )
 
-            else:
-                RunTestsAndEvaluation()
+            #else:
+            #    RunTestsAndEvaluation()
 
     if Action == Constants.VSS:
         ComputeVSS( )
