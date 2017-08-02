@@ -198,29 +198,29 @@ class Evaluator:
         # Use an offset in the seed to make sure the scenario used for evaluation are different from the scenario used for optimization
         offset = solveseed + 999323
 
-        # for seed in range(offset, nrscenario + offset, 1):
-        #     # Generate a random scenario
-        #     ScenarioSeed = seed
-        #     # Evaluate the solution on the scenario
-        #     treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
-        #     scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True)
-        #     scenario = scenariotree.GetAllScenarios(False)[0]
-        #     scenarioset.append( scenario )
-        #     treeset.append( scenariotree)
+        for seed in range(offset, nrscenario + offset, 1):
+            # Generate a random scenario
+            ScenarioSeed = seed
+            # Evaluate the solution on the scenario
+            treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
+            scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True)
+            scenario = scenariotree.GetAllScenarios(False)[0]
+            scenarioset.append( scenario )
+            treeset.append( scenariotree)
 
         #Uncoment to generate all the scenario if a  distribution with smallll support is used
-        scenariotree = ScenarioTree(self.Instance, [1, 8, 8, 8, 1, 1, 1, 0], offset,
-                                    scenariogenerationmethod=Constants.All,
-                                    generateRQMCForYQfix=False,
-                                    model= Constants.ModelYFix)
-        scenarioset = scenariotree.GetAllScenarios(False)
-
-        for s in range( len( scenarioset ) ):
-            tree = ScenarioTree(self.Instance, [1, 1, 1, 1, 1, 1, 1, 0], offset,
-                                        generateRQMCForYQfix=False,
-                                        model=Constants.ModelYFix,
-                                givenfirstperiod=  scenarioset[s].Demands )
-            treeset.append( tree )
+        # scenariotree = ScenarioTree(self.Instance, [1, 8, 8, 8, 1, 1, 1, 0], offset,
+        #                             scenariogenerationmethod=Constants.All,
+        #                             generateRQMCForYQfix=False,
+        #                             model= Constants.ModelYFix)
+        # scenarioset = scenariotree.GetAllScenarios(False)
+        #
+        # for s in range( len( scenarioset ) ):
+        #     tree = ScenarioTree(self.Instance, [1, 1, 1, 1, 1, 1, 1, 0], offset,
+        #                                 generateRQMCForYQfix=False,
+        #                                 model=Constants.ModelYFix,
+        #                         givenfirstperiod=  scenarioset[s].Demands )
+        #     treeset.append( tree )
 
         return scenarioset, treeset
 
