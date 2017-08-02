@@ -227,11 +227,11 @@ def SolveYFix():
     # PrintFinalResult()
 
     PrintTestResult()
-    if EVPI:
-        PrintSolutionToFile(solution)
-        ComputeInSampleStatistis()
-        PrintFinalResult()
-    elif   Method == "MIP" :
+    #if EVPI:
+    #    PrintSolutionToFile(solution)
+    #    ComputeInSampleStatistis()
+    #    PrintFinalResult()
+    if   Method == "MIP" :
         PrintSolutionToFile( solution )
         RunEvaluation()
     GatherEvaluation()
@@ -292,12 +292,14 @@ def EvaluateSingleSol(  ):
     filedescription = GetTestDescription()
     solution = MRPSolution()
     solution.ReadFromFile(filedescription)
-    evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, evpi=EVPI, scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
+    evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, evpi=EVPI, scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy, evaluateaverage= (Model==Constants.Average) )
 
     MIPModel = Model
     if Model == Constants.Average:
         MIPModel = Constants.ModelYQFix
-    OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  MIPModel, saveevaluatetab= True, filename = GetEvaluationFileName()  )
+
+    if not EVPI:
+        OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  MIPModel, saveevaluatetab= True, filename = GetEvaluationFileName()  )
    # PrintFinalResult()
     GatherEvaluation()
 

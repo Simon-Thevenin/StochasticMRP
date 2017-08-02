@@ -521,30 +521,31 @@ class MIPSolver(object):
         AlreadyAdded = [ [ False ] * n  for w in range( self.GetNrProductionVariable() ) ]
 
         for t in self.Instance.TimeBucketSet:
-            for p in self.Instance.ProductSet:
-                for w in self.ScenarioSet:
-                    indexQ = self.GetIndexQuantityVariable(p, t, w)
-                    indexP = self.GetIndexProductionVariable(p, t, w) - self.GetStartProductionVariable()
-                    if not AlreadyAdded[indexP][indexQ]:
-                        #AlreadyAdded[indexP][indexQ] = True
-                        #ic_dict = {}
-                        #ic_dict["lin_expr"] = cplex.SparsePair(ind=[indexQ],
-                        #                                       val=[1.0])
-                        #ic_dict["rhs"] = 0.0
-                        #ic_dict["sense"] = "E"
-                        #ic_dict["indvar"] = self.GetIndexProductionVariable(p, t, w)
-                        #ic_dict["complemented"] = 1
-                        #self.Cplex.indicator_constraints.add( **ic_dict )
+            if t > self.FixSolutionUntil or not  self.EvaluateSolution:
+                for p in self.Instance.ProductSet:
+                    for w in self.ScenarioSet:
+                        indexQ = self.GetIndexQuantityVariable(p, t, w)
+                        indexP = self.GetIndexProductionVariable(p, t, w) - self.GetStartProductionVariable()
+                        if not AlreadyAdded[indexP][indexQ]:
+                            #AlreadyAdded[indexP][indexQ] = True
+                            #ic_dict = {}
+                            #ic_dict["lin_expr"] = cplex.SparsePair(ind=[indexQ],
+                            #                                       val=[1.0])
+                            #ic_dict["rhs"] = 0.0
+                            #ic_dict["sense"] = "E"
+                            #ic_dict["indvar"] = self.GetIndexProductionVariable(p, t, w)
+                            #ic_dict["complemented"] = 1
+                            #self.Cplex.indicator_constraints.add( **ic_dict )
 
 
-                        vars = [indexQ, self.GetIndexProductionVariable(p, t, w) ]
-                        AlreadyAdded[indexP][indexQ] = True
-                        coeff = [ -1.0, MIPSolver.GetBigMValue(self.Instance, self.Scenarios, p ) ]
-                        righthandside = [ 0.0 ]
-                        # PrintConstraint( vars, coeff, righthandside )
-                        self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
-                                                                    senses=["G"],
-                                                                    rhs=righthandside)
+                            vars = [indexQ, self.GetIndexProductionVariable(p, t, w) ]
+                            AlreadyAdded[indexP][indexQ] = True
+                            coeff = [ -1.0, MIPSolver.GetBigMValue(self.Instance, self.Scenarios, p ) ]
+                            righthandside = [ 0.0 ]
+                            # PrintConstraint( vars, coeff, righthandside )
+                            self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                                        senses=["G"],
+                                                                        rhs=righthandside)
 
     # This function creates the Capacity constraint
     def CreateCapacityConstraints( self ):

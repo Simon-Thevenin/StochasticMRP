@@ -15,7 +15,7 @@ import cplex
 
 class Evaluator:
 
-    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP" ):
+    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False ):
         self.Instance = instance
         self.Solutions = solutions
         self.SDDPs = sddps
@@ -29,6 +29,7 @@ class Evaluator:
         self.ReferenceTreeStructure = treestructure
         self.NearestNeighborStrategy = nearestneighborstrategy
         self.OptimizationMethod = optimizationmethod
+        self.EvaluateAverage = evaluateaverage
 
 
 
@@ -199,14 +200,14 @@ class Evaluator:
         offset = solveseed + 999323
 
         for seed in range(offset, nrscenario + offset, 1):
-            # Generate a random scenario
-            ScenarioSeed = seed
-            # Evaluate the solution on the scenario
-            treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
-            scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True)
-            scenario = scenariotree.GetAllScenarios(False)[0]
-            scenarioset.append( scenario )
-            treeset.append( scenariotree)
+           # Generate a random scenario
+           ScenarioSeed = seed
+           # Evaluate the solution on the scenario
+           treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
+           scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True)
+           scenario = scenariotree.GetAllScenarios(False)[0]
+           scenarioset.append( scenario )
+           treeset.append( scenariotree)
 
         #Uncoment to generate all the scenario if a  distribution with smallll support is used
         # scenariotree = ScenarioTree(self.Instance, [1, 8, 8, 8, 1, 1, 1, 0], offset,
@@ -285,18 +286,31 @@ class Evaluator:
            # result = [solution.ScenarioTree.RootNode.Branches[0].QuantityToOrderNextTime[p] for p in self.Instance.ProductSet]
 
             result = [solution.ProductionQuantity[0][time][p]  for p in self.Instance.ProductSet]
+
         else:
-            treestructure = [1] + [self.ReferenceTreeStructure[t - time + 1] if (
-            t >= time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty))) else 1 for
-                                   t in range(self.Instance.NrTimeBucket)] + [0]
+            treestructure = [1] \
+                            + [self.ReferenceTreeStructure[t - time + 1]
+                               if (  t >= time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty)))
+                               else 1 for
+                                t in range(self.Instance.NrTimeBucket)] \
+                            + [0]
 
-
+            if model == Constants.ModelYQFix and self.ScenarioGenerationResolvePolicy == Constants.All :
+                treestructure = [1] \
+                            + [ int( math.pow(8,3-time) )
+                               if (  t == time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty)  ) )
+                               else 1 for
+                                t in range(self.Instance.NrTimeBucket)] \
+                            + [0]
 
             self.StartSeedResolve = self.StartSeedResolve + 1
             scenariotree = ScenarioTree(self.Instance, treestructure, self.StartSeedResolve,
+                                        averagescenariotree = self.EvaluateAverage,
                                         givenfirstperiod=demanduptotimet,
-                                        scenariogenerationmethod=self.ScenarioGenerationResolvePolicy)
+                                        scenariogenerationmethod=self.ScenarioGenerationResolvePolicy,
+                                        model= model)
             quantitytofix = [[givenquantty[t][p] for p in self.Instance.ProductSet] for t in range(time)]
+
             if not self.IsDefineMIPResolveTime[time]:
                 mipsolver = MIPSolver(self.Instance, model, scenariotree,
                                       self.EVPI,
@@ -316,10 +330,12 @@ class Evaluator:
                 self.MIPResolveTime[time].ModifyMipForScenario(scenariotree)
                 self.MIPResolveTime[time].ModifyMipForFixQuantity(quantitytofix, fixuntil=time)
 
-            self.MIPResolveTime[time].Cplex.parameters.advance = 0
-            self.MIPResolveTime[time].Cplex.parameters.lpmethod = 1  # Dual primal cplex.CPX_ALG_DUAL
+            #self.MIPResolveTime[time].Cplex.parameters.advance = 0
+            #self.MIPResolveTime[time].Cplex.parameters.lpmethod = 1  # Dual primal cplex.CPX_ALG_DUAL
+            self.MIPResolveTime[time].Cplex.parameters.advance = 1
+            self.MIPResolveTime[time].Cplex.parameters.lpmethod = 2
             solution = self.MIPResolveTime[time].Solve()
-
+            #self.MIPResolveTime[time].Cplex.write("MRP-Re-Solve.lp")
             # Get the corresponding node:
             if not solution is None:
                 result = [solution.ProductionQuantity[0][time][p] for p in

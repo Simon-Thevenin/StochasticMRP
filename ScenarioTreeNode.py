@@ -25,7 +25,7 @@ class ScenarioTreeNode:
         self.NodeNumber = ScenarioTreeNode.NrNode;
         ScenarioTreeNode.NrNode = ScenarioTreeNode.NrNode + 1;
         self.FirstBranchID = firstbranchid
-        if time > 1:
+        if time > max( self.Owner.FollowGivenUntil, 1):
             self.FirstBranchID = self.Parent.FirstBranchID
         t = time + 1
 
@@ -41,21 +41,20 @@ class ScenarioTreeNode:
                 if (self.Owner.ScenarioGenerationMethod == Constants.RQMC and self.Owner.GenerateRQMCForYQFix and not time >= (
                     self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty)):
                     nextdemands = self.GetDemandRQMCForYQFix(t - 1, nrbranch, firstbranchid)
-                elif ( self.Owner.ScenarioGenerationMethod == Constants.All and self.Owner.Model == Constants.ModelYQFix ):
-                    nextdemands, probabilities = self.GetDemandToFollowMultipleScenarios(t - 1, nrbranch, firstbranchid)
                 elif t <= self.Owner.FollowGivenUntil:
                     nextdemands = self.GetDemandToFollowFirstPeriods(t - 1)
+                elif (self.Owner.ScenarioGenerationMethod == Constants.All and self.Owner.Model == Constants.ModelYQFix):
+                    nextdemands, probabilities = self.GetDemandToFollowMultipleScenarios(t - 1, nrbranch, firstbranchid)
                 else:
                     nextdemands, probabilities = ScenarioTreeNode.CreateDemandNormalDistributiondemand(instance, t - 1,
                                                                                                        nrbranch,
                                                                                                        averagescenariotree,
                                                                                                        self.Owner.ScenarioGenerationMethod)
 
-            usaverageforbranch = t >= (
-            self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty) or self.Owner.AverageScenarioTree
+            usaverageforbranch = t >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty) or self.Owner.AverageScenarioTree
 
             nextfirstbranchid = [self.FirstBranchID for b in range(nrbranch)]
-            if t == 1:
+            if t == max( self.Owner.FollowGivenUntil + 1, 1):
                 nextfirstbranchid = [b for b in range(nrbranch)]
 
             self.Branches = [ScenarioTreeNode(owner=owner,
@@ -120,14 +119,17 @@ class ScenarioTreeNode:
 
     #This function is used To generate a set of scenario in YQFix which must follow given demand andp robability
     def GetDemandToFollowMultipleScenarios(self, time, nrdemand, firstbranchid):
-            demandvector = [[self.Owner.DemandToFollowMultipleSceario[firstbranchid + i][time][p]
+
+        demandvector = [[self.Owner.DemandToFollowMultipleSceario[firstbranchid + i][time][p]
                              for i in range(nrdemand)]
                             for p in self.Instance.ProductSet]
-            probability = [1 for i in range(nrdemand) ]
-            if time == 0:
+
+        probability = [1 for i in range(nrdemand) ]
+
+        if time  - self.Owner.FollowGivenUntil== 0:
                 probability = [ self.Owner.ProbabilityToFollowMultipleSceario[i]  for i in range(nrdemand)]
 
-            return demandvector, probability
+        return demandvector, probability
 
 
     #This function is used when the demand to use are the one generated for YQFix, which are stored in an array DemandToFollow

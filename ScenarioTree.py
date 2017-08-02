@@ -5,6 +5,7 @@ import numpy as np
 from RQMCGenerator import RQMCGenerator
 import os
 from Constants import Constants
+import math
 from ast import literal_eval
 from matplotlib import pyplot as PLT
 
@@ -42,11 +43,16 @@ class ScenarioTree:
         self.GenerateRQMCForYQFix = generateRQMCForYQfix
         self.Model = model
         if self.ScenarioGenerationMethod == Constants.All and model == Constants.ModelYQFix:
+            sizefixed = len( givenfirstperiod)
+            nrscenario = int( max( math.pow( 8 , 3-sizefixed), 1) )
+            temporarytreestructur = [1] +[1]*sizefixed+ [8] * (3-sizefixed ) +  [1, 1, 1, 0]
+            if nrscenario == 1:
+                temporarytreestructur = [ 1, 1, 1, 1, 1, 1, 1, 0 ]
 
-            temporarytreestructur = [1, 8, 8, 8, 1, 1, 1, 0]
             temporaryscenariotree = ScenarioTree(self.Instance, temporarytreestructur, self.Seed,
                                         averagescenariotree=False,
                                         scenariogenerationmethod=Constants.All,
+                                        givenfirstperiod=givenfirstperiod,
                                         generateRQMCForYQfix=False)
             temporaryscenarios = temporaryscenariotree.GetAllScenarios( False )
             self.DemandToFollowMultipleSceario = [[[temporaryscenarios[s].Demands[t][p]
@@ -54,8 +60,8 @@ class ScenarioTree:
                                                       else 0.0
                                                       for p in self.Instance.ProductSet]
                                                      for t in self.Instance.TimeBucketSet]
-                                                    for s in range(512)]
-            self.ProbabilityToFollowMultipleSceario = [ temporaryscenarios[s].Probability  for s in range(512) ]
+                                                    for s in range(nrscenario)]
+            self.ProbabilityToFollowMultipleSceario = [ temporaryscenarios[s].Probability  for s in range(nrscenario) ]
 
 
         if self.ScenarioGenerationMethod == Constants.RQMC and generateRQMCForYQfix:
