@@ -34,7 +34,7 @@ class Evaluator:
 
 
     #This function evaluate the performance of a set of solutions obtain with the same method (different solutions due to randomness in the method)
-    def EvaluateYQFixSolution( self, testidentifier, evaluateidentificator, model, saveevaluatetab = False, filename = ""):
+    def EvaluateYQFixSolution( self, testidentifier, evaluateidentificator, model, saveevaluatetab = False, filename = "", evpi = False):
         # Compute the average value of the demand
         nrscenario = evaluateidentificator[2]
         start_time = time.time()
@@ -45,80 +45,84 @@ class Evaluator:
         firstsolution = True
         nrerror = 0
 
-        for n in range( self.NrSolutions ):
-            if self.OptimizationMethod == Constants.MIP:
-                sol = self.Solutions[n]
-                if model == Constants.ModelYFix:
-                    sol.ComputeAverageS()
-                seed = sol.ScenarioTree.Seed
+        if not evpi:
 
-            if self.OptimizationMethod == Constants.SDDP:
-                sddp = self.SDDPs[n]
-                seed = sddp.StartingSeed
-            evaluatoinscenarios, scenariotrees =self.GetScenarioSet(seed, nrscenario)
-            if self.OptimizationMethod == Constants.SDDP:
-                self.ForwardPassOnScenarios( sddp, evaluatoinscenarios)
-            firstscenario = True
-            self.IsDefineMIPResolveTime = [False for t in self.Instance.TimeBucketSet]
-
-            average = 0
-            totalproba = 0
-            for indexscenario in range( nrscenario ):
-                scenario = evaluatoinscenarios[indexscenario]
-                scenariotree = scenariotrees[indexscenario]
+            for n in range( self.NrSolutions ):
                 if self.OptimizationMethod == Constants.MIP:
-                    givensetup, givenquantty = self.GetDecisionFromSolutionForScenario(sol, model, scenario)
+                    sol = self.Solutions[n]
+                    if model == Constants.ModelYFix:
+                        sol.ComputeAverageS()
+                    seed = sol.ScenarioTree.Seed
 
                 if self.OptimizationMethod == Constants.SDDP:
-                    givensetup, givenquantty = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
+                    sddp = self.SDDPs[n]
+                    seed = sddp.StartingSeed
+                evaluatoinscenarios, scenariotrees =self.GetScenarioSet(seed, nrscenario)
+                if self.OptimizationMethod == Constants.SDDP:
+                    self.ForwardPassOnScenarios( sddp, evaluatoinscenarios)
+                firstscenario = True
+                self.IsDefineMIPResolveTime = [False for t in self.Instance.TimeBucketSet]
 
-                #Solve the MIP and fix the decision to the one given.
-                if firstscenario:
-                    #Defin the MIP
-                    mipsolver = MIPSolver(self.Instance, model, scenariotree,
-                                                      evpi=False,
-                                                      implicitnonanticipativity=False,
-                                                      evaluatesolution=True,
-                                                      givenquantities=givenquantty,
-                                                      givensetups=givensetup,
-                                                      fixsolutionuntil=self.Instance.NrTimeBucket )
-                    mipsolver.BuildModel()
-                else:
-                    #update the MIP
-                    mipsolver.ModifyMipForScenario( scenariotree )
-                    if not self.Policy == Constants.Fix:
-                        mipsolver.ModifyMipForFixQuantity( givenquantty )
+                average = 0
+                totalproba = 0
+                for indexscenario in range( nrscenario ):
+                    scenario = evaluatoinscenarios[indexscenario]
+                    scenariotree = scenariotrees[indexscenario]
+                    if self.OptimizationMethod == Constants.MIP:
+                        givensetup, givenquantty = self.GetDecisionFromSolutionForScenario(sol, model, scenario)
 
-                mipsolver.Cplex.parameters.advance = 0
-                mipsolver.Cplex.parameters.lpmethod = 2
-                solution = mipsolver.Solve()
-                #CPLEX should always find a solution due to complete recourse
-                if solution == None:
-                    if Constants.Debug:
-                        mipsolver.Cplex.write("mrp.lp")
-                        raise NameError("error at seed %d with given qty %r"%(indexscenario, givenquantty))
-                        nrerror = nrerror +1
-                else:
-                    Evaluated[ indexscenario ] = solution.TotalCost
-                    average +=  solution.TotalCost * scenario.Probability
-                    totalproba += scenario.Probability
-                    #Record the obtain solution in an MRPsolution  OutOfSampleSolution
+                    if self.OptimizationMethod == Constants.SDDP:
+                        givensetup, givenquantty = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
+
+                    #Solve the MIP and fix the decision to the one given.
+                    if firstscenario:
+                        #Defin the MIP
+                        mipsolver = MIPSolver(self.Instance, model, scenariotree,
+                                                          evpi=False,
+                                                          implicitnonanticipativity=False,
+                                                          evaluatesolution=True,
+                                                          givenquantities=givenquantty,
+                                                          givensetups=givensetup,
+                                                          fixsolutionuntil=self.Instance.NrTimeBucket )
+                        mipsolver.BuildModel()
+                    else:
+                        #update the MIP
+                        mipsolver.ModifyMipForScenario( scenariotree )
+                        if not self.Policy == Constants.Fix:
+                            mipsolver.ModifyMipForFixQuantity( givenquantty )
+
+                    mipsolver.Cplex.parameters.advance = 0
+                    mipsolver.Cplex.parameters.lpmethod = 2
+                    solution = mipsolver.Solve()
+                    #CPLEX should always find a solution due to complete recourse
+                    if solution == None:
+                        if Constants.Debug:
+                            mipsolver.Cplex.write("mrp.lp")
+                            raise NameError("error at seed %d with given qty %r"%(indexscenario, givenquantty))
+                            nrerror = nrerror +1
+                    else:
+                        Evaluated[ indexscenario ] = solution.TotalCost
+                        average +=  solution.TotalCost * scenario.Probability
+                        totalproba += scenario.Probability
+                        #Record the obtain solution in an MRPsolution  OutOfSampleSolution
+                        if firstsolution:
+                            if firstscenario:
+                                OutOfSampleSolution = solution
+                            else:
+                                OutOfSampleSolution.Merge( solution )
+
+                        firstscenario = False
+
                     if firstsolution:
-                        if firstscenario:
-                            OutOfSampleSolution = solution
-                        else:
-                            OutOfSampleSolution.Merge( solution )
-
-                    firstscenario = False
-
-                if firstsolution:
-                    for s in OutOfSampleSolution.Scenarioset:
-                        s.Probability = 1.0/ len(  OutOfSampleSolution.Scenarioset )
+                        for s in OutOfSampleSolution.Scenarioset:
+                            s.Probability = 1.0/ len(  OutOfSampleSolution.Scenarioset )
 
             OutOfSampleSolution.ComputeStatistics()
             KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed )
             firstsolution = False
-
+        else:
+            KPIStat = [0]*1000
+            Evaluated = [0]*1000
         #Save the evaluation result in a file (This is used when the evaluation is parallelized)
         if saveevaluatetab:
             with open(filename+"Evaluator.txt", "w+") as fp:

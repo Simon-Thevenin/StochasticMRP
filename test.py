@@ -298,8 +298,7 @@ def EvaluateSingleSol(  ):
     if Model == Constants.Average:
         MIPModel = Constants.ModelYQFix
 
-    if not EVPI:
-        OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  MIPModel, saveevaluatetab= True, filename = GetEvaluationFileName()  )
+    OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  MIPModel, saveevaluatetab= True, filename = GetEvaluationFileName()  )
    # PrintFinalResult()
     GatherEvaluation()
 
