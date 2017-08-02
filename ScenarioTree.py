@@ -21,7 +21,7 @@ class ScenarioTree:
         self.EvaluationScenrio = evaluationscenario
         self.AverageScenarioTree = averagescenariotree
         self.ScenarioGenerationMethod = scenariogenerationmethod
-        ScenarioTreeNode.NrNode = 0
+
         #For some types of evaluation, the demand of the  first periods are given and the rest is stochastic
         self.GivenFirstPeriod = givenfirstperiod
         self.FollowGivenUntil = len(self.GivenFirstPeriod )
@@ -49,12 +49,14 @@ class ScenarioTree:
                                         scenariogenerationmethod=Constants.All,
                                         generateRQMCForYQfix=False)
             temporaryscenarios = temporaryscenariotree.GetAllScenarios( False )
-            self.DemandYQFixRQMC = [[[temporaryscenarios[s].Demands[t][p]
-                                      if self.Instance.HasExternalDemand[p]
-                                      else 0.0
-                                      for p in self.Instance.ProductSet]
-                                     for t in self.Instance.TimeBucketSet]
-                                    for s in range(512)]
+            self.DemandToFollowMultipleSceario = [[[temporaryscenarios[s].Demands[t][p]
+                                                      if self.Instance.HasExternalDemand[p]
+                                                      else 0.0
+                                                      for p in self.Instance.ProductSet]
+                                                     for t in self.Instance.TimeBucketSet]
+                                                    for s in range(512)]
+            self.ProbabilityToFollowMultipleSceario = [ temporaryscenarios[s].Probability  for s in range(512) ]
+
 
         if self.ScenarioGenerationMethod == Constants.RQMC and generateRQMCForYQfix:
              nrtimebuckets = self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty
@@ -107,7 +109,7 @@ class ScenarioTree:
              #            n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
              #            PLT.show()
 
-
+        ScenarioTreeNode.NrNode = 0
         self.RootNode =  ScenarioTreeNode( owner = self,
                                            instance = instance,
                                            mipsolver = self.Owner,

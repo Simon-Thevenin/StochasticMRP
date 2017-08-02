@@ -39,9 +39,10 @@ class ScenarioTreeNode:
                 # if self.Owner.GenerateasYQfix:
                 #    nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
                 if (self.Owner.ScenarioGenerationMethod == Constants.RQMC and self.Owner.GenerateRQMCForYQFix and not time >= (
-                    self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty)) \
-                    or ( self.Owner.ScenarioGenerationMethod == Constants.All and self.Owner.Model == Constants.ModelYQFix ):
+                    self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty)):
                     nextdemands = self.GetDemandRQMCForYQFix(t - 1, nrbranch, firstbranchid)
+                elif ( self.Owner.ScenarioGenerationMethod == Constants.All and self.Owner.Model == Constants.ModelYQFix ):
+                    nextdemands, probabilities = self.GetDemandToFollowMultipleScenarios(t - 1, nrbranch, firstbranchid)
                 elif t <= self.Owner.FollowGivenUntil:
                     nextdemands = self.GetDemandToFollowFirstPeriods(t - 1)
                 else:
@@ -115,6 +116,19 @@ class ScenarioTreeNode:
             #             n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
             #             PLT.show()
             return demandvector
+
+
+    #This function is used To generate a set of scenario in YQFix which must follow given demand andp robability
+    def GetDemandToFollowMultipleScenarios(self, time, nrdemand, firstbranchid):
+            demandvector = [[self.Owner.DemandToFollowMultipleSceario[firstbranchid + i][time][p]
+                             for i in range(nrdemand)]
+                            for p in self.Instance.ProductSet]
+            probability = [1 for i in range(nrdemand) ]
+            if time == 0:
+                probability = [ self.Owner.ProbabilityToFollowMultipleSceario[i]  for i in range(nrdemand)]
+
+            return demandvector, probability
+
 
     #This function is used when the demand to use are the one generated for YQFix, which are stored in an array DemandToFollow
     #Return the demand of time at position nrdemand in array DemandTo follow

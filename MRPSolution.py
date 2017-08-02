@@ -157,10 +157,10 @@ class MRPSolution:
         setupcost = 0
         lostsalecost = 0
         gammas = [math.pow(self.MRPInstance.Gamma, t) for t in self.MRPInstance.TimeBucketSet]
+
         for w in range(len(self.Scenarioset)):
             for t in timerange:
                 for p in self.MRPInstance.ProductSet:
-
                     inventorycost += self.InventoryLevel[w][t][p] \
                                           * self.MRPInstance.InventoryCosts[p] \
                                           * gammas[t] \
@@ -170,6 +170,7 @@ class MRPSolution:
                                       * self.MRPInstance.SetupCosts[p] \
                                       * gammas[t] \
                                       * self.Scenarioset[w].Probability
+
 
                     if self.MRPInstance.HasExternalDemand[p]:
                         if t < self.MRPInstance.NrTimeBucket - 1:

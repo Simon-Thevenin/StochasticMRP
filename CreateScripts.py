@@ -9,8 +9,8 @@ import subprocess
 
 if __name__ == "__main__":
 
-    #InstanceSet = [ "00_C=2", "01_C=2", "02_C=2", "03_C=2", "04_C=2", "05_C=2" ]
-    InstanceSet = ["05_C=2"]
+    InstanceSet = [ "00_C=2", "01_C=2", "02_C=2", "03_C=2", "04_C=2", "05_C=2" ]
+    #InstanceSet = ["05_C=2"]
 
     #["00", "01", "02", "03", "04", "05" ]
                #    "01_Theta4", "02_Theta4", "03_Theta4", "04_Theta4", "05_Theta4",
@@ -22,8 +22,8 @@ if __name__ == "__main__":
 
 
     #modelset = ["YFix", "YQFix", "Average"]
-    modelset = [ "YQFix"]#, "YQFix"]
-    generationset = ["RQMC"]
+    modelset = [ "YFix"]#, "YQFix"]
+    generationset = ["RQMC, MC"]
     Nrseed = 5
 
     for instance in InstanceSet :
@@ -109,7 +109,7 @@ if __name__ == "__main__":
 #$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s -e
+python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s
 """ % ( instance, distribution, model, nrscenar, generation, seed, method,  instance, distribution, model, nrscenar, generation, seed, method  ))
                                     for Policy in policyset:
                                           qsub_filename = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
