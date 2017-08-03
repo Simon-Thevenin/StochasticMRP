@@ -97,7 +97,7 @@ if __name__ == "__main__":
                                  #for vss in range(1, maxvss):
                                     print "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
                                             instance, distribution, model, nrscenar, generation, seed, method  )
-                                    qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s_evpi" % (
+                                    qsub_filename = "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
                                             instance, distribution, model, nrscenar, generation, seed, method  )
                                     qsub_file = open(qsub_filename, 'w')
                                     qsub_file.write("""
