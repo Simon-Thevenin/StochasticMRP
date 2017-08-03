@@ -122,6 +122,7 @@ class Evaluator:
             firstsolution = False
         else:
             average = 0
+            totalproba = 1
             KPIStat = [0]*1000
             Evaluated = [0]*1000
         #Save the evaluation result in a file (This is used when the evaluation is parallelized)
