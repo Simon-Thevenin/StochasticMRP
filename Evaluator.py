@@ -121,6 +121,7 @@ class Evaluator:
             KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed )
             firstsolution = False
         else:
+            average = 0
             KPIStat = [0]*1000
             Evaluated = [0]*1000
         #Save the evaluation result in a file (This is used when the evaluation is parallelized)
