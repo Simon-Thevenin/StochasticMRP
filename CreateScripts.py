@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     #modelset = ["YFix", "YQFix", "Average"]
     modelset = [ "YFix"]#, "YQFix"]
-    generationset = ["RQMC", "MC"]
+    generationset = ["RQMC"]#, "MC"]
     Nrseed = 5
 
     for instance in InstanceSet :
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
                  #scenarset = ["512"]
 
-                 policyset = [ "Re-solve"]
+                 policyset = [ "S"]
                  methodset = ["MIP"]
                  avg = False
                  if model == "YFix":
@@ -160,7 +160,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  #scenarset = [ "512" ]
 
                  policyset = [ "S","NNS", "NND", "NNDAC", "NNSAC", "Re-solve"]
-                 policyset = ["Re-solve"]
+                 policyset = ["S"]
 
                  methodset = ["MIP"]
                  avg = False

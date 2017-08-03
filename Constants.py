@@ -28,7 +28,7 @@ class Constants:
     MIP = "MIP"
     SDDP = "SDDP"
 
-    Debug = True
+    Debug = False
     PrintSolutionFileToExcel = False
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = False

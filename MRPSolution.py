@@ -103,7 +103,7 @@ class MRPSolution:
             prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadPickleFiles( description )
 
         self.MRPInstance = MRPInstance()
-        self.MRPInstance.ReadInstanceFromExelFile( instanceinfo.get_value( 'Name', 0 ), instanceinfo.get_value( 'Distribution', 0 ), )
+        self.MRPInstance.ReadInstanceFromExelFile( instanceinfo.get_value( 'Name', 0 ) + "_C=2", instanceinfo.get_value( 'Distribution', 0 ), )
 
         scenariogenerationm = scenariotreeinfo.get_value('ScenarioGenerationMethod', 0)
         avgscenariotree = scenariotreeinfo.get_value( 'AverageScenarioTree', 0 )
@@ -570,6 +570,7 @@ class MRPSolution:
                   for k in self.MRPInstance.ResourceSet]
 
 
+
         return result
 
 
@@ -581,6 +582,8 @@ class MRPSolution:
     def getCapacityCostraintSlack(self,  suggestedquantities ):
         result = [ max(self.MRPInstance.Capacity[k] - sum( self.MRPInstance.ProcessingTime[q][k] * suggestedquantities[q] for q in self.MRPInstance.ProductSet ),
                        0.0)   for k in self.MRPInstance.ResourceSet]
+
+
         return result
 
     def ComputeAvailableFulliment( self, product,  productionslack, capacityslack ):
@@ -608,8 +611,8 @@ class MRPSolution:
         isproductviolation = maxviolation == maxproductviolation
         #While some flow constraints are violated, adjust the quantity to repect the most violated constraint
         while( maxviolation > 0.000001 ) :
-            #if Constants.Debug:
-               # print " the max violation %r is from %r " %( maxviolation, productmaxvioalation )
+            if Constants.Debug:
+                print " the max violation %r is from %r " %( maxviolation, productmaxvioalation )
 
             if isproductviolation:
                 producyqithrequirement = [ p for p in self.MRPInstance.ProductSet if self.MRPInstance.Requirements[p][productmaxvioalation] > 0]
@@ -641,7 +644,6 @@ class MRPSolution:
         for p in self.MRPInstance.ProductSet:
             productionslack = self.getProductionCostraintSlack(suggestedquantities, previousstocklevel)
             capacityslack = self.getCapacityCostraintSlack(suggestedquantities)
-            #print "Is seeing if can increase...%r, %r, %r"%(suggestedquantities[p], idealquuantities[p],self.ComputeAvailableFulliment(p, productionslack, capacityslack) )
             suggestedquantities[p] = suggestedquantities[p] + min( idealquuantities[p] - suggestedquantities[p],
                                                                        self.ComputeAvailableFulliment(p, productionslack, capacityslack) )
 
@@ -701,14 +703,14 @@ class MRPSolution:
             prodinlevel = [p for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p]== l]
             for p in prodinlevel:
                 if self.Production[0][time][p] >= 0.99:
-                          quantity[p] = max( self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
-                                                       - sum( previousquantity[t][p]
-                                                              - previousdemands[t][p]
-                                                              - sum(previousquantity[t][q] * self.MRPInstance.Requirements[q][p] for q in self.MRPInstance.ProductSet ) #external demand
-                                                              for t in range( time ) ) \
-                                                        + sum(quantity[q] * self.MRPInstance.Requirements[q][p] for q in
-                                                              self.MRPInstance.ProductSet) , 0)  # external demand of the current period
-                          print "ATTTENTION REMOVE tAHT if IT DOESNOT WORK %r %r"%(self.InventoryLevel, self.MRPInstance.TotalRequirement)
+                          # quantity[p] = max( self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
+                          #                              - sum( previousquantity[t][p]
+                          #                                     - previousdemands[t][p]
+                          #                                     - sum(previousquantity[t][q] * self.MRPInstance.Requirements[q][p] for q in self.MRPInstance.ProductSet ) #external demand
+                          #                                     for t in range( time ) ) \
+                          #                               + sum(quantity[q] * self.MRPInstance.Requirements[q][p] for q in
+                          #                                     self.MRPInstance.ProductSet) , 0)  # external demand of the current period
+                          # print "ATTTENTION REMOVE tAHT if IT DOESNOT WORK %r %r"%(self.InventoryLevel, self.MRPInstance.TotalRequirement)
                           quantity[p] =  max( self.SValue[time][p]
                                               -  sum( projectedstocklevel[q] * self.MRPInstance.TotalRequirement[q][p]
                                                        for q in self.MRPInstance.ProductSet if self.MRPInstance.HasExternalDemand[q])
@@ -722,11 +724,11 @@ class MRPSolution:
        #         quantity[p] = 10000
 
 
-        if Constants.Debug:
-            print "Chosen quantities for time %r : %r" % (time, quantity)
+        #if Constants.Debug:
+        #    print "Chosen quantities for time %r : %r" % (time, quantity)
         self.RepairQuantityToOrder(quantity, projectedstocklevel)
-        if Constants.Debug:
-            print "Quantities after repair for time %r : %r" % (time, quantity)
+        #if Constants.Debug:
+        #    print "Quantities after repair for time %r : %r" % (time, quantity)
 
         error = 0
         return quantity, error
@@ -750,13 +752,13 @@ class MRPSolution:
                     t= n.Time
                     for p in self.MRPInstance.ProductSet:
                         if   t< self.MRPInstance.NrTimeBucket and  (self.Production[ w][ t ][ p ] >=0.9 ):
-                            #if n.GetS( p) > S[t][p]:
-                            #    S[t][p] = n.GetS( p)
-                            S[t][p] = S[t][p] + n.GetS( p) * s.Probability
-                            probatime[t][p] = probatime[t][p] + s.Probability
+                            if n.GetS( p) > S[t][p]:
+                                S[t][p] = n.GetS( p)
+                            #S[t][p] = S[t][p] + n.GetS( p) * s.Probability
+                            #probatime[t][p] = probatime[t][p] + s.Probability
 
 
-        self.SValue = [ [ S[t][p]/ probatime[t][p] if probatime[t][p] > 0 else 0.0
+        self.SValue = [ [ S[t][p]#/ probatime[t][p] if probatime[t][p] > 0 else 0.0
                           for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
         if Constants.Debug:
