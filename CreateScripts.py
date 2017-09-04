@@ -280,5 +280,5 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):
-                                        file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s_evpi \n" % (
+                                        file.write("qsub job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
                                             instance, distribution, model, nrscenar, generation, seed, method ) )
