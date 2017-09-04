@@ -810,7 +810,7 @@ class MIPSolver(object):
         mdem = MIPSolver.GetBigMDemValue(instance, scenarioset, p)
 
         #compute m based on the capacity of the resource
-        mres = min( instance.Capacity[k] / instance.ProcessingTime[p][k] for k in range( instance.NrResource ) if instance.ProcessingTime[p][k] > 0 )
+        mres = min( instance.Capacity[k] / instance.ProcessingTime[p][k]  if instance.ProcessingTime[p][k] > 0  else Constants.Infinity for k in range( instance.NrResource ) )
         m = min( [ mdem, mres ] )
         return m
 

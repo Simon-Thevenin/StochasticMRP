@@ -349,73 +349,21 @@ def GetTreeStructure():
         treestructure = [1, NrScenario] + [1] * (Instance.NrTimeBucket - 1) + [0]
 
     if Model == Constants.ModelYFix:
-        treestructure = [1, 20, 20, 1, 1, 1, 0]
-
-        if NrScenario == 8:
-            if Instance.NrTimeBucket == 6:
-                treestructure = [1, 8, 8, 8, 1, 1, 1, 0]
-                # treestructure = [1, 8, 4, 2, 1, 1, 1, 0 ]
-            if Instance.NrTimeBucket == 8:
-                treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 9:
-                treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 10:
-                treestructure = [1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 12:
-                treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 15:
-                treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
-
-        if NrScenario == 64:
-            if Instance.NrTimeBucket == 6:
-                treestructure = [1, 4, 4, 4, 1, 1, 1, 0]
-                # treestructure = [1, 8, 4, 2, 1, 1, 1, 0 ]
-            if Instance.NrTimeBucket == 8:
-                treestructure = [1, 4, 4, 4, 4, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 9:
-                treestructure = [1, 4, 4, 4, 4, 1, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 10:
-                treestructure = [1, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 12:
-                treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 15:
-                treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
-
+        treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
+        stochasticparttreestructure =[]
+        nrtimebucketstochastic = Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyBefore  - Instance.NrTimeBucketWithoutUncertaintyAfter
         if NrScenario == 512:
-            if Instance.NrTimeBucket == 6:
-                # treestructure = [1, 2, 2, 2, 1, 1, 1, 0]
-                treestructure = [1, 8, 8, 8, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 8:
-                treestructure = [1, 8, 8, 4, 2, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 9:
-                treestructure = [1, 8, 8, 4, 2, 1, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 10:
-                treestructure = [1, 8, 8, 2, 2, 2, 1, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 12:
-                treestructure = [1, 8, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 15:
-                treestructure = [1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [8, 8, 8]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [8, 8, 4, 2]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [8, 8, 2, 2, 2]
+        k= 0
+        for i in range( Instance.NrTimeBucketWithoutUncertaintyBefore, Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyAfter):
+            treestructure[i] = stochasticparttreestructure[ k]
+            k+=1
 
-        if NrScenario == 1024:
-            if Instance.NrTimeBucket == 6:
-                # treestructure = [1, 2, 2, 2, 1, 1, 1, 0]
-                treestructure = [1, 32, 8, 4, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 9:
-                treestructure = [1, 8, 4, 4, 2, 2, 2, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 12:
-                treestructure = [1, 4, 4, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 15:
-                treestructure = [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0]
-
-        if NrScenario == 8192:
-            if Instance.NrTimeBucket == 6:
-                treestructure = [1, 25, 25, 25, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 9:
-                treestructure = [1, 8, 4, 4, 4, 4, 4, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 12:
-                treestructure = [1, 8, 4, 4, 4, 2, 2, 2, 2, 1, 1, 1, 1, 0]
-            if Instance.NrTimeBucket == 15:
-                treestructure = [1, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0]
 
     return treestructure
 
@@ -666,10 +614,13 @@ if __name__ == "__main__":
 
 
         Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
-        #for InstanceName in ["01", "02", "03", "04", "05"]:  # "06", "07", "08", "09",
-            #			  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-            #			  "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
-            #			  "30", "31", "32", "33", "34", "35", "36", "37", "38"]:
+        #csvfile = open("./Instances/InstanceNames.csv", 'rb')
+        #data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
+        #instancenameslist = []
+        #for row in data_reader:
+        #    instancenameslist.append(row)
+        #instancenameslist = instancenameslist[0]
+        #for InstanceName in instancenameslist:#["01", "02", "03", "04", "05"]:
         #    Distribution = "NonStationary"
         #    for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
         #         "NonStationary"]:

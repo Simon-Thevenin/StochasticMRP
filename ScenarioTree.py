@@ -65,10 +65,11 @@ class ScenarioTree:
 
 
         if self.ScenarioGenerationMethod == Constants.RQMC and generateRQMCForYQfix:
-             nrtimebuckets = self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty
-             avgvector = [  self.Instance.ForecastedAverageDemand[t][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
-             stdvector = [  self.Instance.ForcastedStandardDeviation[t][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebuckets ) ]
-             dimension = len( self.Instance.ProductWithExternalDemand ) * (nrtimebuckets)
+             timebucketswithuncertainty = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore , self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter )
+             nrtimebucketswithuncertainty =len( timebucketswithuncertainty )
+             avgvector = [  self.Instance.ForecastedAverageDemand[t +  self.Instance.NrTimeBucketWithoutUncertaintyBefore ][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebucketswithuncertainty ) ]
+             stdvector = [  self.Instance.ForcastedStandardDeviation[t +  self.Instance.NrTimeBucketWithoutUncertaintyBefore ][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebucketswithuncertainty ) ]
+             dimension = len( self.Instance.ProductWithExternalDemand ) * (nrtimebucketswithuncertainty)
              nrscenarion = self.NrBranches[1]
              rqmcpoint01 = RQMCGenerator.RQMC01( nrscenarion , dimension  )
 
@@ -96,11 +97,11 @@ class ScenarioTree:
              # print "Used indices %r"%indices
 
 
-             self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebuckets + t ][s]
+             self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebucketswithuncertainty + t ][s]
                                           if  self.Instance.HasExternalDemand[p]
                                           else 0.0
                                         for p in self.Instance.ProductSet ]
-                                      for t in range( nrtimebuckets ) ]
+                                      for t in range( nrtimebucketswithuncertainty ) ]
                                      for s in range( nrscenarion )]
 
              # for p in self.Instance.ProductSet:

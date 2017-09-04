@@ -30,28 +30,40 @@ class ScenarioTreeNode:
         t = time + 1
 
         if instance is not None and t <= instance.NrTimeBucket:
+
             nrscneartoconsider = max(nrbranch, 1)
+
             probabilities = [(1.0 / nrscneartoconsider) for b in range(nrscneartoconsider)]
+
             if t == 0:
                 nextdemands = []
                 probabilities = [1]
             else:
                 # if self.Owner.GenerateasYQfix:
                 #    nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
-                if (self.Owner.ScenarioGenerationMethod == Constants.RQMC and self.Owner.GenerateRQMCForYQFix and not time >= (
-                    self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty)):
-                    nextdemands = self.GetDemandRQMCForYQFix(t - 1, nrbranch, firstbranchid)
+                if (self.Owner.ScenarioGenerationMethod == Constants.RQMC
+                    and self.Owner.GenerateRQMCForYQFix
+                    and not time >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
+                    and not time < (  self.Instance.NrTimeBucketWithoutUncertaintyBefore ) ):
+                    print "stochastisity at time: %d"%time
+                    nextdemands = self.GetDemandRQMCForYQFix(t - 1 - self.Instance.NrTimeBucketWithoutUncertaintyBefore, nrbranch, firstbranchid)
+
                 elif t <= self.Owner.FollowGivenUntil:
                     nextdemands = self.GetDemandToFollowFirstPeriods(t - 1)
+
                 elif (self.Owner.ScenarioGenerationMethod == Constants.All and self.Owner.Model == Constants.ModelYQFix):
                     nextdemands, probabilities = self.GetDemandToFollowMultipleScenarios(t - 1, nrbranch, firstbranchid)
+
                 else:
                     nextdemands, probabilities = ScenarioTreeNode.CreateDemandNormalDistributiondemand(instance, t - 1,
                                                                                                        nrbranch,
                                                                                                        averagescenariotree,
                                                                                                        self.Owner.ScenarioGenerationMethod)
 
-            usaverageforbranch = t >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty) or self.Owner.AverageScenarioTree
+
+            usaverageforbranch =  ( t >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter) )\
+                                  or ( t <  self.Instance.NrTimeBucketWithoutUncertaintyBefore ) \
+                                  or self.Owner.AverageScenarioTree
 
             nextfirstbranchid = [self.FirstBranchID for b in range(nrbranch)]
             if t == max( self.Owner.FollowGivenUntil + 1, 1):
@@ -96,6 +108,9 @@ class ScenarioTreeNode:
         self.Scenario = None
 
         self.OneOfScenario = None
+
+
+
     #This function is used when the demand is gereqated using RQMC for YQFix
     #Return the demands  at time at position nrdemand in array DemandYQFixRQMC
     def GetDemandRQMCForYQFix( self, time, nrdemand, firstbranchid ):
@@ -114,6 +129,7 @@ class ScenarioTreeNode:
             #
             #             n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
             #             PLT.show()
+            print demandvector
             return demandvector
 
 
@@ -271,7 +287,7 @@ class ScenarioTreeNode:
         demandvector = [  [  float(instance.ForecastedAverageDemand[time][p])
                                  for i in range( nrdemand ) ]  for p in instance.ProductSet]
 
-        probability =   [  float( 1/ max( nrdemand, 1))  for i in range( max( nrdemand, 1)  ) ]
+        probability =   [  float( 1.0/ max( nrdemand, 1))  for i in range( max( nrdemand, 1)  ) ]
 
         if not average:
             points, probability = ScenarioTreeNode.GeneratePoints( method= scenariogenerationmethod,
@@ -425,12 +441,12 @@ class ScenarioTreeNode:
                 result -= node.Demand[p]
             node = node.Parent
 
-        if node.Time >= 0:
-            print "ATTTENTION REMOVE tAHT if IT DOESNOT WORK %r %r" % ( node.InventoryLevelTime, self.Instance.TotalRequirement)
+        #if node.Time >= 0:
+        #    print "ATTTENTION REMOVE tAHT if IT DOESNOT WORK %r %r" % ( node.InventoryLevelTime, self.Instance.TotalRequirement)
 
-            result = node.QuantityToOrderNextTime[p]
+         #   result = node.QuantityToOrderNextTime[p]
 
-            result += sum( node.InventoryLevelTime[q] * self.Instance.TotalRequirement[q][p]
-                           for q in self.Instance.ProductSet if self.Instance.HasExternalDemand[q]) #self.Instance.StartingInventories[p]
+          #  result += sum( node.InventoryLevelTime[q] * self.Instance.TotalRequirement[q][p]
+           #                for q in self.Instance.ProductSet if self.Instance.HasExternalDemand[q]) #self.Instance.StartingInventories[p]
 
         return result

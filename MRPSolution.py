@@ -103,7 +103,7 @@ class MRPSolution:
             prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadPickleFiles( description )
 
         self.MRPInstance = MRPInstance()
-        self.MRPInstance.ReadInstanceFromExelFile( instanceinfo.get_value( 'Name', 0 ) + "_C=2", instanceinfo.get_value( 'Distribution', 0 ), )
+        self.MRPInstance.ReadInstanceFromExelFile( instanceinfo.get_value( 'Name', 0 ) , instanceinfo.get_value( 'Distribution', 0 ), )
 
         scenariogenerationm = scenariotreeinfo.get_value('ScenarioGenerationMethod', 0)
         avgscenariotree = scenariotreeinfo.get_value( 'AverageScenarioTree', 0 )
@@ -450,7 +450,7 @@ class MRPSolution:
                             / totaldemand
 
         self.ComputeCost()
-        stochasticperiod = range(self.MRPInstance.NrTimeBucket - self.MRPInstance.NrTimeBucketWithoutUncertainty )
+        stochasticperiod = range(self.MRPInstance.NrTimeBucketWithoutUncertaintyBefore, self.MRPInstance.NrTimeBucket - self.MRPInstance.NrTimeBucketWithoutUncertaintyAfter )
         totalcoststochasticperiod, \
         inventorycoststochasticperiod, \
         backordercoststochasticperiod, \
@@ -703,18 +703,19 @@ class MRPSolution:
             prodinlevel = [p for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p]== l]
             for p in prodinlevel:
                 if self.Production[0][time][p] >= 0.99:
-                          # quantity[p] = max( self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
-                          #                              - sum( previousquantity[t][p]
-                          #                                     - previousdemands[t][p]
-                          #                                     - sum(previousquantity[t][q] * self.MRPInstance.Requirements[q][p] for q in self.MRPInstance.ProductSet ) #external demand
-                          #                                     for t in range( time ) ) \
-                          #                               + sum(quantity[q] * self.MRPInstance.Requirements[q][p] for q in
-                          #                                     self.MRPInstance.ProductSet) , 0)  # external demand of the current period
-                          # print "ATTTENTION REMOVE tAHT if IT DOESNOT WORK %r %r"%(self.InventoryLevel, self.MRPInstance.TotalRequirement)
-                          quantity[p] =  max( self.SValue[time][p]
-                                              -  sum( projectedstocklevel[q] * self.MRPInstance.TotalRequirement[q][p]
-                                                       for q in self.MRPInstance.ProductSet if self.MRPInstance.HasExternalDemand[q])
-                                             , 0) # self.Instance.StartingInventories[p]
+                          quantity[p] = max( self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
+                                                       - sum( previousquantity[t][p]
+                                                              - previousdemands[t][p]
+                                                              - sum(previousquantity[t][q] * self.MRPInstance.Requirements[q][p] for q in self.MRPInstance.ProductSet ) #external demand
+                                                              for t in range( time ) ) \
+                                                        + sum(quantity[q] * self.MRPInstance.Requirements[q][p]
+                                                               for q in self.MRPInstance.ProductSet)
+                                             , 0)  # external demand of the current period
+                          #print "ATTTENTION REMOVE tAHT if IT DOESNOT WORK %r %r"%(self.InventoryLevel, self.MRPInstance.TotalRequirement)
+                          # quantity[p] =  max( self.SValue[time][p]
+                          #                     -  sum( projectedstocklevel[q] * self.MRPInstance.TotalRequirement[q][p]
+                          #                              for q in self.MRPInstance.ProductSet if self.MRPInstance.HasExternalDemand[q])
+                          #                    , 0) # self.Instance.StartingInventories[p]
 
 
                           # maxl =  max(levelset)
