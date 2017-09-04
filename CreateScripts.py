@@ -116,7 +116,6 @@ if __name__ == "__main__":
 #$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-cd ..
 python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s
 """ % ( instance, distribution, model, nrscenar, generation, seed, method,  instance, distribution, model, nrscenar, generation, seed, method  ))
                                     for Policy in policyset:
@@ -132,7 +131,6 @@ python test.py Solve %s %s %s %s %s -s %s  -n 500 -m %s
 #$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-cd ..
 python test.py Evaluate %s %s %s %s %s  -s %s -p %s
  """ % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model, nrscenar, generation, seed, Policy) )
 
