@@ -164,8 +164,7 @@ class Evaluator:
                     givenquantty[ti], error = sol.GetQuantityToOrderS( ti,demanduptotimet, givenquantty )
 
                 if self.Policy == Constants.Resolve:
-                    print "known demand:%r"%demanduptotimet
-                    givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,
+                     givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,
                                                                         givensetup, model)
         return givensetup, givenquantty
 
