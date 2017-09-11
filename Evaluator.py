@@ -46,7 +46,6 @@ class Evaluator:
         nrerror = 0
 
         if not evpi:
-
             for n in range( self.NrSolutions ):
                 if self.OptimizationMethod == Constants.MIP:
                     sol = self.Solutions[n]
@@ -288,15 +287,15 @@ class Evaluator:
         result = [0 for p in self.Instance.ProductSet]
         error = 0
 
-        if time == 0:  # return the quantity at the root of the node
+        if time <= self.Instance.NrTimeBucketWithoutUncertaintyBefore:  # return the quantity at the root of the node
            # result = [solution.ScenarioTree.RootNode.Branches[0].QuantityToOrderNextTime[p] for p in self.Instance.ProductSet]
 
             result = [solution.ProductionQuantity[0][time][p]  for p in self.Instance.ProductSet]
 
         else:
             treestructure = [1] \
-                            + [self.ReferenceTreeStructure[t - time + 1]
-                               if (  t >= time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty)))
+                            + [self.ReferenceTreeStructure[t - ( time - self.Instance.NrTimeBucketWithoutUncertaintyBefore)+ 1]
+                               if (  t >= time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)))
                                else 1 for
                                 t in range(self.Instance.NrTimeBucket)] \
                             + [0]
@@ -304,7 +303,7 @@ class Evaluator:
             if model == Constants.ModelYQFix and self.ScenarioGenerationResolvePolicy == Constants.All :
                 treestructure = [1] \
                             + [ int( math.pow(8,3-time) )
-                               if (  t == time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty)  ) )
+                               if (  t == time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)  ) )
                                else 1 for
                                 t in range(self.Instance.NrTimeBucket)] \
                             + [0]
