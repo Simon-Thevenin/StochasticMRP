@@ -147,7 +147,8 @@ class TemplemeierInstanceReader( InstanceReader ):
                 #      prodindex = q
                 prodindex = finishproduct[p]
                 timeindex = 0
-                for t in range( self.Instance.NrTimeBucketWithoutUncertaintyBefore, self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter):
+                stochastictime = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore, self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
+                for t in stochastictime:
                     timeindex += 1
 
                     if t <>  self.Instance.NrTimeBucketWithoutUncertaintyBefore + int(self.DTFile[timeindex][0]) - 1:
@@ -155,6 +156,11 @@ class TemplemeierInstanceReader( InstanceReader ):
                    # if len( self.DTFile[timeindex] ) == 2:
                    #     p = 1
                     self.Instance.ForecastedAverageDemand[t][prodindex] = float( self.DTFile[timeindex][p+1] )
+
+                for t in range( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter,  self.Instance.NrTimeBucket):
+                    self.Instance.ForecastedAverageDemand[t][prodindex] = sum( self.Instance.ForecastedAverageDemand[t2][prodindex]
+                                                                               for t2 in stochastictime  ) / len(stochastictime)
+
 
             self.Instance.ForcastedStandardDeviation = [ [ (1 - self.Instance.RateOfKnownDemand[t])
                                                            * self.Instance.ForecastError[p]
