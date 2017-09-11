@@ -148,7 +148,7 @@ class Evaluator:
                                      for t in self.Instance.TimeBucketSet]
 
         # For model YFix, the quantities depend on the scenarion
-        else:#if model == Constants.ModelYFix:
+        else:
             givenquantty = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
 
             previousnode = sol.ScenarioTree.RootNode
