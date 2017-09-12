@@ -15,7 +15,7 @@ import cplex
 
 class Evaluator:
 
-    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False ):
+    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False, evpiseed = -1 ):
         self.Instance = instance
         self.Solutions = solutions
         self.SDDPs = sddps
@@ -24,6 +24,8 @@ class Evaluator:
         self.StartSeedResolve = 84752390
         self.ScenarioGenerationResolvePolicy = scenariogenerationresolve
         self.EVPI = evpi
+        if evpi:
+            self.EVPISeed = evpiseed
         self.MIPResolveTime = [ None for t in instance.TimeBucketSet  ]
         self.IsDefineMIPResolveTime = [False for t in instance.TimeBucketSet]
         self.ReferenceTreeStructure = treestructure
@@ -45,13 +47,16 @@ class Evaluator:
         firstsolution = True
         nrerror = 0
 
-        if not evpi:
-            for n in range( self.NrSolutions ):
-                if self.OptimizationMethod == Constants.MIP:
-                    sol = self.Solutions[n]
-                    if model == Constants.ModelYFix:
-                        sol.ComputeAverageS()
-                    seed = sol.ScenarioTree.Seed
+        for n in range( self.NrSolutions ):
+                if not evpi:
+                    if self.OptimizationMethod == Constants.MIP:
+                        sol = self.Solutions[n]
+                        if model == Constants.ModelYFix:
+                            sol.ComputeAverageS()
+                        seed = sol.ScenarioTree.Seed
+                else:
+                    seed = self.EVPISeed
+
 
                 if self.OptimizationMethod == Constants.SDDP:
                     sddp = self.SDDPs[n]
@@ -67,27 +72,36 @@ class Evaluator:
                 for indexscenario in range( nrscenario ):
                     scenario = evaluatoinscenarios[indexscenario]
                     scenariotree = scenariotrees[indexscenario]
-                    if self.OptimizationMethod == Constants.MIP:
-                        givensetup, givenquantty = self.GetDecisionFromSolutionForScenario(sol, model, scenario)
 
-                    if self.OptimizationMethod == Constants.SDDP:
-                        givensetup, givenquantty = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
+                    if not evpi:
+                        if self.OptimizationMethod == Constants.MIP:
+                            givensetup, givenquantty = self.GetDecisionFromSolutionForScenario(sol, model, scenario)
 
+                        if self.OptimizationMethod == Constants.SDDP:
+                            givensetup, givenquantty = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
+
+                    else:
+                        givensetup = []
+                        givenquantty = []
                     #Solve the MIP and fix the decision to the one given.
                     if firstscenario:
                         #Defin the MIP
-                        mipsolver = MIPSolver(self.Instance, model, scenariotree,
-                                                          evpi=False,
-                                                          implicitnonanticipativity=False,
-                                                          evaluatesolution=True,
-                                                          givenquantities=givenquantty,
-                                                          givensetups=givensetup,
-                                                          fixsolutionuntil=self.Instance.NrTimeBucket )
+                        if not evpi:
+                            mipsolver = MIPSolver(self.Instance, model, scenariotree,
+                                                              evpi=False,
+                                                              implicitnonanticipativity=False,
+                                                              evaluatesolution=True,
+                                                              givenquantities=givenquantty,
+                                                              givensetups=givensetup,
+                                                              fixsolutionuntil=self.Instance.NrTimeBucket )
+                        else:
+                            mipsolver = MIPSolver(self.Instance, model, scenariotree,
+                                                  evpi=True )
                         mipsolver.BuildModel()
                     else:
                         #update the MIP
                         mipsolver.ModifyMipForScenario( scenariotree )
-                        if not self.Policy == Constants.Fix:
+                        if not self.Policy == Constants.Fix and not evpi:
                             mipsolver.ModifyMipForFixQuantity( givenquantty )
 
                     mipsolver.Cplex.parameters.advance = 0
@@ -116,20 +130,16 @@ class Evaluator:
                         for s in OutOfSampleSolution.Scenarioset:
                             s.Probability = 1.0/ len(  OutOfSampleSolution.Scenarioset )
 
-            OutOfSampleSolution.ComputeStatistics()
-            KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed )
-            firstsolution = False
-        else:
-            average = 0
-            totalproba = 1
-            KPIStat = [0]*1000
-            Evaluated = [0]*1000
+        OutOfSampleSolution.ComputeStatistics()
+        KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed )
+        firstsolution = False
+
         #Save the evaluation result in a file (This is used when the evaluation is parallelized)
         if saveevaluatetab:
-            with open(filename+"Evaluator.txt", "w+") as fp:
-                pickle.dump(Evaluated, fp)
-            with open(filename+"KPIStat.txt", "w+") as fp:
-                pickle.dump(KPIStat, fp)
+                with open(filename+"Evaluator.txt", "w+") as fp:
+                    pickle.dump(Evaluated, fp)
+                with open(filename+"KPIStat.txt", "w+") as fp:
+                    pickle.dump(KPIStat, fp)
 
         duration = time.time() - start_time
         print "Duration od evaluation: %r, outofsampl cost:%r total proba:%r"%( duration, average, totalproba )# %r"%( duration, Evaluated )

@@ -474,8 +474,7 @@ class MRPSolution:
         data = testidentifier + [  filepostscript, len( self.Scenarioset ) ] + kpistat
         d = datetime.now()
         date = d.strftime('%m_%d_%Y_%H_%M_%S')
-        myfile = open(r'./Test/Statistic/TestResult_%s_%r_%s.csv' % (
-            self.MRPInstance.InstanceName, filepostscript, date), 'wb')
+        myfile = open(r'./Test/Statistic/TestResult_%s_%r_%s.csv' % (self.MRPInstance.InstanceName, filepostscript, date), 'w')
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         wr.writerow(data)
         myfile.close()

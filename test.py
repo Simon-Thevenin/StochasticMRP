@@ -100,14 +100,11 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     global SolveInformation
     global CompactSolveInformation
 
-
     scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed,
                                      averagescenariotree=averagescenario,
                                      scenariogenerationmethod = ScenarioGeneration,
                                      generateRQMCForYQfix = ( Model  == Constants.ModelYQFix and ScenarioGeneration == Constants.RQMC ),
                                  model= Model)
-
-
 
     MIPModel = Model
     if Model == Constants.Average:
@@ -290,9 +287,13 @@ def EvaluateSingleSol(  ):
     global OutOfSampleTestResult
    # solutions = GetPreviouslyFoundSolution()
     filedescription = GetTestDescription()
+
     solution = MRPSolution()
-    solution.ReadFromFile(filedescription)
-    evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, evpi=EVPI, scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy, evaluateaverage= (Model==Constants.Average) )
+
+    if not EVPI: #In evpi mode, a solution is computed for each scenario
+        solution.ReadFromFile(filedescription)
+
+    evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, evpi=EVPI, scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy, evaluateaverage= (Model==Constants.Average), evpiseed= SeedArray[0] )
 
     MIPModel = Model
     if Model == Constants.Average:
@@ -333,7 +334,7 @@ def GatherEvaluation():
 
         global OutOfSampleTestResult
         OutOfSampleTestResult =      evaluator.ComputeStatistic(EvaluationTab, NrEvaluation, TestIdentifier,EvaluatorIdentifier, KPIStat, -1, Model)
-        if Method == Constants.MIP:
+        if Method == Constants.MIP and not EVPI:
             ComputeInSampleStatistis()
         PrintFinalResult()
     ScenarioSeed = currentseedvalue
@@ -423,7 +424,7 @@ def parseArguments():
     parser.add_argument("-s", "--ScenarioSeed", help="The seed used for scenario generation", type=int, default= -1 )
 
     # Optional arguments
-    parser.add_argument("-p", "--policy", help="NearestNeighbor", type=str, default="")
+    parser.add_argument("-p", "--policy", help="NearestNeighbor", type=str, default="_")
     parser.add_argument("-n", "--nrevaluation", help="nr scenario used for evaluation.", type=int, default=500)
     parser.add_argument("-m", "--method", help="method used to solve", type=str, default="MIP")
     parser.add_argument("-f", "--fixuntil", help="Use with VSS action, howmany periods are fixed", type=int, default=0)

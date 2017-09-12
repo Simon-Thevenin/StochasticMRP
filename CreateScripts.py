@@ -280,3 +280,34 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                              for seed in range(Nrseed):
                                         file.write("qsub ./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
                                             instance, distribution, model, nrscenar, generation, seed, method ) )
+
+    for instance in InstanceSet:
+        distributionset = ["NonStationary"]
+        for distribution in distributionset:
+            print "job_evpi_%s_%s" % (instance, distribution)
+            qsub_filename = "./Jobs/job_evpi_%s_%s" % (instance, distribution)
+            qsub_file = open(qsub_filename, 'w')
+            qsub_file.write("""
+#!/bin/bash -l
+#
+#$ -cwd
+#$ -q idra
+#$ -j y
+#$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
+ulimit -v 16000000
+mkdir /tmp/thesim
+python test.py Evaluate %s %s YQFix 1 RQMC -e -n 500
+            """ % ( instance, distribution) )
+
+
+  # Create the sh file
+    filename = "runalljobevpi.sh"
+    file = open(filename, 'w')
+    file.write("""
+#!/bin/bash -l
+#
+""")
+    for instance in InstanceSet :
+         distributionset = ["NonStationary"]
+         for distribution in distributionset:
+                file.write("qsub ./Jobs/job_evpi_%s_%s \n" % (instance, distribution) )
