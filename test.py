@@ -343,6 +343,7 @@ def GatherEvaluation():
 
 
 def GetTreeStructure():
+    treestructure = []
     if Model == Constants.Average:
         treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
 
@@ -351,7 +352,7 @@ def GetTreeStructure():
 
     if Model == Constants.ModelYFix:
         treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
-        stochasticparttreestructure =[]
+        stochasticparttreestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
         nrtimebucketstochastic = Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyBefore  - Instance.NrTimeBucketWithoutUncertaintyAfter
         if NrScenario == 512:
             if nrtimebucketstochastic == 3:
@@ -465,6 +466,10 @@ def parseArguments():
     PolicyGeneration = args.policy
     FixUntilTime = args.fixuntil
     EVPI = args.evpi
+    if EVPI:
+        PolicyGeneration ="EVPI"
+        NearestNeighborStrategy = "EVPI"
+
     NearestNeighborStrategy = ""
     if PolicyGeneration in ["NNDAC", "NNSAC", "NND", "NNS" ]:
         PolicyGeneration = "NN"
