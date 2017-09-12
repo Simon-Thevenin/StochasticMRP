@@ -307,6 +307,7 @@ class Evaluator:
             result = [solution.ProductionQuantity[0][time][p]  for p in self.Instance.ProductSet]
 
         else:
+            print self.ReferenceTreeStructure
             treestructure = [1] \
                             + [self.ReferenceTreeStructure[t - ( time - self.Instance.NrTimeBucketWithoutUncertaintyBefore)+ 1]
                                if (  t >= time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)))

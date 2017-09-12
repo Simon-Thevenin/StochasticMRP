@@ -17,6 +17,7 @@ class Constants:
     Fix = "Fix"
     ModelYQFix = "YQFix"
     ModelYFix = "YFix"
+    ModelHeuristicYFix = "HeuristicYFix"
     Model_Fix = "_Fix"
     Average = "Average"
     MonteCarlo = "MC"

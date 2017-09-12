@@ -95,7 +95,7 @@ def PrintFinalResult():
     myfile.close()
 
 #This function creates the CPLEX model and solves it.
-def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False ):
+def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False, yfixheuristic = False ):
 
     global SolveInformation
     global CompactSolveInformation
@@ -113,6 +113,7 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     mipsolver = MIPSolver(Instance, MIPModel, scenariotree, evpi = EVPI,
                           implicitnonanticipativity=(not EVPI),
                           evaluatesolution = EvaluateSolution,
+                          yfixheuristic= yfixheuristic,
                           givenquantities = GivenQuantities,
                           givensetups = GivenSetup,
                           fixsolutionuntil = FixUntilTime )
@@ -196,6 +197,37 @@ def PrintSolutionToFile( solution  ):
         solution.PrintToExcel(testdescription)
     else:
         solution.PrintToPickle(testdescription)
+
+def SolveYFixHeuristic():
+    global SolveInformation
+    global OptimizationInfo
+    global Model
+    global GivenSetup
+    treestructure = [1, 200] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
+    Model = Constants.ModelYQFix
+    solution, mipsolver = MRP( treestructure, False, recordsolveinfo=True )
+    GivenSetup = [[solution.Production[0][t][p] for p in Instance.ProductSet]  for t in Instance.TimeBucketSet]
+
+    if Constants.Debug:
+        Instance.PrintInstance()
+
+
+
+    Model = Constants.ModelYFix
+    treestructure = GetTreeStructure()
+    solution, mipsolver = MRP(treestructure,
+                              averagescenario=False,
+                              recordsolveinfo=True,
+                              yfixheuristic = True)
+    OptimizationInfo[0] = solution.CplexTime
+    OptimizationInfo[1] = solution.CplexGap
+
+    PrintTestResult()
+
+    if Method == "MIP":
+        PrintSolutionToFile(solution)
+        RunEvaluation()
+    GatherEvaluation()
 
 def SolveYFix():
     global SolveInformation
@@ -285,6 +317,7 @@ def GetEvaluationFileName():
 def EvaluateSingleSol(  ):
    # ComputeInSampleStatistis()
     global OutOfSampleTestResult
+    global Model
    # solutions = GetPreviouslyFoundSolution()
     filedescription = GetTestDescription()
 
@@ -293,11 +326,20 @@ def EvaluateSingleSol(  ):
     if not EVPI: #In evpi mode, a solution is computed for each scenario
         solution.ReadFromFile(filedescription)
 
-    evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, evpi=EVPI, scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy, evaluateaverage= (Model==Constants.Average), evpiseed= SeedArray[0] )
 
     MIPModel = Model
     if Model == Constants.Average:
         MIPModel = Constants.ModelYQFix
+    if Model == Constants.ModelHeuristicYFix:
+        MIPModel = Constants.ModelYFix
+        Model = Constants.ModelYFix
+
+
+
+    evaluator = Evaluator(Instance, [solution], [], PolicyGeneration, evpi=EVPI,
+                      scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(),
+                      nearestneighborstrategy=NearestNeighborStrategy, evaluateaverage=(Model == Constants.Average),
+                      evpiseed=SeedArray[0])
 
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  MIPModel, saveevaluatetab= True, filename = GetEvaluationFileName(), evpi=EVPI  )
    # PrintFinalResult()
@@ -361,6 +403,23 @@ def GetTreeStructure():
                 stochasticparttreestructure = [8, 8, 4, 2]
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [8, 8, 2, 2, 2]
+
+        if NrScenario == 4096:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [16, 16, 16]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [8, 8, 8, 8]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [8, 8, 8, 4, 2]
+
+        if NrScenario == 65536:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [64, 32, 32]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [16, 16, 16, 16]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [16, 16, 8, 8, 4]
+
         k= 0
         for i in range( Instance.NrTimeBucketWithoutUncertaintyBefore, Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyAfter):
             treestructure[i] = stochasticparttreestructure[ k]
@@ -653,6 +712,8 @@ if __name__ == "__main__":
             #if Constants.LauchEvalAfterSolve:
                 SolveYFix(  )
 
+        if Model == Constants.ModelHeuristicYFix:
+                SolveYFixHeuristic()
             #else:
             #    RunTestsAndEvaluation()
 

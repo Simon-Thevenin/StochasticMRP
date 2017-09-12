@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
 
     #modelset = ["YFix", "YQFix", "Average"]
-    modelset = [ "Average", "YQFix", "YFix"]
+    modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
     generationset = ["MC", "RQMC"]#, "MC"]
     Nrseed = 1
 
@@ -65,7 +65,8 @@ if __name__ == "__main__":
                      #    methodset = ["MIP"]
                      #else:
                      #    methodset = ["SDDP"]
-
+                 if model == "HeuristicYFix":
+                     scenarset = ["512", "4096", "65536"]
                  if model == "YQFix":
                      #scenarset = [ "200" ]
                      scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
@@ -86,12 +87,12 @@ if __name__ == "__main__":
 
                      for generation in generationset:
 
-                         if method == "SDDP":
-                             scenarset = ["10", "50", "100", "200"]
-                             policyset = ["SDDP"]
+                     #    if method == "SDDP":
+                     #        scenarset = ["10", "50", "100", "200"]
+                     #        policyset = ["SDDP"]
 
-                         if model == "YFix" and method == "MIP":
-                             scenarset = ["512"]
+                     #    if model == "YFix" and method == "MIP":
+                     #        scenarset = ["512"]
 
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):
@@ -174,7 +175,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                      #    methodset = ["MIP"]
                      #else:
                      #    methodset = ["SDDP"]
-
+                 if model == "HeuristicYFix":
+                     scenarset = ["512", "4096", "65536"]
                  if model == "YQFix":
                      #scenarset = [ "200" ]
                      scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
@@ -195,16 +197,16 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 
                      for generation in generationset:
 
-                         if method == "SDDP":
-                             scenarset = ["10", "50", "100", "200"]
-                             policyset = ["SDDP"]
+                     #    if method == "SDDP":
+                     #        scenarset = ["10", "50", "100", "200"]
+                     #        policyset = ["SDDP"]
 
-                         if model == "YFix" and method == "MIP":
-                             scenarset = ["512"]
+                     #    if model == "YFix" and method == "MIP":
+                     #        scenarset = ["512"]
 
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):
-                                  for Policy in policyset:
+                                for Policy in policyset:
                                         file.write("qsub ./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
                                                       instance, distribution, model, nrscenar, generation,method, Policy, seed))
 
@@ -248,12 +250,13 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                      #    methodset = ["MIP"]
                      #else:
                      #    methodset = ["SDDP"]
-
+                 if model == "HeuristicYFix":
+                     scenarset = ["512", "4096", "65536"]
                  if model == "YQFix":
                      #scenarset = [ "200" ]
                      scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
-                     #policyset = ["Fix", "Re-solve"]
                      policyset = ["Fix", "Re-solve"]
+                     #policyset = ["Fix"]
                      #generationset = ["RQMC"]
                  if model == "Average":
                      scenarset = ["1"]
@@ -269,12 +272,12 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 
                      for generation in generationset:
 
-                         if method == "SDDP":
-                             scenarset = ["10", "50", "100", "200"]
-                             policyset = ["SDDP"]
+                     #    if method == "SDDP":
+                     #        scenarset = ["10", "50", "100", "200"]
+                     #        policyset = ["SDDP"]
 
-                         if model == "YFix" and method == "MIP":
-                             scenarset = ["512"]
+                     #    if model == "YFix" and method == "MIP":
+                     #        scenarset = ["512"]
 
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):

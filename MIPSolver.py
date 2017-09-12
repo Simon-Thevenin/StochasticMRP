@@ -22,6 +22,7 @@ class MIPSolver(object):
                  givensetups=[],
                  fixsolutionuntil = -1,
                  evaluatesolution = False,
+                 yfixheuristic = False,
                  demandknownuntil = 0 ):
 
         # Define some attributes and functions which help to et the index of the variable.
@@ -63,6 +64,7 @@ class MIPSolver(object):
         self.NrScenario = len( [ n for n in self.DemandScenarioTree.Nodes if len( n.Branches ) == 0 ] )
         # DemandKnownUntil is used fgor the YQFix model, when the first period are considered known.
         self.DemandKnownUntil = demandknownuntil
+        self.YFixHeuristic= yfixheuristic
         self.ComputeIndices()
         self.Scenarios =  scenariotree.GetAllScenarios( True )
 
@@ -369,7 +371,7 @@ class MIPSolver(object):
                         ub=[self.M] * nrinventoryvariable)
 
         # the variable production_prod_time_scenario_p_t_w equals 1 if a lot of product p is produced at time t in scneario w
-        if self.EvaluateSolution:
+        if self.EvaluateSolution or self.YFixHeuristic:
             self.Cplex.variables.add(obj=setupcosts,
                                      lb=[0.0] * nrproductionvariable,
                                      ub=[1.0] * nrproductionvariable
@@ -541,11 +543,15 @@ class MIPSolver(object):
                             vars = [indexQ, self.GetIndexProductionVariable(p, t, w) ]
                             AlreadyAdded[indexP][indexQ] = True
                             coeff = [ -1.0, MIPSolver.GetBigMValue(self.Instance, self.Scenarios, p ) ]
+                            #linearexprs.append(cplex.SparsePair(vars, coeff))
                             righthandside = [ 0.0 ]
+                           # righthandsides.append(0.0)
+                            #senses.append("G")
                             # PrintConstraint( vars, coeff, righthandside )
+
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
-                                                                        senses=["G"],
-                                                                        rhs=righthandside)
+                                                                senses=["G"],
+                                                                 rhs=righthandside)
 
     # This function creates the Capacity constraint
     def CreateCapacityConstraints( self ):
@@ -624,22 +630,39 @@ class MIPSolver(object):
 
     # Define the constraint of the model
     def CreateConstraints( self ):
+        if Constants.Debug:
+            print "Creat flow constraints ..."
         self.CreateFlowConstraints()
         #if len(self.GivenQuantity) == 0:
+        if Constants.Debug:
+            print "Creat production constraints ..."
         self.CreateProductionConstraints()
+        if Constants.Debug:
+            print "Creat capacity constraints ..."
         self.CreateCapacityConstraints()
         if  not self.UseImplicitNonAnticipativity and not self.EVPI:
+            if Constants.Debug:
+                print "Creat non anticipativity  constraints ..."
             self.CreateNonanticipativityConstraints( )
+        if self.EvaluateSolution or  self.YFixHeuristic:
+            if Constants.Debug:
+                print "Creat given setup and given setup..."
+            self.CreateCopyGivenSetupConstraints()
+
         if self.EvaluateSolution:
             if self.Model == Constants.ModelYQFix or self.Model == Constants.ModelYFix:
+                if Constants.Debug:
+                    print "Creat given setup and given quantity..."
                 self.CreateCopyGivenQuantityConstraints( )
-            #if self.Model == Constants.ModelYFix:
-                self.CreateCopyGivenSetupConstraints()
 
     #This function build the CPLEX model
     def BuildModel( self ):
         #Create the variabbles and constraints
+        if Constants.Debug:
+            print "start to creat variables ..."
         self.CreateVariable()
+        if Constants.Debug:
+            print "start to creat constraints ..."
         self.CreateConstraints()
 
     #This function set the parameter of CPLEX, run Cplex, and return a solution
@@ -707,7 +730,7 @@ class MIPSolver(object):
             Solution = MRPSolution( self.Instance,  solquantity, solproduction, solinventory, solbackorder, self.Scenarios, self.DemandScenarioTree )
             Solution.CplexCost = objvalue
             Solution.CplexGap = 0
-            if not self.EvaluateSolution:
+            if not self.EvaluateSolution and not self.YFixHeuristic:
                 Solution.CplexGap = sol.MIP.get_mip_relative_gap()
             Solution.CplexTime = solvetime
 
@@ -795,11 +818,11 @@ class MIPSolver(object):
     #This function return the upperbound on hte quantities infered from the demand
     @staticmethod
     def GetBigMDemValue( instance, scenarioset, p ):
-        mdem = 0
-        if instance.HasExternalDemand[ p ] :
-            mdem = ( sum( max( s.Demands[t][p] for s in scenarioset ) for t in instance.TimeBucketSet ) )
-        else :
-            mdem = sum( instance.Requirements[q][p] * MIPSolver.GetBigMDemValue( instance, scenarioset, q ) for q in instance.RequieredProduct[p] )
+        mdem = 10000000
+        #if instance.HasExternalDemand[ p ] :
+        #    mdem = ( sum( max( s.Demands[t][p] for s in scenarioset ) for t in instance.TimeBucketSet ) )
+        #else :
+        #    mdem = sum( instance.Requirements[q][p] * MIPSolver.GetBigMDemValue( instance, scenarioset, q ) for q in instance.RequieredProduct[p] )
 
 
         return mdem
