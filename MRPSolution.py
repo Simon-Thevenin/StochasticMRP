@@ -213,7 +213,7 @@ class MRPSolution:
 
     def ListFromDataFrame(self, prodquantitydf, inventorydf, productiondf, bbackorderdf):
         scenarioset = range(len(self.Scenarioset))
-        print "%s" %self.MRPInstance.ProductName[ 0 ]
+        #print "%s" %self.MRPInstance.ProductName[ 0 ]
         self.ProductionQuantity = [ [ [ prodquantitydf.loc[  str(self.MRPInstance.ProductName[ p ]), (t,s)]  for p in self.MRPInstance.ProductSet ]  for t in self.MRPInstance.TimeBucketSet ]for s in scenarioset ]
         self.InventoryLevel = [ [ [inventorydf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]
         self.Production = [ [ [productiondf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]

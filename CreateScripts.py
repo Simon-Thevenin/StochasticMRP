@@ -296,7 +296,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
 #$ -o /home/thesim/outputjob%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Evaluate %s %s YQFix 1 RQMC -e -n 500
+python test.py Evaluate %s %s YQFix 1 RQMC -e -n 500 -s 0
             """ % ( instance, distribution, instance, distribution) )
 
 

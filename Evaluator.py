@@ -176,6 +176,10 @@ class Evaluator:
                 if self.Policy == Constants.Resolve:
                      givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,
                                                                         givensetup, model)
+
+                #print "qty:%r" % givenquantty
+
+        #print "qty:%r"%givenquantty
         return givensetup, givenquantty
 
     #This method run a forward pass of the SDDP algorithm on the considered set of scenarios
@@ -309,6 +313,13 @@ class Evaluator:
                                else 1 for
                                 t in range(self.Instance.NrTimeBucket)] \
                             + [0]
+            if model == Constants.ModelYQFix:
+                treestructure = [1] \
+                                + [self.ReferenceTreeStructure[1]
+                                   if (t == time )
+                                   else 1 for
+                                   t in range(self.Instance.NrTimeBucket)] \
+                                + [0]
 
             if model == Constants.ModelYQFix and self.ScenarioGenerationResolvePolicy == Constants.All :
                 treestructure = [1] \

@@ -45,7 +45,7 @@ class ScenarioTreeNode:
                     and self.Owner.GenerateRQMCForYQFix
                     and not time >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
                     and not time < (  self.Instance.NrTimeBucketWithoutUncertaintyBefore ) ):
-                    print "stochastisity at time: %d"%time
+                    #print "stochastisity at time: %d"%time
                     nextdemands = self.GetDemandRQMCForYQFix(t - 1 - self.Instance.NrTimeBucketWithoutUncertaintyBefore, nrbranch, firstbranchid)
 
                 elif t <= self.Owner.FollowGivenUntil:
@@ -129,7 +129,7 @@ class ScenarioTreeNode:
             #
             #             n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
             #             PLT.show()
-            print demandvector
+            #print demandvector
             return demandvector
 
 
