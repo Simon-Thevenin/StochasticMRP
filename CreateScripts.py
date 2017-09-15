@@ -30,6 +30,7 @@ if __name__ == "__main__":
 
     #modelset = ["YFix", "YQFix", "Average"]
     modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
+    modelset = [ "HeuristicYFix"]
     generationset = ["MC", "RQMC"]#, "MC"]
     Nrseed = 1
 
@@ -66,7 +67,8 @@ if __name__ == "__main__":
                      #else:
                      #    methodset = ["SDDP"]
                  if model == "HeuristicYFix":
-                     scenarset = ["512", "4096", "8192", "16384", "65536"]
+                    #scenarset = ["512", "4096", "8192", "16384", "65536"]
+                    scenarset = ["200", "3200", "6400"]
                  if model == "YQFix":
                      #scenarset = [ "200" ]
                      scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
@@ -176,7 +178,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                      #else:
                      #    methodset = ["SDDP"]
                  if model == "HeuristicYFix":
-                     scenarset = ["512", "4096", "8192", "16384", "65536"]
+                    #scenarset = ["512", "4096", "8192", "16384", "65536"]
+                    scenarset = ["200", "3200", "6400"]
                  if model == "YQFix":
                      #scenarset = [ "200" ]
                      scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]
@@ -251,7 +254,8 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                      #else:
                      #    methodset = ["SDDP"]
                  if model == "HeuristicYFix":
-                     scenarset = ["512", "4096", "8192", "16384", "65536"]
+                     # scenarset = ["512", "4096", "8192", "16384", "65536"]
+                     scenarset = ["200", "3200", "6400"]
                  if model == "YQFix":
                      #scenarset = [ "200" ]
                      scenarset = ["2", "4", "8", "50", "100", "200", "500", "1000"]

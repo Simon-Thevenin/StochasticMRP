@@ -203,16 +203,18 @@ def SolveYFixHeuristic():
     global OptimizationInfo
     global Model
     global GivenSetup
+    global ScenarioGeneration
     treestructure = [1, 200] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
     Model = Constants.ModelYQFix
+    chosengeneration = ScenarioGeneration
+    ScenarioGeneration = "RQMC"
     solution, mipsolver = MRP( treestructure, False, recordsolveinfo=True )
     GivenSetup = [[solution.Production[0][t][p] for p in Instance.ProductSet]  for t in Instance.TimeBucketSet]
 
     if Constants.Debug:
         Instance.PrintInstance()
 
-
-
+    ScenarioGeneration = chosengeneration
     Model = Constants.ModelYFix
     treestructure = GetTreeStructure()
     solution, mipsolver = MRP(treestructure,
@@ -400,7 +402,7 @@ def GetTreeStructure():
             if nrtimebucketstochastic == 3:
                 stochasticparttreestructure = [8, 8, 8]
             if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [16, 4, 4, 2]
+                stochasticparttreestructure = [8, 8, 4, 2]
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [8, 8, 2, 2, 2]
 
@@ -411,6 +413,51 @@ def GetTreeStructure():
                 stochasticparttreestructure = [16, 4, 2, 2]
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [16, 2, 2, 2, 2]
+
+        if NrScenario == 50:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [8, 8, 8]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [50, 1, 1, 1]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [8, 8, 2, 2, 2]
+
+
+        if NrScenario == 100:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [8, 8, 8]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [100, 1, 1, 1]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [8, 8, 2, 2, 2]
+
+
+        if NrScenario == 200:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [8, 8, 8]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [200, 1, 1, 1]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [8, 8, 2, 2, 2]
+
+
+
+        if NrScenario == 6400:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [8, 8, 8]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [50, 8, 4, 4]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [8, 8, 2, 2, 2]
+
+        if NrScenario == 3200:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [8, 8, 8]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [200, 16, 1, 1]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [8, 8, 2, 2, 2]
+
 
         if NrScenario == 4096:
             if nrtimebucketstochastic == 3:

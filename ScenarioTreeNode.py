@@ -61,7 +61,7 @@ class ScenarioTreeNode:
                                                                                                        self.Owner.ScenarioGenerationMethod)
 
 
-            usaverageforbranch =  ( t >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter) )\
+            usaverageforbranch =  ( t +1 >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter) )\
                                   or ( t <  self.Instance.NrTimeBucketWithoutUncertaintyBefore ) \
                                   or self.Owner.AverageScenarioTree
 

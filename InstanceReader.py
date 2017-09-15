@@ -77,7 +77,7 @@ class InstanceReader:
 
 
     def ComputeAverageDependentDemand(self):
-
+        self.Level = self.GetProductLevel()
         self.ActualAvgdemand = [sum(self.Instance.ForecastedAverageDemand[t][p] for t in
                                     self.Instance.TimeBucketSet) / self.Instance.NrTimeBucket for p
                                 in self.Instance.ProductSet]

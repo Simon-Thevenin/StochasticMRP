@@ -474,6 +474,8 @@ class MIPSolver(object):
                                                               senses=["E"],
                                                               rhs=righthandside)
 
+
+
     # Demand and materials requirement: set the value of the invetory level and backorder quantity according to
     #  the quantities produced and the demand
     def CreateFlowConstraints( self ):
@@ -550,8 +552,8 @@ class MIPSolver(object):
                             # PrintConstraint( vars, coeff, righthandside )
 
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
-                                                                senses=["G"],
-                                                                 rhs=righthandside)
+                                                              senses=["G"],
+                                                              rhs=righthandside)
 
     # This function creates the Capacity constraint
     def CreateCapacityConstraints( self ):
@@ -636,7 +638,8 @@ class MIPSolver(object):
         #if len(self.GivenQuantity) == 0:
         if Constants.Debug:
             print "Creat production constraints ..."
-        self.CreateProductionConstraints()
+        if not ( self.EvaluateSolution or self.YFixHeuristic ):
+            self.CreateProductionConstraints()
         if Constants.Debug:
             print "Creat capacity constraints ..."
         self.CreateCapacityConstraints()
@@ -644,7 +647,7 @@ class MIPSolver(object):
             if Constants.Debug:
                 print "Creat non anticipativity  constraints ..."
             self.CreateNonanticipativityConstraints( )
-        if self.EvaluateSolution or  self.YFixHeuristic:
+        if self.EvaluateSolution or self.YFixHeuristic:
             if Constants.Debug:
                 print "Creat given setup and given setup..."
             self.CreateCopyGivenSetupConstraints()
@@ -818,11 +821,11 @@ class MIPSolver(object):
     #This function return the upperbound on hte quantities infered from the demand
     @staticmethod
     def GetBigMDemValue( instance, scenarioset, p ):
-        mdem = 10000000
-        #if instance.HasExternalDemand[ p ] :
-        #    mdem = ( sum( max( s.Demands[t][p] for s in scenarioset ) for t in instance.TimeBucketSet ) )
-        #else :
-        #    mdem = sum( instance.Requirements[q][p] * MIPSolver.GetBigMDemValue( instance, scenarioset, q ) for q in instance.RequieredProduct[p] )
+        #mdem = 10000000
+        if instance.HasExternalDemand[ p ] :
+            mdem = ( sum( max( s.Demands[t][p] for s in scenarioset ) for t in instance.TimeBucketSet ) )
+        else :
+            mdem = sum( instance.Requirements[q][p] * MIPSolver.GetBigMDemValue( instance, scenarioset, q ) for q in instance.RequieredProduct[p] )
 
 
         return mdem

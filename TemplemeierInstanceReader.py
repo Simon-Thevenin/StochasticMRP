@@ -25,6 +25,7 @@ class TemplemeierInstanceReader( InstanceReader ):
         self.DTFile = None
         self.DatFile = None
         self.TMPFile = None
+        self.TBOFile = None
 
     def ReadProductList(self):
 
@@ -70,7 +71,13 @@ class TemplemeierInstanceReader( InstanceReader ):
 
         nametmpfile = list(instancename + ".TMP")
         nametmpfile = "".join(nametmpfile)
-        self.TMPFile  = self.ReadTemplmeierFile( "./Instances/TempleMeierFiles/PROBA/%s" % nametmpfile )
+        self.TMPFile  = self.ReadTemplmeierFile( "./Instances/TempleMeierFiles/PROBA/%s" %nametmpfile )
+
+        nametbofile = list("K_____1_.TBO")
+        nametbofile[0] = instancename[0]
+        nametbofile[6] = instancename[6]
+        nametbofile = "".join(nametbofile)
+        self.TBOFile = self.ReadTemplmeierFile("./Instances/TempleMeierFiles/PROBA/%s" %nametbofile )
 
     def ReadNrResource(self):
         self.Instance.NrResource = int( self.TMPFile[1][5] )
@@ -177,16 +184,42 @@ class TemplemeierInstanceReader( InstanceReader ):
         self.Instance.StartingInventories = [  0.0 for p in self.Instance.ProductSet  ]
 
     def GenerateSetup(self):
+
+        TBO =  [  float( self.TBOFile [p ][1] ) for p in  self.Instance.ProductSet ]
+        echlonstock = self.GetEchelonHoldingCost()
+
+        finishproduct = []
+        for p in self.Instance.ProductSet:
+            if sum(1 for q in self.Instance.ProductSet if self.Instance.Requirements[q][p]) == 0:
+                finishproduct.append(p)
+        avgdemand =  [  0.0 for p in  self.Instance.ProductSet ]
+        for p in range(len(finishproduct)):
+           avgdemand[ finishproduct[p]] = float(self.DTFile[0][p ])
+
+        for l in self.LevelSet:
+            prodinlevel = [p for p in self.Instance.ProductSet if self.Level[p] == l]
+            for p in prodinlevel:
+                avgdemand[p] = sum(
+                    avgdemand[q] * self.Instance.Requirements[q][p] for q in
+                    self.Instance.ProductSet) + \
+                               avgdemand[p]
+
+        computedsetup = [ echlonstock[p]*avgdemand[p]*TBO[p]*TBO[p] / 2
+                          for p in  self.Instance.ProductSet ]
+
         self.Instance.SetupCosts = [ 0 for p in self.Instance.ProductSet]
         startsetup = 3
         for p in self.Instance.ProductSet:
            self.Instance.SetupCosts[p] = sum( float( self.TMPFile[startsetup + p][i] ) for i in range( self.Instance.NrResource) )
            for i in range( self.Instance.NrResource):
-               if float( self.TMPFile[startsetup + p][i] ) > 0 and float( self.TMPFile[startsetup + p][i] ) <> self.Instance.SetupCosts[p]:
-                   raise NameError( "The setup cost are not read as expected" )
+               if float( self.TMPFile[startsetup + p][i] ) > 0 and float( self.TMPFile[startsetup + p][i] ) <> self.Instance.SetupCosts[p] \
+                       or self.Instance.SetupCosts[p] <>  computedsetup[p]:
+                   print "ok for this time"
+                  # raise NameError( "The setup cost are not read as expected" )
 
         if Constants.Debug:
             print "setupcost: %r"%self.Instance.SetupCosts
+        self.Instance.SetupCosts = [ computedsetup[p ] for p in  self.Instance.ProductSet ]
 
     def GenerateCapacity(self):
 
