@@ -204,7 +204,7 @@ def SolveYFixHeuristic():
     global Model
     global GivenSetup
     global ScenarioGeneration
-    treestructure = [1, 200] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
+    treestructure = [1, 5] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
     Model = Constants.ModelYQFix
     chosengeneration = ScenarioGeneration
     ScenarioGeneration = "RQMC"
@@ -398,6 +398,17 @@ def GetTreeStructure():
         treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
         stochasticparttreestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
         nrtimebucketstochastic = Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyBefore  - Instance.NrTimeBucketWithoutUncertaintyAfter
+
+
+        if NrScenario == 16:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [8, 8, 8]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [2, 2, 2, 2]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [8, 8, 2, 2, 2]
+
+
         if NrScenario == 512:
             if nrtimebucketstochastic == 3:
                 stochasticparttreestructure = [8, 8, 8]
