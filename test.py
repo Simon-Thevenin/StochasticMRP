@@ -132,17 +132,16 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
 
 
     scenario = mipsolver.Scenarios
-    #demands = [ [ [ scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet ] for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
-    # for t in Instance.TimeBucketSet:
-    #     for p in Instance.ProductWithExternalDemand:
-    #         print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
-    #         with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
-    #             #v_hist = np.ravel(v)  # 'flatten' v
-    #             fig = PLT.figure()
-    #             ax1 = fig.add_subplot(111)
-    #
-    #             n, bins, patches = ax1.hist(demands[t][p], bins=100, normed=1, facecolor='green')
-    #             PLT.show()
+    demands = [ [ [ scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet ] for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
+    for t in Instance.TimeBucketSet:
+         for p in Instance.ProductWithExternalDemand:
+              print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
+              with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
+                  #v_hist = np.ravel(v)  # 'flatten' v
+                  fig = PLT.figure()
+                  ax1 = fig.add_subplot(111)
+                  n, bins, patches = ax1.hist(demands[t][p], bins=100, normed=1, facecolor='green')
+                  PLT.show()
     solution = mipsolver.Solve()
    # result = solution.TotalCost, [ [ sum( solution.Production.get_value( Instance.ProductName[ p], t, w ) *  for w in Instance.ScenarioSet ) for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
 
@@ -204,7 +203,7 @@ def SolveYFixHeuristic():
     global Model
     global GivenSetup
     global ScenarioGeneration
-    treestructure = [1, 200] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
+    treestructure = [1, 4] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
     Model = Constants.ModelYQFix
     chosengeneration = ScenarioGeneration
     ScenarioGeneration = "RQMC"
@@ -451,6 +450,17 @@ def GetTreeStructure():
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [8, 8, 2, 2, 2]
 
+        if NrScenario == 4:
+            if nrtimebucketstochastic == 1:
+                stochasticparttreestructure = [4]
+            if nrtimebucketstochastic == 2:
+                stochasticparttreestructure = [4,1]
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [8, 8, 8]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [4, 1, 1, 1]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [8, 8, 2, 2, 2]
 
 
         if NrScenario == 6400:
@@ -504,7 +514,7 @@ def GetTreeStructure():
                 stochasticparttreestructure = [16, 16, 8, 8, 4]
 
         k= 0
-        for i in range( Instance.NrTimeBucketWithoutUncertaintyBefore, Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyAfter):
+        for i in range( Instance.NrTimeBucketWithoutUncertaintyBefore+1, Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyAfter+1):
             treestructure[i] = stochasticparttreestructure[ k]
             k+=1
 

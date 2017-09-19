@@ -68,17 +68,21 @@ class MRPSolution:
 
         writer.save()
 
-    def ReadExcelFiles(self, description):
+    def ReadExcelFiles(self, description, index = "", indexbackorder = ""):
         # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
-        prodquantitydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "ProductionQuantity")
-        productiondf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "Production")
-        inventorydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "InventoryLevel")
-        bbackorderdf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "BackOrder")
+        prodquantitydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "ProductionQuantity" )
+        productiondf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "Production" )
+        inventorydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "InventoryLevel" )
+        bbackorderdf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "BackOrder" )
 
         wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
         instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
         scenariotreeinfo = Tool.ReadDataFrame(wb2, "ScenarioTree")
 
+        prodquantitydf.index = index
+        productiondf.index = index
+        inventorydf.index = index
+        bbackorderdf.index = [ index[p] for p in indexbackorder]
         return prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo
 
     def ReadPickleFiles(self, description):
@@ -96,14 +100,18 @@ class MRPSolution:
 
     #This function read the instance from the excel file
     def ReadFromFile(self, description):
+        wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
+        instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
+        self.MRPInstance = MRPInstance()
+        self.MRPInstance.ReadInstanceFromExelFile(instanceinfo.get_value('Name', 0),
+                                                  instanceinfo.get_value('Distribution', 0), )
 
         if Constants.PrintSolutionFileToExcel:
-            prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadExcelFiles( description )
+            prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadExcelFiles( description , index=self.MRPInstance.ProductName, indexbackorder=self.MRPInstance.ProductWithExternalDemand)
+
         else:
             prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadPickleFiles( description )
 
-        self.MRPInstance = MRPInstance()
-        self.MRPInstance.ReadInstanceFromExelFile( instanceinfo.get_value( 'Name', 0 ) , instanceinfo.get_value( 'Distribution', 0 ), )
 
         scenariogenerationm = scenariotreeinfo.get_value('ScenarioGenerationMethod', 0)
         avgscenariotree = scenariotreeinfo.get_value( 'AverageScenarioTree', 0 )
@@ -213,7 +221,6 @@ class MRPSolution:
 
     def ListFromDataFrame(self, prodquantitydf, inventorydf, productiondf, bbackorderdf):
         scenarioset = range(len(self.Scenarioset))
-        #print "%s" %self.MRPInstance.ProductName[ 0 ]
         self.ProductionQuantity = [ [ [ prodquantitydf.loc[  str(self.MRPInstance.ProductName[ p ]), (t,s)]  for p in self.MRPInstance.ProductSet ]  for t in self.MRPInstance.TimeBucketSet ]for s in scenarioset ]
         self.InventoryLevel = [ [ [inventorydf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]
         self.Production = [ [ [productiondf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]

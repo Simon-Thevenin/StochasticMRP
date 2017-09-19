@@ -12,6 +12,7 @@ from MRPSolution import MRPSolution
 from decimal import Decimal, ROUND_HALF_DOWN
 import pickle
 import cplex
+from matplotlib import pyplot as PLT
 
 class Evaluator:
 
@@ -359,6 +360,19 @@ class Evaluator:
 
             #self.MIPResolveTime[time].Cplex.parameters.advance = 0
             #self.MIPResolveTime[time].Cplex.parameters.lpmethod = 1  # Dual primal cplex.CPX_ALG_DUAL
+
+            # scenario = mipsolver.Scenarios
+            # demands = [[[scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet] for p in self.Instance.ProductSet] for t
+            #            in self.Instance.TimeBucketSet]
+            # for t in self.Instance.TimeBucketSet:
+            #     for p in self.Instance.ProductWithExternalDemand:
+            #         print "The demands for product %d at time %d : %r" % (p, t, demands[t][p])
+            #         with open('Histp%dt%d.csv' % (p, t), 'w+') as f:
+            #             # v_hist = np.ravel(v)  # 'flatten' v
+            #             fig = PLT.figure()
+            #             ax1 = fig.add_subplot(111)
+            #             n, bins, patches = ax1.hist(demands[t][p], bins=100, normed=1, facecolor='green')
+            #             PLT.show()
             self.MIPResolveTime[time].Cplex.parameters.advance = 1
             self.MIPResolveTime[time].Cplex.parameters.lpmethod = 2
             solution = self.MIPResolveTime[time].Solve()
