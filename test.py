@@ -203,7 +203,7 @@ def SolveYFixHeuristic():
     global Model
     global GivenSetup
     global ScenarioGeneration
-    treestructure = [1, 4] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
+    treestructure = [1, 200] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
     Model = Constants.ModelYQFix
     chosengeneration = ScenarioGeneration
     ScenarioGeneration = "RQMC"
