@@ -668,8 +668,10 @@ class MIPSolver(object):
             print "start to creat constraints ..."
         self.CreateConstraints()
 
+
+
     #This function set the parameter of CPLEX, run Cplex, and return a solution
-    def Solve( self ):
+    def Solve( self, createsolution = True ):
         start_time = time.time()
         # Our aim is to minimize cost.
         self.Cplex.objective.set_sense(self.Cplex.objective.sense.minimize)
@@ -688,6 +690,10 @@ class MIPSolver(object):
         self.Cplex.parameters.threads.set(1)
         #self.Cplex.parameters.mip.tolerances.mipgap.set(0.00000001)
         #self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00000001)
+        self.Cplex.parameters.advance = 0
+        #self.Cplex.parameters.lpmethod = 2
+        if self.YFixHeuristic:
+            self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)
 
         end_modeling = time.time();
 
@@ -701,69 +707,99 @@ class MIPSolver(object):
         # Handle the results
         sol = self.Cplex.solution
         if sol.is_primal_feasible():
-            if Constants.Debug:
-                sol.write("mrpsolution.sol")
+            if createsolution:
+                #if Constants.Debug:
+                    #sol.write("mrpsolution.sol")
 
-            objvalue = sol.get_objective_value()
-            array = [ self.GetIndexQuantityVariable(p, t, w)
-                     for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet ];
-            #testarray = [ "p:%st:%sw:%s"%(p, t, w)  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet ]
+                if Constants.Debug:
+                    print "read  quanity..."
+                objvalue = sol.get_objective_value()
+                array = [ self.GetIndexQuantityVariable(p, t, w)
+                         for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet ];
+                #testarray = [ "p:%st:%sw:%s"%(p, t, w)  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet ]
 
-            solquantity = sol.get_values(array)
-            solquantity = Tool.Transform3d(solquantity, self.Instance.NrProduct, self.Instance.NrTimeBucket,self.NrScenario)
+                solquantity = sol.get_values(array)
+                if Constants.Debug:
+                    print "transform to 3d array......"
+                solquantity = Tool.Transform3d(solquantity, self.Instance.NrProduct, self.Instance.NrTimeBucket,self.NrScenario)
 
-            array = [self.GetIndexProductionVariable(p, t, w)
-                     for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
-            solproduction = sol.get_values(array)
-            solproduction = Tool.Transform3d( solproduction, self.Instance.NrProduct, self.Instance.NrTimeBucket, self.NrScenario)
-            array = [self.GetIndexInventoryVariable(p, t, w)
-                     for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
-            solinventory = sol.get_values(array)
+                if Constants.Debug:
+                    print "read  setup..."
+                array = [self.GetIndexProductionVariable(p, t, w)
+                         for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
+                solproduction = sol.get_values(array)
+                if Constants.Debug:
+                    print "transform to 3d array......"
 
-            solinventory = Tool.Transform3d( solinventory, self.Instance.NrProduct, self.Instance.NrTimeBucket, self.NrScenario)
+                solproduction = Tool.Transform3d( solproduction, self.Instance.NrProduct, self.Instance.NrTimeBucket, self.NrScenario)
 
-            array = [self.GetIndexBackorderVariable(p, t, w)
-                     for p in self.Instance.ProductWithExternalDemand for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
-            solbackorder = sol.get_values(array)
-            solbackorder = Tool.Transform3d( solbackorder, len( self.Instance.ProductWithExternalDemand), self.Instance.NrTimeBucket, self.NrScenario)
+                if Constants.Debug:
+                    print "read  inventory..."
 
-            if self.Model <> Constants.ModelYQFix:
-                self.DemandScenarioTree.FillQuantityToOrder( sol )
+                array = [self.GetIndexInventoryVariable(p, t, w)
+                         for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
+                solinventory = sol.get_values(array)
+                if Constants.Debug:
+                    print "transform to 3d array......"
 
-            Solution = MRPSolution( self.Instance,  solquantity, solproduction, solinventory, solbackorder, self.Scenarios, self.DemandScenarioTree )
-            Solution.CplexCost = objvalue
-            Solution.CplexGap = 0
-            if not self.EvaluateSolution and not self.YFixHeuristic:
-                Solution.CplexGap = sol.MIP.get_mip_relative_gap()
-            Solution.CplexTime = solvetime
+                solinventory = Tool.Transform3d( solinventory, self.Instance.NrProduct, self.Instance.NrTimeBucket, self.NrScenario)
 
-            costperscenarios, averagecost, std_devcost = self.ComputeCostPerScenario()
+                if Constants.Debug:
+                    print "read  backorders..."
+                array = [self.GetIndexBackorderVariable(p, t, w)
+                         for p in self.Instance.ProductWithExternalDemand for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
+                solbackorder = sol.get_values(array)
+                if Constants.Debug:
+                    print "transform to 3d array......"
+                solbackorder = Tool.Transform3d( solbackorder, len( self.Instance.ProductWithExternalDemand), self.Instance.NrTimeBucket, self.NrScenario)
 
-            self.SolveInfo = [ self.Instance.InstanceName,
-                               self.Model,
-                            objvalue,
-                            Solution.TotalCost,
-                            sol.status[sol.get_status()],
-                            buildtime,
-                            solvetime,
-                            Solution.CplexGap,
-                            #sol.progress.get_num_iterations(),
-                            #sol.progress.get_num_nodes_processed(),
-                            self.Cplex.variables.get_num(),
-                            self.Cplex.linear_constraints.get_num(),
-                            Solution.InventoryCost,
-                            Solution.BackOrderCost,
-                            Solution.SetupCost,
-                            averagecost,
-                            std_devcost,
-                            self.Instance.NrLevel,
-                            self.Instance.NrProduct,
-                            self.Instance.NrTimeBucket,
-                            self.DemandScenarioTree.Seed,
-                            self.NrScenario,
-                            self.Instance.MaxLeadTime,
-                            self.Instance.BranchingStrategy,
-                            self.DemandScenarioTree.Distribution ]
+                if Constants.Debug:
+                    print "update scenario tree......"
+
+                if self.Model <> Constants.ModelYQFix:
+                    self.DemandScenarioTree.FillQuantityToOrder( sol )
+
+                if Constants.Debug:
+                    print "Create soluton object......"
+                Solution = MRPSolution( self.Instance,  solquantity, solproduction, solinventory, solbackorder, self.Scenarios, self.DemandScenarioTree )
+                Solution.CplexCost = objvalue
+                Solution.CplexGap = 0
+                if not self.EvaluateSolution and not self.YFixHeuristic:
+                    Solution.CplexGap = sol.MIP.get_mip_relative_gap()
+                Solution.CplexTime = solvetime
+
+                costperscenarios, averagecost, std_devcost = self.ComputeCostPerScenario()
+
+                if Constants.Debug:
+                    print "fill solve information......"
+                self.SolveInfo = [ self.Instance.InstanceName,
+                                   self.Model,
+                                objvalue,
+                                Solution.TotalCost,
+                                sol.status[sol.get_status()],
+                                buildtime,
+                                solvetime,
+                                Solution.CplexGap,
+                                #sol.progress.get_num_iterations(),
+                                #sol.progress.get_num_nodes_processed(),
+                                self.Cplex.variables.get_num(),
+                                self.Cplex.linear_constraints.get_num(),
+                                Solution.InventoryCost,
+                                Solution.BackOrderCost,
+                                Solution.SetupCost,
+                                averagecost,
+                                std_devcost,
+                                self.Instance.NrLevel,
+                                self.Instance.NrProduct,
+                                self.Instance.NrTimeBucket,
+                                self.DemandScenarioTree.Seed,
+                                self.NrScenario,
+                                self.Instance.MaxLeadTime,
+                                self.Instance.BranchingStrategy,
+                                self.DemandScenarioTree.Distribution ]
+            else:
+                Solution = None
+
             return Solution
 
         else:

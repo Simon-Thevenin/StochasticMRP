@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     #modelset = ["YFix", "YQFix", "Average"]
     modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
-    modelset = [ "YFix"]
+    modelset = [ "HeuristicYFix"]
     generationset = [ "RQMC"]#, "MC"]
     Nrseed = 1
 

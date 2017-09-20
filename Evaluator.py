@@ -106,7 +106,8 @@ class Evaluator:
                             mipsolver.ModifyMipForFixQuantity( givenquantty )
 
                     mipsolver.Cplex.parameters.advance = 0
-                    mipsolver.Cplex.parameters.lpmethod = 2
+                    #mipsolver.Cplex.parameters.lpmethod = 2
+                    mipsolver.Cplex.parameters.lpmethod.set(mipsolver.Cplex.parameters.lpmethod.values.barrier)
                     solution = mipsolver.Solve()
                     #CPLEX should always find a solution due to complete recourse
                     if solution == None:
@@ -374,13 +375,21 @@ class Evaluator:
             #             n, bins, patches = ax1.hist(demands[t][p], bins=100, normed=1, facecolor='green')
             #             PLT.show()
             self.MIPResolveTime[time].Cplex.parameters.advance = 1
-            self.MIPResolveTime[time].Cplex.parameters.lpmethod = 2
-            solution = self.MIPResolveTime[time].Solve()
+            #self.MIPResolveTime[time].Cplex.parameters.lpmethod = 2
+            self.MIPResolveTime[time].Cplex.parameters.lpmethod.set(self.MIPResolveTime[time].Cplex.parameters.lpmethod.values.barrier)
+            solution = self.MIPResolveTime[time].Solve( createsolution = False)
+            if Constants.Debug:
+                print "End solving"
+
             #self.MIPResolveTime[time].Cplex.write("MRP-Re-Solve.lp")
             # Get the corresponding node:
-            if not solution is None:
-                result = [solution.ProductionQuantity[0][time][p] for p in
-                          self.Instance.ProductSet]
+            sol = self.MIPResolveTime[time].Cplex.solution
+            if sol.is_primal_feasible():
+                array = [self.MIPResolveTime[time].GetIndexQuantityVariable(p, time, 0) for p in self.Instance.ProductSet];
+
+                result = sol.get_values(array)
+                #result = [solution.ProductionQuantity[0][time][p] for p in
+                #          self.Instance.ProductSet]
             else:
                 if Constants.Debug:
                     self.MIPResolveTime[time].Cplex.write("MRP-Re-Solve.lp")
