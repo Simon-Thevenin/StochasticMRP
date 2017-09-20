@@ -136,8 +136,8 @@ class MRPSolution:
         self.CplexCost = instanceinfo.get_value( 'CplexCost', 0 )
         self.CplexTime = instanceinfo.get_value( 'CplexTime', 0 )
         self.CplexGap = instanceinfo.get_value( 'CplexGap', 0 )
-        self.CplexNrConstraints = instanceinfo.get_value('CplexNrConstraints', 0)
-        self.CplexNrVariables = instanceinfo.get_value('CplexNrVariables', 0)
+        #self.CplexNrConstraints = instanceinfo.get_value('CplexNrConstraints', 0)
+        #self.CplexNrVariables = instanceinfo.get_value('CplexNrVariables', 0)
 
         self.Scenarioset = self.ScenarioTree.GetAllScenarios( False )
         self.SenarioNrset = range(len(self.Scenarioset))
