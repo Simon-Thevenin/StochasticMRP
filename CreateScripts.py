@@ -30,8 +30,8 @@ if __name__ == "__main__":
 
     #modelset = ["YFix", "YQFix", "Average"]
     modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
-    modelset = [ "HeuristicYFix"]
-    generationset = ["MC", "RQMC"]#, "MC"]
+    modelset = [ "YFix"]
+    generationset = [ "RQMC"]#, "MC"]
     Nrseed = 1
 
     for instance in InstanceSet :
@@ -59,7 +59,7 @@ if __name__ == "__main__":
                  methodset = ["MIP"]
                  avg = False
                  if model == "YFix":
-                     scenarset = ["512"]
+                     scenarset = ["200", "512"]
                      methodset = ["MIP"]
                      #if instance in ["00", "01", "02", "03", "04", "05"]:
                          #methodset = ["MIP", "SDDP"]
@@ -170,7 +170,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  methodset = ["MIP"]
                  avg = False
                  if model == "YFix":
-                     scenarset = ["512"]
+                     scenarset = ["200", "512"]
                      methodset = ["MIP"]
                      #if instance in ["00", "01", "02", "03", "04", "05"]:
                          #methodset = ["MIP", "SDDP"]
@@ -246,7 +246,7 @@ python test.py Evaluate %s %s %s %s %s  -s %s -p %s
                  methodset = ["MIP"]
                  avg = False
                  if model == "YFix":
-                     scenarset = ["512"]
+                     scenarset = ["200", "512"]
                      methodset = ["MIP"]
                      #if instance in ["00", "01", "02", "03", "04", "05"]:
                          #methodset = ["MIP", "SDDP"]
