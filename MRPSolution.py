@@ -100,17 +100,22 @@ class MRPSolution:
 
     #This function read the instance from the excel file
     def ReadFromFile(self, description):
-        wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
-        instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
-        self.MRPInstance = MRPInstance()
-        self.MRPInstance.ReadInstanceFromExelFile(instanceinfo.get_value('Name', 0),
-                                                  instanceinfo.get_value('Distribution', 0), )
+
 
         if Constants.PrintSolutionFileToExcel:
+            wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
+            instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
+            self.MRPInstance = MRPInstance()
+            self.MRPInstance.ReadInstanceFromExelFile(instanceinfo.get_value('Name', 0),
+                                                      instanceinfo.get_value('Distribution', 0), )
             prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadExcelFiles( description , index=self.MRPInstance.ProductName, indexbackorder=self.MRPInstance.ProductWithExternalDemand)
 
         else:
             prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadPickleFiles( description )
+
+        self.MRPInstance = MRPInstance()
+        self.MRPInstance.ReadInstanceFromExelFile(instanceinfo.get_value('Name', 0),
+                                                  instanceinfo.get_value('Distribution', 0), )
 
 
         scenariogenerationm = scenariotreeinfo.get_value('ScenarioGenerationMethod', 0)
