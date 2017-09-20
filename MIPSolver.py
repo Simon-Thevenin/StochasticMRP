@@ -688,12 +688,14 @@ class MIPSolver(object):
         self.Cplex.parameters.timelimit.set( Constants.AlgorithmTimeLimit )
         self.Cplex.parameters.mip.limits.treememory.set( 7000.0 )
         self.Cplex.parameters.threads.set(1)
-        #self.Cplex.parameters.mip.tolerances.mipgap.set(0.00000001)
-        #self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00000001)
+        self.Cplex.parameters.mip.tolerances.mipgap.set(0.00000001)
+        self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00000001)
         self.Cplex.parameters.advance = 0
+        #self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)
         #self.Cplex.parameters.lpmethod = 2
         if self.YFixHeuristic:
             self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)
+            self.Cplex.parameters.threads.set(1)
 
         end_modeling = time.time();
 
@@ -764,6 +766,8 @@ class MIPSolver(object):
                 Solution = MRPSolution( self.Instance,  solquantity, solproduction, solinventory, solbackorder, self.Scenarios, self.DemandScenarioTree )
                 Solution.CplexCost = objvalue
                 Solution.CplexGap = 0
+                Solution.CplexNrVariables = self.Cplex.variables.get_num()
+                Solution.CplexNrConstraints = self.Cplex.linear_constraints.get_num()
                 if not self.EvaluateSolution and not self.YFixHeuristic:
                     Solution.CplexGap = sol.MIP.get_mip_relative_gap()
                 Solution.CplexTime = solvetime

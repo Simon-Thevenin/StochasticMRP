@@ -1,6 +1,6 @@
 #from __future__ import absolute_import, division, print_function
 from __future__ import division
-from matplotlib import pyplot as PLT
+#from matplotlib import pyplot as PLT
 
 import cplex
 import pandas as pd
@@ -23,7 +23,6 @@ from Evaluator import Evaluator
 from SDDP import SDDP
 import argparse
 import subprocess
-
 import glob as glob
 #pass Debug to true to get some debug information printed
 
@@ -204,12 +203,12 @@ def SolveYFixHeuristic():
     global GivenSetup
     global ScenarioGeneration
     treestructure = [1, 200] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
-    #print "AHHHHHHHHHHHHHHHHHHHHHHHHHH The secnario tree is very small"
     Model = Constants.ModelYQFix
     chosengeneration = ScenarioGeneration
     ScenarioGeneration = "RQMC"
     solution, mipsolver = MRP( treestructure, False, recordsolveinfo=True )
     GivenSetup = [[solution.Production[0][t][p] for p in Instance.ProductSet]  for t in Instance.TimeBucketSet]
+    #GivenSetup = [[1 for p in Instance.ProductSet ] for t in Instance.TimeBucketSet]
 
     if Constants.Debug:
         Instance.PrintInstance()
@@ -754,8 +753,9 @@ def ComputeVSS( ):
    # PrintFinalResult()
 
 if __name__ == "__main__":
+
     instancename = ""
-    try: 
+    try:
         args = parseArguments()
         #ScenarioNr = scenarionr
         #Instance.ScenarioNr = scenarionr

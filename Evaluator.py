@@ -12,7 +12,7 @@ from MRPSolution import MRPSolution
 from decimal import Decimal, ROUND_HALF_DOWN
 import pickle
 import cplex
-from matplotlib import pyplot as PLT
+#from matplotlib import pyplot as PLT
 
 class Evaluator:
 

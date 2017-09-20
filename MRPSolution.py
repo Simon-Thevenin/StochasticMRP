@@ -31,8 +31,8 @@ class MRPSolution:
             bbackorderdf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'BackOrder') )
 
             general = [self.MRPInstance.InstanceName, self.MRPInstance.Distribution, self.ScenarioTree.Owner.Model,
-                       self.CplexCost, self.CplexTime, self.CplexGap]
-            columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "CplexGap"]
+                       self.CplexCost, self.CplexTime, self.CplexGap, self.CplexNrConstraints, self.CplexNrVariables]
+            columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "CplexGap", "CplexNrConstraints", "CplexNrVariables"]
             generaldf = pd.DataFrame(general, index=columnstab)
             generaldf.to_pickle( self.GetSolutionPickleFileNameStart(description, "Generic") )
 
@@ -55,8 +55,8 @@ class MRPSolution:
         inventorydf.to_excel(writer, 'InventoryLevel')
         bbackorderdf.to_excel(writer, 'BackOrder')
 
-        general = [  self.MRPInstance.InstanceName, self.MRPInstance.Distribution, self.ScenarioTree.Owner.Model, self.CplexCost, self.CplexTime, self.CplexGap  ]
-        columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "CplexGap"]
+        general = [  self.MRPInstance.InstanceName, self.MRPInstance.Distribution, self.ScenarioTree.Owner.Model, self.CplexCost, self.CplexTime, self.CplexGap, self.CplexNrConstraints, self.CplexNrVariables  ]
+        columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "CplexGap", "CplexNrConstraints", "CplexNrVariables"]
         generaldf = pd.DataFrame( general, index=columnstab )
         generaldf.to_excel(writer, "Generic")
 
@@ -136,6 +136,8 @@ class MRPSolution:
         self.CplexCost = instanceinfo.get_value( 'CplexCost', 0 )
         self.CplexTime = instanceinfo.get_value( 'CplexTime', 0 )
         self.CplexGap = instanceinfo.get_value( 'CplexGap', 0 )
+        self.CplexNrConstraints = instanceinfo.get_value('CplexNrConstraints', 0)
+        self.CplexNrVariables = instanceinfo.get_value('CplexNrVariables', 0)
 
         self.Scenarioset = self.ScenarioTree.GetAllScenarios( False )
         self.SenarioNrset = range(len(self.Scenarioset))
@@ -290,7 +292,8 @@ class MRPSolution:
         self.CplexCost =-1
         self.CplexGap = -1
         self.CplexTime = 0
-
+        self.CplexNrConstraints = -1
+        self.CplexNrVariables = -1
     #This function compute some statistic on the current solution
     def ComputeStatistics( self ):
 
@@ -472,6 +475,8 @@ class MRPSolution:
         kpistat = [ self.CplexCost,
                     self.CplexTime,
                     self.CplexGap,
+                    self.CplexNrConstraints,
+                    self.CplexNrVariables,
                     self.SetupCost,
                     self.InventoryCost,
                     self.InSamplePercentOnTime,
