@@ -25,9 +25,9 @@ def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, me
 #$ -o /home/thesim/outputjob%s%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Solve %s %s %s %s %s -s %s  -n %s -m %s
-""" % (instance, distribution, model, nrscenar, generation, seed, NrScenarioEvaluation, method, instance,
-                          distribution, model, nrscenar, generation, seed, NrScenarioEvaluation, method))
+python test.py Solve %s %s %s %s %s -s %s  -m %s
+""" % (instance, distribution, model, nrscenar, generation, seed, method, instance,
+                          distribution, model, nrscenar, generation, seed, method))
 
 
 def CreatePolicyJob(instance, distribution, model, nrscenar, generation, seed, Policy):
@@ -40,12 +40,12 @@ def CreatePolicyJob(instance, distribution, model, nrscenar, generation, seed, P
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s.txt
+#$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Evaluate %s %s %s %s %s  -s %s -p %s
-""" % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model, nrscenar,
-        generation, seed, Policy))
+python test.py Evaluate %s %s %s %s %s  -s %s -p %s -n %s
+""" % (instance, distribution, model, nrscenar, generation, seed, Policy, NrScenarioEvaluation, instance, distribution, model, nrscenar,
+        generation, seed, Policy, NrScenarioEvaluation))
 
 
 if __name__ == "__main__":
