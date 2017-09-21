@@ -17,16 +17,16 @@ def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, me
         instance, distribution, model, nrscenar, generation, seed, method)
     qsub_file = open(qsub_filename, 'w')
     qsub_file.write("""
-                   #!/bin/bash -l
-                   #
-                   #$ -cwd
-                   #$ -q idra
-                   #$ -j y
-                   #$ -o /home/thesim/outputjob%s%s%s%s%s%s%s%s.txt
-                   ulimit -v 16000000
-                   mkdir /tmp/thesim
-                   python test.py Solve %s %s %s %s %s -s %s  -n %s -m %s
-                   """ % (instance, distribution, model, nrscenar, generation, seed, NrScenarioEvaluation, method, instance,
+#!/bin/bash -l
+#
+#$ -cwd
+#$ -q idra
+#$ -j y
+#$ -o /home/thesim/outputjob%s%s%s%s%s%s%s%s.txt
+ulimit -v 16000000
+mkdir /tmp/thesim
+python test.py Solve %s %s %s %s %s -s %s  -n %s -m %s
+""" % (instance, distribution, model, nrscenar, generation, seed, NrScenarioEvaluation, method, instance,
                           distribution, model, nrscenar, generation, seed, NrScenarioEvaluation, method))
 
 
@@ -44,7 +44,7 @@ def CreatePolicyJob(instance, distribution, model, nrscenar, generation, seed, P
 ulimit -v 16000000
 mkdir /tmp/thesim
 python test.py Evaluate %s %s %s %s %s  -s %s -p %s
- """ % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model, nrscenar,
+""" % (instance, distribution, model, nrscenar, generation, seed, Policy, instance, distribution, model, nrscenar,
         generation, seed, Policy))
 
 
@@ -86,17 +86,17 @@ if __name__ == "__main__":
     jobevalfilename = "runalljobeval.sh"
     fileeval = open(jobevalfilename, 'w')
     fileeval.write("""
-    #!/bin/bash -l
-    #
-    """)
+#!/bin/bash -l
+#
+""")
 
     # Create the sh file for resolution
     filesolvename = "runalljobsolve.sh"
     filesolve = open(filesolvename, 'w')
     filesolve.write("""
-    #!/bin/bash -l
-    #
-    """)
+#!/bin/bash -l
+#
+""")
 
 
     for instance in InstanceSet :
