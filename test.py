@@ -98,12 +98,11 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
 
     global SolveInformation
     global CompactSolveInformation
-
     scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed,
                                      averagescenariotree=averagescenario,
                                      scenariogenerationmethod = ScenarioGeneration,
                                      generateRQMCForYQfix = ( Model  == Constants.ModelYQFix and ScenarioGeneration == Constants.RQMC ),
-                                 model= Model)
+                                     model= Model)
 
     MIPModel = Model
     if Model == Constants.Average:
@@ -416,6 +415,7 @@ def GetTreeStructure():
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [8, 8, 2, 2, 2]
 
+
         if NrScenario == 256:
             if nrtimebucketstochastic == 3:
                 stochasticparttreestructure = [16, 8, 2]
@@ -435,20 +435,28 @@ def GetTreeStructure():
 
         if NrScenario == 100:
             if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [8, 8, 8]
+                stochasticparttreestructure = [100, 1, 1]
             if nrtimebucketstochastic == 4:
                 stochasticparttreestructure = [100, 1, 1, 1]
             if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 2, 2, 2]
+                stochasticparttreestructure = [100, 1, 1, 1, 1]
 
 
         if NrScenario == 200:
             if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [8, 8, 8]
+                stochasticparttreestructure = [200, 1, 1]
             if nrtimebucketstochastic == 4:
                 stochasticparttreestructure = [200, 1, 1, 1]
             if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 2, 2, 2]
+                stochasticparttreestructure = [200, 1, 1, 1, 1]
+
+        if NrScenario == 500:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [500, 1, 1, 1, 1]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [500, 1, 1, 1]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [500, 1, 1, 1, 1]
 
         if NrScenario == 4:
             if nrtimebucketstochastic == 1:
@@ -783,8 +791,8 @@ if __name__ == "__main__":
         #    Distribution = "NonStationary"
         #    for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
         #         "NonStationary"]:
-        #    Instance.ReadFromFile( InstanceName, Distribution )
-        #    Instance.SaveCompleteInstanceInExelFile()
+        #Instance.ReadFromFile( InstanceName, Distribution )
+        #Instance.SaveCompleteInstanceInExelFile()
         #Instance.ReadFromFile(InstanceName, Distribution)
         #Instance.SaveCompleteInstanceInExelFile()
         #Instance.DefineAsSuperSmallIntance()

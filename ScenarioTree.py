@@ -11,8 +11,11 @@ from matplotlib import pyplot as PLT
 
 class ScenarioTree:
     #Constructor
-    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False, generateasYQfix = False, model = "YFix" ):
+    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False, generateasYQfix = False, model = "YFix", CopyscenariofromYFIX=False ):
+        self.CopyscenariofromYFIX= CopyscenariofromYFIX
         self.Seed = seed
+        if Constants.Debug:
+            print "Seed %r brance %r"%(seed, branchperlevel)
         np.random.seed( seed )
         self.Nodes = []
         self.Owner = mipsolver
@@ -27,12 +30,14 @@ class ScenarioTree:
         self.GivenFirstPeriod = givenfirstperiod
         self.FollowGivenUntil = len(self.GivenFirstPeriod )
         #In case the scenario tree has to be the same aas the two stage (YQFix) scenario tree.
+
         self.GenerateasYQfix = generateasYQfix
         self.Distribution = instance.Distribution
         self.DemandToFollow = []
         #Generate the demand of YFix, then replicate them in the generation of the scenario tree
+
         if self.GenerateasYQfix :
-            treestructure = [1,2] + [1] * (instance.NrTimeBucket-1) + [0]
+            treestructure = [1,4] + [1] * (instance.NrTimeBucket-1) + [0]
             YQFixTree =   ScenarioTree( instance, treestructure, seed, scenariogenerationmethod=self.ScenarioGenerationMethod )
             YQFixSceanrios =  YQFixTree.GetAllScenarios( computeindex= False)
             self.DemandToFollow = [ [ [  YQFixSceanrios[w].Demands[t][p] for p in self.Instance.ProductSet ]
@@ -62,6 +67,25 @@ class ScenarioTree:
                                                      for t in self.Instance.TimeBucketSet]
                                                     for s in range(nrscenario)]
             self.ProbabilityToFollowMultipleSceario = [ temporaryscenarios[s].Probability  for s in range(nrscenario) ]
+
+        # print "ATTENTION REMOVE THAT"
+        # if CopyscenariofromYFIX:
+        #     nrscenario = 500
+        #     temporarytreestructur = [1, 1, 1, 1, 500, 1, 1, 1, 1, 1, 1, 0]
+        #
+        #     temporaryscenariotree = ScenarioTree(self.Instance, temporarytreestructur, self.Seed,
+        #                                          averagescenariotree=False,
+        #                                          scenariogenerationmethod=self.ScenarioGenerationMethod,
+        #                                          givenfirstperiod=givenfirstperiod,
+        #                                          generateRQMCForYQfix=False)
+        #     temporaryscenarios = temporaryscenariotree.GetAllScenarios(False)
+        #     self.DemandToFollowMultipleSceario = [[[temporaryscenarios[s].Demands[t][p]
+        #                                             if self.Instance.HasExternalDemand[p]
+        #                                             else 0.0
+        #                                             for p in self.Instance.ProductSet]
+        #                                            for t in self.Instance.TimeBucketSet]
+        #                                           for s in range(nrscenario)]
+        #     self.ProbabilityToFollowMultipleSceario = [temporaryscenarios[s].Probability for s in range(nrscenario)]
 
 
         if self.ScenarioGenerationMethod == Constants.RQMC and generateRQMCForYQfix:
@@ -115,6 +139,7 @@ class ScenarioTree:
              #
              #            n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
              #            PLT.show()
+
 
         ScenarioTreeNode.NrNode = 0
         self.RootNode =  ScenarioTreeNode( owner = self,

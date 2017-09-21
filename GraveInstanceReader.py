@@ -29,7 +29,10 @@ class GraveInstanceReader(InstanceReader):
         self.Actualstd = [ [ ] ]
 
     def ReadProductList(self):
-        self.Instance.ProductName = [row[0] for row in self.DTFile]
+        self.Instance.ProductName = [] #self.Datasheetdf.Index#[row[0] for row in self.DTFile]
+        for i, row in self.Datasheetdf.iterrows():
+            self.Instance.ProductName.append(row.get_value('productName'))
+
 
 
     #Create datasets from the sheets for instance from Grave 2008

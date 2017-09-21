@@ -630,6 +630,34 @@ class MIPSolver(object):
                             #                                     senses=["E"],
                             #                                     rhs=righthandside )
 
+
+                                # This function creates the non anticipitativity constraint
+    #For debug purpose, transfor the multi stage in two stage by adding the required constraints
+    def CreateTwostageFromMultistageConstraints(self):
+        AlreadyAdded = [[False for v in range(self.GetNrQuantityVariable())] for w in
+                        range(self.GetNrQuantityVariable())]
+        for w1 in self.ScenarioSet:
+               for w2 in  self.ScenarioSet:
+                    for p in self.Instance.ProductSet:
+                           for t in self.Instance.TimeBucketSet:
+                               IndexQuantity1 = self.GetIndexQuantityVariable(p, t, w1)
+                               IndexQuantity2 = self.GetIndexQuantityVariable(p, t, w2)
+
+                               if  not AlreadyAdded[IndexQuantity1][IndexQuantity2] and IndexQuantity1<>IndexQuantity2:
+                                   AlreadyAdded[IndexQuantity1][IndexQuantity2] = True
+                                   AlreadyAdded[IndexQuantity2][IndexQuantity1] = True
+                                   vars = [IndexQuantity1,IndexQuantity2]
+                                   coeff = [1.0, -1.0]
+                                   righthandside = [0.0]
+
+                                   # PrintConstraint( vars, coeff, righthandside )
+                                   self.Cplex.linear_constraints.add(
+                                                            lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                            senses=["E"],
+                                                            rhs=righthandside)
+
+
+
     # Define the constraint of the model
     def CreateConstraints( self ):
         if Constants.Debug:
@@ -657,6 +685,10 @@ class MIPSolver(object):
                 if Constants.Debug:
                     print "Creat given setup and given quantity..."
                 self.CreateCopyGivenQuantityConstraints( )
+
+        #print "Attention remove the constraint which transfor Multi stages in two stages"
+        #self.CreateTwostageFromMultistageConstraints()
+
 
     #This function build the CPLEX model
     def BuildModel( self ):

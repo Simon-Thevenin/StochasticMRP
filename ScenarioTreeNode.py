@@ -51,7 +51,7 @@ class ScenarioTreeNode:
                 elif t <= self.Owner.FollowGivenUntil:
                     nextdemands = self.GetDemandToFollowFirstPeriods(t - 1)
 
-                elif (self.Owner.ScenarioGenerationMethod == Constants.All and self.Owner.Model == Constants.ModelYQFix):
+                elif self.Owner.CopyscenariofromYFIX or (self.Owner.ScenarioGenerationMethod == Constants.All and self.Owner.Model == Constants.ModelYQFix):
                     nextdemands, probabilities = self.GetDemandToFollowMultipleScenarios(t - 1, nrbranch, firstbranchid)
 
                 else:
