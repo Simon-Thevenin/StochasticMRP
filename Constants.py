@@ -31,7 +31,7 @@ class Constants:
 
 
     Debug = False
-    PrintSolutionFileToExcel = True
+    PrintSolutionFileToExcel = False
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = False
     Infinity = 9999999999999.9
