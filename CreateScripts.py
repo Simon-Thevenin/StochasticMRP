@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
 
     #modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
-    modelset = [ "HeuristicYFix", "YFix", "YQFix"]
+    modelset = [ "Average", "HeuristicYFix", "YFix", "YQFix"]
 
     nrcenarioyfix =["200"]
     nrcenarioyfqix = ["200"]
