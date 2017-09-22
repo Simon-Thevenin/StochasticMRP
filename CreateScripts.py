@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     policyyqfix = ["Fix", "Re-solve"]
 
-    generationset = [ "RQMC"]#, "MC"]
+    Generationset = [ "RQMC"]#, "MC"]
     methodset = ["MIP"]
     Nrseed = 1
     distributionset = ["NonStationary"]
@@ -108,11 +108,14 @@ if __name__ == "__main__":
                  avg = False
                  if model == "YFix":
                      scenarset= nrcenarioyfix
+                     generationset = Generationset
                  if model == "HeuristicYFix":
                     scenarset = nrcenarioheuristicyfix
+                    generationset = Generationset
                  if model == "YQFix":
                      scenarset = nrcenarioyfqix
                      policyset = policyyqfix
+                     generationset = Generationset
                  if model == "Average":
                      scenarset = ["1"]
                      avg = True
