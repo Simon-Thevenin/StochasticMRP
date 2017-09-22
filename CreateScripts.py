@@ -116,7 +116,7 @@ if __name__ == "__main__":
                  if model == "Average":
                      scenarset = ["1"]
                      avg = True
-                     policyset = ["MC"]
+                     generationset = ["MC"]
 
                  for method in methodset:
                      for generation in generationset:
