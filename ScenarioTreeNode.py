@@ -59,11 +59,18 @@ class ScenarioTreeNode:
                                                                                                        nrbranch,
                                                                                                        averagescenariotree,
                                                                                                        self.Owner.ScenarioGenerationMethod)
-
+            # if time ==0:
+            #      print "The demands for product: %r" % nextdemands[4]
+            #      with open('Histintree.csv'  , 'w+') as f:
+            # # #         # v_hist = np.ravel(v)  # 'flatten' v
+            #           fig = PLT.figure()
+            #           ax1 = fig.add_subplot(111)
+            #           n, bins, patches = ax1.hist(nextdemands[4], bins=100,  facecolor='green')
+            #           PLT.show()
 
             usaverageforbranch =  ( t   >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter) )\
-                                  or ( t <  self.Instance.NrTimeBucketWithoutUncertaintyBefore ) \
-                                  or self.Owner.AverageScenarioTree
+                                      or ( t <  self.Instance.NrTimeBucketWithoutUncertaintyBefore ) \
+                                      or self.Owner.AverageScenarioTree
 
             nextfirstbranchid = [self.FirstBranchID for b in range(nrbranch)]
             if t == max( self.Owner.FollowGivenUntil + 1, 1):

@@ -146,6 +146,10 @@ class Evaluator:
         duration = time.time() - start_time
         print "Duration od evaluation: %r, outofsampl cost:%r total proba:%r"%( duration, average, totalproba )# %r"%( duration, Evaluated )
 
+        namea = "_".join(str(elm) for elm in testidentifier)
+        nameb = "_".join(str(elm) for elm in evaluateidentificator)
+        OutOfSampleSolution.PrintToExcel(namea+nameb+".xlsx")
+
     #This function return the setup decision and quantity to produce for the scenario given in argument
     def GetDecisionFromSolutionForScenario(self, sol, model, scenario):
 
@@ -218,7 +222,8 @@ class Evaluator:
         scenarioset = []
         treeset = []
         # Use an offset in the seed to make sure the scenario used for evaluation are different from the scenario used for optimization
-        offset = solveseed + 999323
+        print "ATTENTION Remove +100 Evaluator.GetScenarioSet"
+        offset = solveseed + 999323 +100
 
         for seed in range(offset, nrscenario + offset, 1):
            # Generate a random scenario
@@ -227,6 +232,7 @@ class Evaluator:
            treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
            scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True)
            scenario = scenariotree.GetAllScenarios(False)[0]
+           print "Demand in scenario: %s"%scenario.Demands
            scenarioset.append( scenario )
            treeset.append( scenariotree)
 
@@ -378,6 +384,11 @@ class Evaluator:
             #self.MIPResolveTime[time].Cplex.parameters.lpmethod = 2
             self.MIPResolveTime[time].Cplex.parameters.lpmethod.set(self.MIPResolveTime[time].Cplex.parameters.lpmethod.values.barrier)
             solution = self.MIPResolveTime[time].Solve( createsolution = False)
+
+            if time == 4:
+                solution = self.MIPResolveTime[time].Solve()
+                solution.PrintToExcel("ResolutionTems4")
+
             if Constants.Debug:
                 print "End solving"
 

@@ -8,7 +8,7 @@ import os
 import subprocess
 import csv
 
-NrScenarioEvaluation = "5000"
+NrScenarioEvaluation = "500"
 
 def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method):
     print "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
@@ -71,13 +71,13 @@ if __name__ == "__main__":
     #modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
     modelset = [ "HeuristicYFix", "YFix", "YQFix"]
 
-    nrcenarioyfix =["200", "512"]
-    nrcenarioyfqix = ["200", "500"]
-    nrcenarioheuristicyfix = ["200", "500"] # scenarset = ["200", "512", "3200", "6400"]
+    nrcenarioyfix =["200"]
+    nrcenarioyfqix = ["200"]
+    nrcenarioheuristicyfix = ["200", "6400"] # scenarset = ["200", "512", "3200", "6400"]
 
-    policyyqfix = ["Re-solve"]#["Fix", "Re-solve"]
+    policyyqfix = ["Fix", "Re-solve"]
 
-    generationset = [ "RQMC", "MC"]
+    generationset = [ "RQMC"]#, "MC"]
     methodset = ["MIP"]
     Nrseed = 1
     distributionset = ["NonStationary"]

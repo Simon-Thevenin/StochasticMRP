@@ -1,5 +1,6 @@
 #from __future__ import absolute_import, division, print_function
 from __future__ import division
+#print "Attention matplt is avctivee"
 #from matplotlib import pyplot as PLT
 
 import cplex
@@ -132,14 +133,14 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     # scenario = mipsolver.Scenarios
     # demands = [ [ [ scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet ] for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
     # for t in Instance.TimeBucketSet:
-    #      for p in Instance.ProductWithExternalDemand:
-    #           print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
-    #           with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
-    #               #v_hist = np.ravel(v)  # 'flatten' v
-    #               fig = PLT.figure()
-    #               ax1 = fig.add_subplot(111)
-    #               n, bins, patches = ax1.hist(demands[t][p], bins=100, normed=1, facecolor='green')
-    #               PLT.show()
+    #       for p in Instance.ProductWithExternalDemand:
+    #            print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
+    #            with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
+    #                #v_hist = np.ravel(v)  # 'flatten' v
+    #                fig = PLT.figure()
+    #                ax1 = fig.add_subplot(111)
+    #                n, bins, patches = ax1.hist(demands[t][p], bins=100,  facecolor='green')
+    #                PLT.show()
     solution = mipsolver.Solve()
    # result = solution.TotalCost, [ [ sum( solution.Production.get_value( Instance.ProductName[ p], t, w ) *  for w in Instance.ScenarioSet ) for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
 
@@ -658,12 +659,12 @@ def parseArguments():
 
 #This function runs the evaluation for the just completed test :
 def RunEvaluation(  ):
-    if Constants.LauchEvalAfterSolve:
-        policyset = [ "NNSAC", "NNDAC", "Re-solve"]
+    if Constants.LauchEvalAfterSolve :
+        policyset = ["Re-solve"]# "NNSAC", "NNDAC", "Re-solve"]
         if Model == Constants.ModelYQFix or Model == Constants.Average:
                 policyset = ["Fix", "Re-solve"]
         for policy in policyset:
-                jobname = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
+                jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
                     TestIdentifier[0],  TestIdentifier[1],  TestIdentifier[2],  TestIdentifier[5], TestIdentifier[4], TestIdentifier[3],  policy, SeedIndex)
                 subprocess.call( ["qsub", jobname]  )
 #This function runs the evaluation jobs when the method is solved for the 5 seed:
@@ -675,7 +676,7 @@ def RunEvaluationIfAllSolve(  ):
         if Model == Constants.ModelYQFix or Model == Constants.Average:
             policyset = ["Fix"]
         for policy in policyset:
-            jobname = "job_evaluate_%s_%s_%s_%s_%s_%s_%s_s" % (
+            jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
                 TestIdentifier[0], TestIdentifier[1], TestIdentifier[2], TestIdentifier[5], TestIdentifier[4],
                 TestIdentifier[3], policy, SeedIndex)
             subprocess.call( ["qsub", jobname]  )
@@ -781,7 +782,7 @@ if __name__ == "__main__":
 
 
         Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
-        #csvfile = open("./Instances/InstanceNames.csv", 'rb')
+        #csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
         #data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
         #instancenameslist = []
         #for row in data_reader:
@@ -791,8 +792,8 @@ if __name__ == "__main__":
         #    Distribution = "NonStationary"
         #    for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
         #         "NonStationary"]:
-        #Instance.ReadFromFile( InstanceName, Distribution )
-        #Instance.SaveCompleteInstanceInExelFile()
+        #    Instance.ReadFromFile( InstanceName, Distribution )
+        #    Instance.SaveCompleteInstanceInExelFile()
         #Instance.ReadFromFile(InstanceName, Distribution)
         #Instance.SaveCompleteInstanceInExelFile()
         #Instance.DefineAsSuperSmallIntance()

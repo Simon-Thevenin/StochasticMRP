@@ -30,8 +30,10 @@ class GraveInstanceReader(InstanceReader):
 
     def ReadProductList(self):
         self.Instance.ProductName = [] #self.Datasheetdf.Index#[row[0] for row in self.DTFile]
-        for i, row in self.Datasheetdf.iterrows():
-            self.Instance.ProductName.append(row.get_value('productName'))
+        print self.Datasheetdf.index
+        for  row in self.Datasheetdf.index:
+            print row
+            self.Instance.ProductName.append(row)
 
 
 

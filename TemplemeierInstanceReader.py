@@ -97,17 +97,26 @@ class TemplemeierInstanceReader( InstanceReader ):
 
 
     def GetEchelonHoldingCost( self ):
+        self.Level = self.GetProductLevel()
+        #result = [ 0 for p in self.Instance.ProductSet ]
+        # for p in self.Instance.ProductSet:
+        #     if  self.Level[p] == 0:
+        #         result[p] = 10
+        #     if self.Level[p] == 1:
+        #         result[p] = 1
+        #     if self.Level[p] == 2:
+        #         result[p] = 0.1
         result = [  float( self.DatFile[i +1  ][2] ) for i in  self.Instance.ProductSet ]
         return result
 
-    def GenerateHoldingCostCost(self):
-
-        startholding = 4 +  self.Instance.NrProduct
-
-        self.Instance.InventoryCosts = [0.0] * self.Instance.NrProduct
-
-        for p in self.Instance.ProductSet:
-            self.Instance.InventoryCosts[p] = float(self.TMPFile[startholding + p][0])
+    # def GenerateHoldingCostCost(self):
+    #
+    #     startholding = 4 +  self.Instance.NrProduct
+    #
+    #     self.Instance.InventoryCosts = [0.0] * self.Instance.NrProduct
+    #
+    #     for p in self.Instance.ProductSet:
+    #         self.Instance.InventoryCosts[p] = float(self.TMPFile[startholding + p][0])
 
 
 
