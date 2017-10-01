@@ -69,13 +69,13 @@ if __name__ == "__main__":
 
 
     #modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
-    modelset = [ "Average", "HeuristicYFix", "YFix", "YQFix"]
+    modelset = [ "Average" ]#, "HeuristicYFix", "YFix", "YQFix"]
 
     nrcenarioyfix =["200"]
     nrcenarioyfqix = ["200"]
     nrcenarioheuristicyfix = ["200", "6400"] # scenarset = ["200", "512", "3200", "6400"]
 
-    policyyqfix = ["Fix", "Re-solve"]
+    policyyqfix = ["Fix"]#, "Re-solve"]
 
     Generationset = [ "RQMC"]#, "MC"]
     methodset = ["MIP"]
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         for distribution in distributionset:
              for model in modelset:
 
-                 policyset = [ "Re-solve"]
+                 policyset = [ "Fix"]
                  methodset = ["MIP"]
                  avg = False
                  if model == "YFix":
