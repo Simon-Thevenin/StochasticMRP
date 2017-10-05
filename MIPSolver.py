@@ -23,7 +23,8 @@ class MIPSolver(object):
                  fixsolutionuntil = -1,
                  evaluatesolution = False,
                  yfixheuristic = False,
-                 demandknownuntil = 0 ):
+                 demandknownuntil = 0,
+                 mipsetting = ""):
 
         # Define some attributes and functions which help to et the index of the variable.
         # the attributs nrquantiyvariables, nrinventoryvariable, nrproductionvariable, and nrbackordervariable gives the number
@@ -58,6 +59,7 @@ class MIPSolver(object):
         self.UseImplicitNonAnticipativity = implicitnonanticipativity
         #self.UseNonAnticipativity
         self.EVPI = evpi
+        self.MipSetting = mipsetting
         #The set of scenarios used to solve the instance
         self.DemandScenarioTree = scenariotree
         self.DemandScenarioTree.Owner = self
@@ -723,7 +725,110 @@ class MIPSolver(object):
         self.Cplex.parameters.mip.tolerances.mipgap.set(0.00000001)
         self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00000001)
         self.Cplex.parameters.advance = 0
-        #self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)
+
+        print "MIPSetting:%r"%self.MipSetting
+
+        if self.MipSetting == "Probing0":
+            self.Cplex.parameters.mip.strategy.probe.set(0)
+        elif self.MipSetting == "Probing1":
+            self.Cplex.parameters.mip.strategy.probe.set(1)
+        elif self.MipSetting == "Probing2":
+            self.Cplex.parameters.mip.strategy.probe.set(2)
+        elif self.MipSetting == "Probing3":
+            self.Cplex.parameters.mip.strategy.probe.set(3)
+        elif self.MipSetting == "CutFactor10":
+            self.Cplex.parameters.mip.limits.cutsfactor.set(10)
+        elif self.MipSetting == "emphasis0":
+            self.Cplex.parameters.emphasis.mip.set(0)
+        elif self.MipSetting == "emphasis1":
+            self.Cplex.parameters.emphasis.mip.set(1)
+        elif self.MipSetting == "emphasis2":
+            self.Cplex.parameters.emphasis.mip.set(2)
+        elif self.MipSetting == "emphasis3":
+            self.Cplex.parameters.emphasis.mip.set(3)
+        elif self.MipSetting == "emphasis4":
+            self.Cplex.parameters.emphasis.mip.set(4)
+        elif self.MipSetting == "localbranching":
+            self.Cplex.parameters.mip.strategy.lbheur.set(1)
+        elif self.MipSetting == "heuristicfreq10":
+            self.Cplex.parameters.mip.strategy.heuristicfreq.set(10)
+        elif self.MipSetting == "feasibilitypomp0":
+            self.Cplex.parameters.mip.strategy.fpheur.set(0)
+        elif self.MipSetting == "feasibilitypomp1":
+            self.Cplex.parameters.mip.strategy.fpheur.set(1)
+        elif self.MipSetting == "feasibilitypomp2":
+            self.Cplex.parameters.mip.strategy.fpheur.set(2)
+        elif self.MipSetting == "BB":
+            self.Cplex.parameters.mip.strategy.search.set(1)
+        elif self.MipSetting == "flowcovers1":
+            self.Cplex.parameters.mip.cuts.flowcovers.set(1)
+        elif self.MipSetting == "flowcovers2":
+            self.Cplex.parameters.mip.cuts.flowcovers.set(2)
+        elif self.MipSetting == "pathcut1":
+            self.Cplex.parameters.mip.cuts.pathcut.set(1)
+        elif self.MipSetting == "pathcut2":
+            self.Cplex.parameters.mip.cuts.pathcut.set(2)
+        elif self.MipSetting == "gomory1":
+            self.Cplex.parameters.mip.cuts.gomory.set(1)
+        elif self.MipSetting == "gomor2":
+            self.Cplex.parameters.mip.cuts.gomory.set(2)
+        elif self.MipSetting == "zerohalfcut1":
+            self.Cplex.parameters.mip.cuts.zerohalfcut.set(1)
+        elif self.MipSetting == "zerohalfcut2":
+            self.Cplex.parameters.mip.cuts.zerohalfcut.set(2)
+        elif self.MipSetting == "mircut1":
+            self.Cplex.parameters.mip.cuts.mircut.set(1)
+        elif self.MipSetting == "mircut2":
+            self.Cplex.parameters.mip.cuts.mircut.set(2)
+        elif self.MipSetting == "implied1":
+            self.Cplex.parameters.mip.cuts.implied.set(1)
+        elif self.MipSetting == "implied2":
+            self.Cplex.parameters.mip.cuts.implied.set(2)
+        elif self.MipSetting == "gubcovers1":
+            self.Cplex.parameters.mip.cuts.gubcovers.set(1)
+        elif self.MipSetting == "gubcovers2":
+            self.Cplex.parameters.mip.cuts.gubcovers.set(2)
+        elif self.MipSetting == "disjunctive1":
+            self.Cplex.parameters.mip.cuts.disjunctive.set(1)
+        elif self.MipSetting == "disjunctive2":
+            self.Cplex.parameters.mip.cuts.disjunctive.set(2)
+        elif self.MipSetting == "disjunctive3":
+            self.Cplex.parameters.mip.cuts.disjunctive.set(3)
+        elif self.MipSetting == "covers1":
+            self.Cplex.parameters.mip.cuts.covers.set(1)
+        elif self.MipSetting == "covers2":
+            self.Cplex.parameters.mip.cuts.covers.set(2)
+        elif self.MipSetting == "covers3":
+            self.Cplex.parameters.mip.cuts.covers.set(3)
+        elif self.MipSetting == "cliques1":
+            self.Cplex.parameters.mip.cuts.cliques.set(1)
+        elif self.MipSetting == "cliques2":
+            self.Cplex.parameters.mip.cuts.cliques.set(2)
+        elif self.MipSetting == "cliques3":
+            self.Cplex.parameters.mip.cuts.cliques.set(3)
+        elif self.MipSetting == "allcutmax":
+            self.Cplex.parameters.mip.cuts.cliques.set(3)
+            self.Cplex.parameters.mip.cuts.covers.set(3)
+            self.Cplex.parameters.mip.cuts.disjunctive.set(3)
+            self.Cplex.parameters.mip.cuts.gubcovers.set(2)
+            self.Cplex.parameters.mip.cuts.implied.set(2)
+            self.Cplex.parameters.mip.cuts.mircut.set(2)
+            self.Cplex.parameters.mip.cuts.zerohalfcut.set(2)
+            self.Cplex.parameters.mip.cuts.gomory.set(2)
+            self.Cplex.parameters.mip.cuts.pathcut.set(2)
+            self.Cplex.parameters.mip.cuts.flowcovers.set(2)
+        elif self.MipSetting == "variableselect00":
+            self.Cplex.parameters.mip.strategy.variableselect.set(-1)
+        elif self.MipSetting == "variableselect1":
+            self.Cplex.parameters.mip.strategy.variableselect.set(1)
+        elif self.MipSetting == "variableselect2":
+            self.Cplex.parameters.mip.strategy.variableselect.set(2)
+        elif self.MipSetting == "variableselect3":
+            self.Cplex.parameters.mip.strategy.variableselect.set(3)
+        elif self.MipSetting == "variableselect4":
+            self.Cplex.parameters.mip.strategy.variableselect.set(4)
+
+        self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)
         #self.Cplex.parameters.lpmethod = 2
         if self.YFixHeuristic:
             self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)

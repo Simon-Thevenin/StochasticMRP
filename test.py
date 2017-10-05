@@ -65,6 +65,7 @@ ScenarioSeed = 1
 SeedIndex = -1
 TestIdentifier = []
 EvaluatorIdentifier = []
+MIPSetting = ""
 SeedArray = [ 2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788 ]
 
 #This list contain the information obtained after solving the problem
@@ -115,7 +116,8 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
                           yfixheuristic= yfixheuristic,
                           givenquantities = GivenQuantities,
                           givensetups = GivenSetup,
-                          fixsolutionuntil = FixUntilTime )
+                          fixsolutionuntil = FixUntilTime,
+                          mipsetting = MIPSetting)
     if Constants.Debug:
         Instance.PrintInstance()
         for s in mipsolver.ScenarioSet:
@@ -591,6 +593,7 @@ def parseArguments():
     parser.add_argument("-m", "--method", help="method used to solve", type=str, default="MIP")
     parser.add_argument("-f", "--fixuntil", help="Use with VSS action, howmany periods are fixed", type=int, default=0)
     parser.add_argument("-e", "--evpi", help="if true the evpi model is consdiered",  default=False, action='store_true')
+    parser.add_argument("-c", "--mipsetting", help="test a specific mip solver parameter",  default="")
     # Print version
     parser.add_argument("--version", action="version", version='%(prog)s - Version 1.0')
 
@@ -614,6 +617,7 @@ def parseArguments():
     global Method
     global FixUntilTime
     global EVPI
+    global MIPSetting
 
     Action = args.Action
     InstanceName = args.Instance
@@ -627,6 +631,7 @@ def parseArguments():
     PolicyGeneration = args.policy
     FixUntilTime = args.fixuntil
     EVPI = args.evpi
+    MIPSetting = args.mipsetting
     if EVPI:
         PolicyGeneration ="EVPI"
         NearestNeighborStrategy = "EVPI"

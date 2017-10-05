@@ -10,11 +10,11 @@ import csv
 
 NrScenarioEvaluation = "500"
 
-def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method):
-    print "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
-        instance, distribution, model, nrscenar, generation, seed, method)
-    qsub_filename = "./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s" % (
-        instance, distribution, model, nrscenar, generation, seed, method)
+def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method, mipsetting = ""):
+    print "job_solve_%s_%s_%s_%s_%s_%s_%s_%s" % (
+        instance, distribution, model, nrscenar, generation, seed, method, mipsetting)
+    qsub_filename = "./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s_%s" % (
+        instance, distribution, model, nrscenar, generation, seed, method, mipsetting)
     qsub_file = open(qsub_filename, 'w')
     qsub_file.write("""
 #!/bin/bash -l
@@ -22,12 +22,12 @@ def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, me
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
+#$ -o /home/thesim/outputjob%s%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Solve %s %s %s %s %s -s %s  -m %s
-""" % (instance, distribution, model, nrscenar, generation, seed, method, instance,
-                          distribution, model, nrscenar, generation, seed, method))
+python test.py Solve %s %s %s %s %s -s %s  -m %s --mipsetting %s
+""" % (instance, distribution, model, nrscenar, generation, seed, method, mipsetting, instance,
+                          distribution, model, nrscenar, generation, seed, method, mipsetting))
 
 
 def CreatePolicyJob(instance, distribution, model, nrscenar, generation, seed, Policy):
@@ -55,6 +55,7 @@ if __name__ == "__main__":
     for row in data_reader:
        instancenameslist.append(row)
     InstanceSet = instancenameslist[0]
+    InstanceSet = ["G5047323b2"]
     # for InstanceName in instancenameslist:#["01", "02", "03", "04", "05"]:
     #InstanceSet = [ "00", "01", "02", "03", "04", "05" ]
     #InstanceSet = ["05_C=2"]
@@ -69,7 +70,7 @@ if __name__ == "__main__":
 
 
     #modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
-    modelset = [ "Average" ]#, "HeuristicYFix", "YFix", "YQFix"]
+    modelset = [ "YFix" ]#, "HeuristicYFix", "YFix", "YQFix"]
 
     nrcenarioyfix =["200"]
     nrcenarioyfqix = ["200"]
@@ -125,9 +126,17 @@ if __name__ == "__main__":
                      for generation in generationset:
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):
-                                    Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method)
-                                    filesolve.write("qsub ./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
-                                                    instance, distribution, model, nrscenar, generation, seed, method))
+                                 for mipsetting in ["Probing0", "Probing1", "Probing2", "Probing3", "CutFactor10", "emphasis0","emphasis1",
+                                                    "emphasis2", "emphasis3", "emphasis4", "localbranching","heuristicfreq10", "feasibilitypomp0" ,"feasibilitypomp1",
+                                                    "feasibilitypomp2", "BB" ,"flowcovers1", "flowcovers2", "pathcut1", "pathcut2", "gomory1", "gomor2",
+                                                    "zerohalfcut1", "zerohalfcut2" ,"mircut1", "mircut2" , "implied1" ,"implied2", "gubcovers1" , "gubcovers2",
+                                                    "disjunctive1", "disjunctive2", "disjunctive3", "covers1", "covers2",
+                                                    "covers3", "cliques1", "cliques2", "cliques3", "allcutmax", "variableselect00",
+                                                    "variableselect1", "variableselect2", "variableselect3", "variableselect4" ]:
+
+                                    Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method, mipsetting)
+                                    filesolve.write("qsub ./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s_$s \n" % (
+                                                    instance, distribution, model, nrscenar, generation, seed, method, mipsetting))
 
                                     for Policy in policyset:
                                         CreatePolicyJob(instance, distribution, model, nrscenar, generation, seed,

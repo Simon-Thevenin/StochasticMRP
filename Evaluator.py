@@ -270,7 +270,7 @@ class Evaluator:
         M = nrscenario
         variance2 = ((1.0 / K) * sum(  (1.0 / M) * sum(math.pow(Evaluated[k][seed], 2) for seed in range(M)) for k in range(K))) - math.pow(mean,  2)
         covariance = ( ((1.0 / K) * sum(math.pow(sum(Evaluated[k][seed] for seed in range(M)) / M, 2) for k in range(K))) - math.pow( mean, 2))
-        term = 0# stats.norm.ppf(1 - 0.05) * math.sqrt((variance + (covariance * (M - 1))) / (K * M))
+        term =  stats.norm.ppf(1 - 0.05) * math.sqrt((variance + (covariance * (M - 1))) / (K * M))
         LB = mean - term
         UB = mean + term
         d = datetime.now()
