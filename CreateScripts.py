@@ -135,7 +135,7 @@ if __name__ == "__main__":
                                                     "variableselect1", "variableselect2", "variableselect3", "variableselect4" ]:
 
                                     Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method, mipsetting)
-                                    filesolve.write("qsub ./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s_$s \n" % (
+                                    filesolve.write("qsub ./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
                                                     instance, distribution, model, nrscenar, generation, seed, method, mipsetting))
 
                                     for Policy in policyset:
