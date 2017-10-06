@@ -72,7 +72,7 @@ if __name__ == "__main__":
     #modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
     modelset = [ "YFix" ]#, "HeuristicYFix", "YFix", "YQFix"]
 
-    nrcenarioyfix =["200"]
+    nrcenarioyfix =["200", "512", "6400" ]
     nrcenarioyfqix = ["200"]
     nrcenarioheuristicyfix = ["200", "6400"] # scenarset = ["200", "512", "3200", "6400"]
 
@@ -126,7 +126,6 @@ if __name__ == "__main__":
                      for generation in generationset:
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):
-                                 for mipsetting in ["Probing00", "BranchUp","BranchDefault", "BranchDown", "NoOtherCuts", "Default"]:
                                                     #, "Probing3", "CutFactor10", "emphasis0","emphasis1",
                                                     #"emphasis2", "emphasis3", "emphasis4", "localbranching","heuristicfreq10", "feasibilitypomp0" ,"feasibilitypomp1",
                                                     #"feasibilitypomp2", "BB" ,"flowcovers1", "flowcovers2", "pathcut1", "pathcut2", "gomory1", "gomor2",

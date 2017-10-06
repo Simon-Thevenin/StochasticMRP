@@ -24,7 +24,8 @@ class MIPSolver(object):
                  evaluatesolution = False,
                  yfixheuristic = False,
                  demandknownuntil = 0,
-                 mipsetting = ""):
+                 mipsetting = "",
+                 warmstart = False):
 
         # Define some attributes and functions which help to et the index of the variable.
         # the attributs nrquantiyvariables, nrinventoryvariable, nrproductionvariable, and nrbackordervariable gives the number
@@ -74,7 +75,7 @@ class MIPSolver(object):
 
         self.GivenSetup = givensetups
         self.FixSolutionUntil =  fixsolutionuntil
-
+        self.WamStart = warmstart
 
         self.ScenarioSet = range( self.NrScenario )
         self.Cplex = cplex.Cplex()
@@ -357,7 +358,7 @@ class MIPSolver(object):
 
                         # the variable quantity_prod_time_scenario_p_t_w indicated the quantity of product p produced at time t in scneario w
         upperbound = [self.M] * nrquantityvariable
-        if len( self.GivenSetup) > 0:
+        if len( self.GivenSetup) > 0 and (self.EvaluateSolution or self.YFixHeuristic):
             for w in self.ScenarioSet:
                 for t in self.Instance.TimeBucketSet:
                     for p in self.Instance.ProductSet:
@@ -382,7 +383,8 @@ class MIPSolver(object):
             self.Cplex.variables.add(obj=setupcosts,
                                      #lb=[0.0] * nrproductionvariable,
                                      #ub=[1.0] * nrproductionvariable,
-                                     types= ['B']*nrproductionvariable )
+                                     types= ['B']*nrproductionvariable
+                                     )
 
         # the variable backorder_prod_time_scenario_p_t_w gives the amount of product p backordered at time t in scneario w
         self.Cplex.variables.add(obj=backordercosts,
@@ -476,6 +478,22 @@ class MIPSolver(object):
                                                               senses=["E"],
                                                               rhs=righthandside)
 
+    def WarmStartGivenSetupConstraints(self):
+         AlreadyAdded = [False for v in range(self.GetNrProductionVariable())]
+         vars=[]
+         righthandside = []
+         # Setup equal to the given ones
+         for p in self.Instance.ProductSet:
+              for t in self.Instance.TimeBucketSet:
+                  for w in self.ScenarioSet:
+                      indexvariable = self.GetIndexProductionVariable(p, t, w)
+                      indexinarray = indexvariable - self.GetStartProductionVariable()
+
+                      if not AlreadyAdded[indexinarray]:
+                          vars = vars + [indexvariable]
+                          AlreadyAdded[indexinarray] = True
+                          righthandside = righthandside + [round(self.GivenSetup[t][p], 0)]
+         self.Cplex.MIP_starts.add(cplex.SparsePair(vars, righthandside), self.Cplex.MIP_starts.effort_level.solve_fixed )
 
 
     # Demand and materials requirement: set the value of the invetory level and backorder quantity according to
@@ -682,6 +700,9 @@ class MIPSolver(object):
                 print "Creat given setup and given setup..."
             self.CreateCopyGivenSetupConstraints()
 
+        if self.WamStart:
+            self.WarmStartGivenSetupConstraints()
+
         if self.EvaluateSolution:
             if self.Model == Constants.ModelYQFix or self.Model == Constants.ModelYFix:
                 if Constants.Debug:
@@ -732,6 +753,13 @@ class MIPSolver(object):
         self.Cplex.parameters.mip.cuts.gomory.set(2)
         self.Cplex.parameters.mip.cuts.pathcut.set(2)
         self.Cplex.parameters.mip.cuts.mircut.set(2)
+        self.Cplex.parameters.mip.cuts.cliques.set(-1)
+        self.Cplex.parameters.mip.cuts.covers.set(-1)
+        self.Cplex.parameters.mip.cuts.disjunctive.set(-1)
+        self.Cplex.parameters.mip.cuts.gubcovers.set(-1)
+        self.Cplex.parameters.mip.cuts.implied.set(-1)
+        self.Cplex.parameters.mip.cuts.zerohalfcut.set(-1)
+        self.Cplex.parameters.mip.cuts.flowcovers.set(-1)
 
         print "MIPSetting:%r"%self.MipSetting
 

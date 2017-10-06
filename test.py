@@ -96,7 +96,7 @@ def PrintFinalResult():
     myfile.close()
 
 #This function creates the CPLEX model and solves it.
-def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False, yfixheuristic = False ):
+def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False, yfixheuristic = False, warmstart = False ):
 
     global SolveInformation
     global CompactSolveInformation
@@ -104,7 +104,7 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
                                      averagescenariotree=averagescenario,
                                      scenariogenerationmethod = ScenarioGeneration,
                                      generateRQMCForYQfix = ( Model  == Constants.ModelYQFix and ScenarioGeneration == Constants.RQMC ),
-                                     model= Model)
+                                     model= Model )
 
     MIPModel = Model
     if Model == Constants.Average:
@@ -117,7 +117,8 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
                           givenquantities = GivenQuantities,
                           givensetups = GivenSetup,
                           fixsolutionuntil = FixUntilTime,
-                          mipsetting = MIPSetting)
+                          mipsetting = MIPSetting,
+                          warmstart = warmstart)
     if Constants.Debug:
         Instance.PrintInstance()
         for s in mipsolver.ScenarioSet:
@@ -235,13 +236,27 @@ def SolveYFixHeuristic():
 def SolveYFix():
     global SolveInformation
     global OptimizationInfo
+    global Model
+    global GivenSetup
+    global ScenarioGeneration
     if Constants.Debug:
         Instance.PrintInstance()
 
+
+    treestructure = [1, 200] + [1] * (Instance.NrTimeBucket - 1) + [0]
+    Model = Constants.ModelYQFix
+    chosengeneration = ScenarioGeneration
+    ScenarioGeneration = "RQMC"
+    solution, mipsolver = MRP(treestructure, False, recordsolveinfo=True)
+    GivenSetup = [[solution.Production[0][t][p] for p in Instance.ProductSet] for t in Instance.TimeBucketSet]
+    # GivenSetup = [[1 for p in Instance.ProductSet ] for t in Instance.TimeBucketSet]
+    ScenarioGeneration = chosengeneration
+    Model = Constants.ModelYFix
     treestructure = GetTreeStructure()
 
+
     if Method == "MIP" :
-            solution, mipsolver = MRP(treestructure, averagescenario=False, recordsolveinfo=True)
+            solution, mipsolver = MRP(treestructure, averagescenario=False, recordsolveinfo=True, warmstart = True)
             OptimizationInfo[0] = solution.CplexTime
             OptimizationInfo[1] = solution.CplexGap
     if Method == "SDDP":
