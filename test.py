@@ -121,8 +121,8 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
                           warmstart = warmstart)
     if Constants.Debug:
         Instance.PrintInstance()
-        for s in mipsolver.ScenarioSet:
-            print "demand scenario %d:%r"%( s,mipsolver.Scenarios[s].Demands)
+        #for s in mipsolver.ScenarioSet:
+        #    print "demand scenario %d:%r"%( s,mipsolver.Scenarios[s].Demands)
     if PrintScenarios:
         mipsolver.PrintScenarioToFile(  )
 
