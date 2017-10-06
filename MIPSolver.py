@@ -720,15 +720,24 @@ class MIPSolver(object):
 
         # tune the paramters
         self.Cplex.parameters.timelimit.set( Constants.AlgorithmTimeLimit )
-        self.Cplex.parameters.mip.limits.treememory.set( 7000.0 )
+        self.Cplex.parameters.mip.limits.treememory.set( 700000000.0 )
         self.Cplex.parameters.threads.set(1)
         self.Cplex.parameters.mip.tolerances.mipgap.set(0.00000001)
         self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00000001)
-        self.Cplex.parameters.advance = 0
+        #self.Cplex.parameters.advance = 0
+
+        self.Cplex.parameters.mip.strategy.probe.set(2)
+        self.Cplex.parameters.mip.strategy.lbheur.set(1)
+        self.Cplex.parameters.mip.strategy.variableselect.set(4)
+        self.Cplex.parameters.mip.cuts.gomory.set(2)
+        self.Cplex.parameters.mip.cuts.pathcut.set(2)
+        self.Cplex.parameters.mip.cuts.mircut.set(2)
 
         print "MIPSetting:%r"%self.MipSetting
 
-        if self.MipSetting == "Probing0":
+        if self.MipSetting == "Probing00":
+            self.Cplex.parameters.mip.strategy.probe.set(-1)
+        elif self.MipSetting == "Probing0":
             self.Cplex.parameters.mip.strategy.probe.set(0)
         elif self.MipSetting == "Probing1":
             self.Cplex.parameters.mip.strategy.probe.set(1)
@@ -827,9 +836,24 @@ class MIPSolver(object):
             self.Cplex.parameters.mip.strategy.variableselect.set(3)
         elif self.MipSetting == "variableselect4":
             self.Cplex.parameters.mip.strategy.variableselect.set(4)
-
-        self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)
+        elif self.MipSetting == "BranchUp":
+            self.Cplex.parameters.mip.strategy.branch.set(-1)
+        elif self.MipSetting == "BranchDefault":
+            self.Cplex.parameters.mip.strategy.branch.set(0)
+        elif self.MipSetting == "BranchDown":
+            self.Cplex.parameters.mip.strategy.branch.set(1)
+        elif self.MipSetting == "NoOtherCuts":
+            self.Cplex.parameters.mip.cuts.cliques.set(-1)
+            self.Cplex.parameters.mip.cuts.covers.set(-1)
+            self.Cplex.parameters.mip.cuts.disjunctive.set(-1)
+            self.Cplex.parameters.mip.cuts.gubcovers.set(-1)
+            self.Cplex.parameters.mip.cuts.implied.set(-1)
+            self.Cplex.parameters.mip.cuts.zerohalfcut.set(-1)
+            self.Cplex.parameters.mip.cuts.flowcovers.set(-1)
+        #self.Cplex.parameters.lpmethod.set(1)
+        #self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)
         #self.Cplex.parameters.lpmethod = 2
+        #self.Cplex.parameters.advance.set(0)
         if self.YFixHeuristic:
             self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)
             self.Cplex.parameters.threads.set(1)

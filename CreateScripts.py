@@ -126,13 +126,14 @@ if __name__ == "__main__":
                      for generation in generationset:
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):
-                                 for mipsetting in ["Probing0", "Probing1", "Probing2", "Probing3", "CutFactor10", "emphasis0","emphasis1",
-                                                    "emphasis2", "emphasis3", "emphasis4", "localbranching","heuristicfreq10", "feasibilitypomp0" ,"feasibilitypomp1",
-                                                    "feasibilitypomp2", "BB" ,"flowcovers1", "flowcovers2", "pathcut1", "pathcut2", "gomory1", "gomor2",
-                                                    "zerohalfcut1", "zerohalfcut2" ,"mircut1", "mircut2" , "implied1" ,"implied2", "gubcovers1" , "gubcovers2",
-                                                    "disjunctive1", "disjunctive2", "disjunctive3", "covers1", "covers2",
-                                                    "covers3", "cliques1", "cliques2", "cliques3", "allcutmax", "variableselect00",
-                                                    "variableselect1", "variableselect2", "variableselect3", "variableselect4" ]:
+                                 for mipsetting in ["Probing00", "BranchUp","BranchDefault", "BranchDown", "NoOtherCuts", "Default"]:
+                                                    #, "Probing3", "CutFactor10", "emphasis0","emphasis1",
+                                                    #"emphasis2", "emphasis3", "emphasis4", "localbranching","heuristicfreq10", "feasibilitypomp0" ,"feasibilitypomp1",
+                                                    #"feasibilitypomp2", "BB" ,"flowcovers1", "flowcovers2", "pathcut1", "pathcut2", "gomory1", "gomor2",
+                                                    #"zerohalfcut1", "zerohalfcut2" ,"mircut1", "mircut2" , "implied1" ,"implied2", "gubcovers1" , "gubcovers2",
+                                                    #"disjunctive1", "disjunctive2", "disjunctive3", "covers1", "covers2",
+                                                    #"covers3", "cliques1", "cliques2", "cliques3", "allcutmax", "variableselect00",
+                                                    #"variableselect1", "variableselect2", "variableselect3", "variableselect4" ]:
 
                                     Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method, mipsetting)
                                     filesolve.write("qsub ./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
