@@ -13,7 +13,7 @@ NrScenarioEvaluation = "500"
 def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method):
     print "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
         instance, distribution, model, nrscenar, generation, seed, method)
-    qsub_filename = "./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s_%s" % (
+    qsub_filename = "./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s" % (
         instance, distribution, model, nrscenar, generation, seed, method)
     qsub_file = open(qsub_filename, 'w')
     qsub_file.write("""
