@@ -10,11 +10,11 @@ import csv
 
 NrScenarioEvaluation = "500"
 
-def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method, mipsetting = ""):
-    print "job_solve_%s_%s_%s_%s_%s_%s_%s_%s" % (
-        instance, distribution, model, nrscenar, generation, seed, method, mipsetting)
+def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method):
+    print "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
+        instance, distribution, model, nrscenar, generation, seed, method)
     qsub_filename = "./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s_%s" % (
-        instance, distribution, model, nrscenar, generation, seed, method, mipsetting)
+        instance, distribution, model, nrscenar, generation, seed, method)
     qsub_file = open(qsub_filename, 'w')
     qsub_file.write("""
 #!/bin/bash -l
@@ -22,12 +22,12 @@ def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, me
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjob%s%s%s%s%s%s%s%s.txt
+#$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
-python test.py Solve %s %s %s %s %s -s %s  -m %s --mipsetting %s
-""" % (instance, distribution, model, nrscenar, generation, seed, method, mipsetting, instance,
-                          distribution, model, nrscenar, generation, seed, method, mipsetting))
+python test.py Solve %s %s %s %s %s -s %s  -m %s
+""" % (instance, distribution, model, nrscenar, generation, seed, method, instance,
+                          distribution, model, nrscenar, generation, seed, method))
 
 
 def CreatePolicyJob(instance, distribution, model, nrscenar, generation, seed, Policy):
