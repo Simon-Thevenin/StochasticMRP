@@ -783,8 +783,8 @@ class MIPSolver(object):
         self.Cplex.parameters.timelimit.set( Constants.AlgorithmTimeLimit )
         self.Cplex.parameters.mip.limits.treememory.set( 700000000.0 )
         self.Cplex.parameters.threads.set(1)
-        self.Cplex.parameters.mip.tolerances.mipgap.set(0.00000001)
-        self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00000001)
+        #self.Cplex.parameters.mip.tolerances.mipgap.set(0.00000001)
+        #self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00000001)
         #self.Cplex.parameters.advance = 0
 
         self.Cplex.parameters.mip.strategy.probe.set(2)
@@ -792,7 +792,7 @@ class MIPSolver(object):
         self.Cplex.parameters.mip.strategy.variableselect.set(4)
         #self.Cplex.parameters.mip.cuts.gomory.set(2)
         #self.Cplex.parameters.mip.cuts.pathcut.set(2)
-        #self.Cplex.parameters.mip.cuts.mircut.set(2)
+        self.Cplex.parameters.mip.cuts.mircut.set(2)
         #self.Cplex.parameters.mip.cuts.cliques.set(-1)
         #self.Cplex.parameters.mip.cuts.covers.set(-1)
         #self.Cplex.parameters.mip.cuts.disjunctive.set(-1)
