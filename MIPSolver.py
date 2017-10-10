@@ -917,6 +917,18 @@ class MIPSolver(object):
             self.Cplex.parameters.mip.cuts.implied.set(-1)
             self.Cplex.parameters.mip.cuts.zerohalfcut.set(-1)
             self.Cplex.parameters.mip.cuts.flowcovers.set(-1)
+        elif self.MipSetting == "cutmax":
+             self.Cplex.parameters.mip.cuts.gomory.set(2)
+             self.Cplex.parameters.mip.cuts.pathcut.set(2)
+             self.Cplex.parameters.mip.cuts.mircut.set(2)
+             self.Cplex.parameters.mip.cuts.cliques.set(-1)
+             self.Cplex.parameters.mip.cuts.covers.set(-1)
+             self.Cplex.parameters.mip.cuts.disjunctive.set(-1)
+             self.Cplex.parameters.mip.cuts.gubcovers.set(-1)
+             self.Cplex.parameters.mip.cuts.implied.set(-1)
+             self.Cplex.parameters.mip.cuts.zerohalfcut.set(-1)
+             self.Cplex.parameters.mip.cuts.flowcovers.set(-1)
+
         #self.Cplex.parameters.lpmethod.set(1)
         #self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)
         #self.Cplex.parameters.lpmethod = 2
