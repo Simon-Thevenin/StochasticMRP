@@ -31,9 +31,9 @@ class DecentralizedMRP(object):
 
                 def incrementalcost(x, p, t):
                     if  t < self.Instance.NrTimeBucket - 1:
-                        result = self.Instance.InventoryCosts[p] * ( dist( x ) ) - self.Instance.BackorderCosts[p] * ( 1 - dist( x ) )
+                        result = self.Instance.InventoryCosts[p] * step * ( dist( x ) ) - self.Instance.BackorderCosts[p] * step * ( 1 - dist( x ) )
                     else :
-                        result = self.Instance.InventoryCosts[p] * (dist(x)) - (self.Instance.LostSaleCost[p] )* ( 1 - dist(x))
+                        result = self.Instance.InventoryCosts[p] *step *  (dist(x)) - (self.Instance.LostSaleCost[p] )*step *  ( 1 - dist(x))
                     return result
 
                 x = self.Instance.ForecastedAverageDemand[t][p]
