@@ -24,6 +24,7 @@ from Evaluator import Evaluator
 from SDDP import SDDP
 import argparse
 import subprocess
+from DecentralizedMRP import DecentralizedMRP
 import glob as glob
 #pass Debug to true to get some debug information printed
 
@@ -832,6 +833,7 @@ if __name__ == "__main__":
     #MRP() #[1, 2, 1, 1, 1, 1, 0 ])
    # ComputeVSS()
    # ComputeAverageGeneraor()
+
     if Action == Constants.Solve:
 
         if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS:

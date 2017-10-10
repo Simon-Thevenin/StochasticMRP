@@ -504,7 +504,7 @@ class MIPSolver(object):
     def CreateFlowConstraints( self ):
         if self.UseSafetyStock:
            decentralized = DecentralizedMRP( self.Instance )
-           serivicelevel  = decentralized.ComputeServiceLevel()
+           safetystock  = decentralized.ComputeServiceLevel()
 
 
         self.FlowConstraintNR = [[[ "" for t in self.Instance.TimeBucketSet]  for p in self.Instance.ProductSet] for w in self.ScenarioSet]
@@ -521,12 +521,7 @@ class MIPSolver(object):
                     backordervar = []
                     righthandside[0] = righthandside[0] + self.Scenarios[w].Demands[t][p]
                     if self.UseSafetyStock:
-                        righthandside[0] = righthandside[0] +ScenarioTreeNode.TransformInverse([[0.99]],
-                                                      1,
-                                                      1,
-                                                      self.Instance.Distribution,
-                                                      [self.Instance.ForecastedAverageDemand[t][p]],
-                                                      [self.Instance.ForcastedStandardDeviation[t][p]])[0][0]
+                        righthandside[0] = righthandside[0] + safetystock[t][p]
 
                     if self.Instance.HasExternalDemand[p]:
                         backordervar = [self.GetIndexBackorderVariable(p, t, w)]

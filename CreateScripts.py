@@ -55,7 +55,7 @@ if __name__ == "__main__":
     for row in data_reader:
        instancenameslist.append(row)
     InstanceSet = instancenameslist[0]
-    InstanceSet = ["G5047323b2"]
+    #InstanceSet = ["G5047323b2"]
     # for InstanceName in instancenameslist:#["01", "02", "03", "04", "05"]:
     #InstanceSet = [ "00", "01", "02", "03", "04", "05" ]
     #InstanceSet = ["05_C=2"]
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
 
     #modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
-    modelset = [ "YFix" ]#, "HeuristicYFix", "YFix", "YQFix"]
+    modelset = [ "AverageSS" ]#, "HeuristicYFix", "YFix", "YQFix"]
 
     nrcenarioyfix =["200"]#, "512", "6400" ]
     nrcenarioyfqix = ["200"]
@@ -117,7 +117,7 @@ if __name__ == "__main__":
                      scenarset = nrcenarioyfqix
                      policyset = policyyqfix
                      generationset = Generationset
-                 if model == "Average":
+                 if model == "Average" or model == "AverageSS":
                      scenarset = ["1"]
                      avg = True
                      generationset = ["MC"]
@@ -126,7 +126,7 @@ if __name__ == "__main__":
                      for generation in generationset:
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):
-                                   for mipsetting in[ "Default", "pathcut2", "mircut2","gomor2"]: #"CutFactor10", "emphasis0","emphasis1",
+                                   for mipsetting in[ "Default"]:#, "pathcut2", "mircut2","gomor2"]: #"CutFactor10", "emphasis0","emphasis1",
                                                     #"emphasis2", "emphasis3", "emphasis4", "localbranching","heuristicfreq10", "feasibilitypomp0" ,"feasibilitypomp1",
                                                     #"feasibilitypomp2", "BB" ,"flowcovers1", "flowcovers2", "pathcut1", "pathcut2", "gomory1", "gomor2",
                                                     #"zerohalfcut1", "zerohalfcut2" ,"mircut1", "mircut2" , "implied1" ,"implied2", "gubcovers1" , "gubcovers2",
