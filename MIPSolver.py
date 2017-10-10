@@ -6,7 +6,8 @@ import numpy as np
 import math
 from Constants import Constants
 from Tool import Tool
-from ScenarioTreeNode import  ScenarioTreeNode
+from ScenarioTreeNode import ScenarioTreeNode
+from DecentralizedMRP import DecentralizedMRP
 class MIPSolver(object):
     M = cplex.infinity
 
@@ -501,6 +502,11 @@ class MIPSolver(object):
     # Demand and materials requirement: set the value of the invetory level and backorder quantity according to
     #  the quantities produced and the demand
     def CreateFlowConstraints( self ):
+        if self.UseSafetyStock:
+           decentralized = DecentralizedMRP( self.Instance )
+           serivicelevel  = decentralized.ComputeServiceLevel()
+
+
         self.FlowConstraintNR = [[[ "" for t in self.Instance.TimeBucketSet]  for p in self.Instance.ProductSet] for w in self.ScenarioSet]
 
         for p in self.Instance.ProductSet:
@@ -786,9 +792,9 @@ class MIPSolver(object):
         self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00000001)
         #self.Cplex.parameters.advance = 0
 
-        #self.Cplex.parameters.mip.strategy.probe.set(-1)
+        self.Cplex.parameters.mip.strategy.probe.set(2)
         #self.Cplex.parameters.mip.strategy.lbheur.set(1)
-        #self.Cplex.parameters.mip.strategy.variableselect.set(4)
+        self.Cplex.parameters.mip.strategy.variableselect.set(4)
         #self.Cplex.parameters.mip.cuts.gomory.set(2)
         #self.Cplex.parameters.mip.cuts.pathcut.set(2)
         #self.Cplex.parameters.mip.cuts.mircut.set(2)

@@ -126,7 +126,7 @@ if __name__ == "__main__":
                      for generation in generationset:
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):
-                                   for mipsetting in[ "Default", "Probing00", "Probing2","Probing3", "cutmax", "variableselect4"]: #"CutFactor10", "emphasis0","emphasis1",
+                                   for mipsetting in[ "Default", "pathcut2", "mircut2","gomor2"]: #"CutFactor10", "emphasis0","emphasis1",
                                                     #"emphasis2", "emphasis3", "emphasis4", "localbranching","heuristicfreq10", "feasibilitypomp0" ,"feasibilitypomp1",
                                                     #"feasibilitypomp2", "BB" ,"flowcovers1", "flowcovers2", "pathcut1", "pathcut2", "gomory1", "gomor2",
                                                     #"zerohalfcut1", "zerohalfcut2" ,"mircut1", "mircut2" , "implied1" ,"implied2", "gubcovers1" , "gubcovers2",
