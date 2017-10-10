@@ -355,7 +355,7 @@ def EvaluateSingleSol(  ):
 
 
     MIPModel = Model
-    if Model == Constants.Average:
+    if Model == Constants.Average or Model == Constants.AverageSS:
         MIPModel = Constants.ModelYQFix
     if Model == Constants.ModelHeuristicYFix:
         MIPModel = Constants.ModelYFix
