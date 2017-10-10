@@ -6,7 +6,7 @@ import numpy as np
 import math
 from Constants import Constants
 from Tool import Tool
-
+from ScenarioTreeNode import  ScenarioTreeNode
 class MIPSolver(object):
     M = cplex.infinity
 
@@ -25,7 +25,8 @@ class MIPSolver(object):
                  yfixheuristic = False,
                  demandknownuntil = 0,
                  mipsetting = "",
-                 warmstart = False):
+                 warmstart = False,
+                 usesafetystock = False):
 
         # Define some attributes and functions which help to et the index of the variable.
         # the attributs nrquantiyvariables, nrinventoryvariable, nrproductionvariable, and nrbackordervariable gives the number
@@ -68,6 +69,7 @@ class MIPSolver(object):
         # DemandKnownUntil is used fgor the YQFix model, when the first period are considered known.
         self.DemandKnownUntil = demandknownuntil
         self.YFixHeuristic= yfixheuristic
+        self.UseSafetyStock = usesafetystock
         self.ComputeIndices()
         self.Scenarios =  scenariotree.GetAllScenarios( True )
 
@@ -512,6 +514,14 @@ class MIPSolver(object):
                 for t in self.Instance.TimeBucketSet:
                     backordervar = []
                     righthandside[0] = righthandside[0] + self.Scenarios[w].Demands[t][p]
+                    if self.UseSafetyStock:
+                        righthandside[0] = righthandside[0] +ScenarioTreeNode.TransformInverse([[0.99]],
+                                                      1,
+                                                      1,
+                                                      self.Instance.Distribution,
+                                                      [self.Instance.ForecastedAverageDemand[t][p]],
+                                                      [self.Instance.ForcastedStandardDeviation[t][p]])[0][0]
+
                     if self.Instance.HasExternalDemand[p]:
                         backordervar = [self.GetIndexBackorderVariable(p, t, w)]
 
@@ -598,6 +608,31 @@ class MIPSolver(object):
                             self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                                senses=["L"],
                                                                rhs=righthandside )
+
+
+
+#                        self.CreateSafetyStockConstraints()
+                        # This function creates the Capacity constraint
+
+    # def CreateSafetyStockConstraints(self):
+    #      AlreadyAdded = [False for v in range(self.GetNrQuantityVariable())]
+    #      for p in self.Instance.ProductWithExternalDemand:
+    #         for t in self.Instance.TimeBucketSet:
+    #             for w in self.ScenarioSet:
+    #                 indexI = self.GetIndexInventoryVariable(p, t, w)
+    #                 #if not AlreadyAdded[indexI]:
+    #                    # AlreadyAdded[indexI] = True
+    #                 vars = [indexI ]
+    #                 coeff = [ 1.0 ]
+    #                 righthandside = [ ScenarioTreeNode.TransformInverse([[0.99]],
+    #                                                                    1,
+    #                                                                    1,
+    #                                                                    self.Instance.Distribution,
+    #                                                                    [self.Instance.ForecastedAverageDemand[t][p]],
+    #                                                                    [self.Instance.ForcastedStandardDeviation[t][p]] )[0][0] ]
+    #                 self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff) ],
+    #                                                                           senses=["G"],
+    #                                                                           rhs=righthandside)
 
     # This function creates the non anticipitativity constraint
     def CreateNonanticipativityConstraints( self ):
@@ -701,7 +736,11 @@ class MIPSolver(object):
             self.CreateCopyGivenSetupConstraints()
 
         if self.WamStart:
+            print "Use warm start"
             self.WarmStartGivenSetupConstraints()
+
+        #if self.UseSafetyStock:
+        #    self.CreateSafetyStockConstraints()
 
         if self.EvaluateSolution:
             if self.Model == Constants.ModelYQFix or self.Model == Constants.ModelYFix:
@@ -747,19 +786,19 @@ class MIPSolver(object):
         self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00000001)
         #self.Cplex.parameters.advance = 0
 
-        self.Cplex.parameters.mip.strategy.probe.set(2)
-        self.Cplex.parameters.mip.strategy.lbheur.set(1)
-        self.Cplex.parameters.mip.strategy.variableselect.set(4)
-        self.Cplex.parameters.mip.cuts.gomory.set(2)
-        self.Cplex.parameters.mip.cuts.pathcut.set(2)
-        self.Cplex.parameters.mip.cuts.mircut.set(2)
-        self.Cplex.parameters.mip.cuts.cliques.set(-1)
-        self.Cplex.parameters.mip.cuts.covers.set(-1)
-        self.Cplex.parameters.mip.cuts.disjunctive.set(-1)
-        self.Cplex.parameters.mip.cuts.gubcovers.set(-1)
-        self.Cplex.parameters.mip.cuts.implied.set(-1)
-        self.Cplex.parameters.mip.cuts.zerohalfcut.set(-1)
-        self.Cplex.parameters.mip.cuts.flowcovers.set(-1)
+        #self.Cplex.parameters.mip.strategy.probe.set(-1)
+        #self.Cplex.parameters.mip.strategy.lbheur.set(1)
+        #self.Cplex.parameters.mip.strategy.variableselect.set(4)
+        #self.Cplex.parameters.mip.cuts.gomory.set(2)
+        #self.Cplex.parameters.mip.cuts.pathcut.set(2)
+        #self.Cplex.parameters.mip.cuts.mircut.set(2)
+        #self.Cplex.parameters.mip.cuts.cliques.set(-1)
+        #self.Cplex.parameters.mip.cuts.covers.set(-1)
+        #self.Cplex.parameters.mip.cuts.disjunctive.set(-1)
+        #self.Cplex.parameters.mip.cuts.gubcovers.set(-1)
+        #self.Cplex.parameters.mip.cuts.implied.set(-1)
+        #self.Cplex.parameters.mip.cuts.zerohalfcut.set(-1)
+        #self.Cplex.parameters.mip.cuts.flowcovers.set(-1)
 
         print "MIPSetting:%r"%self.MipSetting
 

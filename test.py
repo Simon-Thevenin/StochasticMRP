@@ -66,6 +66,7 @@ SeedIndex = -1
 TestIdentifier = []
 EvaluatorIdentifier = []
 MIPSetting = ""
+UseSS = False
 SeedArray = [ 2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788 ]
 
 #This list contain the information obtained after solving the problem
@@ -118,7 +119,8 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
                           givensetups = GivenSetup,
                           fixsolutionuntil = FixUntilTime,
                           mipsetting = MIPSetting,
-                          warmstart = warmstart)
+                          warmstart = warmstart,
+                          usesafetystock=UseSS)
     if Constants.Debug:
         Instance.PrintInstance()
         #for s in mipsolver.ScenarioSet:
@@ -171,15 +173,21 @@ def GetEvaluateDescription():
 
 def SolveYQFix( ):
     global OptimizationInfo
+    global UseSS
+    global Model
 
     if Constants.Debug:
         Instance.PrintInstance()
 
     average = False
     nrscenario = NrScenario
-    if Model == "Average":
+    if Model == Constants.Average or Model == Constants.AverageSS:
         average = True
         nrscenario = 1
+
+        if Model == Constants.AverageSS:
+             UseSS = True
+             Model = Constants.Average
 
     treestructure = [1, nrscenario] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
     solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
@@ -826,7 +834,7 @@ if __name__ == "__main__":
    # ComputeAverageGeneraor()
     if Action == Constants.Solve:
 
-        if Model == Constants.ModelYQFix or Model == Constants.Average:
+        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS:
             #if Constants.LauchEvalAfterSolve :
                 SolveYQFix()
             #else: RunTestsAndEvaluation()

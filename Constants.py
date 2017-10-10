@@ -20,6 +20,7 @@ class Constants:
     ModelHeuristicYFix = "HeuristicYFix"
     Model_Fix = "_Fix"
     Average = "Average"
+    AverageSS = "AverageSS"
     MonteCarlo = "MC"
     RQMC = "RQMC"
     All = "all"
@@ -31,7 +32,7 @@ class Constants:
 
 
     Debug = True
-    PrintSolutionFileToExcel = False
+    PrintSolutionFileToExcel = True
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = True
     Infinity = 9999999999999.9
