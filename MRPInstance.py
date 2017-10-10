@@ -303,7 +303,7 @@ class MRPInstance:
 
     #Save the Instance in an Excel  file
     def SaveCompleteInstanceInExelFile( self ):
-        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_" + self.Distribution + ".xlsx",  engine='openpyxl' ) #+ "b2_ei_"
+        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "b2_" + self.Distribution + ".xlsx",  engine='openpyxl' ) #+ "b2_ei_"
 
         general = [ self.InstanceName, self.NrProduct, self.NrTimeBucket, self.NrResource, self.Gamma, self.Distribution,  self.NrTimeBucketWithoutUncertaintyBefore, self.NrTimeBucketWithoutUncertaintyAfter  ]
         columnstab = [ "Name", "NrProducts", "NrBuckets", "NrResources", "Gamma", "Distribution", "NrTimeBucketWithoutUncertaintyBefore", "NrTimeBucketWithoutUncertaintyAfter" ]

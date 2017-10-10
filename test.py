@@ -819,8 +819,8 @@ if __name__ == "__main__":
         #instancenameslist = instancenameslist[0]
         #for InstanceName in instancenameslist:#["01", "02", "03", "04", "05"]:
         #    Distribution = "NonStationary"
-        #    for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
-        #         "NonStationary"]:
+            #for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
+            #     "NonStationary"]:
         #    Instance.ReadFromFile( InstanceName, Distribution )
         #    Instance.SaveCompleteInstanceInExelFile()
         #Instance.ReadFromFile(InstanceName, Distribution)
