@@ -10,32 +10,39 @@ class DecentralizedMRP(object):
     # constructor
 
     def __init__(self, mrpinstance):
-        self.Intance =mrpinstance
+        self.Instance =mrpinstance
 
     def GetDistribution(self, time, product, x):
-        if self.Intance.Distribution == Constants.NonStationary:
+        if self.Instance.Distribution == Constants.NonStationary:
             return norm.cdf(x, 1,1)#self.Intance.ForecastedAverageDemand[time][product], self.Intance.ForcastedStandardDeviation[time][product])
 
     def ComputeServiceLevel(self):
-        safetystock = [ [ 0.0 for p in self.Intance.ProductSet] for t in self.Intance.TimeBucketSet ]
+        safetystock = [ [ 0.0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
 
-        for p in self.Intance.ProductSet:
-            for t in self.Intance.TimeBucketSet:
+        for p in self.Instance.ProductSet:
+            for t in self.Instance.TimeBucketSet:
                 #def normpdf(x, mu, sigma):
                 #    u = (x - mu) / abs(sigma)
                 #    y = (1 / (np.sqrt(2 * np.pi) * abs(sigma))) * np.exp(-u * u / 2)
                 #    return y
-
+                step =0.01
                 def dist(a) :
-                     return   norm.cdf(a + 1, self.Intance.ForecastedAverageDemand[t][p], self.Intance.ForcastedStandardDeviation[t][p] )
+                     return   norm.cdf(a + step, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p] )
 
+                def incrementalcost(x, p, t):
+                    if  t < self.Instance.NrTimeBucket - 1:
+                        result = self.Instance.InventoryCosts[p] * ( dist( x ) ) - self.Instance.BackorderCosts[p] * ( 1 - dist( x ) )
+                    else :
+                        result = self.Instance.InventoryCosts[p] * (dist(x)) - (self.Instance.LostSaleCost[p] )* ( 1 - dist(x))
+                    return result
 
-                x = self.Intance.ForecastedAverageDemand[t][p]
-                while  self.Intance.InventoryCosts[p] * ( dist( x ) ) - self.Intance.BackorderCosts[p] * ( 1 - dist( x ) ) < 0:
-                    x+= 0.01
-                print "optimized %s, value %r, proba %r " %  (x,self.Intance.InventoryCosts[p] * ( dist( x ) ) - self.Intance.BackorderCosts[p] * ( 1 - dist( x ) ), dist(x))
+                x = self.Instance.ForecastedAverageDemand[t][p]
 
-                safetystock[t][p] = x - self.Intance.ForecastedAverageDemand[t][p]
+                while  incrementalcost(x,p,t) < 0:
+                    x+= step
+                print "optimized %s, value %r, proba %r, forecast %r std %r" %  (x,incrementalcost(x,p,t), dist(x), self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p])
+
+                safetystock[t][p] = x - self.Instance.ForecastedAverageDemand[t][p]
 
             #quad(lambda a: (x*x - a*x) * dist(a) , 100.0, x)[0] \
                     #quad(lambda a: (a*x - x*x) * dist(a), x, 100000000)[0] #np.inf

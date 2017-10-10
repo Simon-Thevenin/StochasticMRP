@@ -98,8 +98,8 @@ class TemplemeierInstanceReader( InstanceReader ):
 
     def GetEchelonHoldingCost( self ):
         self.Level = self.GetProductLevel()
-        #result = [ 0 for p in self.Instance.ProductSet ]
-        # for p in self.Instance.ProductSet:
+        result = [ 0 for p in self.Instance.ProductSet ]
+        #for p in self.Instance.ProductSet:
         #     if  self.Level[p] == 0:
         #         result[p] = 10
         #     if self.Level[p] == 1:
@@ -181,7 +181,9 @@ class TemplemeierInstanceReader( InstanceReader ):
             self.Instance.ForcastedStandardDeviation = [ [ (1 - self.Instance.RateOfKnownDemand[t])
                                                            * self.Instance.ForecastError[p]
                                                            * self.Instance.ForecastedAverageDemand[t][p]
-                                                            for p in self.Instance.ProductSet ]
+                                                           if t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
+                                                           else 0.0
+                                                           for p in self.Instance.ProductSet ]
                                                          for t in self.Instance.TimeBucketSet]
 
             self.Instance.YearlyAverageDemand = [ sum( self.Instance.ForecastedAverageDemand[t][p]

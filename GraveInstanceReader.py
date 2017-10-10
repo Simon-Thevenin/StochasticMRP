@@ -112,12 +112,15 @@ class GraveInstanceReader(InstanceReader):
             self.Instance.ForcastedStandardDeviation = [ [ (1 - self.Instance.RateOfKnownDemand[t])
                                                            * self.Instance.ForecastError[p]
                                                            * self.Instance.ForecastedAverageDemand[t][p]
+                                                           if t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
+                                                           else 0.0
                                                             for p in self.Instance.ProductSet ]
                                                          for t in self.Instance.TimeBucketSet]
 
 
 
-    #This function generate the starting inventory
+
+        #This function generate the starting inventory
     def GenerateStartinInventory(self):
 
         sumdemand = [sum(self.Actualdepdemand[t][p] for t in range(self.TimeBetweenOrder)) if self.Instance.YearlyAverageDemand[p] > 0
@@ -178,6 +181,6 @@ class GraveInstanceReader(InstanceReader):
         # Back order is twice the  holding cost as in :
         # Solving the capacitated lot - sizing problem with backorder consideration CH Cheng1 *, MS Madan2, Y Gupta3 and S So4
         # See how to set this value
-        self.Instance.BackorderCosts = [ 10 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet ]
-        self.Instance.LostSaleCost = [ 100 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet ]
+        self.Instance.BackorderCosts = [ 2 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet ]
+        self.Instance.LostSaleCost = [ 20 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet ]
 

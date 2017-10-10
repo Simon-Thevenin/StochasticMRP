@@ -155,8 +155,8 @@ class InstanceReader:
         # Back order is twice the  holding cost as in :
         # Solving the capacitated lot - sizing problem with backorder consideration CH Cheng1 *, MS Madan2, Y Gupta3 and S So4
         # See how to set this value
-        self.Instance.BackorderCosts = [2 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
-        self.Instance.LostSaleCost = [20 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
+        self.Instance.BackorderCosts = [10 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
+        self.Instance.LostSaleCost = [100 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
 
     # This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
     def ReadFromFile(self, instancename, distribution):
