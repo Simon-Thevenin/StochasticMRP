@@ -31,9 +31,9 @@ class DecentralizedMRP(object):
 
 
                 x = self.Intance.ForecastedAverageDemand[t][p]
-                while  1 * ( dist( x ) ) - 10 * ( 1 - dist( x ) ) < 0:
+                while  self.Intance.InventoryCosts[p] * ( dist( x ) ) - self.Intance.BackorderCosts[p] * ( 1 - dist( x ) ) < 0:
                     x+= 0.01
-                print "optimized %s, value %r, proba %r " % (x,1 * ( dist( x ) ) - 10 * ( 1 - dist( x ) ), dist(x))
+                print "optimized %s, value %r, proba %r " %  (x,self.Intance.InventoryCosts[p] * ( dist( x ) ) - self.Intance.BackorderCosts[p] * ( 1 - dist( x ) ), dist(x))
 
                 safetystock[t][p] = x - self.Intance.ForecastedAverageDemand[t][p]
 
