@@ -21,7 +21,6 @@ class GraveInstanceReader(InstanceReader):
     # Constructor
     def __init__( self, instance ):
         InstanceReader.__init__(self, instance)
-
         self.Supplychaindf = None
         self.Datasheetdf = None
         self.Actualdepdemand = [ [ ] ]
@@ -34,8 +33,6 @@ class GraveInstanceReader(InstanceReader):
         for  row in self.Datasheetdf.index:
             print row
             self.Instance.ProductName.append(row)
-
-
 
     #Create datasets from the sheets for instance from Grave 2008
     def OpenFiles(self, instancename):
@@ -58,7 +55,6 @@ class GraveInstanceReader(InstanceReader):
          result =  [self.Datasheetdf.get_value(self.Instance.ProductName[p], 'stageCost') for p in self.Instance.ProductSet]
          return result
 
-
     def GetProductLevel(self):
          result =  [self.Datasheetdf.get_value(self.Instance.ProductName[p], 'relDepth') for p in self.Instance.ProductSet]
          return result
@@ -70,7 +66,7 @@ class GraveInstanceReader(InstanceReader):
         self.Instance.NrTimeBucketWithoutUncertaintyAfter = self.Instance.MaxLeadTime
         self.Instance.ComputeIndices()
 
-    def GenerateDistribution(self):
+    def GenerateDistribution(self, forecasterror):
         # Generate the sets of scenarios
         self.Instance.YearlyAverageDemand = [ self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand')
                                               for p in self.Instance.ProductSet]
@@ -101,7 +97,7 @@ class GraveInstanceReader(InstanceReader):
                                            for t in  self.Instance.TimeBucketSet ]
             self.Instance.RateOfKnownDemand = 0.0
         else:
-            self.Instance.ForecastError = [0.25 for p in self.Instance.ProductSet]
+            self.Instance.ForecastError = [forecasterror for p in self.Instance.ProductSet]
             self.Instance.RateOfKnownDemand = [math.pow(0.9, t + 1) for t in self.Instance.TimeBucketSet]
             self.Instance.ForecastedAverageDemand = [[np.floor( np.random.normal(self.Instance.YearlyAverageDemand[p],
                                                                                  self.Instance.YearlyStandardDevDemands[p], 1).clip( min=0.0)).tolist()[0]

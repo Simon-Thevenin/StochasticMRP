@@ -31,10 +31,11 @@ class Constants:
     SDDP = "SDDP"
 
 
-    Debug = True
-    PrintSolutionFileToExcel = True
+    Debug = False
+    PrintSolutionFileToExcel = False
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = True
+    PrintOnlyFirstStageDecision = False
     Infinity = 9999999999999.9
     AlgorithmTimeLimit = 36000.0
     AlgorithmOptimalityTolerence = 0.00001

@@ -149,19 +149,19 @@ class InstanceReader:
                                  for p in self.Instance.ProductSet)
             for k in range(self.Instance.NrResource)]
 
-    def GenerateCostParameters(self):
+    def GenerateCostParameters(self, b):
         # Gamma is set to 0.9 which is a common value (find reference!!!)
         self.Instance.Gamma = 0.9
         # Back order is twice the  holding cost as in :
         # Solving the capacitated lot - sizing problem with backorder consideration CH Cheng1 *, MS Madan2, Y Gupta3 and S So4
         # See how to set this value
-        self.Instance.BackorderCosts = [2 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
-        self.Instance.LostSaleCost = [20 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
+        self.Instance.BackorderCosts = [b * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
+        self.Instance.LostSaleCost = [b * 10 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
 
     # This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile(self, instancename, distribution):
+    def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25):
 
-        self.Instance.InstanceName = instancename
+        self.Instance.InstanceName = "%s_b%s_fe%s"%(instancename, b, forcasterror)
         self.Instance.Distribution = distribution
 
         self.OpenFiles(instancename)
@@ -176,11 +176,11 @@ class InstanceReader:
         self.Instance.ComputeLevel()
         self.Instance.ComputeMaxLeadTime()
         self.GenerateTimeHorizon()
-        self.GenerateDistribution()
+        self.GenerateDistribution( float(forcasterror/100.0) )
         self.ComputeAverageDependentDemand()
         self.GenerateStartinInventory()
         self.GenerateSetup()
         self.GenerateCapacity()
-        self.GenerateCostParameters()
+        self.GenerateCostParameters( b )
         self.Instance.SaveCompleteInstanceInExelFile()
         self.Instance.ComputeInstanceData()

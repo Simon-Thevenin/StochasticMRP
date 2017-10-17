@@ -21,6 +21,13 @@ class MRPSolution:
         result ="./Solutions/"+  description + "_" + dataframename
         return result
 
+    def GetGeneralInfoDf(self):
+        general = [self.MRPInstance.InstanceName, self.MRPInstance.Distribution, self.ScenarioTree.Owner.Model,
+                   self.CplexCost, self.CplexTime, self.CplexGap, self.CplexNrConstraints, self.CplexNrVariables, self.IsPartialSolution]
+        columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "CplexGap", "CplexNrConstraints",
+                      "CplexNrVariables", "IsPartialSolution"]
+        generaldf = pd.DataFrame(general, index=columnstab)
+        return generaldf
     # This function print the solution different pickle files
     def PrintToPickle(self, description):
             prodquantitydf, inventorydf, productiondf, bbackorderdf = self.DataFrameFromList()
@@ -30,10 +37,7 @@ class MRPSolution:
             inventorydf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'InventoryLevel') )
             bbackorderdf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'BackOrder') )
 
-            general = [self.MRPInstance.InstanceName, self.MRPInstance.Distribution, self.ScenarioTree.Owner.Model,
-                       self.CplexCost, self.CplexTime, self.CplexGap, self.CplexNrConstraints, self.CplexNrVariables]
-            columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "CplexGap", "CplexNrConstraints", "CplexNrVariables"]
-            generaldf = pd.DataFrame(general, index=columnstab)
+            generaldf = self.GetGeneralInfoDf()
             generaldf.to_pickle( self.GetSolutionPickleFileNameStart(description, "Generic") )
 
             scenariotreeinfo = [self.MRPInstance.InstanceName, self.ScenarioTree.Seed, self.ScenarioTree.TreeStructure,
@@ -55,9 +59,7 @@ class MRPSolution:
         inventorydf.to_excel(writer, 'InventoryLevel')
         bbackorderdf.to_excel(writer, 'BackOrder')
 
-        general = [  self.MRPInstance.InstanceName, self.MRPInstance.Distribution, self.ScenarioTree.Owner.Model, self.CplexCost, self.CplexTime, self.CplexGap, self.CplexNrConstraints, self.CplexNrVariables  ]
-        columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "CplexGap", "CplexNrConstraints", "CplexNrVariables"]
-        generaldf = pd.DataFrame( general, index=columnstab )
+        generaldf = self.GetGeneralInfoDf()
         generaldf.to_excel(writer, "Generic")
 
         scenariotreeinfo = [self.MRPInstance.InstanceName, self.ScenarioTree.Seed, self.ScenarioTree.TreeStructure, self.ScenarioTree.AverageScenarioTree, self.ScenarioTree.ScenarioGenerationMethod]
@@ -133,6 +135,7 @@ class MRPSolution:
                                            generateRQMCForYQfix = RQMCForYQfix,
                                            model = model)
 
+        self.IsPartialSolution = instanceinfo.get_value('IsPartialSolution', 0)
         self.CplexCost = instanceinfo.get_value( 'CplexCost', 0 )
         self.CplexTime = instanceinfo.get_value( 'CplexTime', 0 )
         self.CplexGap = instanceinfo.get_value( 'CplexGap', 0 )
@@ -140,12 +143,15 @@ class MRPSolution:
         self.CplexNrVariables = instanceinfo.get_value('CplexNrVariables', 0)
 
         self.Scenarioset = self.ScenarioTree.GetAllScenarios( False )
+        if  self.IsPartialSolution:
+            self.Scenarioset = [ self.Scenarioset [ 0 ] ]
         self.SenarioNrset = range(len(self.Scenarioset))
         self.ListFromDataFrame(prodquantitydf, inventorydf, productiondf, bbackorderdf)
-        self.ComputeCost()
+        if not self.IsPartialSolution:
+            self.ComputeCost()
 
-        if model <> Constants.ModelYQFix:
-            self.ScenarioTree.FillQuantityToOrderFromMRPSolution(self, self.Scenarioset)
+            if model <> Constants.ModelYQFix:
+                self.ScenarioTree.FillQuantityToOrderFromMRPSolution(self, self.Scenarioset)
             # for s in range( len(self.Scenarioset) ):
             #     print "Scenario with demand:%r" % self.Scenarioset[s].Demands
             #     print "quantity %r" % [ [ self.ProductionQuantity.loc[self.MRPInstance.ProductName[p], (time, s)] for p in
@@ -204,20 +210,36 @@ class MRPSolution:
                 totalcost = inventorycost + backordercost + setupcost + lostsalecost
         return totalcost, inventorycost, backordercost, setupcost, lostsalecost
 
+    def GetConsideredTimeBucket(self):
+        result = self.MRPInstance.TimeBucketSet
+        if self.IsPartialSolution:
+            result = [ 0 ]
+        return result
+
+    def GetConsideredScenarioset(self):
+        result = self.Scenarioset
+        if self.IsPartialSolution:
+            result = [ 0 ]
+        return result
+
     def DataFrameFromList(self):
         scenarioset = range(len(self.Scenarioset) )
-        solquantity = [ [ self.ProductionQuantity[s][t][p]   for t in self.MRPInstance.TimeBucketSet for s in scenarioset] for p in self.MRPInstance.ProductSet ]
-        solinventory = [[self.InventoryLevel[s][t][p]  for t in self.MRPInstance.TimeBucketSet for s in scenarioset ] for p in self.MRPInstance.ProductSet ]
+        timebucketset = self.GetConsideredTimeBucket()
+        solquantity = [ [ self.ProductionQuantity[s][t][p]   for t in timebucketset for s in scenarioset] for p in self.MRPInstance.ProductSet ]
+        solinventory = [[self.InventoryLevel[s][t][p]  for t in timebucketset for s in scenarioset ] for p in self.MRPInstance.ProductSet ]
         solproduction = [[self.Production[s][t][p]  for t in self.MRPInstance.TimeBucketSet for s in scenarioset ] for p in self.MRPInstance.ProductSet ]
-        solbackorder = [[self.BackOrder[s][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ]  for t in self.MRPInstance.TimeBucketSet for s in scenarioset ] for p in self.MRPInstance.ProductWithExternalDemand ]
+        solbackorder = [[self.BackOrder[s][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ]  for t in timebucketset for s in scenarioset ] for p in self.MRPInstance.ProductWithExternalDemand ]
 
-        iterables = [self.MRPInstance.TimeBucketSet, range(len(self.Scenarioset))]
+        iterables = [timebucketset, range(len(self.Scenarioset))]
         multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
         prodquantitydf = pd.DataFrame(solquantity, index=self.MRPInstance.ProductName, columns=multiindex)
         prodquantitydf.index.name = "Product"
         inventorydf = pd.DataFrame(solinventory, index=self.MRPInstance.ProductName, columns=multiindex)
         inventorydf.index.name = "Product"
-        productiondf = pd.DataFrame(solproduction, index=self.MRPInstance.ProductName, columns=multiindex)
+        #Production variables are decided at stage 1 for the complete horizon
+        iterablesproduction = [ range(len(self.MRPInstance.TimeBucketSet)) , range(len(self.Scenarioset) )]
+        multiindexproduction = pd.MultiIndex.from_product(iterablesproduction, names=['time', 'scenario'])
+        productiondf = pd.DataFrame(solproduction, index=self.MRPInstance.ProductName, columns=multiindexproduction)
         productiondf.index.name = "Product"
         nameproductwithextternaldemand = [self.MRPInstance.ProductName[p] for p in self.MRPInstance.ProductWithExternalDemand]
         bbackorderdf = pd.DataFrame(solbackorder, index=nameproductwithextternaldemand, columns=multiindex)
@@ -228,14 +250,15 @@ class MRPSolution:
 
     def ListFromDataFrame(self, prodquantitydf, inventorydf, productiondf, bbackorderdf):
         scenarioset = range(len(self.Scenarioset))
-        self.ProductionQuantity = [ [ [ prodquantitydf.loc[  str(self.MRPInstance.ProductName[ p ]), (t,s)]  for p in self.MRPInstance.ProductSet ]  for t in self.MRPInstance.TimeBucketSet ]for s in scenarioset ]
-        self.InventoryLevel = [ [ [inventorydf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]
+        timebucketset = self.GetConsideredTimeBucket()
+        self.ProductionQuantity = [ [ [ prodquantitydf.loc[  str(self.MRPInstance.ProductName[ p ]), (t,s)]  for p in self.MRPInstance.ProductSet ]  for t in timebucketset ]for s in scenarioset ]
+        self.InventoryLevel = [ [ [inventorydf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in timebucketset] for s in scenarioset ]
         self.Production = [ [ [productiondf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]
-        self.BackOrder = [ [ [bbackorderdf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductWithExternalDemand]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]
+        self.BackOrder = [ [ [bbackorderdf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductWithExternalDemand]  for t in timebucketset] for s in scenarioset ]
 
 
     #constructor
-    def __init__( self, instance = None, solquantity= None, solproduction= None, solinventory= None, solbackorder= None, scenarioset= None, scenriotree= None ):
+    def __init__( self, instance = None, solquantity= None, solproduction= None, solinventory= None, solbackorder= None, scenarioset= None, scenriotree= None, partialsolution = False ):
         self.MRPInstance = instance
 
 
@@ -271,8 +294,9 @@ class MRPSolution:
         self.BackOrderCost = -1
         self.SetupCost = -1
         self.TotalCost =-1
+        self.IsPartialSolution = partialsolution
 
-        if instance is not None:
+        if instance is not None and not self.IsPartialSolution:
             self.ComputeCost()
         #The attribute below compute some statistic on the solution
         self.InSampleAverageInventory = []
@@ -296,7 +320,6 @@ class MRPSolution:
         self.CplexNrVariables = -1
     #This function compute some statistic on the current solution
     def ComputeStatistics( self ):
-
 
         self.InSampleAverageInventory = [ [ sum( self.InventoryLevel[w][t][p] for w in self.SenarioNrset)/  len( self.SenarioNrset )
                                            for p in  self.MRPInstance.ProductSet ]

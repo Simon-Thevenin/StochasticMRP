@@ -140,13 +140,13 @@ class TemplemeierInstanceReader( InstanceReader ):
         self.Instance.ComputeIndices()
         # Consider a time horizon of 20 days plus the total lead time
         self.Instance.NrTimeBucketWithoutUncertaintyBefore = self.Instance.MaxLeadTime
-        self.Instance.NrTimeBucketWithoutUncertaintyAfter = self.Instance.MaxLeadTime
+        self.Instance.NrTimeBucketWithoutUncertaintyAfter = 0#self.Instance.MaxLeadTime
         self.Instance.NrTimeBucket = self.Instance.NrTimeBucketWithoutUncertaintyBefore  + self.Instance.NrTimeBucketWithoutUncertaintyAfter + int(self.TMPFile[1][1])
 
         self.Instance.ComputeIndices()
 
-    def GenerateDistribution(self):
-            self.Instance.ForecastError = [0.25 for p in self.Instance.ProductSet]
+    def GenerateDistribution(self, forecasterror):
+            self.Instance.ForecastError = [forecasterror for p in self.Instance.ProductSet]
             self.Instance.RateOfKnownDemand = [math.pow(0.9, (t - self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1) ) for t in self.Instance.TimeBucketSet]
             self.Instance.ForecastedAverageDemand = [ [ 0.0 for p in self.Instance.ProductSet ]
                                                       for t in self.Instance.TimeBucketSet]

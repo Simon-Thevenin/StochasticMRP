@@ -66,6 +66,8 @@ ScenarioSeed = 1
 SeedIndex = -1
 TestIdentifier = []
 EvaluatorIdentifier = []
+MaxQuantities = []
+MinSetup = []
 MIPSetting = ""
 UseSS = False
 SeedArray = [ 2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788 ]
@@ -121,7 +123,9 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
                           fixsolutionuntil = FixUntilTime,
                           mipsetting = MIPSetting,
                           warmstart = warmstart,
-                          usesafetystock=UseSS)
+                          usesafetystock=UseSS,
+                          maxquantities = MaxQuantities,
+                          minsetup = MinSetup)
     if Constants.Debug:
         Instance.PrintInstance()
         #for s in mipsolver.ScenarioSet:
@@ -248,6 +252,8 @@ def SolveYFix():
     global Model
     global GivenSetup
     global ScenarioGeneration
+    global MaxQuantities
+    global MinSetup
     if Constants.Debug:
         Instance.PrintInstance()
 
@@ -257,7 +263,11 @@ def SolveYFix():
     chosengeneration = ScenarioGeneration
     ScenarioGeneration = "RQMC"
     solution, mipsolver = MRP(treestructure, False, recordsolveinfo=True)
-    GivenSetup = [[solution.Production[0][t][p] for p in Instance.ProductSet] for t in Instance.TimeBucketSet]
+    GivenSetup =  [[solution.Production[0][t][p] for p in Instance.ProductSet] for t in Instance.TimeBucketSet]
+    Quanitties = [[solution.ProductionQuantity[0][t][p] for p in Instance.ProductSet] for t in Instance.TimeBucketSet]
+    MinSetup = [sum(GivenSetup[t][p] for t in Instance.TimeBucketSet )  for  p in Instance.ProductSet ]
+    MaxQuantities = [100000 + max(Quanitties[t][p] for t in Instance.TimeBucketSet )  for  p in Instance.ProductSet ]
+    print "maxquanitity %r"%MaxQuantities
     # GivenSetup = [[1 for p in Instance.ProductSet ] for t in Instance.TimeBucketSet]
     ScenarioGeneration = chosengeneration
     Model = Constants.ModelYFix
@@ -321,10 +331,11 @@ def ComputeInSampleStatistis():
     for i in range(11 + Instance.NrLevel + 51):
         InSampleKPIStat[i] =0
     for solution in solutions:
-        solution.ComputeStatistics()
-        insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample", -1, 0, ScenarioSeed)
-        for i in range(11 + Instance.NrLevel + 51):
-            InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
+        if not Constants.PrintOnlyFirstStageDecision:
+            solution.ComputeStatistics()
+            insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample", -1, 0, ScenarioSeed)
+            for i in range(11 + Instance.NrLevel + 51):
+                InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
 
     for i in range(11 + Instance.NrLevel + 51):
         InSampleKPIStat[i] = InSampleKPIStat[i] / len( solutions )
@@ -485,7 +496,7 @@ def GetTreeStructure():
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [500, 1, 1, 1, 1]
 
-        if NrScenario == 4:
+        if NrScenario == 2:
             if nrtimebucketstochastic == 1:
                 stochasticparttreestructure = [4]
             if nrtimebucketstochastic == 2:
@@ -493,7 +504,7 @@ def GetTreeStructure():
             if nrtimebucketstochastic == 3:
                 stochasticparttreestructure = [8, 8, 8]
             if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [4, 1, 1, 1]
+                stochasticparttreestructure = [2, 1, 1, 1]
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [8, 8, 2, 2, 2]
 
@@ -505,6 +516,21 @@ def GetTreeStructure():
                 stochasticparttreestructure = [50, 8, 4, 4]
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [8, 8, 2, 2, 2]
+
+        if NrScenario == 40000:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [8, 8, 8]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [50, 50, 4, 4]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [8, 8, 2, 2, 2]
+
+        if NrScenario == 250000:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [8, 8, 8]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [50, 50, 10, 10]
+
 
         if NrScenario == 3200:
             if nrtimebucketstochastic == 3:
@@ -811,18 +837,18 @@ if __name__ == "__main__":
 
 
         Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
-        #csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
-        #data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
-        #instancenameslist = []
-        #for row in data_reader:
-        #    instancenameslist.append(row)
-        #instancenameslist = instancenameslist[0]
-        #for InstanceName in instancenameslist:#["01", "02", "03", "04", "05"]:
-        #    Distribution = "NonStationary"
-            #for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
-            #     "NonStationary"]:
-        #    Instance.ReadFromFile( InstanceName, Distribution )
-        #    Instance.SaveCompleteInstanceInExelFile()
+        # csvfile = open("./Instances/InstanceNameTemp.csv", 'rb')
+        # data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
+        # instancenameslist = []
+        # for row in data_reader:
+        #     instancenameslist.append(row)
+        # instancenameslist = instancenameslist[0]
+        # for InstanceName in instancenameslist:#["01", "02", "03", "04", "05"]:
+        #     Distribution = "NonStationary"
+        #     #for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
+        #     #     "NonStationary"]:
+        #     Instance.ReadFromFile( InstanceName, Distribution )
+        #     Instance.SaveCompleteInstanceInExelFile()
         #Instance.ReadFromFile(InstanceName, Distribution)
         #Instance.SaveCompleteInstanceInExelFile()
         #Instance.DefineAsSuperSmallIntance()

@@ -52,7 +52,7 @@ class Evaluator:
                 if not evpi:
                     if self.OptimizationMethod == Constants.MIP:
                         sol = self.Solutions[n]
-                        if model == Constants.ModelYFix:
+                        if model == Constants.ModelYFix and not sol.IsPartialSolution:
                             sol.ComputeAverageS()
                         seed = sol.ScenarioTree.Seed
                 else:

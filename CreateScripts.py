@@ -70,13 +70,13 @@ if __name__ == "__main__":
 
 
     #modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
-    modelset = [ "YQFix", "YFix" ]#, "HeuristicYFix", "YFix", "YQFix"]
+    modelset = [ "YQFix", "YFix", "HeuristicYFix", "Average", "AverageSS", ]#, "HeuristicYFix", "YFix", "YQFix"]
 
-    nrcenarioyfix =["200", "512", "6400" ]
+    nrcenarioyfix =["6400" ]
     nrcenarioyfqix = ["200"]
-    nrcenarioheuristicyfix = ["200", "6400"] # scenarset = ["200", "512", "3200", "6400"]
+    nrcenarioheuristicyfix = ["6400", "40000"] # scenarset = ["200", "512", "3200", "6400"]
 
-    policyyqfix = ["Fix"]#, "Re-solve"]
+    policyyqfix = ["Fix", "Re-solve"]
 
     Generationset = [ "RQMC"]#, "MC"]
     methodset = ["MIP"]
