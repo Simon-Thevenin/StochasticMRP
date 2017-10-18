@@ -76,9 +76,9 @@ if __name__ == "__main__":
     nrcenarioyfqix = ["200"]
     nrcenarioheuristicyfix = ["6400", "40000"] # scenarset = ["200", "512", "3200", "6400"]
 
-    policyyqfix = ["Fix", "Re-solve"]
-
-    Generationset = [ "RQMC"]#, "MC"]
+    policyyqfix = ["Fix", "Resolve"]
+    policyyfix = ["Resolve"]
+    Generationset = [ "RQMC"]#, "MC"]cd J
     methodset = ["MIP"]
     Nrseed = 1
     distributionset = ["NonStationary"]
@@ -110,9 +110,11 @@ if __name__ == "__main__":
                  if model == "YFix":
                      scenarset= nrcenarioyfix
                      generationset = Generationset
+                     policyset = policyyfix
                  if model == "HeuristicYFix":
                     scenarset = nrcenarioheuristicyfix
                     generationset = Generationset
+                    policyset = policyyfix
                  if model == "YQFix":
                      scenarset = nrcenarioyfqix
                      policyset = policyyqfix
@@ -121,7 +123,7 @@ if __name__ == "__main__":
                      scenarset = ["1"]
                      avg = True
                      generationset = ["MC"]
-
+                     policyset = policyyqfix
                  for method in methodset:
                      for generation in generationset:
                          for nrscenar in scenarset:

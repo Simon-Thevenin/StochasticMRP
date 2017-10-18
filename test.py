@@ -715,9 +715,9 @@ def parseArguments():
 #This function runs the evaluation for the just completed test :
 def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve :
-        policyset = ["Re-solve"]# "NNSAC", "NNDAC", "Re-solve"]
-        if Model == Constants.ModelYQFix or Model == Constants.Average:
-                policyset = ["Fix", "Re-solve"]
+        policyset = ["Resolve"]# "NNSAC", "NNDAC", "Re-solve"]
+        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS:
+                policyset = ["Fix", "Resolve"]
         for policy in policyset:
                 jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
                     TestIdentifier[0],  TestIdentifier[1],  TestIdentifier[2],  TestIdentifier[5], TestIdentifier[4], TestIdentifier[3],  policy, SeedIndex)
@@ -727,9 +727,11 @@ def RunEvaluationIfAllSolve(  ):
     #Check among the available files, if one of the sceed is not solve
     solutions = GetPreviouslyFoundSolution()
     if len( solutions ) >= 5 :
-        policyset = ["NNDAC", "NNSAC", "NND", "NNS", "Re-solve"]
-        if Model == Constants.ModelYQFix or Model == Constants.Average:
-            policyset = ["Fix"]
+        policyset = ["NNDAC", "NNSAC", "NND", "NNS", "Resolve"]
+        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS:
+            policyset = ["Fix", "Resolve"]
+
+
         for policy in policyset:
             jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
                 TestIdentifier[0], TestIdentifier[1], TestIdentifier[2], TestIdentifier[5], TestIdentifier[4],
@@ -787,7 +789,6 @@ def ComputeVSS( ):
     treestructure = GetTreeStructure()
 
     # Get the setup quantitities associated with the solultion
-
     GivenSetup = [[averagesolution.Production[0][t][p]  for p in averagesolution.MRPInstance.ProductSet] for t in averagesolution.MRPInstance.TimeBucketSet]
 
     GivenQuantities = [[averagesolution.ProductionQuantity[0][t][p] for p in averagesolution.MRPInstance.ProductSet]
