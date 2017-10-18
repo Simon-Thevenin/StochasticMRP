@@ -151,7 +151,7 @@ class InstanceReader:
 
     def GenerateCostParameters(self, b):
         # Gamma is set to 0.9 which is a common value (find reference!!!)
-        self.Instance.Gamma = 0.9
+        self.Instance.Gamma = 1.0
         # Back order is twice the  holding cost as in :
         # Solving the capacitated lot - sizing problem with backorder consideration CH Cheng1 *, MS Madan2, Y Gupta3 and S So4
         # See how to set this value

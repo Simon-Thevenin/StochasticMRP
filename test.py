@@ -128,8 +128,8 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
                           minsetup = MinSetup)
     if Constants.Debug:
         Instance.PrintInstance()
-        #for s in mipsolver.ScenarioSet:
-        #    print "demand scenario %d:%r"%( s,mipsolver.Scenarios[s].Demands)
+        for s in mipsolver.ScenarioSet:
+            print "demand scenario %d:%r"%( s,mipsolver.Scenarios[s].Demands)
     if PrintScenarios:
         mipsolver.PrintScenarioToFile(  )
 
@@ -496,15 +496,15 @@ def GetTreeStructure():
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [500, 1, 1, 1, 1]
 
-        if NrScenario == 2:
+        if NrScenario == 4:
             if nrtimebucketstochastic == 1:
                 stochasticparttreestructure = [4]
             if nrtimebucketstochastic == 2:
                 stochasticparttreestructure = [4,1]
             if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [8, 8, 8]
+                stochasticparttreestructure = [4, 1, 1]
             if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [2, 1, 1, 1]
+                stochasticparttreestructure = [4, 1, 1, 1]
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [8, 8, 2, 2, 2]
 
