@@ -1022,7 +1022,7 @@ class MIPSolver(object):
             if createsolution:
 
                 Solution = self.CreateMRPSolution(sol, solvetime)
-                costperscenarios, averagecost, std_devcost = self.ComputeCostPerScenario()
+                #costperscenarios, averagecost, std_devcost = self.ComputeCostPerScenario()
 
                 if Constants.Debug:
                     print "fill solve information......"
@@ -1046,8 +1046,8 @@ class MIPSolver(object):
                                 Solution.InventoryCost,
                                 Solution.BackOrderCost,
                                 Solution.SetupCost,
-                                averagecost,
-                                std_devcost,
+                                #averagecost,
+                                #std_devcost,
                                 self.Instance.NrLevel,
                                 self.Instance.NrProduct,
                                 self.Instance.NrTimeBucket,
