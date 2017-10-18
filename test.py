@@ -517,11 +517,11 @@ def GetTreeStructure():
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [8, 8, 2, 2, 2]
 
-        if NrScenario == 40000:
+        if NrScenario == 80000:
             if nrtimebucketstochastic == 3:
                 stochasticparttreestructure = [8, 8, 8]
             if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [50, 50, 4, 4]
+                stochasticparttreestructure = [50, 25, 8, 8]
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [8, 8, 2, 2, 2]
 
