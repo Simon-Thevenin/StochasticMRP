@@ -384,9 +384,9 @@ class Evaluator:
             self.MIPResolveTime[time].Cplex.parameters.lpmethod.set(self.MIPResolveTime[time].Cplex.parameters.lpmethod.values.barrier)
             solution = self.MIPResolveTime[time].Solve( createsolution = False)
 
-            if time == 4:
-                solution = self.MIPResolveTime[time].Solve()
-                solution.PrintToExcel("ResolutionTems4")
+            #if time == 4:
+            #    solution = self.MIPResolveTime[time].Solve()
+            #    solution.PrintToExcel("ResolutionTems4")
 
             if Constants.Debug:
                 print "End solving"
