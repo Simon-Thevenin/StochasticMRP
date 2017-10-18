@@ -76,8 +76,8 @@ if __name__ == "__main__":
     nrcenarioyfqix = ["200"]
     nrcenarioheuristicyfix = ["6400", "40000"] # scenarset = ["200", "512", "3200", "6400"]
 
-    policyyqfix = ["Fix", "Resolve"]
-    policyyfix = ["Resolve"]
+    policyyqfix = ["Fix", "Re-solve"]
+    policyyfix = ["Re-solve"]
     Generationset = [ "RQMC"]#, "MC"]cd J
     methodset = ["MIP"]
     Nrseed = 1
