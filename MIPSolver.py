@@ -524,6 +524,7 @@ class MIPSolver(object):
         if self.UseSafetyStock:
            decentralized = DecentralizedMRP( self.Instance )
            safetystock  = decentralized.ComputeSafetyStock()
+           print safetystock
 
 
         self.FlowConstraintNR = [[[ "" for t in self.Instance.TimeBucketSet]  for p in self.Instance.ProductSet] for w in self.ScenarioSet]

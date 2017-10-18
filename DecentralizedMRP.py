@@ -22,7 +22,6 @@ class DecentralizedMRP(object):
 
 
         safetystock = [ [ 0.0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
-
         for p in self.Instance.ProductSet:
             for t in self.Instance.TimeBucketSet:
                 #def normpdf(x, mu, sigma):
@@ -51,12 +50,12 @@ class DecentralizedMRP(object):
         return safetystock
 
 
-    def ComputeSafetyStock(self):
+    #def ComputeSafetyStock(self):
 
-        ss = 0
+    #    ss = 0
 
-        if self.Instance.Distribution <> Constants.NonStationary:
-            raise "Not Impemented for other than normal!!!!"
+    #    if self.Instance.Distribution <> Constants.NonStationary:
+    #        raise "Not Impemented for other than normal!!!!"
 
         #compute the distribution of the average demand
         #meandeamnd = [mean( self.Instance.ForecastedAverageDemand[t][p] for t in self.Instance.TimeBucketSet) for p in self.Instance.ProductSet ]
