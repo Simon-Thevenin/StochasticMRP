@@ -715,7 +715,7 @@ def parseArguments():
 #This function runs the evaluation for the just completed test :
 def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve :
-        policyset = ["Resolve"]# "NNSAC", "NNDAC", "Re-solve"]
+        policyset = ["Re-solve"]# "NNSAC", "NNDAC", "Re-solve"]
         if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS:
                 policyset = ["Fix", "Re-solve"]
         for policy in policyset:
@@ -818,7 +818,6 @@ def ComputeVSS( ):
    # PrintFinalResult()
 
 if __name__ == "__main__":
-
     instancename = ""
     try:
         args = parseArguments()

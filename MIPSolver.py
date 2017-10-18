@@ -415,7 +415,7 @@ class MIPSolver(object):
 
         # Define the variable name.
         # Usefull for debuging purpose. Otherwise, disable it, it is time consuming.
-        if Constants.Debug and False:
+        if Constants.Debug:
             quantityvars = []
             inventoryvars = []
             productionvars = []
@@ -975,6 +975,8 @@ class MIPSolver(object):
              self.Cplex.parameters.mip.cuts.implied.set(-1)
              self.Cplex.parameters.mip.cuts.zerohalfcut.set(-1)
              self.Cplex.parameters.mip.cuts.flowcovers.set(-1)
+
+
     #This function set the parameter of CPLEX, run Cplex, and return a solution
     def Solve( self, createsolution = True ):
         start_time = time.time()
@@ -995,22 +997,7 @@ class MIPSolver(object):
         self.Cplex.parameters.threads.set(1)
         self.TuneCplexParamter()
 
-        #self.Cplex.parameters.mip.tolerances.mipgap.set(0.00000001)
-        #self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00000001)
-        #self.Cplex.parameters.advance = 0
 
-        #self.Cplex.parameters.mip.strategy.probe.set(2)
-        #self.Cplex.parameters.mip.strategy.variableselect.set(4)
-        #self.Cplex.parameters.mip.cuts.mircut.set(2)
-
-       # print "MIPSetting:%r"%self.MipSetting
-
-
-
-        #self.Cplex.parameters.lpmethod.set(1)
-        #self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)
-        #self.Cplex.parameters.lpmethod = 2
-        #self.Cplex.parameters.advance.set(0)
         if self.YFixHeuristic:
             self.Cplex.parameters.lpmethod.set(self.Cplex.parameters.lpmethod.values.barrier)
             self.Cplex.parameters.threads.set(1)
@@ -1027,86 +1014,24 @@ class MIPSolver(object):
         solvetime = time.time() - end_modeling;
 
         # Handle the results
+        print "CPLEx Solve Time: %r   CPLEX build time %s  feasible %s"%(solvetime, buildtime)
         sol = self.Cplex.solution
         if sol.is_primal_feasible():
             if createsolution:
-                #if Constants.Debug:
-                    #sol.write("mrpsolution.sol")
 
-                scenarioset = self.ScenarioSet
-                scenarios = self.Scenarios
-                timebucketset= self.Instance.TimeBucketSet
-                partialsol = Constants.PrintOnlyFirstStageDecision and self.Model == Constants.ModelYFix and not self.EvaluateSolution
-                if partialsol:
-                    scenarioset = [ 0 ]
-                    timebucketset = [ 0 ]
-                    scenarios = [ self.Scenarios[ 0 ] ]
-                    partialsol = True
-                if Constants.Debug:
-                    print "read  quanity..."
-                objvalue = sol.get_objective_value()
-                array = [ self.GetIndexQuantityVariable(p, t, w) for p in self.Instance.ProductSet for t in timebucketset for w in scenarioset ];
-                #testarray = [ "p:%st:%sw:%s"%(p, t, w)  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet ]
-                if Constants.Debug:
-                    print "call cplex..."
-                solquantity = sol.get_values(array)
-                if Constants.Debug:
-                    print "transform to 3d array......"
-                solquantity = Tool.Transform3d(solquantity, self.Instance.NrProduct, len(timebucketset), len( scenarioset ) )
-
-                if Constants.Debug:
-                    print "read  setup..."
-                #here self.Instance.TimeBucketSet is used because the setups are decided for the complete time horizon in YFix
-                array = [self.GetIndexProductionVariable(p, t, w) for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in scenarioset ]
-                solproduction = sol.get_values(array)
-                if Constants.Debug:
-                    print "transform to 3d array......"
-
-                solproduction = Tool.Transform3d( solproduction, self.Instance.NrProduct, len(self.Instance.TimeBucketSet), len( scenarioset ) )
-
-                if Constants.Debug:
-                    print "read  inventory..."
-
-                array = [self.GetIndexInventoryVariable(p, t, w) for p in self.Instance.ProductSet for t in timebucketset for w in scenarioset ]
-                solinventory = sol.get_values(array)
-                if Constants.Debug:
-                    print "transform to 3d array......"
-
-                solinventory = Tool.Transform3d( solinventory, self.Instance.NrProduct, len(timebucketset), len( scenarioset ) )
-
-                if Constants.Debug:
-                    print "read  backorders..."
-                array = [self.GetIndexBackorderVariable(p, t, w)
-                         for p in self.Instance.ProductWithExternalDemand  for t in timebucketset for w in scenarioset ]
-                solbackorder = sol.get_values(array)
-                if Constants.Debug:
-                    print "transform to 3d array......"
-                solbackorder = Tool.Transform3d( solbackorder, len( self.Instance.ProductWithExternalDemand), len(timebucketset), len( scenarioset ) )
-
-                if Constants.Debug:
-                    print "update scenario tree......"
-
-                if self.Model <> Constants.ModelYQFix:
-                    self.DemandScenarioTree.FillQuantityToOrder( sol )
-
-                if Constants.Debug:
-                    print "Create soluton object......"
-                Solution = MRPSolution( self.Instance,  solquantity, solproduction, solinventory, solbackorder, scenarios, self.DemandScenarioTree, partialsolution = partialsol )
-                Solution.CplexCost = objvalue
-                Solution.CplexGap = 0
-                Solution.CplexNrVariables = self.Cplex.variables.get_num()
-                Solution.CplexNrConstraints = self.Cplex.linear_constraints.get_num()
-                if not self.EvaluateSolution and not self.YFixHeuristic:
-                    Solution.CplexGap = sol.MIP.get_mip_relative_gap()
-                Solution.CplexTime = solvetime
-
+                Solution = self.CreateMRPSolution(sol, solvetime)
                 costperscenarios, averagecost, std_devcost = self.ComputeCostPerScenario()
 
                 if Constants.Debug:
                     print "fill solve information......"
+
+                modelname = self.Model
+                if self.UseSafetyStock:
+                    modelname = modelname + "SS"
+
                 self.SolveInfo = [ self.Instance.InstanceName,
-                                   self.Model,
-                                objvalue,
+                                   modelname,
+                                   Solution.CplexCost,
                                 Solution.CplexCost,
                                 sol.status[sol.get_status()],
                                 buildtime,
@@ -1152,6 +1077,84 @@ class MIPSolver(object):
         for s in self.Scenarios:
             s.PrintScenarioToExcel( writer )
         writer.save()
+
+
+    def CreateMRPSolution(self, sol, solvetime):
+        if Constants.Debug:
+            print "Start to create a solution..."
+        scenarioset = self.ScenarioSet
+        scenarios = self.Scenarios
+        timebucketset = self.Instance.TimeBucketSet
+        partialsol = Constants.PrintOnlyFirstStageDecision and self.Model == Constants.ModelYFix and not self.EvaluateSolution
+        if partialsol:
+            scenarioset = [0]
+            timebucketset = [0]
+            scenarios = [self.Scenarios[0]]
+            partialsol = True
+        if Constants.Debug:
+            print "read  quanity..."
+        objvalue = sol.get_objective_value()
+        array = [self.GetIndexQuantityVariable(p, t, w) for p in self.Instance.ProductSet for t in timebucketset for w
+                 in scenarioset];
+        # testarray = [ "p:%st:%sw:%s"%(p, t, w)  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet ]
+        if Constants.Debug:
+            print "call cplex..."
+        solquantity = sol.get_values(array)
+        if Constants.Debug:
+            print "transform to 3d array......"
+        solquantity = Tool.Transform3d(solquantity, self.Instance.NrProduct, len(timebucketset), len(scenarioset))
+
+        if Constants.Debug:
+            print "read  setup..."
+        # here self.Instance.TimeBucketSet is used because the setups are decided for the complete time horizon in YFix
+        array = [self.GetIndexProductionVariable(p, t, w) for p in self.Instance.ProductSet for t in
+                 self.Instance.TimeBucketSet for w in scenarioset]
+        solproduction = sol.get_values(array)
+        if Constants.Debug:
+            print "transform to 3d array......"
+
+        solproduction = Tool.Transform3d(solproduction, self.Instance.NrProduct, len(self.Instance.TimeBucketSet),
+                                         len(scenarioset))
+
+        if Constants.Debug:
+            print "read  inventory..."
+
+        array = [self.GetIndexInventoryVariable(p, t, w) for p in self.Instance.ProductSet for t in timebucketset for w
+                 in scenarioset]
+        solinventory = sol.get_values(array)
+        if Constants.Debug:
+            print "transform to 3d array......"
+
+        solinventory = Tool.Transform3d(solinventory, self.Instance.NrProduct, len(timebucketset), len(scenarioset))
+
+        if Constants.Debug:
+            print "read  backorders..."
+        array = [self.GetIndexBackorderVariable(p, t, w)
+                 for p in self.Instance.ProductWithExternalDemand for t in timebucketset for w in scenarioset]
+        solbackorder = sol.get_values(array)
+        if Constants.Debug:
+            print "transform to 3d array......"
+        solbackorder = Tool.Transform3d(solbackorder, len(self.Instance.ProductWithExternalDemand), len(timebucketset),
+                                        len(scenarioset))
+
+        if Constants.Debug:
+            print "update scenario tree......"
+
+        if self.Model <> Constants.ModelYQFix:
+            self.DemandScenarioTree.FillQuantityToOrder(sol)
+
+        if Constants.Debug:
+            print "Create soluton object......"
+        Solution = MRPSolution(self.Instance, solquantity, solproduction, solinventory, solbackorder, scenarios,
+                               self.DemandScenarioTree, partialsolution=partialsol)
+        Solution.CplexCost = objvalue
+        Solution.CplexGap = 0
+        Solution.CplexNrVariables = self.Cplex.variables.get_num()
+        Solution.CplexNrConstraints = self.Cplex.linear_constraints.get_num()
+        if not self.EvaluateSolution and not self.YFixHeuristic:
+            Solution.CplexGap = sol.MIP.get_mip_relative_gap()
+        Solution.CplexTime = solvetime
+        return Solution
 
     #This function compute the cost per scenario
     def ComputeCostPerScenario( self ):
