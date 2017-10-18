@@ -32,7 +32,7 @@ class Constants:
 
 
     Debug = True
-    PrintSolutionFileToExcel = False
+    PrintSolutionFileToExcel = True
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = True
     PrintOnlyFirstStageDecision = True

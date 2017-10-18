@@ -213,7 +213,7 @@ class MRPSolution:
     def GetConsideredTimeBucket(self):
         result = self.MRPInstance.TimeBucketSet
         if self.IsPartialSolution:
-            result = [ 0 ]
+            result = range(self.MRPInstance.NrTimeBucketWithoutUncertaintyBefore + 1)
         return result
 
     def GetConsideredScenarioset(self):

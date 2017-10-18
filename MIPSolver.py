@@ -388,30 +388,40 @@ class MIPSolver(object):
 
         # the variable inventory_prod_time_scenario_p_t_w indicated the inventory level of product p at time t in scneario w
         self.Cplex.variables.add(obj= inventorycosts,
-                        lb=[0.0] * nrinventoryvariable,
-                        ub=[self.M] * nrinventoryvariable)
+                                 #obj=[0.0] * nrinventoryvariable,
+                                lb=[0.0] * nrinventoryvariable,
+                                ub=[self.M] * nrinventoryvariable)
 
         # the variable production_prod_time_scenario_p_t_w equals 1 if a lot of product p is produced at time t in scneario w
         if self.EvaluateSolution or self.YFixHeuristic:
-            self.Cplex.variables.add(obj= setupcosts,#[0.0] * nrproductionvariable,#setupcosts
+            self.Cplex.variables.add(obj= setupcosts,
+                                     #[0.0] * nrproductionvariable,
                                      lb=[0.0] * nrproductionvariable,
                                      ub=[1.0] * nrproductionvariable
                                      )
         else:
-            self.Cplex.variables.add(obj=setupcosts,#[0.0] * nrproductionvariable,#setupcosts
+            self.Cplex.variables.add(obj=setupcosts,
+                                     #[0.0] * nrproductionvariable,
                                      #lb=[0.0] * nrproductionvariable,
                                      #ub=[1.0] * nrproductionvariable,
                                      types= ['B']*nrproductionvariable
                                      )
 
         # the variable backorder_prod_time_scenario_p_t_w gives the amount of product p backordered at time t in scneario w
-        self.Cplex.variables.add( obj=backordercosts, # [0.0] * nrbackordervariable,#backordercosts
+        self.Cplex.variables.add( obj=backordercosts, #
+                                  #[0.0] * nrbackordervariable,
                                   lb=[0.0] * nrbackordervariable,
                                   ub=[self.M] * nrbackordervariable)
 
-        #self.Cplex.variables.add(obj=[1.0],
-        #                         lb=[0.0],
-        #                         ub=[self.M] )
+        # self.Cplex.variables.add(obj=[1.0],
+        #                           lb=[0.0],
+        #                           ub=[self.M] )
+        #
+        # self.Cplex.variables.add(obj=[1.0],
+        #                          lb=[0.0],
+        #                           ub=[self.M] )
+        #
+        # self.CreateTotalCostConstraint()
 
         # Define the variable name.
         # Usefull for debuging purpose. Otherwise, disable it, it is time consuming.
@@ -606,67 +616,86 @@ class MIPSolver(object):
     # This function add the objective function as a variable
     def CreateTotalCostConstraint(self):
 
+        nextvar= 0
+        for productset in [ self.Instance.ProductWithExternalDemand, self.Instance.ProductWithoutExternalDemand ]:
+            print productset
+            vars = [self.GetIndexTotalCost() + nextvar]
+            nextvar = nextvar +1
+            coeff = [1]
+
+            for p in productset:
+                for t in self.Instance.TimeBucketSet:
+                    vars = vars + [self.GetIndexProductionVariable(p, t, 0)]
+                    coeff = coeff + [-1 *np.power(self.Instance.Gamma, t) * self.Instance.SetupCosts[p] ]
+
+            indice = len(coeff)
+
+            nrinventory =  len( productset ) * (self.DemandScenarioTree.NrNode - 2)
+            nribackorder = self.NrBackorderVariableWithoutNonAnticipativity
+            if nextvar == 2: #(components)
+                nribackorder = 0
+            indicecoeffiunventory = [-1 for w in range(self.NrInventoryVariableWithoutNonAnticipativity)]
+
+            indicecoeffbackorders = [-1 for w in range(self.NrBackorderVariableWithoutNonAnticipativity)]
+
+            coeff = coeff + [ 0 for i in range(nrinventory + nribackorder)  ]
+            for p in productset:
+                for t in self.Instance.TimeBucketSet:
+                    for w in self.ScenarioSet:
+                         multiplier = -1 * self.Scenarios[w].Probability * np.power(self.Instance.Gamma, t)
+
+                         indexI =  self.GetIndexInventoryVariable(p, t, w) - self.StartInventoryVariableWithoutNonAnticipativity
+                         if indicecoeffiunventory[indexI]  == -1:
+                            vars = vars + [ self.GetIndexInventoryVariable(p, t, w)]
+                            indicecoeffiunventory[ indexI ] = indice
+                            indice = indice + 1
+                         if self.Instance.HasExternalDemand[p]:
+                             print "has backorder"
+                             indexB =  self.GetIndexBackorderVariable(p, t, w) - self.StartBackorderVariableWithoutNonAnticipativity
+                             if indicecoeffbackorders[indexB] == -1:
+                                 vars = vars + [self.GetIndexBackorderVariable(p, t, w)]
+                                 indicecoeffbackorders[indexB] = indice
+                                 indice = indice + 1
+                             if t == self.Instance.NrTimeBucket -1:
+                                 coeff[indicecoeffbackorders[indexB]] = coeff[indicecoeffbackorders[indexB]] + multiplier * \
+                                                                                                               self.Instance.LostSaleCost[
+                                                                                                                   p]
+                             else:
+                                coeff[indicecoeffbackorders[indexB]] = coeff[indicecoeffbackorders[indexB]] + multiplier * \
+                                                                                                       self.Instance.BackorderCosts[
+                                                                                                           p]
+
+                         coeff[indicecoeffiunventory[indexI]] = coeff[indicecoeffiunventory[indexI]] + multiplier * self.Instance.InventoryCosts[p]
+
+
+            righthandside = [0]
+            print coeff
+            self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                           senses=["E"],
+                                                           rhs=righthandside)
+
         vars = [self.GetIndexTotalCost()]
         coeff = [1]
-
-        for p in self.Instance.ProductSet:
-            for t in self.Instance.TimeBucketSet:
-                vars = vars + [self.GetIndexProductionVariable(p, t, 0)]
-                coeff = coeff + [-1 *np.power(self.Instance.Gamma, t) * self.Instance.SetupCosts[p] ]
-
-        indice = len(coeff)
-        indicecoeffiunventory = [-1 for w in range(self.NrInventoryVariableWithoutNonAnticipativity)]
-        indicecoeffbackorders = [-1 for w in range(self.NrBackorderVariableWithoutNonAnticipativity)]
-        coeff = coeff + [ 0 for i in range(self.NrInventoryVariableWithoutNonAnticipativity + self.NrBackorderVariableWithoutNonAnticipativity)  ]
-        for p in self.Instance.ProductSet:
-            for t in self.Instance.TimeBucketSet:
-                for w in self.ScenarioSet:
-                     multiplier = -1 * self.Scenarios[w].Probability * np.power(self.Instance.Gamma, t)
-
-                     indexI =  self.GetIndexInventoryVariable(p, t, w) - self.StartInventoryVariableWithoutNonAnticipativity
-                     if indicecoeffiunventory[indexI]  == -1:
-                        vars = vars + [ self.GetIndexInventoryVariable(p, t, w)]
-                        indicecoeffiunventory[ indexI ] = indice
-                        indice = indice + 1
-                     if self.Instance.HasExternalDemand[p]:
-                         indexB =  self.GetIndexBackorderVariable(p, t, w) - self.StartBackorderVariableWithoutNonAnticipativity
-                         if indicecoeffbackorders[indexB] == -1:
-                             vars = vars + [self.GetIndexBackorderVariable(p, t, w)]
-                             indicecoeffbackorders[indexB] = indice
-                             indice = indice + 1
-                         if t == self.Instance.NrTimeBucket -1:
-                             coeff[indicecoeffbackorders[indexB]] = coeff[indicecoeffbackorders[indexB]] + multiplier * \
-                                                                                                           self.Instance.LostSaleCost[
-                                                                                                               p]
-                         else:
-                            coeff[indicecoeffbackorders[indexB]] = coeff[indicecoeffbackorders[indexB]] + multiplier * \
-                                                                                                   self.Instance.BackorderCosts[
-                                                                                                       p]
-
-                     coeff[indicecoeffiunventory[indexI]] = coeff[indicecoeffiunventory[indexI]] + multiplier * self.Instance.InventoryCosts[p]
-
-
         righthandside = [0]
-        self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
-                                                       senses=["G"],
-                                                       rhs=righthandside)
+        for p in self.Instance.ProductWithExternalDemand:
+             for t in self.Instance.TimeBucketSet:
+                    if t + self.Instance.Leadtimes[p] < self.Instance.NrTimeBucket:
+                        demand = np.power(self.Instance.Gamma, t + self.Instance.Leadtimes[p] -1)  \
+                                * self.Instance.InventoryCosts[p] \
+                                * sum( self.Scenarios[w].Demands[t + self.Instance.Leadtimes[p] ][p]  * self.Scenarios[w].Probability
+                                      for w in self.ScenarioSet )
+                    else: demand=0
+                    vars = vars + [  self.GetIndexProductionVariable(p, t , 0)]
+                    coeficient = - np.power(self.Instance.Gamma, t) * self.Instance.SetupCosts[p]
+                    for w in self.ScenarioSet:
+                        if t + self.Instance.Leadtimes[p] < self.Instance.NrTimeBucket:
+                            coeficient = coeficient + demand
+                    coeff = coeff + [   (coeficient )   ]
+                    righthandside[0] = righthandside[0] + demand
 
-        # vars = [self.GetIndexTotalCost()]
-        # coeff = [1]
-        # righthandside = [0]
-        # for p in self.Instance.ProductSet:
-        #     for t in self.Instance.TimeBucketSet:
-        #             minimumdemand = min( self.Scenarios[w].Demands[t][p] for w in self.ScenarioSet )
-        #             vars = vars + [  self.GetIndexProductionVariable(p, t, 0)]
-        #             coeficient = self.Instance.SetupCosts[p]
-        #             for w in self.ScenarioSet:
-        #                 coeficient = coeficient - self.Instance.InventoryCosts[p] * self.Scenarios[w].Demands[t][p] * self.Scenarios[w].Probability
-        #             coeff = coeff + [  np.power(self.Instance.Gamma, t) * (coeficient )   ]
-        #             righthandside[0] = righthandside[0] + minimumdemand
-        #
-        # self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
-        #                                    senses=["G"],
-        #                                    rhs=righthandside)
+        self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                           senses=["G"],
+                                           rhs=righthandside)
 
 
 
@@ -850,6 +879,7 @@ class MIPSolver(object):
 
 
     def TuneCplexParamter(self):
+       # self.Cplex.parameters.mip.strategy.probe.set(3)
         if self.MipSetting == "Probing00":
             self.Cplex.parameters.mip.strategy.probe.set(-1)
         elif self.MipSetting == "Probing0":
@@ -1090,7 +1120,7 @@ class MIPSolver(object):
         partialsol = Constants.PrintOnlyFirstStageDecision and self.Model == Constants.ModelYFix and not self.EvaluateSolution
         if partialsol:
             scenarioset = [0]
-            timebucketset = [0]
+            timebucketset = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1)
             scenarios = [self.Scenarios[0]]
             partialsol = True
         if Constants.Debug:

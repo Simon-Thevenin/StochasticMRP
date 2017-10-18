@@ -222,8 +222,7 @@ class Evaluator:
         scenarioset = []
         treeset = []
         # Use an offset in the seed to make sure the scenario used for evaluation are different from the scenario used for optimization
-        print "ATTENTION Remove +100 Evaluator.GetScenarioSet"
-        offset = solveseed + 999323 +100
+        offset = solveseed + 999323
 
         for seed in range(offset, nrscenario + offset, 1):
            # Generate a random scenario
