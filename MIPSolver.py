@@ -1014,8 +1014,9 @@ class MIPSolver(object):
         solvetime = time.time() - end_modeling;
 
         # Handle the results
-        print "CPLEx Solve Time: %r   CPLEX build time %s  feasible %s"%(solvetime, buildtime)
         sol = self.Cplex.solution
+        print "CPLEx Solve Time: %r   CPLEX build time %s  feasible %s" % (solvetime, buildtime, sol.is_primal_feasible())
+
         if sol.is_primal_feasible():
             if createsolution:
 
