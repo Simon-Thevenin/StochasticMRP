@@ -56,12 +56,12 @@ class InstanceReader:
                 self.Instance.ProductName.index(i)] = 1
 
     #Generate the inventory costs
-    def GenerateHoldingCostCost(self):
+    def GenerateHoldingCostCost(self, e="n"):
          # Assume an inventory holding cost of 0.1 per day for now
         holdingcost = 1#0.1 / 250
         self.Instance.InventoryCosts = [0.0] * self.Instance.NrProduct
         # The cost of the product is given by  added value per stage. The cost of the product at each stage must be computed
-        addedvalueatstage = self.GetEchelonHoldingCost()
+        addedvalueatstage = self.GetEchelonHoldingCost(e)
         self.Level = self.GetProductLevel()
         self.LevelSet = sorted(set(self.Level), reverse=True)
         for l in self.LevelSet:
@@ -159,9 +159,9 @@ class InstanceReader:
         self.Instance.LostSaleCost = [b * 10 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
 
     # This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25):
+    def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25, e="n"):
 
-        self.Instance.InstanceName = "%s_b%s_fe%s"%(instancename, b, forcasterror)
+        self.Instance.InstanceName = "%s_b%s_fe%s_e%s"%(instancename, b, forcasterror, e)
         self.Instance.Distribution = distribution
 
         self.OpenFiles(instancename)
@@ -171,7 +171,7 @@ class InstanceReader:
         self.ReadNrResource()
         self.CreateLeadTime()
         self.CreateRequirement()
-        self.GenerateHoldingCostCost()
+        self.GenerateHoldingCostCost(e)
 
         self.Instance.ComputeLevel()
         self.Instance.ComputeMaxLeadTime()
@@ -179,7 +179,7 @@ class InstanceReader:
         self.GenerateDistribution( float(forcasterror/100.0) )
         self.ComputeAverageDependentDemand()
         self.GenerateStartinInventory()
-        self.GenerateSetup()
+        self.GenerateSetup(e)
         self.GenerateCapacity()
         self.GenerateCostParameters( b )
         self.Instance.SaveCompleteInstanceInExelFile()

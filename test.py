@@ -847,7 +847,15 @@ if __name__ == "__main__":
         #     Distribution = "NonStationary"
         #     #for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
         #     #     "NonStationary"]:
-        #     Instance.ReadFromFile( InstanceName, Distribution )
+        #     Instance.ReadFromFile( InstanceName, Distribution, 10, 25, e="n" )
+        #     Instance.SaveCompleteInstanceInExelFile()
+        #     Instance.ReadFromFile(InstanceName, Distribution, 2, 50, e="n")
+        #     Instance.SaveCompleteInstanceInExelFile()
+        #     Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l")
+        #     Instance.SaveCompleteInstanceInExelFile()
+        #     Instance.ReadFromFile(InstanceName, Distribution, 10, 25, e="l")
+        #     Instance.SaveCompleteInstanceInExelFile()
+        #     Instance.ReadFromFile(InstanceName, Distribution, 10, 50, e="l")
         #     Instance.SaveCompleteInstanceInExelFile()
         #Instance.ReadFromFile(InstanceName, Distribution)
         #Instance.SaveCompleteInstanceInExelFile()

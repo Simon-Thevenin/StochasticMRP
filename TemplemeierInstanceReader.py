@@ -96,17 +96,19 @@ class TemplemeierInstanceReader( InstanceReader ):
             print "Requirement: %r" % self.Instance.Requirements
 
 
-    def GetEchelonHoldingCost( self ):
+    def GetEchelonHoldingCost( self, e="n" ):
         self.Level = self.GetProductLevel()
         result = [ 0 for p in self.Instance.ProductSet ]
-        #for p in self.Instance.ProductSet:
-        #     if  self.Level[p] == 0:
-        #         result[p] = 10
-        #     if self.Level[p] == 1:
-        #         result[p] = 1
-        #     if self.Level[p] == 2:
-        #         result[p] = 0.1
-        result = [  float( self.DatFile[i +1  ][2] ) for i in  self.Instance.ProductSet ]
+        if e == "l":
+            for p in self.Instance.ProductSet:
+                 if  self.Level[p] == 0:
+                     result[p] = 10
+                 if self.Level[p] == 1:
+                     result[p] = 1
+                 if self.Level[p] == 2:
+                     result[p] = 0.1
+        if e == "n":
+            result = [  float( self.DatFile[i +1  ][2] ) for i in  self.Instance.ProductSet ]
         return result
 
     # def GenerateHoldingCostCost(self):
@@ -194,10 +196,10 @@ class TemplemeierInstanceReader( InstanceReader ):
     def GenerateStartinInventory(self):
         self.Instance.StartingInventories = [  0.0 for p in self.Instance.ProductSet  ]
 
-    def GenerateSetup(self):
+    def GenerateSetup(self, e="n"):
 
         TBO =  [  float( self.TBOFile [p ][1] ) for p in  self.Instance.ProductSet ]
-        echlonstock = self.GetEchelonHoldingCost()
+        echlonstock = self.GetEchelonHoldingCost(e)
 
         finishproduct = []
         for p in self.Instance.ProductSet:
@@ -225,7 +227,7 @@ class TemplemeierInstanceReader( InstanceReader ):
            for i in range( self.Instance.NrResource):
                if float( self.TMPFile[startsetup + p][i] ) > 0 and float( self.TMPFile[startsetup + p][i] ) <> self.Instance.SetupCosts[p] \
                        or self.Instance.SetupCosts[p] <>  computedsetup[p]:
-                   print "ok for this time"
+                   print "warning: The setup cost are not the same as the ones in the file!"
                   # raise NameError( "The setup cost are not read as expected" )
 
         if Constants.Debug:
