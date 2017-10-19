@@ -70,11 +70,11 @@ if __name__ == "__main__":
 
 
     #modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
-    modelset = [ "YQFix", "YFix", "HeuristicYFix", "Average", "AverageSS", ]#, "HeuristicYFix", "YFix", "YQFix"]
+    modelset = [ "YQFix", "YFix", "HeuristicYFix"]#, "Average", "AverageSS", ]#, "HeuristicYFix", "YFix", "YQFix"]
 
-    nrcenarioyfix =["200","6400" ]
+    nrcenarioyfix =["6400" ]
     nrcenarioyfqix = ["200"]
-    nrcenarioheuristicyfix = ["200", "6400", "65536", "3200", "80000"] # scenarset = ["200", "512", "3200", "6400"]
+    nrcenarioheuristicyfix = [ "6400"] # scenarset = ["200", "512", "3200", "6400"]
 
     policyyqfix = ["Fix", "Re-solve"]
     policyyfix = ["Re-solve"]

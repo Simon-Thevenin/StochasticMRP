@@ -23,7 +23,9 @@ class Evaluator:
         self.NrSolutions = max( len( self.Solutions ), len(  self.SDDPs ) )
         self.Policy = policy
         self.StartSeedResolve = 84752390
-        self.ScenarioGenerationResolvePolicy = scenariogenerationresolve
+
+        print "WARNING!!!!!!!!!!!: Evaluate with RQMC"
+        self.ScenarioGenerationResolvePolicy = Constants.RQMC#scenariogenerationresolve
         self.EVPI = evpi
         if evpi:
             self.EVPISeed = evpiseed
