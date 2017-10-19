@@ -24,8 +24,7 @@ class Evaluator:
         self.Policy = policy
         self.StartSeedResolve = 84752390
 
-        print "WARNING!!!!!!!!!!!: Evaluate with RQMC"
-        self.ScenarioGenerationResolvePolicy = Constants.RQMC#scenariogenerationresolve
+        self.ScenarioGenerationResolvePolicy = scenariogenerationresolve
         self.EVPI = evpi
         if evpi:
             self.EVPISeed = evpiseed
@@ -231,7 +230,9 @@ class Evaluator:
            ScenarioSeed = seed
            # Evaluate the solution on the scenario
            treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
-           scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True)
+           print "WARNING!!!!!!!!!!!: Evaluate with RQMC"
+
+           scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True, scenariogenerationmethod=Constants.RQMC)
            scenario = scenariotree.GetAllScenarios(False)[0]
            print "Demand in scenario: %s"%scenario.Demands
            scenarioset.append( scenario )
