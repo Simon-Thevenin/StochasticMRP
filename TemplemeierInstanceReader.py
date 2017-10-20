@@ -147,9 +147,9 @@ class TemplemeierInstanceReader( InstanceReader ):
 
         self.Instance.ComputeIndices()
 
-    def GenerateDistribution(self, forecasterror):
+    def GenerateDistribution(self, forecasterror, rateknown = 90):
             self.Instance.ForecastError = [forecasterror for p in self.Instance.ProductSet]
-            self.Instance.RateOfKnownDemand = [math.pow(0.9, (t - self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1) ) for t in self.Instance.TimeBucketSet]
+            self.Instance.RateOfKnownDemand = [math.pow(rateknown, (t - self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1) ) for t in self.Instance.TimeBucketSet]
             self.Instance.ForecastedAverageDemand = [ [ 0.0 for p in self.Instance.ProductSet ]
                                                       for t in self.Instance.TimeBucketSet]
 

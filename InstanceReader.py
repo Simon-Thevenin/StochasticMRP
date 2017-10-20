@@ -159,9 +159,9 @@ class InstanceReader:
         self.Instance.LostSaleCost = [b * 10 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
 
     # This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25, e="n"):
+    def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25, e="n", rateknown = 90):
 
-        self.Instance.InstanceName = "%s_b%s_fe%s_e%s"%(instancename, b, forcasterror, e)
+        self.Instance.InstanceName = "%s_b%s_fe%s_e%s_rk%s"%(instancename, b, forcasterror, e, rateknown)
         self.Instance.Distribution = distribution
 
         self.OpenFiles(instancename)
@@ -176,7 +176,7 @@ class InstanceReader:
         self.Instance.ComputeLevel()
         self.Instance.ComputeMaxLeadTime()
         self.GenerateTimeHorizon()
-        self.GenerateDistribution( float(forcasterror/100.0) )
+        self.GenerateDistribution( float(forcasterror/100.0), float( rateknown/100.0 ) )
         self.ComputeAverageDependentDemand()
         self.GenerateStartinInventory()
         self.GenerateSetup(e)
