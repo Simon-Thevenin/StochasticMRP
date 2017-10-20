@@ -100,7 +100,7 @@ def PrintFinalResult():
     myfile.close()
 
 #This function creates the CPLEX model and solves it.
-def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False, yfixheuristic = False, warmstart = False ):
+def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False, yfixheuristic = False, warmstart = False, aggregatetree = False ):
 
     global SolveInformation
     global CompactSolveInformation
@@ -108,7 +108,8 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
                                      averagescenariotree=averagescenario,
                                      scenariogenerationmethod = ScenarioGeneration,
                                      generateRQMCForYQfix = ( Model  == Constants.ModelYQFix and ScenarioGeneration == Constants.RQMC ),
-                                     model= Model )
+                                     model= Model,
+                                     aggregatetree = aggregatetree)
 
     MIPModel = Model
     if Model == Constants.Average:
@@ -235,7 +236,8 @@ def SolveYFixHeuristic():
     solution, mipsolver = MRP(treestructure,
                               averagescenario=False,
                               recordsolveinfo=True,
-                              yfixheuristic = True)
+                              yfixheuristic = True,
+                              aggregatetree = True)
     OptimizationInfo[0] = solution.CplexTime
     OptimizationInfo[1] = solution.CplexGap
 
@@ -530,6 +532,12 @@ def GetTreeStructure():
                 stochasticparttreestructure = [8, 8, 8]
             if nrtimebucketstochastic == 4:
                 stochasticparttreestructure = [50, 50, 10, 10]
+
+        if NrScenario == 6250000:
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [8, 8, 8]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [50, 50, 50, 50]
 
 
         if NrScenario == 3200:

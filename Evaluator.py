@@ -102,7 +102,7 @@ class Evaluator:
                         mipsolver.BuildModel()
                     else:
                         #update the MIP
-                        mipsolver.ModifyMipForScenario( scenariotree )
+                        mipsolver.ModifyMipForScenarioTree( scenariotree )
                         if not self.Policy == Constants.Fix and not evpi:
                             mipsolver.ModifyMipForFixQuantity( givenquantty )
 
@@ -317,38 +317,39 @@ class Evaluator:
             result = [solution.ProductionQuantity[0][time][p]  for p in self.Instance.ProductSet]
 
         else:
-            print self.ReferenceTreeStructure
-            treestructure = [1] \
-                            + [self.ReferenceTreeStructure[t - ( time - self.Instance.NrTimeBucketWithoutUncertaintyBefore)+ 1]
-                               if (  t >= time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)))
-                               else 1 for
-                                t in range(self.Instance.NrTimeBucket)] \
-                            + [0]
-            if model == Constants.ModelYQFix:
-                treestructure = [1] \
-                                + [self.ReferenceTreeStructure[1]
-                                   if (t == time )
-                                   else 1 for
-                                   t in range(self.Instance.NrTimeBucket)] \
-                                + [0]
-
-            if model == Constants.ModelYQFix and self.ScenarioGenerationResolvePolicy == Constants.All :
-                treestructure = [1] \
-                            + [ int( math.pow(8,3-time) )
-                               if (  t == time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)  ) )
-                               else 1 for
-                                t in range(self.Instance.NrTimeBucket)] \
-                            + [0]
-
-            self.StartSeedResolve = self.StartSeedResolve + 1
-            scenariotree = ScenarioTree(self.Instance, treestructure, self.StartSeedResolve,
-                                        averagescenariotree = self.EvaluateAverage,
-                                        givenfirstperiod=demanduptotimet,
-                                        scenariogenerationmethod=self.ScenarioGenerationResolvePolicy,
-                                        model= model)
             quantitytofix = [[givenquantty[t][p] for p in self.Instance.ProductSet] for t in range(time)]
 
             if not self.IsDefineMIPResolveTime[time]:
+                treestructure = [1] \
+                                + [self.ReferenceTreeStructure[t - ( time - self.Instance.NrTimeBucketWithoutUncertaintyBefore)+ 1]
+                                   if (  t >= time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)))
+                                   else 1 for
+                                    t in range(self.Instance.NrTimeBucket)] \
+                                + [0]
+                if model == Constants.ModelYQFix:
+                    treestructure = [1] \
+                                    + [self.ReferenceTreeStructure[1]
+                                       if (t == time )
+                                       else 1 for
+                                       t in range(self.Instance.NrTimeBucket)] \
+                                    + [0]
+
+                if model == Constants.ModelYQFix and self.ScenarioGenerationResolvePolicy == Constants.All :
+                    treestructure = [1] \
+                                + [ int( math.pow(8,3-time) )
+                                   if (  t == time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)  ) )
+                                   else 1 for
+                                    t in range(self.Instance.NrTimeBucket)] \
+                                + [0]
+
+                self.StartSeedResolve = self.StartSeedResolve + 1
+                scenariotree = ScenarioTree(self.Instance, treestructure, self.StartSeedResolve,
+                                            averagescenariotree = self.EvaluateAverage,
+                                            givenfirstperiod=demanduptotimet,
+                                            scenariogenerationmethod=self.ScenarioGenerationResolvePolicy,
+                                            model= model,
+                                            aggregatetree= True)
+
                 mipsolver = MIPSolver(self.Instance, model, scenariotree,
                                       self.EVPI,
                                       implicitnonanticipativity=( not self.EVPI),
@@ -364,7 +365,7 @@ class Evaluator:
                 self.MIPResolveTime[time] = mipsolver
                 self.IsDefineMIPResolveTime[time] = True
             else:
-                self.MIPResolveTime[time].ModifyMipForScenario(scenariotree)
+                self.MIPResolveTime[time].ModifyMipForScenario(demanduptotimet, time)
                 self.MIPResolveTime[time].ModifyMipForFixQuantity(quantitytofix, fixuntil=time)
 
             #self.MIPResolveTime[time].Cplex.parameters.advance = 0

@@ -1243,21 +1243,41 @@ class MIPSolver(object):
         m = min( [ mdem, mres ] )
         return m
 
-    #This function modify the MIP tosolve the scenario tree given in argument.
-    #It is assumed that both the initial scenario tree and the new one have a single scenario
-    def ModifyMipForScenario(self, scenariotree):
+    def ModifyMipForScenarioTree(self, scenariotree):
         self.DemandScenarioTree = scenariotree
         self.DemandScenarioTree.Owner = self
         self.NrScenario = len([n for n in self.DemandScenarioTree.Nodes if len(n.Branches) == 0])
         self.ComputeIndices()
         self.Scenarios = scenariotree.GetAllScenarios(True)
         self.ScenarioSet = range(self.NrScenario)
+        # Redefine the flow conservation constraint
+        constrainttuples = []
+        for p in self.Instance.ProductWithExternalDemand:
+            for w in self.ScenarioSet:
+                righthandside = -1 * self.Instance.StartingInventories[p]
+                for t in self.Instance.TimeBucketSet:
+                    righthandside = righthandside + self.Scenarios[w].Demands[t][p]
+                    constrnr = self.FlowConstraintNR[w][p][t]
+                    constrainttuples.append((constrnr, righthandside))
+
+        self.Cplex.linear_constraints.set_rhs(constrainttuples)
+    #This function modify the MIP tosolve the scenario tree given in argument.
+    #It is assumed that both the initial scenario tree and the new one have a single scenario
+    def ModifyMipForScenario(self, demanduptotime, time):
+        self.DemandScenarioTree = None #not up to date anymore
+        #self.DemandScenarioTree.Owner = self
+        #self.NrScenario = len([n for n in self.DemandScenarioTree.Nodes if len(n.Branches) == 0])
+        #self.ComputeIndices()
+        #self.Scenarios = scenariotree.GetAllScenarios(True)
+        #self.ScenarioSet = range(self.NrScenario)
         #Redefine the flow conservation constraint
         constrainttuples=[]
         for p in self.Instance.ProductWithExternalDemand:
            for w in self.ScenarioSet:
                 righthandside = -1 * self.Instance.StartingInventories[p]
                 for t in self.Instance.TimeBucketSet:
+                    if t< time:
+                        self.Scenarios[w].Demands[t][p] = demanduptotime[t][p]
                     righthandside = righthandside + self.Scenarios[w].Demands[t][p]
                     constrnr = self.FlowConstraintNR[w][p][t]
                     constrainttuples.append( ( constrnr, righthandside) )

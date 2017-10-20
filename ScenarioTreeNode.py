@@ -68,6 +68,15 @@ class ScenarioTreeNode:
             #           n, bins, patches = ax1.hist(nextdemands[4], bins=100,  facecolor='green')
             #           PLT.show()
 
+            if self.Owner.AggregateTree:
+                #print "WARNING!!!!!: Agregate the tree %s"%self.Owner.Model
+                if len(nextdemands) > 0:
+                    nextdemands, probabilities = ScenarioTreeNode.Aggregate(nextdemands, probabilities)
+                    nrbranch = len(nextdemands[0])
+                    self.Owner.NrBranches[t] =  nrbranch
+                    self.Owner.TreeStructure[t] = nrbranch
+
+
             usaverageforbranch =  ( t   >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter) )\
                                       or ( t <  self.Instance.NrTimeBucketWithoutUncertaintyBefore ) \
                                       or self.Owner.AverageScenarioTree
@@ -172,9 +181,23 @@ class ScenarioTreeNode:
                                 for p in self.Instance.ProductSet]
              return demandvector
 
+    #This method aggregate the points with same value and update the prbability accordingly
+    @staticmethod
+    def Aggregate(points, probabilities):
+       # get the set of difflerent value in points
+        newpoints = points
+
+        newpoints=map(list, zip(*newpoints))
+        newpoints =  list(set(map(tuple,newpoints)))
+
+        newpoints = [list(t) for t in newpoints]
+        tpoint = map(list, zip(*points))
+        newprobaba = [ sum( probabilities[i]  for i in range(len( tpoint ) ) if tpoint[i] == newpoints[p] ) for p in range( len( newpoints ) ) ]
+
+        newpoints = map(list, zip(*newpoints))
+        return newpoints, newprobaba
+
     #This method generate a set of points in [0,1] using RQMC. The points are generated with the library given on the website of P. Lecuyer
-
-
     # Apply the inverse of  the given distribution for each point (generated in [0,1]) in the set.
     @staticmethod
     def TransformInverse( points, nrpoints, dimensionpoint, distribution, average, std = 0 ):
@@ -299,12 +322,14 @@ class ScenarioTreeNode:
         if not average:
             points, probability = ScenarioTreeNode.GeneratePoints( method= scenariogenerationmethod,
                                                                    nrpoints=nrdemand,
-                                                                   dimensionpoint = instance.NrProduct ,
+                                                                   dimensionpoint = len(instance.ProductWithExternalDemand) ,
                                                                    distribution = instance.Distribution,
-                                                                   average = [ instance.ForecastedAverageDemand[time][p] for p in instance.ProductSet ],
-                                                                   std = [ instance.ForcastedStandardDeviation[time][p] for p in instance.ProductSet ]  )
+                                                                   average = [ instance.ForecastedAverageDemand[time][p] for p in instance.ProductWithExternalDemand ],
+                                                                   std = [ instance.ForcastedStandardDeviation[time][p] for p in instance.ProductWithExternalDemand ]  )
 
-            demandvector = points
+            for i in range(nrdemand):
+                for p in instance.ProductWithExternalDemand:
+                    demandvector[ instance.ProductWithExternalDemandIndex[p] ][i] = points[p][i]
 
         return demandvector, probability
 
