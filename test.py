@@ -901,7 +901,7 @@ if __name__ == "__main__":
 
 
         #Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
-        GenerateInstances()
+        #GenerateInstances()
 
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
