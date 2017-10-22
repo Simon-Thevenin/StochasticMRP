@@ -24,7 +24,7 @@ class MIPSolver(object):
                  fixsolutionuntil = -1,
                  evaluatesolution = False,
                  yfixheuristic = False,
-                 demandknownuntil = 0,
+                 demandknownuntil = -1,
                  mipsetting = "",
                  warmstart = False,
                  usesafetystock = False,
@@ -106,7 +106,8 @@ class MIPSolver(object):
 
             scenariotimeproduct = self.Instance.NrProduct * self.Instance.NrTimeBucket * self.NrScenario
             self.NrQuantiyVariables = scenariotimeproduct
-            self.NrInventoryVariable =scenariotimeproduct - self.DemandKnownUntil * self.Instance.NrProduct * ( self.NrScenario -1 )
+            d = max( self.DemandKnownUntil, 0)
+            self.NrInventoryVariable = scenariotimeproduct -  d * self.Instance.NrProduct * ( self.NrScenario -1 )
             self.NrProductionVariable = scenariotimeproduct
             self.NrBackorderVariable = len( self.Instance.ProductWithExternalDemand ) * self.Instance.NrTimeBucket * self.NrScenario - self.DemandKnownUntil * len( self.Instance.ProductWithExternalDemand ) * ( self.NrScenario -1 )
             self.StartQuantityVariable = 0
@@ -147,6 +148,7 @@ class MIPSolver(object):
             # The indices of the variable in the case where a one stage problem is solved
             self.NrProductionVariablesYFix = producttime
             self.StartQuantityVariablYFix = 0
+
             self.StartInventoryVariableYFix = self.StartQuantityVariablYQFix + self.NrQuantiyVariables
             self.StartProdustionVariableYFix = self.StartInventoryVariableYFix + self.NrInventoryVariable
             if self.UseImplicitNonAnticipativity:
@@ -237,12 +239,20 @@ class MIPSolver(object):
 
             # the function GetIndexBackorderVariable returns the index of the variable B_{p, t}. Quantity of product p produced backordered at time t
 
-    def GetIndexTotalCost(self):
+    #def GetIndexTotalCost(self):
+    #    if not self.UseImplicitNonAnticipativity: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
+    #    if self.Model == Constants.ModelYQFix: return self.StartBackorderVariableYQFix + self.NrBackorderVariableWithoutNonAnticipativity
+    #    if self.Model == Constants.ModelYFix: return self.StartBackorderVariableYFix + self.NrBackorderVariableWithoutNonAnticipativity
+    #    if self.Model == Constants.Model_Fix: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
+
+    def GetIndexKnownDemand(self, p):
+        return self.GetStartKnownDemand() + self.Instance.ProductWithExternalDemandIndex.index(p)
+
+    def GetStartKnownDemand(self):
         if not self.UseImplicitNonAnticipativity: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
-        if self.Model == Constants.ModelYQFix: return self.StartBackorderVariableYQFix + self.NrBackorderVariableWithoutNonAnticipativity
+        if self.Model == Constants.ModelYQFix: return self.StartBackorderVariableWithoutNonAnticipativity + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.ModelYFix: return self.StartBackorderVariableYFix + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.Model_Fix: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
-
 
     #return the index at which the backorder variables starts
     def GetStartBackorderVariable( self ):
@@ -262,7 +272,7 @@ class MIPSolver(object):
     def GetStartInventoryVariable( self ):
         if not self.UseImplicitNonAnticipativity:return self.StartInventoryVariable
         if self.Model == Constants.ModelYQFix: return self.StartInventoryVariableYQFix
-        if self.Model == Constants.ModelYFix: return self.StartInventoryVariableYFix
+        if self.Model == Constants.ModelYFix: return self.StartInventoryVariableWithoutNonAnticipativity
         if self.Model == Constants.Model_Fix: return self.StartInventoryVariable
 
     #return the index at which the quantity variable starts
@@ -284,6 +294,14 @@ class MIPSolver(object):
         if self.Model == Constants.ModelYQFix: return self.NrProductionVariablesYQFix
         if self.Model == Constants.ModelYFix: return self.NrProductionVariablesYFix
         if self.Model == Constants.Model_Fix: return self.NrProductionVariable
+
+        # return the number of quantity variables
+
+    def GetNrInventoryVariable(self):
+        if self.Model == Constants.ModelYQFix and self.UseImplicitNonAnticipativity:
+            return self.NrInventoryVariable
+        else:
+            return self.NrInventoryVariableWithoutNonAnticipativity
 
     # This function define the variables
     def CreateVariable( self ):
@@ -337,8 +355,7 @@ class MIPSolver(object):
                         # Add the cost of the cariable representing multiple scenarios
                         inventorycostindex = self.Scenarios[w].InventoryVariable[t][p] - self.StartInventoryVariableWithoutNonAnticipativity
                         inventorycosts[inventorycostindex] = inventorycosts[inventorycostindex] \
-                                                             + self.Instance.InventoryCosts[p] * self.Scenarios[
-                            w].Probability * np.power( self.Instance.Gamma, t )
+                                                             + self.Instance.InventoryCosts[p] * self.Scenarios[w].Probability * np.power( self.Instance.Gamma, t )
 
                         if self.Model <> Constants.ModelYFix and self.Model <> Constants.ModelYQFix :
                             setupcostindex = self.Scenarios[w].ProductionVariable[t][
@@ -361,6 +378,7 @@ class MIPSolver(object):
                                                                        + self.Instance.LostSaleCost[p] \
                                                                          * self.Scenarios[w].Probability \
                                                                          *np.power(self.Instance.Gamma, t)
+                            #print backordercosts
 
             if self.Model == Constants.ModelYQFix:
                 nrquantityvariable = self.NrQuantiyVariablesYQFix
@@ -413,6 +431,15 @@ class MIPSolver(object):
                                   lb=[0.0] * nrbackordervariable,
                                   ub=[self.M] * nrbackordervariable)
 
+        #Add a variable which represents the known demand:
+        if self.DemandKnownUntil >= 0:
+            nrknowndemand = len( self.Instance.ProductWithExternalDemand )
+            value = [ sum( self.Scenarios[0].Demands[tau][p] for tau in range(self.DemandKnownUntil +1 ))  for p in self.Instance.ProductWithExternalDemand ]
+            print "KnownDemandValue:%r - %r"%(value, self.DemandKnownUntil  )
+            self.Cplex.variables.add(obj=[0.0] * nrknowndemand,
+                                     lb=value,
+                                     ub=value)
+
         # self.Cplex.variables.add(obj=[1.0],
         #                           lb=[0.0],
         #                           ub=[self.M] )
@@ -433,11 +460,11 @@ class MIPSolver(object):
             for p in self.Instance.ProductSet:
                 for t in self.Instance.TimeBucketSet:
                     for w in self.ScenarioSet:
-                        quantityvars.append( ( self.GetIndexQuantityVariable(p, t, w), self.GetNameQuantityVariable(p, t, w) ) )
-                        productionvars.append( ( self.GetIndexProductionVariable(p, t, w), self.GetNameProductionVariable(p, t, w) ) )
-                        inventoryvars.append( ( self.GetIndexInventoryVariable(p, t, w), self.GetNameInventoryVariable(p, t, w) ) )
+                        quantityvars.append( ( (int)(self.GetIndexQuantityVariable(p, t, w)), self.GetNameQuantityVariable(p, t, w) ) )
+                        productionvars.append( ( (int)(self.GetIndexProductionVariable(p, t, w)), self.GetNameProductionVariable(p, t, w) ) )
+                        inventoryvars.append( ( (int)(self.GetIndexInventoryVariable(p, t, w) ), self.GetNameInventoryVariable(p, t, w) ) )
                         if self.Instance.HasExternalDemand[p] :
-                            backordervars.append( ( self.GetIndexBackorderVariable(p, t, w), self.GetNameBackOrderQuantity(p, t, w) ) )
+                            backordervars.append( ( (int)( self.GetIndexBackorderVariable(p, t, w) ), self.GetNameBackOrderQuantity(p, t, w) ) )
 
             quantityvars = list( set( quantityvars ) )
             productionvars = list( set( productionvars ) )
@@ -538,6 +565,7 @@ class MIPSolver(object):
 
 
         self.FlowConstraintNR = [[[ "" for t in self.Instance.TimeBucketSet]  for p in self.Instance.ProductSet] for w in self.ScenarioSet]
+        AlreadyAdded = [ False for w in range(self.GetNrInventoryVariable())  ]
 
         for p in self.Instance.ProductSet:
             for w in self.ScenarioSet:
@@ -548,36 +576,53 @@ class MIPSolver(object):
                 dependentdemandvar = []
                 dependentdemandvarcoeff = []
                 for t in self.Instance.TimeBucketSet:
+                    indexinventoryvar = self.GetIndexInventoryVariable(p, t, w) - self.GetStartInventoryVariable()
                     backordervar = []
-                    righthandside[0] = righthandside[0] + self.Scenarios[w].Demands[t][p]
+
+                    if t == self.DemandKnownUntil -1:
+                            #reset right hand side because the demand afterward is saved in a variable to accelerate the update of the MIP
+                            righthandside[0] = 0
+                    else:
+                            righthandside[0] = righthandside[0] + self.Scenarios[w].Demands[t][p]
+
+
                     if self.UseSafetyStock:
-                        righthandside[0] = righthandside[0] + safetystock[t][p]
+                            righthandside[0] = righthandside[0] + safetystock[t][p]
 
                     if self.Instance.HasExternalDemand[p]:
-                        backordervar = [self.GetIndexBackorderVariable(p, t, w)]
+                            backordervar = [self.GetIndexBackorderVariable(p, t, w)]
 
                     if t - self.Instance.Leadtimes[p] >= 0:
-                        quantityvar = quantityvar + [ self.GetIndexQuantityVariable(p, t - self.Instance.Leadtimes[p], w)]
-                        quantityvarceoff = quantityvarceoff + [1]
+                            quantityvar = quantityvar + [ self.GetIndexQuantityVariable(p, t - self.Instance.Leadtimes[p], w)]
+                            quantityvarceoff = quantityvarceoff + [1]
 
                     dependentdemandvar = dependentdemandvar + [ self.GetIndexQuantityVariable(q, t, w) for q in
-                                                                self.Instance.RequieredProduct[p] ]
+                                                                    self.Instance.RequieredProduct[p] ]
 
                     dependentdemandvarcoeff = dependentdemandvarcoeff + [-1 * self.Instance.Requirements[q][p] for q in
-                                                                         self.Instance.RequieredProduct[p] ]
+                                                                             self.Instance.RequieredProduct[p] ]
                     inventoryvar = [ self.GetIndexInventoryVariable(p, t, w) ]
 
-                    vars = inventoryvar + backordervar + quantityvar + dependentdemandvar
+                    knondemand = []
+                    knondemandcoeff = []
+                    if self.DemandKnownUntil>=0 and t >= (self.DemandKnownUntil-1) and self.Instance.HasExternalDemand[p]:
+                            knondemand = [self.GetIndexKnownDemand(p)]
+                            knondemandcoeff = [-1]
+
+                    vars = inventoryvar + backordervar + quantityvar + dependentdemandvar + knondemand
                     coeff = [-1] * len(inventoryvar) \
-                            + [1] * len(backordervar) \
-                            + quantityvarceoff \
-                            + dependentdemandvarcoeff
+                                + [1] * len(backordervar) \
+                                + quantityvarceoff \
+                                + dependentdemandvarcoeff \
+                                + knondemandcoeff
 
                     if len(vars) > 0:
-                        self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
-                                                           senses=["E"],
-                                                           rhs=righthandside,
-                                                           names = ["Flowa%da%da%d"%(p,t,w)])
+                            if  not AlreadyAdded[indexinventoryvar]:
+                                AlreadyAdded[indexinventoryvar] = True
+                                self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                                       senses=["E"],
+                                                                       rhs=righthandside,
+                                                                       names = ["Flowa%da%da%d"%(p,t,w)])
                     self.FlowConstraintNR[w][p][t] = "Flowa%da%da%d"%(p,t,w)
 
     # This function creates the  indicator constraint to se the production variable to 1 when a positive quantity is produce
@@ -609,6 +654,7 @@ class MIPSolver(object):
                             AlreadyAdded[indexP][indexQ] = True
                             coeff = [ -1.0, BigM[p] ]
                             righthandside = [ 0.0 ]
+
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                               senses=["G"],
                                                              rhs=righthandside)#
@@ -1120,7 +1166,7 @@ class MIPSolver(object):
         partialsol = Constants.PrintOnlyFirstStageDecision and self.Model == Constants.ModelYFix and not self.EvaluateSolution
         if partialsol:
             scenarioset = [0]
-            timebucketset = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1)
+            timebucketset = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore +1 )
             scenarios = [self.Scenarios[0]]
             partialsol = True
         if Constants.Debug:
@@ -1273,17 +1319,24 @@ class MIPSolver(object):
         #Redefine the flow conservation constraint
         constrainttuples=[]
         for p in self.Instance.ProductWithExternalDemand:
-           for w in self.ScenarioSet:
+           #for w in self.ScenarioSet:
                 righthandside = -1 * self.Instance.StartingInventories[p]
                 for t in self.Instance.TimeBucketSet:
-                    if t< time:
-                        self.Scenarios[w].Demands[t][p] = demanduptotime[t][p]
-                    righthandside = righthandside + self.Scenarios[w].Demands[t][p]
-                    constrnr = self.FlowConstraintNR[w][p][t]
-                    constrainttuples.append( ( constrnr, righthandside) )
+                    if t< time -1:
+                        self.Scenarios[0].Demands[t][p] = demanduptotime[t][p]
+                        righthandside = righthandside + self.Scenarios[0].Demands[t][p]
+                        constrnr = self.FlowConstraintNR[0][p][t]
+                        constrainttuples.append( ( constrnr, righthandside) )
+                    if t == time -1:
+                        self.Scenarios[0].Demands[t][p] = demanduptotime[t][p]
+                        righthandside = 0
+                        constrnr = self.FlowConstraintNR[0][p][t]
+                        constrainttuples.append((constrnr, righthandside))
+                        self.Cplex.linear_constraints.set_rhs( constrainttuples )
 
-        self.Cplex.linear_constraints.set_rhs( constrainttuples )
-
+        knowndemandtuples = [ ( self.GetIndexKnownDemand(p),  sum(demanduptotime[t][p] for t in range( time )) )  for p in self.Instance.ProductWithExternalDemand]
+        self.Cplex.variables.set_lower_bounds(knowndemandtuples)
+        self.Cplex.variables.set_upper_bounds(knowndemandtuples)
         # This function modify the MIP tosolve the scenario tree given in argument.
         # It is assumed that both the initial scenario tree and the new one have a single scenario
 
@@ -1294,30 +1347,13 @@ class MIPSolver(object):
                 timeset = range( fixuntil )
             # Redefine the flow conservation constraint
             constrainttuples = []
-            AlreadyAdded = [False for v in range(self.GetNrQuantityVariable())]
-
 
             # Capacity constraint
             for p in self.Instance.ProductSet:
                 for t in timeset:
-                    for w in self.ScenarioSet:
-                        indexvariable = self.GetIndexQuantityVariable(p, t, w)
-                        if not AlreadyAdded[indexvariable]:
-                            AlreadyAdded[indexvariable]= True
-                            value =  "%f"%givenquanities[t][p]
-                            #print "Value: %+18.16e" %givenquanities[t][p]
                             righthandside = givenquanities[t][p]#
-
-                            #value = float( righthandside + 0.1)
-                            #righthandside1 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
-                            constrnr = "L"+self.QuantityConstraintNR[w][p][t]
+                            constrnr = "L"+self.QuantityConstraintNR[0][p][t]
                             constrainttuples.append((constrnr, righthandside))
 
-                            #value = max( float( righthandside - 0.1), 0.0)
 
-                            #righthandside2 = float(Decimal(value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_DOWN))
-
-                            #constrnr = "G"+self.QuantityConstraintNR[w][p][t]
-                            #constrainttuples.append((constrnr, righthandside2))
-            #print "constrainttuples %r"%constrainttuples
             self.Cplex.linear_constraints.set_rhs( constrainttuples )

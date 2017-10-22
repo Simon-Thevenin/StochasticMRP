@@ -43,9 +43,9 @@ class InstanceReader:
         self.LevelSet = []
 
     # This function creates the lead times
-    def CreateLeadTime(self):
+    def CreateLeadTime(self, lastperiodleadtim):
         print " CAUTION: LEAD TIME ARE MODIFIED"
-        self.Instance.Leadtimes = [1 for p in self.Instance.ProductSet] #[randint(1, 1) for p in self.Instance.ProductSet]
+        self.Instance.Leadtimes = [lastperiodleadtim if sum( self.Instance.Requirements[q][p] for q in self.Instance.ProductSet) == 0 else 1 for p in self.Instance.ProductSet] #[randint(1, 1) for p in self.Instance.ProductSet]
 
 
     # Compute the requireement from the supply chain. This set of instances assume the requirement of each arc is 1.
@@ -159,9 +159,9 @@ class InstanceReader:
         self.Instance.LostSaleCost = [b * 10 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
 
     # This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25, e="n", rateknown = 90):
+    def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25, e="n", rateknown = 90, lastperiodleadtime = 1):
 
-        self.Instance.InstanceName = "%s_b%s_fe%s_e%s_rk%s"%(instancename, b, forcasterror, e, rateknown)
+        self.Instance.InstanceName = "%s_b%s_fe%s_e%s_rk%s_ll%s"%(instancename, b, forcasterror, e, rateknown, lastperiodleadtime)
         self.Instance.Distribution = distribution
 
         self.OpenFiles(instancename)
@@ -169,8 +169,9 @@ class InstanceReader:
         self.ReadProductList()
         self.ReadInstanceStructure()
         self.ReadNrResource()
-        self.CreateLeadTime()
+
         self.CreateRequirement()
+        self.CreateLeadTime(lastperiodleadtime)
         self.GenerateHoldingCostCost(e)
 
         self.Instance.ComputeLevel()

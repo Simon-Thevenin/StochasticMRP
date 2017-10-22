@@ -356,8 +356,8 @@ class Evaluator:
                                       evaluatesolution=True,
                                       givenquantities=quantitytofix,
                                       givensetups=givensetup,
-                                      fixsolutionuntil=(time - 1),
-                                      demandknownuntil =  time)
+                                      fixsolutionuntil=(time -1 ), #time lower or equal
+                                      demandknownuntil =  time )  #time stricty lower
 
 
 
