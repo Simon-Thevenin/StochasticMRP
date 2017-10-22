@@ -900,7 +900,7 @@ if __name__ == "__main__":
         #
 
 
-        #Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
+        Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
         #GenerateInstances()
 
     except KeyError:
