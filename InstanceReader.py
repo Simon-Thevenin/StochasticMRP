@@ -161,7 +161,7 @@ class InstanceReader:
     # This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
     def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25, e="n", rateknown = 90, lastperiodleadtime = 1, lostsale = 2):
 
-        self.Instance.InstanceName = "%s_b%s_fe%s_e%s_rk%s_ll%s"%(instancename, b, forcasterror, e, rateknown, lastperiodleadtime)
+        self.Instance.InstanceName = "%s_b%s_fe%s_e%s_rk%s_ll%s_l%s"%(instancename, b, forcasterror, e, rateknown, lastperiodleadtime, lostsale)
         self.Instance.Distribution = distribution
 
         self.OpenFiles(instancename)
