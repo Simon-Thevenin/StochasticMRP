@@ -149,17 +149,17 @@ class InstanceReader:
                                  for p in self.Instance.ProductSet)
             for k in range(self.Instance.NrResource)]
 
-    def GenerateCostParameters(self, b):
+    def GenerateCostParameters(self, b, lostsale):
         # Gamma is set to 0.9 which is a common value (find reference!!!)
         self.Instance.Gamma = 1.0
         # Back order is twice the  holding cost as in :
         # Solving the capacitated lot - sizing problem with backorder consideration CH Cheng1 *, MS Madan2, Y Gupta3 and S So4
         # See how to set this value
         self.Instance.BackorderCosts = [b * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
-        self.Instance.LostSaleCost = [b * 10 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
+        self.Instance.LostSaleCost = [lostsale * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
 
     # This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25, e="n", rateknown = 90, lastperiodleadtime = 1):
+    def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25, e="n", rateknown = 90, lastperiodleadtime = 1, lostsale = 2):
 
         self.Instance.InstanceName = "%s_b%s_fe%s_e%s_rk%s_ll%s"%(instancename, b, forcasterror, e, rateknown, lastperiodleadtime)
         self.Instance.Distribution = distribution
@@ -182,6 +182,6 @@ class InstanceReader:
         self.GenerateStartinInventory()
         self.GenerateSetup(e)
         self.GenerateCapacity()
-        self.GenerateCostParameters( b )
+        self.GenerateCostParameters( b, lostsale )
         self.Instance.SaveCompleteInstanceInExelFile()
         self.Instance.ComputeInstanceData()

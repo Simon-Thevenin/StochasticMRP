@@ -858,7 +858,7 @@ def GenerateInstances( ):
         Distribution = "NonStationary"
         #for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
          #     "NonStationary"]:
-        Instance.ReadFromFile( InstanceName, Distribution, 2, 25, e="l", rk = 50, lastperiodleadtime = 0 )
+        Instance.ReadFromFile( InstanceName, Distribution, 2, 25, e="l", rk = 50, lastperiodleadtime = 0 , lostsale = 2)
         Instance.SaveCompleteInstanceInExelFile()
         instancecreated = instancecreated + [Instance.InstanceName]
         # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk=50, lastperiodleadtime=0)
