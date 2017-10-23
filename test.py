@@ -858,24 +858,24 @@ def GenerateInstances( ):
         Distribution = "NonStationary"
         #for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
          #     "NonStationary"]:
-        Instance.ReadFromFile( InstanceName, Distribution, 2, 25, e="n", rk = 90, lastperiodleadtime = 1 )
+        Instance.ReadFromFile( InstanceName, Distribution, 2, 25, e="l", rk = 50, lastperiodleadtime = 0 )
         Instance.SaveCompleteInstanceInExelFile()
         instancecreated = instancecreated + [Instance.InstanceName]
-        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=90, lastperiodleadtime=0)
-        Instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [Instance.InstanceName]
-        Instance.ReadFromFile( InstanceName, Distribution, 2, 25, e="n", rk = 50, lastperiodleadtime = 0 )
-        Instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [Instance.InstanceName]
-        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk = 50, lastperiodleadtime = 1)
-        Instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [Instance.InstanceName]
-        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk = 50, lastperiodleadtime = 0)
-        Instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [Instance.InstanceName]
-        Instance.ReadFromFile(InstanceName, Distribution, 10, 25, e="l", rk = 50, lastperiodleadtime = 0)
-        Instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [Instance.InstanceName]
+        # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk=50, lastperiodleadtime=0)
+        # Instance.SaveCompleteInstanceInExelFile()
+        # instancecreated = instancecreated + [Instance.InstanceName]
+        # Instance.ReadFromFile( InstanceName, Distribution, 2, 25, e="n", rk = 50, lastperiodleadtime = 0 )
+        # Instance.SaveCompleteInstanceInExelFile()
+        # instancecreated = instancecreated + [Instance.InstanceName]
+        # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk = 50, lastperiodleadtime = 1)
+        # Instance.SaveCompleteInstanceInExelFile()
+        # instancecreated = instancecreated + [Instance.InstanceName]
+        # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk = 50, lastperiodleadtime = 0)
+        # Instance.SaveCompleteInstanceInExelFile()
+        # instancecreated = instancecreated + [Instance.InstanceName]
+        # Instance.ReadFromFile(InstanceName, Distribution, 10, 25, e="l", rk = 50, lastperiodleadtime = 0)
+        # Instance.SaveCompleteInstanceInExelFile()
+        # instancecreated = instancecreated + [Instance.InstanceName]
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
