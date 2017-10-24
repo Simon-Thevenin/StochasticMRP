@@ -157,7 +157,6 @@ class ScenarioTree:
             self.NrLevel = instance.NrTimeBucket
         self.NrNode = ScenarioTreeNode.NrNode
         self.Renumber()
-        print "Treeshape %r"%self.TreeStructure
 
     #This function number the node from highest level to lowest.
     def Renumber( self ):

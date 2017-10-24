@@ -373,15 +373,17 @@ class MRPSolution:
     def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed):
 
         scenarioset = range(len(self.Scenarioset))
+
+        avginventorydf = pd.DataFrame(self.InSampleAverageInventory,
+                                      columns=self.MRPInstance.ProductName,
+                                      index=self.MRPInstance.TimeBucketSet)
         if Constants.PrintDetailsExcelFiles:
             d = datetime.now()
             date = d.strftime('%m_%d_%Y_%H_%M_%S')
             writer = pd.ExcelWriter("./Solutions/" + self.MRPInstance.InstanceName + "_Statistics_"+filepostscript+"_"+date+".xlsx",
                                     engine='openpyxl')
 
-            avginventorydf = pd.DataFrame(self.InSampleAverageInventory,
-                                          columns=self.MRPInstance.ProductName,
-                                          index=self.MRPInstance.TimeBucketSet)
+
 
             avginventorydf.to_excel(writer, "AverageInventory" )
 

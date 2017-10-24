@@ -1115,7 +1115,8 @@ class MIPSolver(object):
 
         # Handle the results
         sol = self.Cplex.solution
-        print "CPLEx Solve Time: %r   CPLEX build time %s  feasible %s" % (solvetime, buildtime, sol.is_primal_feasible())
+        if Constants.Debug:
+            print "CPLEx Solve Time: %r   CPLEX build time %s  feasible %s" % (solvetime, buildtime, sol.is_primal_feasible())
 
         if sol.is_primal_feasible():
             if createsolution:
