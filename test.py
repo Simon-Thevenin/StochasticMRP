@@ -237,7 +237,7 @@ def SolveYFixHeuristic():
                               averagescenario=False,
                               recordsolveinfo=True,
                               yfixheuristic = True,
-                              aggregatetree = True)
+                              aggregatetree = False)
     OptimizationInfo[0] = solution.CplexTime
     OptimizationInfo[1] = solution.CplexGap
 
@@ -905,8 +905,8 @@ if __name__ == "__main__":
         #
 
 
-        #Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
-        GenerateInstances()
+        Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
+        #GenerateInstances()
 
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"

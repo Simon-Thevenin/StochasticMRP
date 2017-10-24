@@ -8,7 +8,7 @@ import os
 import subprocess
 import csv
 
-NrScenarioEvaluation = "500"
+NrScenarioEvaluation = "5000"
 
 def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method, mipsetting):
     print "job_solve_%s_%s_%s_%s_%s_%s_%s_%s" % (

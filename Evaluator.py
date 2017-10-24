@@ -230,9 +230,8 @@ class Evaluator:
            ScenarioSeed = seed
            # Evaluate the solution on the scenario
            treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
-           print "WARNING!!!!!!!!!!!: Evaluate with RQMC"
 
-           scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True, scenariogenerationmethod=Constants.RQMC)
+           scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True, scenariogenerationmethod=Constants.MC)
            scenario = scenariotree.GetAllScenarios(False)[0]
            print "Demand in scenario: %s"%scenario.Demands
            scenarioset.append( scenario )
