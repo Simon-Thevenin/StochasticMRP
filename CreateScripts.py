@@ -25,6 +25,7 @@ def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, me
 #$ -o /home/thesim/outputjob%s%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
+mkdir /tmp/thesim/Evaluations
 python test.py Solve %s %s %s %s %s -s %s  -m %s --mipsetting %s
 """ % (instance, distribution, model, nrscenar, generation, seed, method, mipsetting, instance,
                           distribution, model, nrscenar, generation, seed, method, mipsetting))
@@ -43,6 +44,7 @@ def CreatePolicyJob(instance, distribution, model, nrscenar, generation, seed, P
 #$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
+mkdir /tmp/thesim/Evaluations
 python test.py Evaluate %s %s %s %s %s  -s %s -p %s -n %s
 """ % (instance, distribution, model, nrscenar, generation, seed, Policy, NrScenarioEvaluation, instance, distribution, model, nrscenar,
         generation, seed, Policy, NrScenarioEvaluation))
@@ -161,6 +163,7 @@ if __name__ == "__main__":
 #$ -o /home/thesim/outputjob%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
+mkdir /tmp/thesim/Evaluations
 python test.py Evaluate %s %s YQFix 1 RQMC -e -n 500 -s 0
             """ % ( instance, distribution, instance, distribution) )
 

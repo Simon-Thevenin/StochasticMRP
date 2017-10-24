@@ -351,7 +351,8 @@ def Evaluate():
     PrintFinalResult()
 
 def GetEvaluationFileName():
-    result = "./Evaluations/" + GetTestDescription() + GetEvaluateDescription()
+    result = "/tmp/thesim/Evaluations/" + GetTestDescription() + GetEvaluateDescription()
+    #result = "./Evaluations/" + GetTestDescription() + GetEvaluateDescription()
     return result
 
 def EvaluateSingleSol(  ):

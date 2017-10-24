@@ -233,7 +233,6 @@ class Evaluator:
 
            scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True, scenariogenerationmethod="MC")
            scenario = scenariotree.GetAllScenarios(False)[0]
-           print "Demand in scenario: %s"%scenario.Demands
            scenarioset.append( scenario )
            treeset.append( scenariotree)
 
