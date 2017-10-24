@@ -147,9 +147,10 @@ class Evaluator:
         duration = time.time() - start_time
         print "Duration od evaluation: %r, outofsampl cost:%r total proba:%r"%( duration, average, totalproba )# %r"%( duration, Evaluated )
 
-        namea = "_".join(str(elm) for elm in testidentifier)
-        nameb = "_".join(str(elm) for elm in evaluateidentificator)
-        OutOfSampleSolution.PrintToExcel(namea+nameb+".xlsx")
+        if Constants.PrintDetailsExcelFiles:
+            namea = "_".join(str(elm) for elm in testidentifier)
+            nameb = "_".join(str(elm) for elm in evaluateidentificator)
+            OutOfSampleSolution.PrintToExcel(namea+nameb+".xlsx")
 
     #This function return the setup decision and quantity to produce for the scenario given in argument
     def GetDecisionFromSolutionForScenario(self, sol, model, scenario):
