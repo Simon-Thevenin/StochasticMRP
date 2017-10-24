@@ -14,11 +14,17 @@ import numpy as np
 class MRPSolution:
 
     def GetSolutionFileName(self, description):
-        result ="./Solutions/"+  description + "_Solution.xlsx"
+        if Constants.PrintSolutionFileInTMP:
+            result = "/tmp/Solutions/" + description + "_Solution.xlsx"
+        else:
+            result ="./Solutions/"+  description + "_Solution.xlsx"
         return result
 
     def GetSolutionPickleFileNameStart(self, description, dataframename):
-        result ="./Solutions/"+  description + "_" + dataframename
+        if Constants.PrintSolutionFileInTMP:
+            result = "/tmp/Solutions/" + description + "_" + dataframename
+        else:
+            result ="./Solutions/"+  description + "_" + dataframename
         return result
 
     def GetGeneralInfoDf(self):
