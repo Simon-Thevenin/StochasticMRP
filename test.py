@@ -861,22 +861,27 @@ def GenerateInstances( ):
         Instance.ReadFromFile( InstanceName, Distribution, 2, 25, e="l", rk = 50, lastperiodleadtime = 0 , lostsale = 2)
         Instance.SaveCompleteInstanceInExelFile()
         instancecreated = instancecreated + [Instance.InstanceName]
-        # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk=50, lastperiodleadtime=0)
-        # Instance.SaveCompleteInstanceInExelFile()
-        # instancecreated = instancecreated + [Instance.InstanceName]
-        # Instance.ReadFromFile( InstanceName, Distribution, 2, 25, e="n", rk = 50, lastperiodleadtime = 0 )
-        # Instance.SaveCompleteInstanceInExelFile()
-        # instancecreated = instancecreated + [Instance.InstanceName]
-        # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk = 50, lastperiodleadtime = 1)
-        # Instance.SaveCompleteInstanceInExelFile()
-        # instancecreated = instancecreated + [Instance.InstanceName]
-        # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk = 50, lastperiodleadtime = 0)
-        # Instance.SaveCompleteInstanceInExelFile()
-        # instancecreated = instancecreated + [Instance.InstanceName]
-        # Instance.ReadFromFile(InstanceName, Distribution, 10, 25, e="l", rk = 50, lastperiodleadtime = 0)
-        # Instance.SaveCompleteInstanceInExelFile()
-        # instancecreated = instancecreated + [Instance.InstanceName]
-
+        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk=50, lastperiodleadtime=0, lostsale=20)
+        Instance.SaveCompleteInstanceInExelFile()
+        instancecreated = instancecreated + [Instance.InstanceName]
+        Instance.ReadFromFile(InstanceName, Distribution, 4, 25, e="l", rk=50, lastperiodleadtime=0, lostsale=40)
+        Instance.SaveCompleteInstanceInExelFile()
+        instancecreated = instancecreated + [Instance.InstanceName]
+        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=50, lastperiodleadtime=0, lostsale=20)
+        Instance.SaveCompleteInstanceInExelFile()
+        instancecreated = instancecreated + [Instance.InstanceName]
+        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk=90, lastperiodleadtime=0, lostsale=20)
+        Instance.SaveCompleteInstanceInExelFile()
+        instancecreated = instancecreated + [Instance.InstanceName]
+        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk=50, lastperiodleadtime=1, lostsale=20)
+        Instance.SaveCompleteInstanceInExelFile()
+        instancecreated = instancecreated + [Instance.InstanceName]
+        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l2", rk=50, lastperiodleadtime=0, lostsale=20)
+        Instance.SaveCompleteInstanceInExelFile()
+        instancecreated = instancecreated + [Instance.InstanceName]
+        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="l", rk=75, lastperiodleadtime=0, lostsale=20)
+        Instance.SaveCompleteInstanceInExelFile()
+        instancecreated = instancecreated + [Instance.InstanceName]
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
     data_rwriter.writerow(instancecreated)
@@ -900,8 +905,8 @@ if __name__ == "__main__":
         #
 
 
-        Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
-        #GenerateInstances()
+        #Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
+        GenerateInstances()
 
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"

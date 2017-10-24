@@ -8,6 +8,7 @@ from Constants import Constants
 from Tool import Tool
 from ScenarioTreeNode import ScenarioTreeNode
 from DecentralizedMRP import DecentralizedMRP
+import itertools
 class MIPSolver(object):
     M = cplex.infinity
 
@@ -625,6 +626,26 @@ class MIPSolver(object):
                                                                        names = ["Flowa%da%da%d"%(p,t,w)])
                     self.FlowConstraintNR[w][p][t] = "Flowa%da%da%d"%(p,t,w)
 
+                    # This function creates the  indicator constraint to se the production variable to 1 when a positive quantity is produce
+
+    def CreateLSInequalities( self ):
+        for p in self.Instance.ProductWithExternalDemand:
+            for w in self.ScenarioSet:
+                for l in range(self.Instance.Leadtimes[p] , self.Instance.NrTimeBucket):
+                    for r in range(l+1):
+                            #SSet = itertools.combinations( range(l+1), r)
+                            S = range(r, l+1)
+                            vars = [ self.GetIndexQuantityVariable(p, t - self.Instance.Leadtimes[p], w) for t in S ] \
+                                    + [ self.GetIndexProductionVariable(p, t - self.Instance.Leadtimes[p], w) for t in S ] \
+                                    + [ self.GetIndexInventoryVariable(p, l, w ) ]
+                            coeff = [ 1 for t in S ] \
+                                    + [ -  sum( self.Scenarios[w].Demands[tau][p] for tau in range( t,l +1 ) ) for t in S ] \
+                                    + [ - 1 ]
+
+                            self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                                          senses=["L"],
+                                                                          rhs=[0])  #
+
     # This function creates the  indicator constraint to se the production variable to 1 when a positive quantity is produce
     def CreateProductionConstraints( self ):
         n = self.GetNrQuantityVariable()
@@ -901,7 +922,9 @@ class MIPSolver(object):
 
         #if self.UseSafetyStock:
         #    self.CreateSafetyStockConstraints()
-
+        #print "start create LS ...."
+        #self.CreateLSInequalities()
+        #print "end create LS ...."
         if self.EvaluateSolution:
             if self.Model == Constants.ModelYQFix or self.Model == Constants.ModelYFix:
                 if Constants.Debug:

@@ -107,6 +107,16 @@ class TemplemeierInstanceReader( InstanceReader ):
                      result[p] = 1
                  if self.Level[p] == 2:
                      result[p] = 0.1
+
+        if e == "l2":
+            for p in self.Instance.ProductSet:
+                 if  self.Level[p] == 0:
+                     result[p] = 2
+                 if self.Level[p] == 1:
+                     result[p] = 1
+                 if self.Level[p] == 2:
+                     result[p] = 0.5
+
         if e == "n":
             result = [  float( self.DatFile[i +1  ][2] ) for i in  self.Instance.ProductSet ]
         return result
