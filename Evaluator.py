@@ -353,8 +353,7 @@ class Evaluator:
                                             averagescenariotree = self.EvaluateAverage,
                                             givenfirstperiod=demanduptotimet,
                                             scenariogenerationmethod=self.ScenarioGenerationResolvePolicy,
-                                            model= model,
-                                            aggregatetree= True)
+                                            model= model)
 
                 mipsolver = MIPSolver(self.Instance, model, scenariotree,
                                       self.EVPI,
