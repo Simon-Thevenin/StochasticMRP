@@ -100,7 +100,7 @@ def PrintFinalResult():
     myfile.close()
 
 #This function creates the CPLEX model and solves it.
-def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False, yfixheuristic = False, warmstart = False, aggregatetree = False ):
+def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False, yfixheuristic = False, warmstart = False ):
 
     global SolveInformation
     global CompactSolveInformation
@@ -108,8 +108,7 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
                                      averagescenariotree=averagescenario,
                                      scenariogenerationmethod = ScenarioGeneration,
                                      generateRQMCForYQfix = ( Model  == Constants.ModelYQFix and ScenarioGeneration == Constants.RQMC ),
-                                     model= Model,
-                                     aggregatetree = aggregatetree)
+                                     model= Model)
 
     MIPModel = Model
     if Model == Constants.Average:

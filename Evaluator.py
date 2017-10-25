@@ -161,7 +161,7 @@ class Evaluator:
 
         # For model YQFix, the quatities are fixed, and can be taken from the solution
         if self.Policy == "Fix":
-            givenquantty = [[sol.ProductionQuantity[0][t][p]
+            givenquantty = [[ sol.ProductionQuantity[0][t][p]
                                      for p in self.Instance.ProductSet]
                                      for t in self.Instance.TimeBucketSet]
 
@@ -186,6 +186,11 @@ class Evaluator:
                                                                         givensetup, model)
 
                 #print "qty:%r" % givenquantty
+
+            for p in self.Instance.ProductSet:
+                for t in self.Instance.TimeBucketSet:
+                    if givensetup[t][p] == 0:
+                        givenquantty[t][p] = 0
 
         #print "qty:%r"%givenquantty
         return givensetup, givenquantty

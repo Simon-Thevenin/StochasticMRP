@@ -167,7 +167,7 @@ ulimit -v 16000000
 mkdir /tmp/thesim
 mkdir /tmp/thesim/Evaluations
 mkdir /tmp/thesim/Solutions
-python test.py Evaluate %s %s YQFix 1 RQMC -e -n 500 -s 0
+python test.py Evaluate %s %s YQFix 1 RQMC -e -n 5000 -s 0
             """ % ( instance, distribution, instance, distribution) )
 
 

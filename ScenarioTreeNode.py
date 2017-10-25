@@ -68,13 +68,13 @@ class ScenarioTreeNode:
             #           n, bins, patches = ax1.hist(nextdemands[4], bins=100,  facecolor='green')
             #           PLT.show()
 
-            if self.Owner.AggregateTree:
+            #if self.Owner.AggregateTree:
                 #print "WARNING!!!!!: Agregate the tree %s"%self.Owner.Model
-                if len(nextdemands) > 0:
-                    nextdemands, probabilities = ScenarioTreeNode.Aggregate(nextdemands, probabilities)
-                    nrbranch = len(nextdemands[0])
-                    self.Owner.NrBranches[t] =  nrbranch
-                    self.Owner.TreeStructure[t] = nrbranch
+            #    if len(nextdemands) > 0:
+            #        nextdemands, probabilities = ScenarioTreeNode.Aggregate(nextdemands, probabilities)
+            #        nrbranch = len(nextdemands[0])
+            #        self.Owner.NrBranches[t] =  nrbranch
+            #        self.Owner.TreeStructure[t] = nrbranch
 
 
             usaverageforbranch =  ( t   >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter) )\

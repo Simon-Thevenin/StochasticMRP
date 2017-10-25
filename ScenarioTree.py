@@ -11,7 +11,7 @@ from matplotlib import pyplot as PLT
 
 class ScenarioTree:
     #Constructor
-    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False, generateasYQfix = False, model = "YFix", CopyscenariofromYFIX=False, aggregatetree = False ):
+    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False, generateasYQfix = False, model = "YFix", CopyscenariofromYFIX=False ):
         self.CopyscenariofromYFIX= CopyscenariofromYFIX
         self.Seed = seed
         if Constants.Debug:
@@ -19,9 +19,9 @@ class ScenarioTree:
         np.random.seed( seed )
         self.Nodes = []
         self.Owner = mipsolver
-        self.AggregateTree = aggregatetree
-        if self.AggregateTree:
-            print "Aggregate the tree!!!"
+        #self.AggregateTree = aggregatetree
+        #if self.AggregateTree:
+        #    print "Aggregate the tree!!!"
         self.Instance = instance
         self.TreeStructure = branchperlevel
         self.NrBranches = branchperlevel
