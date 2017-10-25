@@ -156,7 +156,7 @@ class Evaluator:
     def GetDecisionFromSolutionForScenario(self, sol, model, scenario):
 
         # The setups are fixed in the first stage
-        givensetup = [[ (int)(sol.Production[0][t][p] ) for p in self.Instance.ProductSet]
+        givensetup = [[ (sol.Production[0][t][p] ) for p in self.Instance.ProductSet]
                         for t in self.Instance.TimeBucketSet]
 
         # For model YQFix, the quatities are fixed, and can be taken from the solution
@@ -187,12 +187,12 @@ class Evaluator:
 
                 #print "qty:%r" % givenquantty
 
-        for p in self.Instance.ProductSet:
-            for t in self.Instance.TimeBucketSet:
-                print givensetup
-                print givenquantty
-                if givensetup[t][p] < 0.5:
-                        givenquantty[t][p] = 0
+        # for p in self.Instance.ProductSet:
+        #     for t in self.Instance.TimeBucketSet:
+        #         print givensetup
+        #         print givenquantty
+        #         if givensetup[t][p] < 0.5:
+        #                 givenquantty[t][p] = 0
 
         #print "qty:%r"%givenquantty
         return givensetup, givenquantty
