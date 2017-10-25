@@ -187,9 +187,9 @@ class Evaluator:
 
                 #print "qty:%r" % givenquantty
 
-            for p in self.Instance.ProductSet:
-                for t in self.Instance.TimeBucketSet:
-                    if givensetup[t][p] == 0:
+        for p in self.Instance.ProductSet:
+            for t in self.Instance.TimeBucketSet:
+                if givensetup[t][p] == 0:
                         givenquantty[t][p] = 0
 
         #print "qty:%r"%givenquantty
