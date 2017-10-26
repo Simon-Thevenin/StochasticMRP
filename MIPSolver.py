@@ -399,7 +399,7 @@ class MIPSolver(object):
             for w in self.ScenarioSet:
                 for t in self.Instance.TimeBucketSet:
                     for p in self.Instance.ProductSet:
-                        upperbound[self.GetIndexQuantityVariable(p,t,w)] =  self.GivenSetup[t][p] * self.GetBigMValue(self.Instance, self.Scenarios, p)
+                        upperbound[self.GetIndexQuantityVariable(p,t,w)] =  (self.GivenSetup[t][p]+0.001) * self.GetBigMValue(self.Instance, self.Scenarios, p)
 
         self.Cplex.variables.add(obj=[0.0] * nrquantityvariable,
                                 lb=[0.0] * nrquantityvariable,
