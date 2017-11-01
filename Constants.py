@@ -37,7 +37,7 @@ class Constants:
     LauchEvalAfterSolve = True
     PrintOnlyFirstStageDecision = True
     PrintDetailsExcelFiles = False
-    PrintSolutionFileInTMP = True #To avoid memory comsumption it is better to print the files in /tmp However if th files are printed in tmp they are deleted after 4 days
+    PrintSolutionFileInTMP = False #To avoid memory comsumption it is better to print the files in /tmp However if th files are printed in tmp they are deleted after 4 days
     Infinity = 9999999999999.9
     AlgorithmTimeLimit = 36000.0
     AlgorithmOptimalityTolerence = 0.00001
