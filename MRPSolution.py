@@ -22,7 +22,7 @@ class MRPSolution:
 
     def GetSolutionPickleFileNameStart(self, description, dataframename):
         if Constants.PrintSolutionFileInTMP:
-            result = "/tmp/Solutions/" + description + "_" + dataframename
+            result = "/tmp/thesim/Solutions/" + description + "_" + dataframename
         else:
             result ="./Solutions/"+  description + "_" + dataframename
         return result
