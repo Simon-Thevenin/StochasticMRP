@@ -43,9 +43,22 @@ class InstanceReader:
         self.LevelSet = []
 
     # This function creates the lead times
-    def CreateLeadTime(self, lastperiodleadtim):
-        print " CAUTION: LEAD TIME ARE MODIFIED"
-        self.Instance.Leadtimes = [lastperiodleadtim if sum( self.Instance.Requirements[q][p] for q in self.Instance.ProductSet) == 0 else 1 for p in self.Instance.ProductSet] #[randint(1, 1) for p in self.Instance.ProductSet]
+    def CreateLeadTime(self, leadtimestructure):
+        self.Instance.Leadtimes = [ 1 for p in self.Instance.ProductSet] #[randint(1, 1) for p in self.Instance.ProductSet]
+
+        productwith0leadtime = []
+
+        if leadtimestructure == 1 or leadtimestructure == 5:
+            productwith0leadtime + [ p for p in self.Instance.ProductSet if self.Instance.Level[p] == 0 ]
+
+        if leadtimestructure == 2 or  leadtimestructure == 4 or leadtimestructure == 5:
+            productwith0leadtime + [p for p in self.Instance.ProductSet if self.Instance.Level[p] == 1]
+
+        if leadtimestructure == 3 or  leadtimestructure == 4 or leadtimestructure == 5:
+            productwith0leadtime + [p for p in self.Instance.ProductSet if self.Instance.Level[p] == 2]
+
+        for p in productwith0leadtime:
+                self.Instance.Leadtimes[p] = 0
 
 
     # Compute the requireement from the supply chain. This set of instances assume the requirement of each arc is 1.
@@ -159,9 +172,9 @@ class InstanceReader:
         self.Instance.LostSaleCost = [lostsale * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
 
     # This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25, e="n", rateknown = 90, lastperiodleadtime = 1, lostsale = 2):
+    def ReadFromFile(self, instancename, distribution, b=2, forcasterror = 25, e="n", rateknown = 90, leadtimestructure = 1, lostsale = 2):
 
-        self.Instance.InstanceName = "%s_b%s_fe%s_e%s_rk%s_ll%s_l%s"%(instancename, b, forcasterror, e, rateknown, lastperiodleadtime, lostsale)
+        self.Instance.InstanceName = "%s_b%s_fe%s_e%s_rk%s_ll%s_l%s"%(instancename, b, forcasterror, e, rateknown, leadtimestructure, lostsale)
         self.Instance.Distribution = distribution
 
         self.OpenFiles(instancename)
@@ -171,10 +184,11 @@ class InstanceReader:
         self.ReadNrResource()
 
         self.CreateRequirement()
-        self.CreateLeadTime(lastperiodleadtime)
+        self.Instance.ComputeLevel()
+        self.CreateLeadTime(leadtimestructure)
         self.GenerateHoldingCostCost(e)
 
-        self.Instance.ComputeLevel()
+
         self.Instance.ComputeMaxLeadTime()
         self.GenerateTimeHorizon()
         self.GenerateDistribution( float(forcasterror/100.0), float( rateknown/100.0 ) )

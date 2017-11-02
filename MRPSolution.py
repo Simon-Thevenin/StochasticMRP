@@ -376,7 +376,7 @@ class MRPSolution:
         self.InSamplePercentOnTime = 100 * ( sum( self.InSampleTotalOnTimePerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
 
     #This function print hthe statistic in an Excel file
-    def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed):
+    def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed, evaluationduration):
 
         scenarioset = range(len(self.Scenarioset))
 
@@ -515,7 +515,8 @@ class MRPSolution:
                     self.LostsaleCost,
                     inventorycoststochasticperiod,
                     setupcoststochasticperiod,
-                    backordercoststochasticperiod
+                    backordercoststochasticperiod,
+                    evaluationduration
                     ] \
                   + AverageStockAtLevel + [0]*(5- self.MRPInstance.NrLevel) + nrbackorerxperiod + [0]*(50 - self.MRPInstance.NrTimeBucket)+[nrlostsale]
 

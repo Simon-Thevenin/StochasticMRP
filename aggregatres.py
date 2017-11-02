@@ -280,6 +280,7 @@ columnname = ["Instance name",
               "In Sample BackOrder For 49 Period",
               "In Sample BackOrder For 50 Period",
               "Out Sample Lost Sale"
+              "Evaluation_Duration"
               ]
 
 all_data = pd.DataFrame(columns=columnname)

@@ -134,7 +134,12 @@ class Evaluator:
                             s.Probability = 1.0/ len(  OutOfSampleSolution.Scenarioset )
 
         OutOfSampleSolution.ComputeStatistics()
-        KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed )
+
+        duration = time.time() - start_time
+        print "Duration od evaluation: %r, outofsampl cost:%r total proba:%r" % (duration, average, totalproba)  # %r"%( duration, Evaluated )
+        self.EvaluationDuration = duration
+
+        KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed, duration )
         firstsolution = False
 
         #Save the evaluation result in a file (This is used when the evaluation is parallelized)
@@ -144,8 +149,6 @@ class Evaluator:
                 with open(filename+"KPIStat.txt", "w+") as fp:
                     pickle.dump(KPIStat, fp)
 
-        duration = time.time() - start_time
-        print "Duration od evaluation: %r, outofsampl cost:%r total proba:%r"%( duration, average, totalproba )# %r"%( duration, Evaluated )
 
         if Constants.PrintDetailsExcelFiles:
             namea = "_".join(str(elm) for elm in testidentifier)
@@ -290,16 +293,16 @@ class Evaluator:
         MinAverage = min((1.0 / M) * sum(Evaluated[k][seed] for seed in range(M)) for k in range(K))
         MaxAverage = max((1.0 / M) * sum(Evaluated[k][seed] for seed in range(M)) for k in range(K))
 
-        general = testidentifier + evaluateidentificator + [mean, variance, covariance, LB, UB, MinAverage, MaxAverage,
-                                                            nrerror]
+        #general = testidentifier + evaluateidentificator + [mean, variance, covariance, LB, UB, MinAverage, MaxAverage,
+        #                                                    nrerror]
 
-        columnstab = ["Instance", "Distribution", "Model", "NrInSampleScenario", "Identificator", "Mean", "Variance",
-                      "Covariance", "LB", "UB", "Min Average", "Max Average", "nrerror"]
-        myfile = open(r'./Test/Bounds/TestResultOfEvaluated_%s_%r_%s_%s.csv' % (
-            self.Instance.InstanceName, evaluateidentificator[0], model, date), 'wb')
-        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-        wr.writerow(general)
-        myfile.close()
+        #columnstab = ["Instance", "Distribution", "Model", "NrInSampleScenario", "Identificator", "Mean", "Variance",
+        #              "Covariance", "LB", "UB", "Min Average", "Max Average", "nrerror"]
+       # myfile = open(r'./Test/Bounds/TestResultOfEvaluated_%s_%r_%s_%s.csv' % (
+       #     self.Instance.InstanceName, evaluateidentificator[0], model, date), 'wb')
+       # wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+       # wr.writerow(general)
+       # myfile.close()
         # generaldf = pd.DataFrame(general, index=columnstab)
         # generaldf.to_excel(writer, "General")
         KPIStat = KPIStat[3:]
