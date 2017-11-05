@@ -10,11 +10,11 @@ import csv
 
 NrScenarioEvaluation = "5000"
 
-def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method, mipsetting):
-    print "job_solve_%s_%s_%s_%s_%s_%s_%s_%s" % (
-        instance, distribution, model, nrscenar, generation, seed, method, mipsetting)
-    qsub_filename = "./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s_%s" % (
-        instance, distribution, model, nrscenar, generation, seed, method, mipsetting)
+def Createsolvejob(instance, model, nrscenar, generation, seed, method, mipsetting):
+    print "job_solve_%s_%s_%s_%s_%s_%s_%s" % (
+        instance, model, nrscenar, generation, seed, method, mipsetting)
+    qsub_filename = "./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s" % (
+        instance, model, nrscenar, generation, seed, method, mipsetting)
     qsub_file = open(qsub_filename, 'w')
     qsub_file.write("""
 #!/bin/bash -l
@@ -22,19 +22,19 @@ def Createsolvejob(instance, distribution, model, nrscenar, generation, seed, me
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjob%s%s%s%s%s%s%s%s.txt
+#$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
 mkdir /tmp/thesim/Evaluations
 mkdir /tmp/thesim/Solutions
-python test.py Solve %s %s %s %s %s -s %s  -m %s --mipsetting %s
-""" % (instance, distribution, model, nrscenar, generation, seed, method, mipsetting, instance,
-                          distribution, model, nrscenar, generation, seed, method, mipsetting))
+python test.py Solve %s %s %s %s -s %s  -m %s --mipsetting %s
+""" % (instance, model, nrscenar, generation, seed, method, mipsetting, instance,
+                          model, nrscenar, generation, seed, method, mipsetting))
 
 
-def CreatePolicyJob(instance, distribution, model, nrscenar, generation, seed, Policy):
-    qsub_filename = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
-        instance, distribution, model, nrscenar, generation, method, Policy, seed)
+def CreatePolicyJob(instance, model, nrscenar, generation, seed, Policy):
+    qsub_filename = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
+        instance, model, nrscenar, generation, method, Policy, seed)
     qsub_file = open(qsub_filename, 'w')
     qsub_file.write("""
 #!/bin/bash -l
@@ -42,13 +42,13 @@ def CreatePolicyJob(instance, distribution, model, nrscenar, generation, seed, P
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s%s.txt
+#$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
 mkdir /tmp/thesim/Evaluations
 mkdir /tmp/thesim/Solutions
-python test.py Evaluate %s %s %s %s %s  -s %s -p %s -n %s
-""" % (instance, distribution, model, nrscenar, generation, seed, Policy, NrScenarioEvaluation, instance, distribution, model, nrscenar,
+python test.py Evaluate %s %s %s %s  -s %s -p %s -n %s
+""" % (instance,  model, nrscenar, generation, seed, Policy, NrScenarioEvaluation, instance, model, nrscenar,
         generation, seed, Policy, NrScenarioEvaluation))
 
 
@@ -85,7 +85,6 @@ if __name__ == "__main__":
     Generationset = [ "RQMC"]#, "MC"]cd J
     methodset = ["MIP"]
     Nrseed = 1
-    distributionset = ["NonStationary"]
 
     # Create the sh file for evaluation
     jobevalfilename = "runalljobeval.sh"
@@ -105,7 +104,6 @@ if __name__ == "__main__":
 
 
     for instance in InstanceSet :
-        for distribution in distributionset:
              for model in modelset:
 
                  policyset = [ "Fix"]
@@ -140,35 +138,33 @@ if __name__ == "__main__":
                                                     #"covers3", "cliques1", "cliques2", "cliques3", "allcutmax", "variableselect00",
                                                     #"variableselect1", "variableselect2", "variableselect3", "variableselect4" ]:
 
-                                    Createsolvejob(instance, distribution, model, nrscenar, generation, seed, method, mipsetting)
-                                    filesolve.write("qsub ./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
-                                                    instance, distribution, model, nrscenar, generation, seed, method, mipsetting))
+                                    Createsolvejob(instance, model, nrscenar, generation, seed, method, mipsetting)
+                                    filesolve.write("qsub ./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
+                                                    instance, model, nrscenar, generation, seed, method, mipsetting))
 
                                     for Policy in policyset:
-                                        CreatePolicyJob(instance, distribution, model, nrscenar, generation, seed,
+                                        CreatePolicyJob(instance, model, nrscenar, generation, seed,
                                                         Policy)
-                                        fileeval.write("qsub ./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s \n" % (
-                                            instance, distribution, model, nrscenar, generation, method, Policy, seed))
+                                        fileeval.write("qsub ./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
+                                            instance, model, nrscenar, generation, method, Policy, seed))
 
     for instance in InstanceSet:
-        distributionset = ["NonStationary"]
-        for distribution in distributionset:
-            print "job_evpi_%s_%s" % (instance, distribution)
-            qsub_filename = "./Jobs/job_evpi_%s_%s" % (instance, distribution)
-            qsub_file = open(qsub_filename, 'w')
-            qsub_file.write("""
+        print "job_evpi_%s_%s" % (instance )
+        qsub_filename = "./Jobs/job_evpi_%s" % (instance )
+        qsub_file = open(qsub_filename, 'w')
+        qsub_file.write("""
 #!/bin/bash -l
 #
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjob%s%s.txt
+#$ -o /home/thesim/outputjob%s.txt
 ulimit -v 16000000
 mkdir /tmp/thesim
 mkdir /tmp/thesim/Evaluations
 mkdir /tmp/thesim/Solutions
-python test.py Evaluate %s %s YQFix 1 RQMC -e -n 5000 -s 0
-            """ % ( instance, distribution, instance, distribution) )
+python test.py Evaluate %s YQFix 1 RQMC -e -n 5000 -s 0
+            """ % ( instance, instance) )
 
 
   # Create the sh file
@@ -179,8 +175,6 @@ python test.py Evaluate %s %s YQFix 1 RQMC -e -n 5000 -s 0
 #
 """)
     for instance in InstanceSet :
-         distributionset = ["NonStationary"]
-         for distribution in distributionset:
-                file.write("qsub ./Jobs/job_evpi_%s_%s \n" % (instance, distribution) )
+              file.write("qsub ./Jobs/job_evpi_%s \n" % (instance) )
 
 
