@@ -139,7 +139,7 @@ class Evaluator:
         print "Duration od evaluation: %r, outofsampl cost:%r total proba:%r" % (duration, average, totalproba)  # %r"%( duration, Evaluated )
         self.EvaluationDuration = duration
 
-        KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed, duration )
+        KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed, duration, False )
         firstsolution = False
 
         #Save the evaluation result in a file (This is used when the evaluation is parallelized)

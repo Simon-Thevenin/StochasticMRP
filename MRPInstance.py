@@ -303,7 +303,7 @@ class MRPInstance:
 
     #Save the Instance in an Excel  file
     def SaveCompleteInstanceInExelFile( self ):
-        writer = pd.ExcelWriter("./Instances/" + self.InstanceName  + "_" + self.Distribution + ".xlsx",  engine='openpyxl' ) #+ "b2_ei_"
+        writer = pd.ExcelWriter("./Instances/" + self.InstanceName  + ".xlsx",  engine='openpyxl' ) #+ "b2_ei_"
 
         general = [ self.InstanceName, self.NrProduct, self.NrTimeBucket, self.NrResource, self.Gamma, self.Distribution,  self.NrTimeBucketWithoutUncertaintyBefore, self.NrTimeBucketWithoutUncertaintyAfter  ]
         columnstab = [ "Name", "NrProducts", "NrBuckets", "NrResources", "Gamma", "Distribution", "NrTimeBucketWithoutUncertaintyBefore", "NrTimeBucketWithoutUncertaintyAfter" ]
@@ -317,6 +317,8 @@ class MRPInstance:
                         self.SetupCosts, self.BackorderCosts, self.YearlyAverageDemand, self.YearlyStandardDevDemands,
                         self.LostSaleCost ]
         col = [ "Leadtimes", "StartingInventories", "InventoryCosts", "SetupCosts", "BackorderCosts", "AverageDemand", "StandardDevDemands", "LostSale" ]
+        print self.ProductName
+        print productdata
         productdatadf = pd.DataFrame( productdata, columns=self.ProductName, index=col).transpose();
         productdatadf.to_excel(writer, "Productdata")
 
@@ -336,8 +338,8 @@ class MRPInstance:
 
 
     #Save the Instance in an Excel  file
-    def ReadInstanceFromExelFile( self, instancename, distribution ):
-        wb2 = opxl.load_workbook("./Instances/" + instancename+ "_" + distribution + ".xlsx")
+    def ReadInstanceFromExelFile( self, instancename ):
+        wb2 = opxl.load_workbook("./Instances/" + instancename + ".xlsx")
 
         # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
         Genericdf = Tool.ReadDataFrame(wb2, "Generic")

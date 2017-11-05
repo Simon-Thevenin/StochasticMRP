@@ -246,8 +246,9 @@ class MIPSolver(object):
     #    if self.Model == Constants.ModelYFix: return self.StartBackorderVariableYFix + self.NrBackorderVariableWithoutNonAnticipativity
     #    if self.Model == Constants.Model_Fix: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
 
+    #This function return the index of the variable known demand. They are ordered by product (only for products wiht external demands)
     def GetIndexKnownDemand(self, p):
-        return self.GetStartKnownDemand() + self.Instance.ProductWithExternalDemandIndex.index(p)
+        return self.GetStartKnownDemand() + self.Instance.ProductWithExternalDemandIndex[p]
 
     def GetStartKnownDemand(self):
         if not self.UseImplicitNonAnticipativity: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
@@ -582,7 +583,7 @@ class MIPSolver(object):
 
                     if t == self.DemandKnownUntil -1:
                             #reset right hand side because the demand afterward is saved in a variable to accelerate the update of the MIP
-                            righthandside[0] = 0
+                            righthandside = [ -1 * self.Instance.StartingInventories[p]]
                     else:
                             righthandside[0] = righthandside[0] + self.Scenarios[w].Demands[t][p]
 

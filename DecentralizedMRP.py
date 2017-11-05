@@ -1,6 +1,7 @@
 from scipy import optimize
 from scipy.stats import norm
 from Constants import Constants
+from ScenarioTreeNode import ScenarioTreeNode
 from scipy.integrate import quad
 import numpy as np
 #This object contains logic and methods to compute the classical MRP in decentralized fashion
@@ -17,36 +18,40 @@ class DecentralizedMRP(object):
             return norm.cdf(x, 1,1)#self.Intance.ForecastedAverageDemand[time][product], self.Intance.ForcastedStandardDeviation[time][product])
 
     def ComputeSafetyStock(self):
-        if self.Instance.Distribution <> Constants.NonStationary:
-            raise "Not Impemented for other than normal!!!!"
-
 
         safetystock = [ [ 0.0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
         for p in self.Instance.ProductSet:
             for t in self.Instance.TimeBucketSet:
 
                 ratio = self.Instance.BackorderCosts[p] / (self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] )
-                value = norm.ppf( ratio, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p] )
+
+                #value = norm.ppf( ratio, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p] )
+                x = ScenarioTreeNode.TransformInverse([[ratio]],
+                                                  1,
+                                                  1,
+                                                  self.Instance.Distribution,
+                                                  [self.Instance.ForecastedAverageDemand[t][p]],
+                                                  [self.Instance.ForcastedStandardDeviation[t][p]])[0][0]
                 #def normpdf(x, mu, sigma):
                 #    u = (x - mu) / abs(sigma)
                 #    y = (1 / (np.sqrt(2 * np.pi) * abs(sigma))) * np.exp(-u * u / 2)
                 #    return y
-                step =0.01
-                def dist(a) :
-                     return   norm.cdf(a + step, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p] )
-
-                def incrementalcost(x, p, t):
-                    if  t < self.Instance.NrTimeBucket - 1:
-                        result = self.Instance.InventoryCosts[p] * step * ( dist( x ) ) - self.Instance.BackorderCosts[p] * step * ( 1 - dist( x ) )
-                    else :
-                        result = self.Instance.InventoryCosts[p] *step *  (dist(x)) - (self.Instance.LostSaleCost[p] )*step *  ( 1 - dist(x))
-                    return result
-
-                x = self.Instance.ForecastedAverageDemand[t][p]
-
-                while  incrementalcost(x,p,t) < 0:
-                    x+= step
-                print "optimized %s, value %r, proba %r, forecast %r std %r value %r" %  (x,incrementalcost(x,p,t), dist(x), self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p], value)
+                # step =0.01
+                # def dist(a) :
+                #      return   norm.cdf(a + step, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p] )
+                #
+                # def incrementalcost(x, p, t):
+                #     if  t < self.Instance.NrTimeBucket - 1:
+                #         result = self.Instance.InventoryCosts[p] * step * ( dist( x ) ) - self.Instance.BackorderCosts[p] * step * ( 1 - dist( x ) )
+                #     else :
+                #         result = self.Instance.InventoryCosts[p] *step *  (dist(x)) - (self.Instance.LostSaleCost[p] )*step *  ( 1 - dist(x))
+                #     return result
+                #
+                # x = self.Instance.ForecastedAverageDemand[t][p]
+                #
+                # while  incrementalcost(x,p,t) < 0:
+                #     x+= step
+                print "optimized %s forecast %r std %r  "%  (x, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p])
 
                 safetystock[t][p] = x - self.Instance.ForecastedAverageDemand[t][p]
 

@@ -51,7 +51,7 @@ class GraveInstanceReader(InstanceReader):
         for i, row in self.Supplychaindf.iterrows():
             self.Instance.Requirements[self.Instance.ProductName.index(row.get_value('destinationStage'))][self.Instance.ProductName.index(i)] = 1
 
-    def GetEchelonHoldingCost(self):
+    def GetEchelonHoldingCost(self, uselessparameter):
          result =  [self.Datasheetdf.get_value(self.Instance.ProductName[p], 'stageCost') for p in self.Instance.ProductSet]
          return result
 
@@ -61,28 +61,33 @@ class GraveInstanceReader(InstanceReader):
 
     def GenerateTimeHorizon(self):
         # Consider a time horizon of 20 days plus the total lead time
-        self.Instance.NrTimeBucket = 2 * self.Instance.MaxLeadTime
+        self.Instance.NrTimeBucket =  self.Instance.MaxLeadTime
         self.Instance.NrTimeBucketWithoutUncertaintyBefore = 0
-        self.Instance.NrTimeBucketWithoutUncertaintyAfter = self.Instance.MaxLeadTime
+        self.Instance.NrTimeBucketWithoutUncertaintyAfter = 0
         self.Instance.ComputeIndices()
 
-    def GenerateDistribution(self, forecasterror):
+    def GenerateDistribution(self, forecasterror, rateknown):
         # Generate the sets of scenarios
         self.Instance.YearlyAverageDemand = [ self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand')
                                               for p in self.Instance.ProductSet]
 
+
+        self.Instance.YearlyStandardDevDemands = [self.Datasheetdf.get_value(self.Instance.ProductName[p], 'stdDevDemand')
+                                                    for p in self.Instance.ProductSet]
+
         if self.Instance.Distribution == Constants.SlowMoving:
             self.Instance.YearlyAverageDemand = [1 if self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand') > 0
-                                          else 0
-                                        for p in self.Instance.ProductSet]
+                                                  else 0
+                                                for p in self.Instance.ProductSet]
+            self.Instance.YearlyStandardDevDemands = [1 if self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand') > 0
+                                                  else 0
+                                                for p in self.Instance.ProductSet]
 
         if self.Instance.Distribution == Constants.Uniform:
             self.Instance.YearlyAverageDemand = [0.5 if self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand') > 0
                                                  else 0
                                                  for p in self.Instance.ProductSet]
 
-        self.Instance.YearlyStandardDevDemands = [self.Datasheetdf.get_value(self.Instance.ProductName[p], 'stdDevDemand')
-                                                    for p in self.Instance.ProductSet]
 
         stationarydistribution = ( self.Instance.Distribution == Constants.Normal) \
                                  or ( self.Instance.Distribution == Constants.SlowMoving) \
@@ -97,8 +102,8 @@ class GraveInstanceReader(InstanceReader):
                                            for t in  self.Instance.TimeBucketSet ]
             self.Instance.RateOfKnownDemand = 0.0
         else:
-            self.Instance.ForecastError = [forecasterror for p in self.Instance.ProductSet]
-            self.Instance.RateOfKnownDemand = [math.pow(0.9, t + 1) for t in self.Instance.TimeBucketSet]
+            self.Instance.ForecastError = [ forecasterror for p in self.Instance.ProductSet]
+            self.Instance.RateOfKnownDemand = [math.pow(rateknown, t + 1) for t in self.Instance.TimeBucketSet]
             self.Instance.ForecastedAverageDemand = [[np.floor( np.random.normal(self.Instance.YearlyAverageDemand[p],
                                                                                  self.Instance.YearlyStandardDevDemands[p], 1).clip( min=0.0)).tolist()[0]
                                                       if self.Instance.YearlyStandardDevDemands[p] > 0
@@ -112,7 +117,6 @@ class GraveInstanceReader(InstanceReader):
                                                            else 0.0
                                                             for p in self.Instance.ProductSet ]
                                                          for t in self.Instance.TimeBucketSet]
-
 
 
 
@@ -141,16 +145,17 @@ class GraveInstanceReader(InstanceReader):
                                                for p in self.Instance.ProductSet  ]
 
         if self.Instance.Distribution == Constants.Binomial or self.Instance.Distribution == Constants.Uniform:
-            self.StartingInventories = [ scipy.stats.binom.ppf(0.6, 2 * sumdemand[p], 0.5)
+            self.StartingInventories = [ scipy.stats.binom.ppf(0.75, 2 * sumdemand[p], 0.5)
                                          if ((self.Level[p]) % self.TimeBetweenOrder == 1)
                                          else 0.0
                                          for p in self.Instance.ProductSet]
 
-    def GenerateSetup(self):
+    def GenerateSetup(self, echelonstocktype):
         # Assume a starting inventory is the average demand during the lead time
-        echeloninventorycost = [ self.Instance.InventoryCosts[p] \
-                                 - sum ( self.Instance.Requirements[p][q] * self.Instance.InventoryCosts[q]  for q in self.Instance.ProductSet  )
-                                 for p in self.Instance.ProductSet ]
+        echeloninventorycost =  self.GetEchelonHoldingCost(echelonstocktype)
+        #echeloninventorycost = [ self.Instance.InventoryCosts[p] \
+        #                         - sum ( self.Instance.Requirements[p][q] * self.Instance.InventoryCosts[q]  for q in self.Instance.ProductSet  )
+        #                         for p in self.Instance.ProductSet ]
         print "echeloninventorycost %r" % echeloninventorycost
 
         self.Instance.SetupCosts = [ ( self.DependentAverageDemand[p]
@@ -171,12 +176,12 @@ class GraveInstanceReader(InstanceReader):
                                                          for p in self.Instance.ProductSet)
                                    for k in range(self.Instance.NrResource)]
 
-    def  GenerateCostParameters(self):
-        # Gamma is set to 0.9 which is a common value (find reference!!!)
-        self.Instance.Gamma = 0.9
-        # Back order is twice the  holding cost as in :
-        # Solving the capacitated lot - sizing problem with backorder consideration CH Cheng1 *, MS Madan2, Y Gupta3 and S So4
-        # See how to set this value
-        self.Instance.BackorderCosts = [ 2 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet ]
-        self.Instance.LostSaleCost = [ 20 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet ]
+    # def  GenerateCostParameters(self):
+    #     # Gamma is set to 0.9 which is a common value (find reference!!!)
+    #     self.Instance.Gamma = 0.9
+    #     # Back order is twice the  holding cost as in :
+    #     # Solving the capacitated lot - sizing problem with backorder consideration CH Cheng1 *, MS Madan2, Y Gupta3 and S So4
+    #     # See how to set this value
+    #     self.Instance.BackorderCosts = [ 2 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet ]
+    #     self.Instance.LostSaleCost = [ 20 * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet ]
 

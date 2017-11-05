@@ -248,6 +248,7 @@ def SolveYFixHeuristic():
     GatherEvaluation()
 
 def SolveYFix():
+    start = time.time()
     global SolveInformation
     global OptimizationInfo
     global Model
@@ -269,7 +270,6 @@ def SolveYFix():
     MinSetup = [sum(GivenSetup[t][p] for t in Instance.TimeBucketSet )  for  p in Instance.ProductSet ]
     MaxQuantities = [100000 + max(Quanitties[t][p] for t in Instance.TimeBucketSet )  for  p in Instance.ProductSet ]
     print "maxquanitity %r"%MaxQuantities
-    # GivenSetup = [[1 for p in Instance.ProductSet ] for t in Instance.TimeBucketSet]
     ScenarioGeneration = chosengeneration
     Model = Constants.ModelYFix
     treestructure = GetTreeStructure()
@@ -293,6 +293,8 @@ def SolveYFix():
                                                             saveevaluatetab=True, filename=GetEvaluationFileName())
     # PrintFinalResult()
 
+    end = time.time()
+    solution.TotalTime = end - start
     PrintTestResult()
     #if EVPI:
     #    PrintSolutionToFile(solution)
@@ -307,7 +309,7 @@ def GetPreviouslyFoundSolution():
     result = []
     for s in SeedArray:
         try:
-            TestIdentifier[6] = s
+            TestIdentifier[5] = s
             filedescription = GetTestDescription()
             solution = MRPSolution()
             solution.ReadFromFile( filedescription )
@@ -334,8 +336,8 @@ def ComputeInSampleStatistis():
     for solution in solutions:
         if not Constants.PrintOnlyFirstStageDecision:
             solution.ComputeStatistics()
-            insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample", -1, 0, ScenarioSeed)
-            for i in range(11 + Instance.NrLevel + 51):
+        insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample", -1, 0, ScenarioSeed, -1, True )
+        for i in range(11 + Instance.NrLevel + 51):
                 InSampleKPIStat[i] = InSampleKPIStat[i] + insamplekpisstate[i]
 
     for i in range(11 + Instance.NrLevel + 51):
@@ -397,7 +399,7 @@ def GatherEvaluation():
         try:
             ScenarioSeed = seed
             filename =  GetEvaluationFileName()
-            TestIdentifier[6] = seed
+            TestIdentifier[5] = seed
             print "open file %rEvaluator.txt"%filename
             with open(filename + "Evaluator.txt", 'rb') as f:
                 list = pickle.load(f)
@@ -420,7 +422,7 @@ def GatherEvaluation():
             ComputeInSampleStatistis()
         PrintFinalResult()
     ScenarioSeed = currentseedvalue
-    TestIdentifier[6] = currentseedvalue
+    TestIdentifier[5] = currentseedvalue
 
 
 
@@ -438,14 +440,6 @@ def GetTreeStructure():
         nrtimebucketstochastic = Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyBefore  - Instance.NrTimeBucketWithoutUncertaintyAfter
 
 
-        if NrScenario == 16:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [8, 8, 8]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [2, 2, 2, 2]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 2, 2, 2]
-
 
         if NrScenario == 512:
             if nrtimebucketstochastic == 3:
@@ -455,31 +449,6 @@ def GetTreeStructure():
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [8, 8, 2, 2, 2]
 
-
-        if NrScenario == 256:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [16, 8, 2]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [16, 4, 2, 2]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [16, 2, 2, 2, 2]
-
-        if NrScenario == 50:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [8, 8, 8]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [50, 1, 1, 1]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 2, 2, 2]
-
-
-        if NrScenario == 100:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [100, 1, 1]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [100, 1, 1, 1]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [100, 1, 1, 1, 1]
 
 
         if NrScenario == 200:
@@ -513,44 +482,11 @@ def GetTreeStructure():
 
         if NrScenario == 6400:
             if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [8, 8, 8]
+                stochasticparttreestructure = [50, 32, 4]
             if nrtimebucketstochastic == 4:
                 stochasticparttreestructure = [50, 8, 4, 4]
             if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 2, 2, 2]
-
-        if NrScenario == 80000:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [8, 8, 8]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [50, 25, 8, 8]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 2, 2, 2]
-
-
-        if NrScenario == 6250000:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [8, 8, 8]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [50, 50, 50, 50]
-
-
-        if NrScenario == 3200:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [8, 8, 8]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [200, 16, 1, 1]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 2, 2, 2]
-
-        if NrScenario == 50000:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [8, 8, 8]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [500, 10, 10, 1]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 2, 2, 2]
-
+                stochasticparttreestructure = [50, 8, 4, 2, 2]
 
         if NrScenario == 4096:
             if nrtimebucketstochastic == 3:
@@ -558,48 +494,33 @@ def GetTreeStructure():
             if nrtimebucketstochastic == 4:
                 stochasticparttreestructure = [8, 8, 8, 8]
             if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 8, 4, 2]
+                stochasticparttreestructure = [8, 8, 4, 4, 4]
 
 
-        if NrScenario == 8192:
+        if NrScenario == 80000:
             if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [32, 16, 16]
+                stochasticparttreestructure = [50, 50, 32]
             if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [16, 8, 8, 8]
+                stochasticparttreestructure = [50, 25, 8, 8]
             if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [16, 8, 8, 4, 2]
+                stochasticparttreestructure = [50, 25, 8, 4, 2]
 
-        if NrScenario == 16384:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [64, 16, 16]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [16, 16, 8, 8]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [16, 16, 8, 4, 2]
 
-        if NrScenario == 65536:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [64, 32, 32]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [16, 16, 16, 16]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [16, 16, 8, 8, 4]
 
-        if NrScenario == 125000:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [64, 32, 32]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [50, 50, 50, 1]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [16, 16, 8, 8, 4]
 
-        if NrScenario == 250000:
+        if NrScenario == 3200:
             if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [64, 32, 32]
+                stochasticparttreestructure = [200, 16, 1]
             if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [500, 50, 10, 1]
+                stochasticparttreestructure = [200, 16, 1, 1]
             if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [16, 16, 8, 8, 4]
+                stochasticparttreestructure = [200, 16, 1, 1, 1]
+
+
+
+
+
+
 
         k= 0
         for i in range( Instance.NrTimeBucketWithoutUncertaintyBefore+1, Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyAfter+1):
@@ -658,7 +579,6 @@ def parseArguments():
     # Positional mandatory arguments
     parser.add_argument("Action", help="Evaluate, Solve, VSS, EVPI", type=str)
     parser.add_argument("Instance", help="Cname of the instance.", type=str)
-    parser.add_argument("Distribution", help="Considered didemand disdistribution.", type=str)
     parser.add_argument("Model", help="Average/YQFix/YFiz .", type=str)
     parser.add_argument("NrScenario", help="the number of scenario used for optimization", type=int)
     parser.add_argument("ScenarioGeneration", help="MC,/RQMC.", type=str)
@@ -679,7 +599,6 @@ def parseArguments():
 
     global Action
     global InstanceName
-    global Distribution
     global Model
     global PolicyGeneration
     global NrScenario
@@ -698,7 +617,6 @@ def parseArguments():
 
     Action = args.Action
     InstanceName = args.Instance
-    Distribution = args.Distribution
     Model = args.Model
     Method = args.method
     NrScenario = args.NrScenario
@@ -720,7 +638,7 @@ def parseArguments():
     else:
         NearestNeighborStrategy = PolicyGeneration #to have something in the table of results
     NrEvaluation = args.nrevaluation
-    TestIdentifier = [ InstanceName, Distribution, Model, Method, ScenarioGeneration, NrScenario, ScenarioSeed, EVPI ]
+    TestIdentifier = [ InstanceName,  Model, Method, ScenarioGeneration, NrScenario, ScenarioSeed, EVPI ]
     EvaluatorIdentifier = [ PolicyGeneration, NearestNeighborStrategy, NrEvaluation]
 
 
@@ -853,29 +771,112 @@ def GenerateInstances( ):
     instancenameslist = []
     for row in data_reader:
         instancenameslist.append(row)
-    instancenameslist = instancenameslist[0]
-    for InstanceName in instancenameslist:#["01", "02", "03", "04", "05"]:
-        Distribution = "NonStationary"
-        #for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform",
+    instancenameslist = instancenameslist[0] #instancenameslist:#
+    #for InstanceName in ["01", "02", "03", "04", "05"]:
+       # Distribution = "NonStationary"
+    #    for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform"]:
          #     "NonStationary"]:
-        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk = 50, leadtimestructure = 0 , lostsale = 20)
-        Instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [Instance.InstanceName]
-        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20)
-        Instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [Instance.InstanceName]
-        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=50, leadtimestructure=2, lostsale=20)
-        Instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [Instance.InstanceName]
-        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=50, leadtimestructure=3, lostsale=20)
-        Instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [Instance.InstanceName]
-        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=50, leadtimestructure=4, lostsale=20)
-        Instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [Instance.InstanceName]
-        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=50, leadtimestructure=5, lostsale=20)
-        Instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [Instance.InstanceName]
+    #        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk = 50, leadtimestructure = 0 , lostsale = 20)
+    #        Instance.SaveCompleteInstanceInExelFile()
+    #        instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("01", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("02", "Normal", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("03", "Lumpy", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("04", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("05", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("01", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("02", "Lumpy", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("03", "NonStationary", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("04", "SlowMoving", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("05", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("G5047424", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="l", rk=25, leadtimestructure=1, lostsale=20)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("K5014141", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("G0047232", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("K0014232", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("G5047141", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("K5014424", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    Instance.ReadFromFile("G0047313", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+
+
+    # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20)
+        # Instance.SaveCompleteInstanceInExelFile()
+        # instancecreated = instancecreated + [Instance.InstanceName]
+        # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=50, leadtimestructure=2, lostsale=20)
+        # Instance.SaveCompleteInstanceInExelFile()
+        # instancecreated = instancecreated + [Instance.InstanceName]
+        # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=50, leadtimestructure=3, lostsale=20)
+        # Instance.SaveCompleteInstanceInExelFile()
+        # instancecreated = instancecreated + [Instance.InstanceName]
+        # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=50, leadtimestructure=4, lostsale=20)
+        # Instance.SaveCompleteInstanceInExelFile()
+        # instancecreated = instancecreated + [Instance.InstanceName]
+        # Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk=50, leadtimestructure=5, lostsale=20)
+        # Instance.SaveCompleteInstanceInExelFile()
+        # instancecreated = instancecreated + [Instance.InstanceName]
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
@@ -900,7 +901,7 @@ if __name__ == "__main__":
         #
 
 
-        Instance.ReadInstanceFromExelFile( InstanceName,  Distribution )
+        Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
 
     except KeyError:

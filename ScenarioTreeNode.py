@@ -329,7 +329,7 @@ class ScenarioTreeNode:
 
             for i in range(nrdemand):
                 for p in instance.ProductWithExternalDemand:
-                    demandvector[ instance.ProductWithExternalDemandIndex[p] ][i] = points[p][i]
+                    demandvector[ p][i] = points[ instance.ProductWithExternalDemandIndex[p] ][i]
 
         return demandvector, probability
 

@@ -169,9 +169,6 @@ class TemplemeierInstanceReader( InstanceReader ):
 
             prodindex = 0
             for p in range( len( finishproduct ) ):
-                #for q in self.Instance.ProductSet:
-                #    if self.Instance.ProductName[q] == self.DTFile[p][0]:
-                #      prodindex = q
                 prodindex = finishproduct[p]
                 timeindex = 0
                 stochastictime = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore, self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
@@ -180,14 +177,12 @@ class TemplemeierInstanceReader( InstanceReader ):
 
                     if t <>  self.Instance.NrTimeBucketWithoutUncertaintyBefore + int(self.DTFile[timeindex][0]) - 1:
                         raise NameError( "Wrong time %d - %d -%d"%( t , int(self.DTFile[timeindex][0]) - 1 , timeindex ) )
-                   # if len( self.DTFile[timeindex] ) == 2:
-                   #     p = 1
+
                     self.Instance.ForecastedAverageDemand[t][prodindex] = float( self.DTFile[timeindex][p+1] )
 
                 for t in range( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter,  self.Instance.NrTimeBucket):
                     self.Instance.ForecastedAverageDemand[t][prodindex] = sum( self.Instance.ForecastedAverageDemand[t2][prodindex]
                                                                                for t2 in stochastictime  ) / len(stochastictime)
-
 
             self.Instance.ForcastedStandardDeviation = [ [ (1 - self.Instance.RateOfKnownDemand[t])
                                                            * self.Instance.ForecastError[p]
@@ -200,6 +195,10 @@ class TemplemeierInstanceReader( InstanceReader ):
             self.Instance.YearlyAverageDemand = [ sum( self.Instance.ForecastedAverageDemand[t][p]
                                                        for t in self.Instance.TimeBucketSet ) / self.Instance.NrTimeBucket
                                                   for p in self.Instance.ProductSet]
+
+            self.Instance.YearlyStandardDevDemands = [sum(self.Instance.ForcastedStandardDeviation[t][p]
+                                             for t in self.Instance.TimeBucketSet) / self.Instance.NrTimeBucket
+                                         for p in self.Instance.ProductSet]
 
     #This function generate the starting inventory
     def GenerateStartinInventory(self):
