@@ -664,8 +664,8 @@ def RunEvaluation(  ):
         if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS:
                 policyset = ["Fix", "Re-solve"]
         for policy in policyset:
-                jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
-                    TestIdentifier[0],  TestIdentifier[1],  TestIdentifier[2],  TestIdentifier[5], TestIdentifier[4], TestIdentifier[3],  policy, SeedIndex)
+                jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
+                    TestIdentifier[0],  TestIdentifier[1],   TestIdentifier[4], TestIdentifier[3],  TestIdentifier[2],  policy, SeedIndex)
                 subprocess.call( ["qsub", jobname]  )
 #This function runs the evaluation jobs when the method is solved for the 5 seed:
 def RunEvaluationIfAllSolve(  ):
@@ -678,9 +678,9 @@ def RunEvaluationIfAllSolve(  ):
 
 
         for policy in policyset:
-            jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s_%s" % (
-                TestIdentifier[0], TestIdentifier[1], TestIdentifier[2], TestIdentifier[5], TestIdentifier[4],
-                TestIdentifier[3], policy, SeedIndex)
+            jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
+                TestIdentifier[0], TestIdentifier[1],  TestIdentifier[4],
+                TestIdentifier[3], TestIdentifier[2], policy, SeedIndex)
             subprocess.call( ["qsub", jobname]  )
 
 def RunTestsAndEvaluation():
