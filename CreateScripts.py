@@ -149,7 +149,7 @@ if __name__ == "__main__":
                                             instance, model, nrscenar, generation, method, Policy, seed))
 
     for instance in InstanceSet:
-        print "job_evpi_%s_%s" % (instance )
+        print "job_evpi_%s" % (instance )
         qsub_filename = "./Jobs/job_evpi_%s" % (instance )
         qsub_file = open(qsub_filename, 'w')
         qsub_file.write("""
