@@ -52,7 +52,7 @@ class GraveInstanceReader(InstanceReader):
             self.Instance.Requirements[self.Instance.ProductName.index(row.get_value('destinationStage'))][self.Instance.ProductName.index(i)] = 1
 
     def GetEchelonHoldingCost(self, uselessparameter):
-         result =  [self.Datasheetdf.get_value(self.Instance.ProductName[p], 'stageCost') for p in self.Instance.ProductSet]
+         result =  [ (0.1 / 250) * self.Datasheetdf.get_value(self.Instance.ProductName[p], 'stageCost') for p in self.Instance.ProductSet]
          return result
 
     def GetProductLevel(self):
@@ -98,7 +98,7 @@ class GraveInstanceReader(InstanceReader):
         if stationarydistribution:
             self.Instance.ForecastedAverageDemand = [ self.Instance.YearlyAverageDemand for t in self.Instance.TimeBucketSet]
             self.Instance.ForcastedStandardDeviation = [ self.Instance.YearlyStandardDevDemands for t in self.Instance.TimeBucketSet]
-            self.Instance.ForecastError = [self.Instance.YearlyStandardDevDemands[p] / self.Instance.YearlyAverageDemand[p]
+            self.Instance.ForecastError = [-1
                                            for t in  self.Instance.TimeBucketSet ]
             self.Instance.RateOfKnownDemand = 0.0
         else:

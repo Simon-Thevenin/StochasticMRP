@@ -327,6 +327,8 @@ class MRPSolution:
         self.TotalTime = 0
         self.CplexNrConstraints = -1
         self.CplexNrVariables = -1
+
+
     #This function compute some statistic on the current solution
     def ComputeStatistics( self ):
 
@@ -374,68 +376,81 @@ class MRPSolution:
         nrscenario = len( self.Scenarioset )
 
         self.InSampleAverageDemand = sum( self.InSampleTotalDemandPerScenario[s] for s in self.SenarioNrset ) / nrscenario
-        #self.InSamplePercenBackOrder =  100 * ( sum( self.InSampleTotalBackOrderPerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
-        #self.InSamplePercentLostSale = 100 * ( sum( self.InSampleTotalLostSalePerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
         self.InSamplePercentOnTime = 100 * ( sum( self.InSampleTotalOnTimePerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
 
-    #This function print hthe statistic in an Excel file
-    def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed, evaluationduration, insample):
+
+    #This function print detailed statistics about the obtained solution (avoid using it as it consume memory)
+    def PrintDetailExcelStatistic(self, filepostscript, offsetseed, nrevaluation, solutionseed, testidentifier):
 
         scenarioset = range(len(self.Scenarioset))
+
+        d = datetime.now()
+        date = d.strftime('%m_%d_%Y_%H_%M_%S')
+        writer = pd.ExcelWriter(
+            "./Solutions/" + self.MRPInstance.InstanceName + "_Statistics_" + filepostscript + "_" + date + ".xlsx",
+            engine='openpyxl')
+
+        avginventorydf = pd.DataFrame(self.InSampleAverageInventory,
+                                      columns=self.MRPInstance.ProductName,
+                                      index=self.MRPInstance.TimeBucketSet)
+
+        avginventorydf.to_excel(writer, "AverageInventory")
+
+        avgbackorderdf = pd.DataFrame(self.InSampleAverageBackOrder,
+                                      columns=[self.MRPInstance.ProductName[p] for p in
+                                               self.MRPInstance.ProductWithExternalDemand],
+                                      index=self.MRPInstance.TimeBucketSet)
+
+        avgbackorderdf.to_excel(writer, "AverageBackOrder")
+
+        avgQuantitydf = pd.DataFrame(self.InSampleAverageQuantity,
+                                     columns=self.MRPInstance.ProductName,
+                                     index=self.MRPInstance.TimeBucketSet)
+
+        avgQuantitydf.to_excel(writer, "AverageQuantity")
+
+        avgSetupdf = pd.DataFrame(self.InSampleAverageSetup,
+                                  columns=self.MRPInstance.ProductName,
+                                  index=self.MRPInstance.TimeBucketSet)
+
+        avgSetupdf.to_excel(writer, "AverageSetup")
+
+        perscenariodf = pd.DataFrame([self.InSampleTotalDemandPerScenario, self.InSampleTotalBackOrderPerScenario,
+                                      self.InSampleTotalLostSalePerScenario],
+                                     index=["Total Demand", "Total Backorder", "Total Lost Sales"],
+                                     columns=scenarioset)
+
+        perscenariodf.to_excel(writer, "Info Per scenario")
+
+        general = testidentifier + [self.InSampleAverageDemand, offsetseed, nrevaluation, solutionseed]
+        columnstab = ["Instance", "Distribution", "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed",
+                      "EVPI", "Average demand", "offsetseed", "nrevaluation", "solutionseed"]
+        generaldf = pd.DataFrame(general, index=columnstab)
+        generaldf.to_excel(writer, "General")
+        writer.save()
+
+
+    #This function print the statistic in an Excel file
+    def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed, evaluationduration, insample):
 
         inventorycoststochasticperiod = -1
         setupcoststochasticperiod = -1
         backordercoststochasticperiod =-1
-        # Compute the average inventory level at each level of the supply chain
+
+        # Initialize the average inventory level at each level of the supply chain
         AverageStockAtLevel = [-1 for l in range(self.MRPInstance.NrLevel)]
         nrbackorerxperiod = [ - 1 for t in self.MRPInstance.TimeBucketSet]
 
         nrlostsale = -1
+        #To compute every statistic Constants.PrintOnlyFirstStageDecision should be False
         if (not Constants.PrintOnlyFirstStageDecision) or (not insample):
 
             avginventorydf = pd.DataFrame(self.InSampleAverageInventory,
                                           columns=self.MRPInstance.ProductName,
                                           index=self.MRPInstance.TimeBucketSet)
+
             if Constants.PrintDetailsExcelFiles:
-                d = datetime.now()
-                date = d.strftime('%m_%d_%Y_%H_%M_%S')
-                writer = pd.ExcelWriter("./Solutions/" + self.MRPInstance.InstanceName + "_Statistics_"+filepostscript+"_"+date+".xlsx",
-                                        engine='openpyxl')
-
-
-
-                avginventorydf.to_excel(writer, "AverageInventory" )
-
-                avgbackorderdf = pd.DataFrame(self.InSampleAverageBackOrder,
-                                              columns= [ self.MRPInstance.ProductName[p] for p in self.MRPInstance.ProductWithExternalDemand] ,
-                                              index=self.MRPInstance.TimeBucketSet)
-
-                avgbackorderdf.to_excel(writer, "AverageBackOrder" )
-
-                avgQuantitydf = pd.DataFrame(self.InSampleAverageQuantity,
-                                              columns=self.MRPInstance.ProductName,
-                                              index=self.MRPInstance.TimeBucketSet)
-
-                avgQuantitydf.to_excel(writer, "AverageQuantity" )
-
-                avgSetupdf = pd.DataFrame(self.InSampleAverageSetup,
-                                              columns=self.MRPInstance.ProductName,
-                                              index=self.MRPInstance.TimeBucketSet)
-
-                avgSetupdf.to_excel(writer, "AverageSetup" )
-
-                perscenariodf = pd.DataFrame([ self.InSampleTotalDemandPerScenario, self.InSampleTotalBackOrderPerScenario, self.InSampleTotalLostSalePerScenario ],
-                                             index=[ "Total Demand", "Total Backorder", "Total Lost Sales" ],
-                                             columns=scenarioset)
-
-                perscenariodf.to_excel(writer, "Info Per scenario" )
-
-
-                general = testidentifier+ [ self.InSampleAverageDemand,  offsetseed, nrevaluation, solutionseed ]
-                columnstab = [ "Instance", "Distribution",  "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed" , "EVPI", "Average demand",  "offsetseed", "nrevaluation", "solutionseed" ]
-                generaldf = pd.DataFrame(general, index=columnstab )
-                generaldf.to_excel( writer, "General" )
-                writer.save()
+                self.PrintDetailExcelStatistic( filepostscript, offsetseed, nrevaluation, solutionseed, testidentifier )
 
             #Compute the average inventory level at each level of the supply chain
             AverageStockAtLevel = [ ( sum( sum ( avginventorydf.loc[t,self.MRPInstance.ProductName[p]]
@@ -511,11 +526,13 @@ class MRPSolution:
 
             self.ComputeCost()
             stochasticperiod = range(self.MRPInstance.NrTimeBucketWithoutUncertaintyBefore, self.MRPInstance.NrTimeBucket - self.MRPInstance.NrTimeBucketWithoutUncertaintyAfter )
+
             totalcoststochasticperiod, \
             inventorycoststochasticperiod, \
             backordercoststochasticperiod, \
             setupcoststochasticperiod,\
             lostsalecoststochasticperiod = self.GetCostInInterval( stochasticperiod )
+
         kpistat = [ self.CplexCost,
                     self.CplexTime,
                     self.CplexGap,
@@ -532,7 +549,7 @@ class MRPSolution:
                     backordercoststochasticperiod,
                     evaluationduration
                     ] \
-                  + AverageStockAtLevel + [0]*(5- self.MRPInstance.NrLevel) + nrbackorerxperiod + [0]*(50 - self.MRPInstance.NrTimeBucket)+[nrlostsale]
+                  + AverageStockAtLevel + [0]*(5- self.MRPInstance.NrLevel) + nrbackorerxperiod + [0]*(49 - self.MRPInstance.NrTimeBucket)+[nrlostsale]
 
         data = testidentifier + [  filepostscript, len( self.Scenarioset ) ] + kpistat
         if Constants.PrintDetailsExcelFiles:
@@ -558,7 +575,6 @@ class MRPSolution:
                                   - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time ) for q in self.MRPInstance.ProductSet)
                                   - sum( prevdemand[t][p] for t in range( time ) ) )
                                     for p in self.MRPInstance.ProductSet ]
-
 
         currentinventory = [ ( self.MRPInstance.StartingInventories[p]
                                   + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] , 0 ) ) )

@@ -188,16 +188,6 @@ class Evaluator:
                      givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,
                                                                         givensetup, model)
 
-                #print "qty:%r" % givenquantty
-
-        # for p in self.Instance.ProductSet:
-        #     for t in self.Instance.TimeBucketSet:
-        #         print givensetup
-        #         print givenquantty
-        #         if givensetup[t][p] < 0.5:
-        #                 givenquantty[t][p] = 0
-
-        #print "qty:%r"%givenquantty
         return givensetup, givenquantty
 
     #This method run a forward pass of the SDDP algorithm on the considered set of scenarios
@@ -293,22 +283,21 @@ class Evaluator:
         MinAverage = min((1.0 / M) * sum(Evaluated[k][seed] for seed in range(M)) for k in range(K))
         MaxAverage = max((1.0 / M) * sum(Evaluated[k][seed] for seed in range(M)) for k in range(K))
 
-        #general = testidentifier + evaluateidentificator + [mean, variance, covariance, LB, UB, MinAverage, MaxAverage,
-        #                                                    nrerror]
+        if Constants.PrintDetailsExcelFiles:
+            general = testidentifier + evaluateidentificator + [mean, variance, covariance, LB, UB, MinAverage, MaxAverage,
+                                                            nrerror]
 
-        #columnstab = ["Instance", "Distribution", "Model", "NrInSampleScenario", "Identificator", "Mean", "Variance",
-        #              "Covariance", "LB", "UB", "Min Average", "Max Average", "nrerror"]
-       # myfile = open(r'./Test/Bounds/TestResultOfEvaluated_%s_%r_%s_%s.csv' % (
-       #     self.Instance.InstanceName, evaluateidentificator[0], model, date), 'wb')
-       # wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-       # wr.writerow(general)
-       # myfile.close()
-        # generaldf = pd.DataFrame(general, index=columnstab)
-        # generaldf.to_excel(writer, "General")
-        KPIStat = KPIStat[3:]
+            columnstab = ["Instance", "Distribution", "Model", "NrInSampleScenario", "Identificator", "Mean", "Variance",
+                      "Covariance", "LB", "UB", "Min Average", "Max Average", "nrerror"]
+            myfile = open(r'./Test/Bounds/TestResultOfEvaluated_%s_%r_%s_%s.csv' % (
+                            self.Instance.InstanceName, evaluateidentificator[0], model, date), 'wb')
+            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+            wr.writerow(general)
+            myfile.close()
+
+        KPIStat = KPIStat[6:] #The first values in KPIStats are not interesting for out of sample evalution (see MRPSolution::PrintStatistics)
         EvaluateInfo = [mean, LB, UB, MinAverage, MaxAverage, nrerror] + KPIStat
 
-        # writer.save()
         return EvaluateInfo
 
 
