@@ -23,7 +23,7 @@ class DecentralizedMRP(object):
         for p in self.Instance.ProductSet:
             for t in self.Instance.TimeBucketSet:
 
-                ratio = self.Instance.BackorderCosts[p] / (self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] )
+                ratio = float(self.Instance.BackorderCosts[p] ) / float((self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] ) )
 
                 #value = norm.ppf( ratio, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p] )
                 x = ScenarioTreeNode.TransformInverse([[ratio]],
@@ -51,7 +51,8 @@ class DecentralizedMRP(object):
                 #
                 # while  incrementalcost(x,p,t) < 0:
                 #     x+= step
-                print "optimized %s forecast %r std %r  "%  (x, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p])
+                if Constants.Debug:
+                    print "optimized %s forecast %r std %r  "%  (x, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p])
 
                 safetystock[t][p] = x - self.Instance.ForecastedAverageDemand[t][p]
 
