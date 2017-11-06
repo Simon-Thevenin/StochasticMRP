@@ -235,8 +235,7 @@ def SolveYFixHeuristic():
     solution, mipsolver = MRP(treestructure,
                               averagescenario=False,
                               recordsolveinfo=True,
-                              yfixheuristic = True,
-                              aggregatetree = False)
+                              yfixheuristic = True)
     OptimizationInfo[0] = solution.CplexTime
     OptimizationInfo[1] = solution.CplexGap
 
