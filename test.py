@@ -24,9 +24,22 @@ from Evaluator import Evaluator
 from SDDP import SDDP
 import argparse
 import subprocess
+from ScenarioTreeNode import ScenarioTreeNode
 from DecentralizedMRP import DecentralizedMRP
 import glob as glob
 #pass Debug to true to get some debug information printed
+#
+#
+# clusters = ScenarioTreeNode.GeneratePoints( "MC", 50, 2, "Normal", [10,10], std = [5,5] )
+# from pylab import *
+#
+# for k in range(len(clusters[0][0])):
+#     x = clusters[0][0][k]
+#     y = clusters[0][1][k]
+#     xlim(0, 20)
+#     ylim(0, 20)
+#     plot(x, y, '+', color=(0,0,0) )
+# show() # or savefig(<filename>)
 
 Action = ""
 InstanceName = ""

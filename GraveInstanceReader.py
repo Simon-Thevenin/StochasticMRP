@@ -131,9 +131,12 @@ class GraveInstanceReader(InstanceReader):
                   else sum(self.Actualstd[t][p] for t in range(self.TimeBetweenOrder, min(2 * self.TimeBetweenOrder, self.Instance.NrTimeBucket)))
                   for p in self.Instance.ProductSet]
 
-        servicelevel = 0.6
+        servicelevel = 0.75
 
         print "Level of product %r"%self.Level
+        if self.Instance.Distribution == Constants.Lumpy:
+            servicelevel = 0.95
+
         self.Instance.StartingInventories = [ ScenarioTreeNode.TransformInverse([[servicelevel]],
                                                                        1,
                                                                        1,
@@ -171,7 +174,7 @@ class GraveInstanceReader(InstanceReader):
 
                                             for k in range(self.Instance.NrResource)]
                                            for p in self.Instance.ProductSet]
-        capacityfactor = 2;
+        capacityfactor = 5;
         self.Instance.Capacity = [ capacityfactor * sum( self.DependentAverageDemand[p] * self.Instance.ProcessingTime[p][k]
                                                          for p in self.Instance.ProductSet)
                                    for k in range(self.Instance.NrResource)]
