@@ -400,7 +400,12 @@ class MIPSolver(object):
             for w in self.ScenarioSet:
                 for t in self.Instance.TimeBucketSet:
                     for p in self.Instance.ProductSet:
-                        upperbound[self.GetIndexQuantityVariable(p,t,w)] =  max((self.GivenSetup[t][p]) * self.M,0.0)
+                        #round the setup when not evaluating to avoid cases where Q can take non 0 values / when evaluating, the previous rounding error ust remain valid but bigM should not change
+                        setup = self.GivenSetup[t][p]
+                        if not self.EvaluateSolution and self.YFixHeuristic:
+                            setup = round( self.GivenSetup[t][p], 2)
+                        upperbound[self.GetIndexQuantityVariable(p,t,w)] =  max((setup) * self.M,0.0)
+
 
         self.Cplex.variables.add(obj=[0.0] * nrquantityvariable,
                                 lb=[0.0] * nrquantityvariable,
