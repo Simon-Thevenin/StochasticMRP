@@ -340,7 +340,7 @@ class ScenarioTreeNode:
                                                                    average = [ instance.ForecastedAverageDemand[time][p] for p in instance.ProductWithExternalDemand ],
                                                                    std = [ instance.ForcastedStandardDeviation[time][p] for p in instance.ProductWithExternalDemand ]  )
 
-            resultingnrpoints = len( points)
+            resultingnrpoints = len( points[0])
             demandvector = [[float(instance.ForecastedAverageDemand[time][p])
                              for i in range(resultingnrpoints)] for p in instance.ProductSet]
 
