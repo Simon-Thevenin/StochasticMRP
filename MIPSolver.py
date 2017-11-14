@@ -441,11 +441,12 @@ class MIPSolver(object):
         #Add a variable which represents the known demand:
         if self.DemandKnownUntil >= 0:
             nrknowndemand = len( self.Instance.ProductWithExternalDemand )
-            value = [ sum( self.Scenarios[0].Demands[tau][p] for tau in range(self.DemandKnownUntil +1 ))  for p in self.Instance.ProductWithExternalDemand ]
-            print "KnownDemandValue:%r - %r"%(value, self.DemandKnownUntil  )
+            value = [ sum( self.Scenarios[0].Demands[tau][p] for tau in range(self.DemandKnownUntil ))  for p in self.Instance.ProductWithExternalDemand ]
+            if Constants.Debug:
+                print "KnownDemandValue:%r - %r"%(value, self.DemandKnownUntil  )
             self.Cplex.variables.add(obj=[0.0] * nrknowndemand,
-                                     lb=value,
-                                     ub=value)
+                                         lb=value,
+                                         ub=value)
 
         # self.Cplex.variables.add(obj=[1.0],
         #                           lb=[0.0],
@@ -481,7 +482,7 @@ class MIPSolver(object):
             self.Cplex.variables.set_names(varnames)
 
     # Print a constraint (usefull for debugging)
-    def PrintConstraint( vars, coeff, righthandside):
+    def PrintConstraint( self, vars, coeff, righthandside):
         print "Add the following constraint:"
         print "----------------Var-----------------------------"
         print vars
@@ -593,10 +594,10 @@ class MIPSolver(object):
                             righthandside[0] = righthandside[0] + self.Scenarios[w].Demands[t][p]
 
 
-                    if self.UseSafetyStock:
+                    if self.UseSafetyStock and t >= self.DemandKnownUntil:
                             righthandside[0] = righthandside[0] + safetystock[t][p]
 
-                    if self.Instance.HasExternalDemand[p]:
+                    if self.Instance.HasExternalDemand[p] :
                             backordervar = [self.GetIndexBackorderVariable(p, t, w)]
 
                     if t - self.Instance.Leadtimes[p] >= 0:

@@ -114,16 +114,6 @@ class ScenarioTree:
              rmcpoint = ScenarioTreeNode.TransformInverse( rqmcpoint01, nrscenarion, dimension, self.Instance.Distribution, avgvector, stdvector )
 
 
-             # indices =  [[[self.Instance.ProductWithExternalDemandIndex[p] * nrtimebuckets + t
-             #    if self.Instance.HasExternalDemand[p]
-             #    else -1
-             #               for s in range(nrscenarion)   ]
-             #   for t in range(nrtimebuckets)]
-             #   for p in self.Instance.ProductSet]
-             #
-             # print "Used indices %r"%indices
-
-
              self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebucketswithuncertainty + t ][s]
                                           if  self.Instance.HasExternalDemand[p]
                                           else 0.0

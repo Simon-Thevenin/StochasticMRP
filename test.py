@@ -239,7 +239,7 @@ def SolveYFixHeuristic():
     treestructure = [1, 500] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
     Model = Constants.ModelYQFix
     chosengeneration = ScenarioGeneration
-    ScenarioGeneration = "RQMC"
+    ScenarioGeneration = Constants.RQMC
     solution, mipsolver = MRP( treestructure, False, recordsolveinfo=True )
     GivenSetup = [[solution.Production[0][t][p] for p in Instance.ProductSet]  for t in Instance.TimeBucketSet]
 
@@ -395,7 +395,7 @@ def EvaluateSingleSol(  ):
 
     evaluator = Evaluator(Instance, [solution], [], PolicyGeneration, evpi=EVPI,
                       scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(),
-                      nearestneighborstrategy=NearestNeighborStrategy, evaluateaverage=(Model == Constants.Average),
+                      nearestneighborstrategy=NearestNeighborStrategy, evaluateaverage=(Model == Constants.Average or Model == Constants.AverageSS), usesafetystock = (Model == Constants.AverageSS),
                       evpiseed=SeedArray[0])
 
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  MIPModel, saveevaluatetab= True, filename = GetEvaluationFileName(), evpi=EVPI  )
@@ -785,7 +785,7 @@ def GenerateInstances( ):
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
 
-    Instance.ReadFromFile("03", "Lumpy", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    Instance.ReadFromFile("01",  "Lumpy", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
 
@@ -793,7 +793,7 @@ def GenerateInstances( ):
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
 
-    Instance.ReadFromFile("05", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    Instance.ReadFromFile("02", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
 
@@ -805,7 +805,7 @@ def GenerateInstances( ):
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
 
-    Instance.ReadFromFile("03", "NonStationary", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    Instance.ReadFromFile("04", "NonStationary", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
 
@@ -813,7 +813,7 @@ def GenerateInstances( ):
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
 
-    Instance.ReadFromFile("05", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    Instance.ReadFromFile("04", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
 

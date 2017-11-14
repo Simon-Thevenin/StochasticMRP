@@ -70,11 +70,11 @@ class ScenarioTreeNode:
 
             #if self.Owner.AggregateTree:
                 #print "WARNING!!!!!: Agregate the tree %s"%self.Owner.Model
-            #    if len(nextdemands) > 0:
+            if len(nextdemands) > 0:
             #        nextdemands, probabilities = ScenarioTreeNode.Aggregate(nextdemands, probabilities)
-            #        nrbranch = len(nextdemands[0])
-            #        self.Owner.NrBranches[t] =  nrbranch
-            #        self.Owner.TreeStructure[t] = nrbranch
+                nrbranch = len(nextdemands[0])
+                self.Owner.NrBranches[t] =  nrbranch
+                self.Owner.TreeStructure[t] = nrbranch
 
 
             usaverageforbranch =  ( t   >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter) )\
@@ -269,20 +269,33 @@ class ScenarioTreeNode:
 
         # Generate the points using RQMC
         if method == Constants.RQMC:
-            points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
-            nrnonzero = sum( 1  for p in range( dimensionpoint ) if average[p] > 0 )
-            idnonzero = [  p  for p in range( dimensionpoint ) if average[p] > 0 ]
-            avg = [ average[prod] for prod in idnonzero ]
-            stddev = [std[prod] for prod in idnonzero ]
-            pointsin01 = RQMCGenerator.RQMC01(nrpoints, nrnonzero)
+            newnrpoints = nrpoints
+            nextdemands = [[]]
+            while len( nextdemands[0] ) < nrpoints and newnrpoints <= 100:
+                if Constants.Debug:
+                    print "try with %r points because only %r  points were generated )" %(newnrpoints, len( nextdemands[0]) )
+                points = [[0.0 for pt in range(newnrpoints)] for p in range(dimensionpoint)]
+                nrnonzero = sum( 1  for p in range( dimensionpoint ) if average[p] > 0 )
+                idnonzero = [  p  for p in range( dimensionpoint ) if average[p] > 0 ]
+                avg = [ average[prod] for prod in idnonzero ]
+                stddev = [std[prod] for prod in idnonzero ]
+                pointsin01 = RQMCGenerator.RQMC01(newnrpoints, nrnonzero)
 
-            rqmcpoints = ScenarioTreeNode.TransformInverse( pointsin01, nrpoints, nrnonzero, distribution, avg, stddev )
+                rqmcpoints = ScenarioTreeNode.TransformInverse( pointsin01, newnrpoints, nrnonzero, distribution, avg, stddev )
 
+                for p in range( nrnonzero ):  # instance.ProductWithExternalDemand:
+                        for i in range(newnrpoints):
+                            points[idnonzero[p]] [i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
 
+                nextdemands, proability = ScenarioTreeNode.Aggregate(rqmcpoints,  [ 1.0 / max( newnrpoints, 1) for pt in range( max( newnrpoints, 1) ) ])
+                if len(nextdemands[0]) < nrpoints:
+                    newnrpoints = newnrpoints + 1
+                rqmcpoints = nextdemands
 
+            nrpoints = len(nextdemands[0])
             for p in range( nrnonzero ):  # instance.ProductWithExternalDemand:
-                    for i in range(nrpoints):
-                        points[idnonzero[p]] [i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
+                        for i in range(nrpoints):
+                            points[idnonzero[p]] [i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
 
         if method == "all" and distribution <> Constants.Binomial:
             points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
@@ -327,7 +340,11 @@ class ScenarioTreeNode:
                                                                    average = [ instance.ForecastedAverageDemand[time][p] for p in instance.ProductWithExternalDemand ],
                                                                    std = [ instance.ForcastedStandardDeviation[time][p] for p in instance.ProductWithExternalDemand ]  )
 
-            for i in range(nrdemand):
+            resultingnrpoints = len( points)
+            demandvector = [[float(instance.ForecastedAverageDemand[time][p])
+                             for i in range(resultingnrpoints)] for p in instance.ProductSet]
+
+            for i in range( resultingnrpoints ):
                 for p in instance.ProductWithExternalDemand:
                     demandvector[ p][i] = points[ instance.ProductWithExternalDemandIndex[p] ][i]
 

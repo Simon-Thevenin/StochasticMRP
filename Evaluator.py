@@ -2,6 +2,7 @@ import pandas as pd
 from MIPSolver import MIPSolver
 from ScenarioTree import ScenarioTree
 from Constants import Constants
+from DecentralizedMRP import DecentralizedMRP
 import time
 import math
 from datetime import datetime
@@ -16,7 +17,7 @@ import cplex
 
 class Evaluator:
 
-    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False, evpiseed = -1 ):
+    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False, usesafetystock = False, evpiseed = -1 ):
         self.Instance = instance
         self.Solutions = solutions
         self.SDDPs = sddps
@@ -34,7 +35,7 @@ class Evaluator:
         self.NearestNeighborStrategy = nearestneighborstrategy
         self.OptimizationMethod = optimizationmethod
         self.EvaluateAverage = evaluateaverage
-
+        self.UseSafetyStock = usesafetystock
 
 
     #This function evaluate the performance of a set of solutions obtain with the same method (different solutions due to randomness in the method)
@@ -86,6 +87,11 @@ class Evaluator:
                         givensetup = []
                         givenquantty = []
                     #Solve the MIP and fix the decision to the one given.
+                    if Constants.Debug:
+                        for t in  self.Instance.TimeBucketSet:
+                            print "Quantity:%r" % givenquantty[t]
+                            print "Demand:%r"%scenario.Demands[t]
+
                     if firstscenario:
                         #Defin the MIP
                         if not evpi:
@@ -95,7 +101,7 @@ class Evaluator:
                                                               evaluatesolution=True,
                                                               givenquantities=givenquantty,
                                                               givensetups=givensetup,
-                                                              fixsolutionuntil=self.Instance.NrTimeBucket )
+                                                              fixsolutionuntil=self.Instance.NrTimeBucket)
                         else:
                             mipsolver = MIPSolver(self.Instance, model, scenariotree,
                                                   evpi=True )
@@ -176,7 +182,6 @@ class Evaluator:
             #At each time period the quantity to produce is decided based on the demand known up to now
             for ti in self.Instance.TimeBucketSet:
                 demanduptotimet = [[scenario.Demands[t][p] for p in self.Instance.ProductSet] for t in range(ti)]
-
                 if self.Policy == Constants.NearestNeighbor:
                     givenquantty[ti], previousnode, error = sol.GetQuantityToOrder(self.NearestNeighborStrategy, ti,
                                                                                     demanduptotimet, givenquantty,
@@ -308,7 +313,11 @@ class Evaluator:
     def GetQuantityByResolve(self, demanduptotimet, time, givenquantty, solution, givensetup, model):
         result = [0 for p in self.Instance.ProductSet]
         error = 0
-
+        # decentralized = DecentralizedMRP(self.Instance)
+        # safetystock = decentralized.ComputeSafetyStock()
+        # print safetystock
+        # demanduptotimet = [  [  float(self.Instance.ForecastedAverageDemand[t][p]) + safetystock[t][p]
+        #                            for p in self.Instance.ProductSet] for t in range( time ) ]
         if time <= self.Instance.NrTimeBucketWithoutUncertaintyBefore:  # return the quantity at the root of the node
            # result = [solution.ScenarioTree.RootNode.Branches[0].QuantityToOrderNextTime[p] for p in self.Instance.ProductSet]
 
@@ -354,7 +363,9 @@ class Evaluator:
                                       givenquantities=quantitytofix,
                                       givensetups=givensetup,
                                       fixsolutionuntil=(time -1 ), #time lower or equal
-                                      demandknownuntil =  time )  #time stricty lower
+                                      demandknownuntil =  time,
+                                      usesafetystock= self.UseSafetyStock)
+                #time stricty lower
 
 
 

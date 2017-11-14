@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     nrcenarioyfix =["6400" ]
     nrcenarioyfqix = ["500"]
-    nrcenarioheuristicyfix = [  "6400", "80000" ] # scenarset = ["200", "512", "3200", "6400"]
+    nrcenarioheuristicyfix = [  "6400" ] # scenarset = ["200", "512", "3200", "6400"]
 
     policyyqfix = ["Fix", "Re-solve"]
     policyyfix = ["Re-solve"]
