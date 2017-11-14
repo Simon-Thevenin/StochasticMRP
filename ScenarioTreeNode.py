@@ -73,6 +73,7 @@ class ScenarioTreeNode:
             if len(nextdemands) > 0:
             #        nextdemands, probabilities = ScenarioTreeNode.Aggregate(nextdemands, probabilities)
                 nrbranch = len(nextdemands[0])
+
                 self.Owner.NrBranches[t] =  nrbranch
                 self.Owner.TreeStructure[t] = nrbranch
 
@@ -85,15 +86,15 @@ class ScenarioTreeNode:
             if t == max( self.Owner.FollowGivenUntil + 1, 1):
                 nextfirstbranchid = [b for b in range(nrbranch)]
 
-            self.Branches = [ScenarioTreeNode(owner=owner,
-                                              parent=self,
-                                              firstbranchid=nextfirstbranchid[b],
-                                              instance=instance,
-                                              time=t,
-                                              nrbranch=owner.NrBranches[t + 1],
-                                              demands=[nextdemands[p][b] for p in instance.ProductSet if t > 0],
-                                              proabibilty=probabilities[b],
-                                              averagescenariotree=usaverageforbranch) for b in range(nrbranch)]
+            self.Branches = [ ScenarioTreeNode(owner=owner,
+                                               parent=self,
+                                               firstbranchid=nextfirstbranchid[b],
+                                               instance=instance,
+                                               time=t,
+                                               nrbranch=owner.NrBranches[t + 1],
+                                               demands=[nextdemands[p][b] for p in instance.ProductSet if t > 0],
+                                               proabibilty=probabilities[b],
+                                               averagescenariotree=usaverageforbranch) for b in range(nrbranch) ]
 
         self.Time = time
         # The probability associated with the node
@@ -195,6 +196,9 @@ class ScenarioTreeNode:
         newprobaba = [ sum( probabilities[i]  for i in range(len( tpoint ) ) if tpoint[i] == newpoints[p] ) for p in range( len( newpoints ) ) ]
 
         newpoints = map(list, zip(*newpoints))
+
+
+
         return newpoints, newprobaba
 
     #This method generate a set of points in [0,1] using RQMC. The points are generated with the library given on the website of P. Lecuyer
@@ -285,17 +289,21 @@ class ScenarioTreeNode:
 
                 for p in range( nrnonzero ):  # instance.ProductWithExternalDemand:
                         for i in range(newnrpoints):
-                            points[idnonzero[p]] [i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
+                            points[idnonzero[p]][i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
 
                 nextdemands, proability = ScenarioTreeNode.Aggregate(rqmcpoints,  [ 1.0 / max( newnrpoints, 1) for pt in range( max( newnrpoints, 1) ) ])
+
+
                 if len(nextdemands[0]) < nrpoints:
                     newnrpoints = newnrpoints + 1
                 rqmcpoints = nextdemands
 
             nrpoints = len(nextdemands[0])
+            points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
             for p in range( nrnonzero ):  # instance.ProductWithExternalDemand:
                         for i in range(nrpoints):
                             points[idnonzero[p]] [i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
+
 
         if method == "all" and distribution <> Constants.Binomial:
             points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
@@ -339,16 +347,12 @@ class ScenarioTreeNode:
                                                                    distribution = instance.Distribution,
                                                                    average = [ instance.ForecastedAverageDemand[time][p] for p in instance.ProductWithExternalDemand ],
                                                                    std = [ instance.ForcastedStandardDeviation[time][p] for p in instance.ProductWithExternalDemand ]  )
-
             resultingnrpoints = len( points[0])
             demandvector = [[float(instance.ForecastedAverageDemand[time][p])
                              for i in range(resultingnrpoints)] for p in instance.ProductSet]
 
             for i in range( resultingnrpoints ):
                 for p in instance.ProductWithExternalDemand:
-                    print resultingnrpoints
-                    print p
-                    print i
                     demandvector[ p][i] = points[ instance.ProductWithExternalDemandIndex[p] ][i]
 
         return demandvector, probability
