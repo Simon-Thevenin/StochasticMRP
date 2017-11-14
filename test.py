@@ -61,6 +61,8 @@ NrScenario = -1
 Model = "YFix"
 Method = "MIP"
 ComputeAverageSolution = False
+Rule = "L4L"
+
 
 #How to generate a policy from the solution of a scenario tree
 PolicyGeneration = "NearestNeighbor"
@@ -317,6 +319,9 @@ def SolveYFix():
         PrintSolutionToFile( solution )
         RunEvaluation()
     GatherEvaluation()
+
+def SolveWithRule(rule):
+    solution = DecentralizedMRP.SolveWithSimpleRule( Instance, Rule )
 
 def GetPreviouslyFoundSolution():
     result = []
@@ -904,6 +909,9 @@ if __name__ == "__main__":
 
         if Model == Constants.ModelHeuristicYFix:
                 SolveYFixHeuristic()
+
+        if Model == Constants.L4L or Model == Constants.EOQ or Model == Constants.POQ or Model == Constants.SilverMeal :
+                SolveWithRule(Model)
             #else:
             #    RunTestsAndEvaluation()
 

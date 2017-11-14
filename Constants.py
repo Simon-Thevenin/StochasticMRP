@@ -29,7 +29,10 @@ class Constants:
     VSS= "VSS"
     MIP = "MIP"
     SDDP = "SDDP"
-
+    L4L = "L4L"
+    EOQ  = "EOQ"
+    POQ = "POQ"
+    SilverMeal  = "SilverMeal"
 
     Debug =False
     PrintSolutionFileToExcel = False

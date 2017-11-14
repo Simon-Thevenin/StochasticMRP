@@ -1,9 +1,8 @@
-from scipy import optimize
-from scipy.stats import norm
 from Constants import Constants
 from ScenarioTreeNode import ScenarioTreeNode
-from scipy.integrate import quad
-import numpy as np
+from MRPSolution import MRPSolution
+
+
 #This object contains logic and methods to compute the classical MRP in decentralized fashion
 class DecentralizedMRP(object):
 
@@ -13,9 +12,6 @@ class DecentralizedMRP(object):
     def __init__(self, mrpinstance):
         self.Instance =mrpinstance
 
-    def GetDistribution(self, time, product, x):
-        if self.Instance.Distribution == Constants.NonStationary:
-            return norm.cdf(x, 1,1)#self.Intance.ForecastedAverageDemand[time][product], self.Intance.ForcastedStandardDeviation[time][product])
 
     def ComputeSafetyStock(self):
 
@@ -32,25 +28,7 @@ class DecentralizedMRP(object):
                                                   self.Instance.Distribution,
                                                   [self.Instance.ForecastedAverageDemand[t][p]],
                                                   [self.Instance.ForcastedStandardDeviation[t][p]])[0][0]
-                #def normpdf(x, mu, sigma):
-                #    u = (x - mu) / abs(sigma)
-                #    y = (1 / (np.sqrt(2 * np.pi) * abs(sigma))) * np.exp(-u * u / 2)
-                #    return y
-                # step =0.01
-                # def dist(a) :
-                #      return   norm.cdf(a + step, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p] )
-                #
-                # def incrementalcost(x, p, t):
-                #     if  t < self.Instance.NrTimeBucket - 1:
-                #         result = self.Instance.InventoryCosts[p] * step * ( dist( x ) ) - self.Instance.BackorderCosts[p] * step * ( 1 - dist( x ) )
-                #     else :
-                #         result = self.Instance.InventoryCosts[p] *step *  (dist(x)) - (self.Instance.LostSaleCost[p] )*step *  ( 1 - dist(x))
-                #     return result
-                #
-                # x = self.Instance.ForecastedAverageDemand[t][p]
-                #
-                # while  incrementalcost(x,p,t) < 0:
-                #     x+= step
+
                 if Constants.Debug:
                     print "optimized %s forecast %r std %r  "%  (x, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p])
 
@@ -58,41 +36,53 @@ class DecentralizedMRP(object):
 
         return safetystock
 
+    #This method solve the instance given in argument wth the rule given in argument
+    #The problem is decomposed by product, starting from end item to highest level component.
+    #After each planning decision, the capacity is checked, and repair is applied if required.
+    def SolveWithSimpleRule( self, instance, rule ):
+        # Create an empty solution
+        result =  MRPSolution( instance= instance )
 
-    #def ComputeSafetyStock(self):
+        # sort the prduct by level
+        self.LevelSet = sorted(set(self.Level), reverse=False)
 
-    #    ss = 0
+        # For each product, at each time periode, apply the decision rule to find the quantity to produce / order
+        for l in self.LevelSet:
+            prodinlevel = [p for p in self.Instance.ProductSet if self.Level[p] == l]
+            for p in prodinlevel:
+                for t in instance.TimeBucketSet:
+                    self.GetIdealQuantityToOrder(instance, p, t, rule)
 
-    #    if self.Instance.Distribution <> Constants.NonStationary:
-    #        raise "Not Impemented for other than normal!!!!"
+                    # After each decision, check capacity, and repair if necessary
+                    self.RepairCapacity(p, t)
 
-        #compute the distribution of the average demand
-        #meandeamnd = [mean( self.Instance.ForecastedAverageDemand[t][p] for t in self.Instance.TimeBucketSet) for p in self.Instance.ProductSet ]
-        #meanstd  = [sum( np.power(self.Instance.ForecastedAverageDemand[t][p], 2) / np.power(self.Instance.NrTimeBucket, 2) for t in self.Instance.TimeBucketSet) for p in
-        #              self.Instance.ProductSet]
+    # This method apply lot for lot to solve the instance
+    def GetIdealQuantityToOrder(self, instance,  p, t, rule):
+        if rule == Constants.L4L:
+            self.LotForLot(instance,  p, t)
+        if rule == Constants.EOQ:
+            self.EOQ( instance,  p, t)
+        if rule == Constants.POQ:
+            self.POQ(instance,  p, t)
+        if rule == Constants.SilverMeal:
+            self.SilverMeal(instance,  p, t)
 
-                 #def normpdf(x, mu, sigma):
-                #    u = (x - mu) / abs(sigma)
-                #    y = (1 / (np.sqrt(2 * np.pi) * abs(sigma))) * np.exp(-u * u / 2)
-                #    return y
-        #         step =0.01
-        #         def dist(a) :
-        #              return   norm.cdf(a + step, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p] )
-        #
-        #         def incrementalcost(x, p, t):
-        #             if  t < self.Instance.NrTimeBucket - 1:
-        #                 result = self.Instance.InventoryCosts[p] * step * ( dist( x ) ) - self.Instance.BackorderCosts[p] * step * ( 1 - dist( x ) )
-        #             else :
-        #                 result = self.Instance.InventoryCosts[p] *step *  (dist(x)) - (self.Instance.LostSaleCost[p] )*step *  ( 1 - dist(x))
-        #             return result
-        #
-        #         x = self.Instance.ForecastedAverageDemand[t][p]
-        #
-        #         while  incrementalcost(x,p,t) < 0:
-        #             x+= step
-        #         print "optimized %s, value %r, proba %r, forecast %r std %r" %  (x,incrementalcost(x,p,t), dist(x), self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p])
-        #
-        #         ss[t][p] = x - self.Instance.ForecastedAverageDemand[t][p]
-        # safetystock = [[ss for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+    #return the quantity to order at time t for product p in instance with Lot for Lot rule
+    def LotForLot( self, instance,  p, t ):
+        return 0
 
-        #return safetystock
+    # return the quantity to order at time t for product p in instance with EOQ
+    def EOQ(self, instance, p, t):
+        return 0
+
+    # return the quantity to order at time t for product p in instance with POQ
+    def POQ(self, instance, p, t):
+        return 0
+
+    # return the quantity to order at time t for product p in instance with SilverMeal
+    def SilverMeal(self, instance, p, t):
+        return 0
+
+    #This method check if the quantity of product p inserted in period t violate the capacity contraitn
+    def RepairCapacity( self, p, t ):
+        print "To be implemented"
