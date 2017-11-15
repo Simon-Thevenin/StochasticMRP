@@ -263,6 +263,8 @@ class MRPSolution:
         self.BackOrder = [ [ [bbackorderdf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductWithExternalDemand]  for t in timebucketset] for s in scenarioset ]
 
 
+
+
     #constructor
     def __init__( self, instance = None, solquantity= None, solproduction= None, solinventory= None, solbackorder= None, scenarioset= None, scenriotree= None, partialsolution = False ):
         self.MRPInstance = instance
@@ -303,6 +305,7 @@ class MRPSolution:
         self.SetupCost = -1
         self.TotalCost =-1
         self.IsPartialSolution = partialsolution
+        self.NotCompleteSolution = False
 
         if instance is not None and not self.IsPartialSolution:
             self.ComputeCost()
@@ -423,7 +426,7 @@ class MRPSolution:
         perscenariodf.to_excel(writer, "Info Per scenario")
 
         general = testidentifier + [self.InSampleAverageDemand, offsetseed, nrevaluation, solutionseed]
-        columnstab = ["Instance", "Distribution", "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed",
+        columnstab = ["Instance", "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed",
                       "EVPI", "Average demand", "offsetseed", "nrevaluation", "solutionseed"]
         generaldf = pd.DataFrame(general, index=columnstab)
         generaldf.to_excel(writer, "General")
@@ -585,7 +588,7 @@ class MRPSolution:
         for p in self.MRPInstance.ProductSet:
              if projinventory[p] > - 0.0001 : projectedinventory[p] = projinventory[p]
              else:
-                 if not self.MRPInstance.HasExternalDemand[p]:
+                 if not self.MRPInstance.HasExternalDemand[p] and not self.NotCompleteSolution:
                      print "inventory: %r " % (projinventory)
                      raise NameError(" A product without external demand cannot have backorder")
                  projectedbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
@@ -593,7 +596,7 @@ class MRPSolution:
         if Constants.Debug:
             print "prevdemand: %r "%(prevdemand)
             print "prevquanity: %r "%(prevquanity)
-            print "currentbackorder: %r "%(NameError)
+            print "projectedbackorder: %r "%(projectedbackorder)
             print "projected stock level in next period: %r "%(projectedinventory)
 
         return projectedbackorder, projectedinventory, currrentstocklevel

@@ -34,7 +34,7 @@ class Constants:
     POQ = "POQ"
     SilverMeal  = "SilverMeal"
 
-    Debug =False
+    Debug = False
     PrintSolutionFileToExcel = False
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = True

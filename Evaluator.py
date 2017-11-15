@@ -82,15 +82,16 @@ class Evaluator:
 
                         if self.OptimizationMethod == Constants.SDDP:
                             givensetup, givenquantty = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
+                            # Solve the MIP and fix the decision to the one given.
+                            if Constants.Debug:
+                                for t in self.Instance.TimeBucketSet:
+                                    print "Quantity:%r" % givenquantty[t]
+                                    print "Demand:%r" % scenario.Demands[t]
 
                     else:
                         givensetup = []
                         givenquantty = []
-                    #Solve the MIP and fix the decision to the one given.
-                    if Constants.Debug:
-                        for t in  self.Instance.TimeBucketSet:
-                            print "Quantity:%r" % givenquantty[t]
-                            print "Demand:%r"%scenario.Demands[t]
+
 
                     if firstscenario:
                         #Defin the MIP

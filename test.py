@@ -321,7 +321,8 @@ def SolveYFix():
     GatherEvaluation()
 
 def SolveWithRule(rule):
-    solution = DecentralizedMRP.SolveWithSimpleRule( Instance, Rule )
+    decentralizedmrp = DecentralizedMRP(Instance)
+    solution = decentralizedmrp.SolveWithSimpleRule( Rule )
 
 def GetPreviouslyFoundSolution():
     result = []

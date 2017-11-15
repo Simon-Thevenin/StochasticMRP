@@ -134,8 +134,8 @@ class GraveInstanceReader(InstanceReader):
         servicelevel = 0.75
 
         print "Level of product %r"%self.Level
-        if self.Instance.Distribution == Constants.Lumpy:
-            servicelevel = 0.95
+        #if self.Instance.Distribution == Constants.Lumpy:
+        #    servicelevel = 0.95
 
         self.Instance.StartingInventories = [ ScenarioTreeNode.TransformInverse([[servicelevel]],
                                                                        1,
@@ -148,7 +148,7 @@ class GraveInstanceReader(InstanceReader):
                                                for p in self.Instance.ProductSet  ]
 
         if self.Instance.Distribution == Constants.Binomial or self.Instance.Distribution == Constants.Uniform:
-            self.StartingInventories = [ scipy.stats.binom.ppf(0.75, 2 * sumdemand[p], 0.5)
+            self.StartingInventories = [ scipy.stats.binom.ppf(servicelevel, 2 * sumdemand[p], 0.5)
                                          if ((self.Level[p]) % self.TimeBetweenOrder == 1)
                                          else 0.0
                                          for p in self.Instance.ProductSet]

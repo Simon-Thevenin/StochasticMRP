@@ -74,8 +74,8 @@ class ScenarioTreeNode:
             #        nextdemands, probabilities = ScenarioTreeNode.Aggregate(nextdemands, probabilities)
                 nrbranch = len(nextdemands[0])
 
-                self.Owner.NrBranches[t] =  nrbranch
-                self.Owner.TreeStructure[t] = nrbranch
+                self.Owner.NrBranches[time] =  nrbranch
+                self.Owner.TreeStructure[time] = nrbranch
 
 
             usaverageforbranch =  ( t   >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter) )\
@@ -219,7 +219,7 @@ class ScenarioTreeNode:
             result = [[scipy.stats.poisson.ppf(points[i][p], average[p]) for i in range(nrpoints)] for p in range(dimensionpoint)]
 
         if distribution == Constants.Lumpy:
-            result = [[scipy.stats.poisson.ppf( ( points[i][p] - 0.8 ) / 0.2, (average[p]) / 0.2 ) +1 if points[i][p] > 0.8 else 0 for i in range(nrpoints)] for p in range(dimensionpoint)]
+            result = [[scipy.stats.poisson.ppf( ( points[i][p] - 0.5 ) / 0.5, (average[p]) / 0.5 ) +1 if points[i][p] > 0.5 else 0 for i in range(nrpoints)] for p in range(dimensionpoint)]
 
         if distribution == Constants.Uniform:
             result = [[0.0 if points[i][p] < 0.5 else 1.0
@@ -257,10 +257,10 @@ class ScenarioTreeNode:
                 for p in range(dimensionpoint):
                     for i in range(nrpoints):
                         randompoint = scipy.random.uniform(0, 1)
-                        if randompoint < 0.8 or average[p] == 0:
+                        if randompoint < 0.5 or average[p] == 0:
                             points[p][i] = 0;
                         else:
-                            points[p][i] = scipy.stats.poisson.ppf( (randompoint - 0.8 ) / 0.2, (average[p]) / 0.2 ) +1
+                            points[p][i] = scipy.stats.poisson.ppf( (randompoint - 0.5 ) / 0.5, (average[p]) / 0.5 ) +1
             elif distribution == Constants.Uniform:
                 points = [[0.0 if(  average[p] <= 0 or np.random.uniform(0,1) < 0.5 ) else 1.0
                                for i in range(nrpoints)] for p in range(dimensionpoint)]
@@ -275,7 +275,7 @@ class ScenarioTreeNode:
         if method == Constants.RQMC:
             newnrpoints = nrpoints
             nextdemands = [[]]
-            while len( nextdemands[0] ) < nrpoints and newnrpoints <= 100:
+            while len( nextdemands[0] ) < nrpoints and newnrpoints <= 1000:
                 if Constants.Debug:
                     print "try with %r points because only %r  points were generated )" %(newnrpoints, len( nextdemands[0]) )
                 points = [[0.0 for pt in range(newnrpoints)] for p in range(dimensionpoint)]

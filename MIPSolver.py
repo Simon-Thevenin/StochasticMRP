@@ -1303,9 +1303,9 @@ class MIPSolver(object):
     def GetBigMDemValue( instance, scenarioset, p ):
         #mdem = 10000000
         if instance.HasExternalDemand[ p ] :
-            mdem = ( sum( max( s.Demands[t][p] for s in scenarioset ) for t in instance.TimeBucketSet ) )
+            mdem = ( sum( max( s.Demands[t][p] for s in scenarioset ) for t in instance.TimeBucketSet ) ) + instance.StartingInventories[p]
         else :
-            mdem = sum( instance.Requirements[q][p] * MIPSolver.GetBigMDemValue( instance, scenarioset, q ) for q in instance.RequieredProduct[p] )
+            mdem = sum( instance.Requirements[q][p] * MIPSolver.GetBigMDemValue( instance, scenarioset, q ) for q in instance.RequieredProduct[p] ) + instance.StartingInventories[p]
 
 
         return mdem
@@ -1318,6 +1318,7 @@ class MIPSolver(object):
         #compute m based on the capacity of the resource
         mres = min( instance.Capacity[k] / instance.ProcessingTime[p][k]  if instance.ProcessingTime[p][k] > 0  else Constants.Infinity for k in range( instance.NrResource ) )
         m = min( [ mdem, mres ] )
+        print "M = %r"%m
         return m
 
     def ModifyMipForScenarioTree(self, scenariotree):
