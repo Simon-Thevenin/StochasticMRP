@@ -170,6 +170,18 @@ class DecentralizedMRP(object):
 
         return result
 
+     # This function return the quantity to remove to make the plan feasible according to requirementt in components
+    def CheckRequirement(self, p, t):
+            result = -Constants.Infinity
+            # for each resource:
+            for q in self.Instance.ProductSet:
+                if self.Instance.Requirment[][] > 0:
+                    #Compute the quantity of q reuire to produce
+
+                    if result < quantityviolation:
+                        result = quantityviolation
+
+            return result
     # This function return the quantity to remove to make the plan feasible according to capacities
     def MoveBackward(self, quantity,  p, t):
 
@@ -198,7 +210,6 @@ class DecentralizedMRP(object):
 
         #No feasible solution were found
         if bestspreadingcost == Constants.Infinity:
-
             return False
 
         else:

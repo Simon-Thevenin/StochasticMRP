@@ -27,6 +27,7 @@ ulimit -v 16000000
 mkdir /tmp/thesim
 mkdir /tmp/thesim/Evaluations
 mkdir /tmp/thesim/Solutions
+mkdir /tmp/thesim/CPLEXLog
 python test.py Solve %s %s %s %s -s %s  -m %s --mipsetting %s
 """ % (instance, model, nrscenar, generation, seed, method, mipsetting, instance,
                           model, nrscenar, generation, seed, method, mipsetting))
@@ -47,6 +48,7 @@ ulimit -v 16000000
 mkdir /tmp/thesim
 mkdir /tmp/thesim/Evaluations
 mkdir /tmp/thesim/Solutions
+mkdir /tmp/thesim/CPLEXLog
 python test.py Evaluate %s %s %s %s  -s %s -p %s -n %s
 """ % (instance,  model, nrscenar, generation, seed, Policy, NrScenarioEvaluation, instance, model, nrscenar,
         generation, seed, Policy, NrScenarioEvaluation))
@@ -163,6 +165,7 @@ ulimit -v 16000000
 mkdir /tmp/thesim
 mkdir /tmp/thesim/Evaluations
 mkdir /tmp/thesim/Solutions
+mkdir /tmp/thesim/CPLEXLog
 python test.py Evaluate %s YQFix 1 RQMC -e -n 5000 -s 0
             """ % ( instance, instance) )
 
