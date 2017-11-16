@@ -30,7 +30,8 @@ class MIPSolver(object):
                  warmstart = False,
                  usesafetystock = False,
                  maxquantities = [],
-                 minsetup = []):
+                 minsetup = [],
+                 logfile = ""):
 
         # Define some attributes and functions which help to et the index of the variable.
         # the attributs nrquantiyvariables, nrinventoryvariable, nrproductionvariable, and nrbackordervariable gives the number
@@ -87,7 +88,7 @@ class MIPSolver(object):
         self.Cplex = cplex.Cplex()
 
         self.EvaluateSolution = evaluatesolution
-
+        self.logfilename= logfile
         #This list is filled after the resolution of the MIP
         self.SolveInfo = []
 
@@ -1084,19 +1085,35 @@ class MIPSolver(object):
              self.Cplex.parameters.mip.cuts.flowcovers.set(-1)
 
 
+    def ReadNrVariableConstraint(self, logfilename):
+
+        nrvariable= 0
+        nrconstraints = 0
+
+        with open(logfilename, 'r') as searchfile:
+            for line in searchfile:
+                if 'Reduced LP has' in line or ('Reduced MIP has' in line and not "binaries" in line):
+                    line = line.split()
+                    nrvariable = int(line[5])
+                    nrconstraints = int(line[3])
+                    print "there are %r variable and %r constraint"%(nrvariable, nrconstraints)
+        return nrvariable, nrconstraints
+
     #This function set the parameter of CPLEX, run Cplex, and return a solution
     def Solve( self, createsolution = True ):
         start_time = time.time()
         # Our aim is to minimize cost.
+
         self.Cplex.objective.set_sense(self.Cplex.objective.sense.minimize)
         if Constants.Debug:
             self.Cplex.write("mrp.lp")
         else:
             #name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
-            self.Cplex.set_log_stream( None )
-            self.Cplex.set_results_stream( None )
-            self.Cplex.set_warning_stream( None )
-            self.Cplex.set_error_stream( None )
+            #file = open("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename, 'w')
+            self.Cplex.set_log_stream("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename)
+            self.Cplex.set_results_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
+            self.Cplex.set_warning_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
+            self.Cplex.set_error_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
 
         # tune the paramters
         self.Cplex.parameters.timelimit.set( Constants.AlgorithmTimeLimit )
@@ -1116,6 +1133,8 @@ class MIPSolver(object):
         #    self.Cplex.parameters.benders.strategy.set(3)
         self.Cplex.solve()
 
+
+        nrvariable, nrconstraints = self.ReadNrVariableConstraint("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename)
 
         buildtime = end_modeling - start_time;
         solvetime = time.time() - end_modeling;
@@ -1148,8 +1167,8 @@ class MIPSolver(object):
                                 Solution.CplexGap,
                                 #sol.progress.get_num_iterations(),
                                 #sol.progress.get_num_nodes_processed(),
-                                self.Cplex.variables.get_num(),
-                                self.Cplex.linear_constraints.get_num(),
+                                nrvariable,
+                                nrconstraints,
                                 Solution.InventoryCost,
                                 Solution.BackOrderCost,
                                 Solution.SetupCost,
@@ -1318,7 +1337,6 @@ class MIPSolver(object):
         #compute m based on the capacity of the resource
         mres = min( instance.Capacity[k] / instance.ProcessingTime[p][k]  if instance.ProcessingTime[p][k] > 0  else Constants.Infinity for k in range( instance.NrResource ) )
         m = min( [ mdem, mres ] )
-        print "M = %r"%m
         return m
 
     def ModifyMipForScenarioTree(self, scenariotree):

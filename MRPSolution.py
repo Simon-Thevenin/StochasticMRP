@@ -574,14 +574,14 @@ class MRPSolution:
 
         # sum of quantity and initial inventory minus demands
         projinventory = [ ( self.MRPInstance.StartingInventories[p]
-                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] +1, 0 ) ) )
-                                  - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time ) for q in self.MRPInstance.ProductSet)
+                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] , 0 ) ) )
+                                  - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time +1 ) for q in self.MRPInstance.ProductSet)
                                   - sum( prevdemand[t][p] for t in range( time ) ) )
                                     for p in self.MRPInstance.ProductSet ]
 
         currentinventory = [ ( self.MRPInstance.StartingInventories[p]
                                   + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] , 0 ) ) )
-                                  - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time ) for q in self.MRPInstance.ProductSet)
+                                  - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time +1 ) for q in self.MRPInstance.ProductSet)
                                   - sum( prevdemand[t][p] for t in range( time ) ) )
                                     for p in self.MRPInstance.ProductSet ]
 
@@ -591,7 +591,7 @@ class MRPSolution:
                  if not self.MRPInstance.HasExternalDemand[p] and not self.NotCompleteSolution:
                      print "inventory: %r " % (projinventory)
                      raise NameError(" A product without external demand cannot have backorder")
-                 projectedbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
+                     projectedbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
 
         if Constants.Debug:
             print "prevdemand: %r "%(prevdemand)
@@ -599,7 +599,7 @@ class MRPSolution:
             print "projectedbackorder: %r "%(projectedbackorder)
             print "projected stock level in next period: %r "%(projectedinventory)
 
-        return projectedbackorder, projectedinventory, currrentstocklevel
+        return projectedbackorder, projinventory, currrentstocklevel
 
 
     def GetFeasibleNodesAtTime( self, time, currentlevelofinventory ):

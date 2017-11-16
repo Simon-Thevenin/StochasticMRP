@@ -139,7 +139,8 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
                           warmstart = warmstart,
                           usesafetystock=UseSS,
                           maxquantities = MaxQuantities,
-                          minsetup = MinSetup)
+                          minsetup = MinSetup,
+                          logfile=GetTestDescription())
     if Constants.Debug:
         Instance.PrintInstance()
         #for s in mipsolver.ScenarioSet:
