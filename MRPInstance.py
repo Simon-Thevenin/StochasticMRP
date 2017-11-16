@@ -141,7 +141,7 @@ class MRPInstance:
         self.ComputeIndices()
         self.ComputeLevel()
         self.ComputeMaxLeadTime()
-        self.RequieredProduct = [ [ q for q in self.ProductSet  if self.Requirements[ q ][ p ] > 0.0 ]
+        self.RequieredProduct = [ [ q for q in self.ProductSet  if self.Requirements[ q ][ p] > 0.0 ]
                                                                     for p in self.ProductSet ]
         self.ComputeHasExternalDemand()
         self.ComputeUseForFabrication()

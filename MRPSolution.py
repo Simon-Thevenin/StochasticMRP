@@ -28,7 +28,12 @@ class MRPSolution:
         return result
 
     def GetGeneralInfoDf(self):
-        general = [self.MRPInstance.InstanceName, self.MRPInstance.Distribution, self.ScenarioTree.Owner.Model,
+        model = ""
+        if not self.ScenarioTree.Owner is None:
+            model = self.ScenarioTree.Owner.Model
+        else:
+            model = "Rule"
+        general = [self.MRPInstance.InstanceName, self.MRPInstance.Distribution, model,
                    self.CplexCost, self.CplexTime, self.TotalTime, self.CplexGap, self.CplexNrConstraints, self.CplexNrVariables, self.IsPartialSolution]
         columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "TotalTime", "CplexGap", "CplexNrConstraints",
                       "CplexNrVariables", "IsPartialSolution"]
@@ -574,9 +579,9 @@ class MRPSolution:
 
         # sum of quantity and initial inventory minus demands
         projinventory = [ ( self.MRPInstance.StartingInventories[p]
-                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] , 0 ) ) )
+                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] + 1 , 0 ) ) )
                                   - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time +1 ) for q in self.MRPInstance.ProductSet)
-                                  - sum( prevdemand[t][p] for t in range( time ) ) )
+                                  - sum( prevdemand[t][p] for t in range( time + 1) ) )
                                     for p in self.MRPInstance.ProductSet ]
 
         currentinventory = [ ( self.MRPInstance.StartingInventories[p]

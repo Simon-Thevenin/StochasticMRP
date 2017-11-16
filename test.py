@@ -324,6 +324,8 @@ def SolveYFix():
 def SolveWithRule(rule):
     decentralizedmrp = DecentralizedMRP(Instance)
     solution = decentralizedmrp.SolveWithSimpleRule( Rule )
+    PrintTestResult()
+    PrintSolutionToFile(solution)
 
 def GetPreviouslyFoundSolution():
     result = []
@@ -397,8 +399,8 @@ def EvaluateSingleSol(  ):
     if Model == Constants.ModelHeuristicYFix:
         MIPModel = Constants.ModelYFix
         Model = Constants.ModelYFix
-
-
+    #if  IsRule( Model ) :
+    #   Model =  Constants.ModelYQFix
 
     evaluator = Evaluator(Instance, [solution], [], PolicyGeneration, evpi=EVPI,
                       scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(),
@@ -869,6 +871,10 @@ def GenerateInstances( ):
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
     data_rwriter.writerow(instancecreated)
 
+def IsRule( s ):
+   result =  Model == Constants.L4L or Model == Constants.EOQ or Model == Constants.POQ or Model == Constants.SilverMeal
+   return result
+
 if __name__ == "__main__":
     instancename = ""
     try:
@@ -912,7 +918,7 @@ if __name__ == "__main__":
         if Model == Constants.ModelHeuristicYFix:
                 SolveYFixHeuristic()
 
-        if Model == Constants.L4L or Model == Constants.EOQ or Model == Constants.POQ or Model == Constants.SilverMeal :
+        if IsRule( Model ) :
                 SolveWithRule(Model)
             #else:
             #    RunTestsAndEvaluation()

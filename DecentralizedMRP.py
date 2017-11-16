@@ -21,7 +21,7 @@ class DecentralizedMRP(object):
     def ComputeSafetyStock(self):
 
         safetystock = [ [ 0.0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
-        for p in self.Instance.ProductSet:
+        for p in self.Instance.ProductWithExternalDemand:
             for t in self.Instance.TimeBucketSet:
 
                 ratio = float(self.Instance.BackorderCosts[p] ) / float((self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] ) )
@@ -90,7 +90,15 @@ class DecentralizedMRP(object):
                     # After each decision, check capacity, and repair if necessary
                     self.RepairCapacity(p, t)
 
+        self.RepairRequirement( None )
+
+        self.InferY()
+
+        self.InferInventory()
+
         self.Solution.Print()
+
+        return self.Solution
 
     # This method apply lot for lot to solve the instance
     def GetIdealQuantityToOrder(self,  p, t, rule):
@@ -105,16 +113,24 @@ class DecentralizedMRP(object):
             result = self.SilverMeal( p, t )
         return result
 
+
+    def GetProjetedInventory(self, time):
+        prevquanity = [[self.Solution.ProductionQuantity[0][t1][p1] for p1 in self.Instance.ProductSet] for t1 in
+                       self.Instance.TimeBucketSet]
+        print prevquanity
+        prevdemand = [[self.Solution.Scenarioset[0].Demands[t1][p1] for p1 in self.Instance.ProductSet] for t1 in
+                      self.Instance.TimeBucketSet]
+        print prevdemand
+        quantity = 0
+        projectedbackorder, projectedinventory, currrentstocklevel = self.Solution.GetCurrentStatus(prevdemand, prevquanity, time)
+        return projectedbackorder, projectedinventory
+
     #return the quantity to order at time t for product p in instance with Lot for Lot rule
     def LotForLot( self, p, t ):
         print "prodct %r time %r"%(p,t)
-        prevquanity  = [ [ self.Solution.ProductionQuantity[0][t1][p1] for  p1 in self.Instance.ProductSet] for t1 in self.Instance.TimeBucketSet ]
-        print prevquanity
-        prevdemand = [ [ self.Solution.Scenarioset[0].Demands[t1][p1] * 10 for  p1 in self.Instance.ProductSet] for t1 in self.Instance.TimeBucketSet ]
-        print prevdemand
         quantity = 0
         if  t + self.Instance.Leadtimes[p] < self.Instance.NrTimeBucket:
-            projectedbackorder, projectedinventory, currrentstocklevel = self.Solution.GetCurrentStatus( prevdemand, prevquanity, t + self.Instance.Leadtimes[p]   )
+            projectedbackorder, projectedinventory = self.GetProjetedInventory(  t + self.Instance.Leadtimes[p]   )
 
             print projectedinventory
             quantity = - projectedinventory[p]
@@ -122,7 +138,7 @@ class DecentralizedMRP(object):
             if self.Instance.HasExternalDemand[p]:
                 quantity = quantity + projectedbackorder[ self.Instance.ProductWithExternalDemandIndex[p]]
 
-        print "Add quantity:%r"%(max( quantity, 0) )
+        print "Add quantity:%r"%( max( quantity, 0) )
 
 
         quantity = max( quantity, 0)
@@ -131,7 +147,21 @@ class DecentralizedMRP(object):
 
     # return the quantity to order at time t for product p in instance with EOQ
     def EOQ(self, p, t):
-        return 0
+        quantity = 0
+        if t + self.Instance.Leadtimes[p] < self.Instance.NrTimeBucket:
+            projectedbackorder, projectedinventory = self.GetProjetedInventory(t + self.Instance.Leadtimes[p])
+
+            print projectedinventory
+            quantity = - projectedinventory[p]
+
+            if self.Instance.HasExternalDemand[p]:
+                quantity = quantity + projectedbackorder[self.Instance.ProductWithExternalDemandIndex[p]]
+
+        print "Add quantity:%r" % (max(quantity, 0))
+
+        quantity = max(quantity, 0)
+
+        return quantity
 
     # return the quantity to order at time t for product p in instance with POQ
     def POQ(self, p, t):
@@ -159,7 +189,34 @@ class DecentralizedMRP(object):
 
             #If forward move fail, remove the quantity
 
+                # Push the production forward to ensure the plan is feasible according to the requirments in components
 
+    def RepairRequirement(self, afterprod):
+            # This replaning can lead to an infeasible downstream  schedule.
+            # sort the prduct by level
+            self.LevelSet = sorted(set(self.Instance.Level), reverse=True)
+
+            # For each product, at each time periode, apply the decision rule to find the quantity to produce / order
+            for l in self.LevelSet:
+                if afterprod is None or l < self.Instance.Level[afterprod]:
+                    prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
+                    for p in prodinlevel:
+                        # For each downstream product (sorted by level)
+                        quantitytoshift = 0
+
+                        # for each time period (from t to the end of horizon)
+                        for t in self.Instance.TimeBucketSet:
+                            # compute the quantity to shift
+                            quantityinviolation = max(self.GetViolation(p, t), 0)
+                            quantitytoshift += quantityinviolation
+                            self.Solution.ProductionQuantity[0][t][p] -= quantityinviolation
+                            # Get the maximum quanitty which can be shifted to that period (consider capacity and raw material)
+                            if t < self.Instance.NrTimeBucket - 1:
+                                maximumshiftable = max(- self.GetViolation(p, t + 1), 0)
+                                shiftedquantity = min(maximumshiftable, quantitytoshift)
+                                self.Solution.ProductionQuantity[0][t + 1][p] += shiftedquantity
+                                quantitytoshift -= shiftedquantity
+                                # At the end of the forward, some quantity might not be planned if capacity is very restrictive, but the solution is feasible
 
 
     #This function return the quantity to remove to make the plan feasible according to capacities
@@ -185,12 +242,17 @@ class DecentralizedMRP(object):
     def CheckRequirement(self, p, t):
             result = -Constants.Infinity
             # for each resource:
-            for q in self.Instance.RequieredProduct[p]:
-                if self.Planned[t-self.Instance.Leadtimes[q]][q]:
+            for q in self.Instance.ProductSet:
+                if self.Instance.Requirements[p][q] > 0 and (t-self.Instance.Leadtimes[q] < 0 or self.Planned[t-self.Instance.Leadtimes[q]][q]):
                     #Compute the quantity of q reuire to produce p
-                    requiredquantity = self.Instance.Requirements[q][p] * self.Solution.ProductionQuantity[0][t][p]
+                    requiredquantity = self.Instance.Requirements[p][q] * self.Solution.ProductionQuantity[0][t][p]
 
-                    quantityviolation = requiredquantity -  self.Solution.ProductionQuantity[0][t-self.Instance.Leadtimes[q]][q]
+                    if (t - self.Instance.Leadtimes[q]) >= 0 :
+                        projectedbackorder, projectedinventory = self.GetProjetedInventory( t )
+
+                        quantityviolation = min(requiredquantity, -( projectedinventory[q] / self.Instance.Requirements[p][q] ) )
+                    else:
+                        quantityviolation = requiredquantity
                     if result < quantityviolation:
                         result = quantityviolation
             return result
@@ -260,32 +322,26 @@ class DecentralizedMRP(object):
             remainingquantity = remainingquantity - quantityreplanattau2
 
 
-        self.RepairRequirement()
+        self.RepairRequirement( prod )
 
-    #Push the production forward to ensure the plan is feasible according to the requirments in components
-    def RepairRequirement(self, afterprod):
-        #This replaning can lead to an infeasible downstream  schedule.
-        # sort the prduct by level
-        self.LevelSet = sorted(set(self.Instance.Level), reverse=True)
+    #This functioninfer the value of Y from the value of Q
+    def InferY( self ):
+        self.Solution.Production = [ [ [ 1 if self.Solution.ProductionQuantity[0][t][p] > 0 else 0
+                                         for p in self.Instance.ProductSet]
+                                         for t in self.Instance.TimeBucketSet ] ]
 
-        # For each product, at each time periode, apply the decision rule to find the quantity to produce / order
-        for l in self.LevelSet:
-            if l < self.Instance.Level[afterprod]:
-                prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
-                for p in prodinlevel:
-                    #For each downstream product (sorted by level)
-                    quantitytoshift = 0
 
-                    #for each time period (from t to the end of horizon)
-                    for t in self.Instance.TimeBucketSet:
-                        # compute the quantity to shift
-                        quantityinviolation = max( self.GetViolation(p, t), 0)
-                        quantitytoshift +=  quantityinviolation
-                        self.Solution.ProductionQuantity[0][t][p] -= quantityinviolation
-                        #Get the maximum quanitty which can be shifted to that period (consider capacity and raw material)
-                        if t < self.Instance.NrTimeBucket - 1:
-                            maximumshiftable = max( - self.GetViolation(p, t+1), 0)
-                            shiftedquantity = min( maximumshiftable,  quantitytoshift )
-                            self.Solution.ProductionQuantity[0][t+1][p] += shiftedquantity
-                            quantitytoshift -= shiftedquantity
-        #At the end of the forward, some quantity might not be planned if capacity is very restrictive, but the solution is feasible
+    #This functioninfer the value of Y from the value of Q
+    def InferInventory( self ):
+        self.Solution.InventoryLevel = [ [ [ 0 for p in self.Instance.ProductSet ]
+                                           for t in self.Instance.TimeBucketSet ] ]
+
+        self.Solution.BackOrder = [[ [ 0 for p in self.Instance.ProductWithExternalDemand ]
+                                     for t in self.Instance.TimeBucketSet ] ]
+        for t in self.Instance.TimeBucketSet:
+            backorder, inventory = self.GetProjetedInventory( t )
+            for p in self.Instance.ProductSet:
+                print inventory
+                self.Solution.InventoryLevel[0][t][p] = max( inventory[p], 0 )
+                if self.Instance.HasExternalDemand[p]:
+                    self.Solution.BackOrder[0][t][ self.Instance.ProductWithExternalDemandIndex[p] ] = backorder[p]

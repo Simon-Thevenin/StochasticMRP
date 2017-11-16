@@ -96,7 +96,7 @@ class Evaluator:
                     if firstscenario:
                         #Defin the MIP
                         if not evpi:
-                            mipsolver = MIPSolver(self.Instance, model, scenariotree,
+                            mipsolver = MIPSolver(self.Instance, Constants.ModelYQFix, scenariotree,
                                                               evpi=False,
                                                               implicitnonanticipativity=False,
                                                               evaluatesolution=True,
