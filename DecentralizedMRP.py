@@ -13,6 +13,11 @@ class DecentralizedMRP(object):
         self.Instance =mrpinstance
         self.Solution = None
 
+        #This array indicates whether a produt and time period have already been planned
+        self.Planned = [ [ False for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
+
+
+
     def ComputeSafetyStock(self):
 
         safetystock = [ [ 0.0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
@@ -78,7 +83,9 @@ class DecentralizedMRP(object):
             prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
             for p in prodinlevel:
                 for t in  self.Instance .TimeBucketSet:
-                    self.GetIdealQuantityToOrder( p, t, rule)
+                    quantity = self.GetIdealQuantityToOrder( p, t, rule)
+                    self.Solution.ProductionQuantity[0][t][p]  += quantity
+                    self.Planned[t][p] = True
 
                     # After each decision, check capacity, and repair if necessary
                     self.RepairCapacity(p, t)
@@ -87,21 +94,23 @@ class DecentralizedMRP(object):
 
     # This method apply lot for lot to solve the instance
     def GetIdealQuantityToOrder(self,  p, t, rule):
+        result = -1
         if rule == Constants.L4L:
-            self.LotForLot( p, t)
+            result = self.LotForLot( p, t)
         if rule == Constants.EOQ:
-            self.EOQ( p, t)
+            result = self.EOQ( p, t)
         if rule == Constants.POQ:
-            self.POQ( p, t)
+            result = self.POQ( p, t)
         if rule == Constants.SilverMeal:
-            self.SilverMeal( p, t)
+            result = self.SilverMeal( p, t )
+        return result
 
     #return the quantity to order at time t for product p in instance with Lot for Lot rule
     def LotForLot( self, p, t ):
         print "prodct %r time %r"%(p,t)
         prevquanity  = [ [ self.Solution.ProductionQuantity[0][t1][p1] for  p1 in self.Instance.ProductSet] for t1 in self.Instance.TimeBucketSet ]
         print prevquanity
-        prevdemand = [ [ self.Solution.Scenarioset[0].Demands[t1][p1] +10000 for  p1 in self.Instance.ProductSet] for t1 in self.Instance.TimeBucketSet ]
+        prevdemand = [ [ self.Solution.Scenarioset[0].Demands[t1][p1] * 10 for  p1 in self.Instance.ProductSet] for t1 in self.Instance.TimeBucketSet ]
         print prevdemand
         quantity = 0
         if  t + self.Instance.Leadtimes[p] < self.Instance.NrTimeBucket:
@@ -113,8 +122,10 @@ class DecentralizedMRP(object):
             if self.Instance.HasExternalDemand[p]:
                 quantity = quantity + projectedbackorder[ self.Instance.ProductWithExternalDemandIndex[p]]
 
-        print "Add quantity:%r"%(max( quantity, 0) *3)
-        self.Solution.ProductionQuantity[0][t][p] = max( quantity, 0)
+        print "Add quantity:%r"%(max( quantity, 0) )
+
+
+        quantity = max( quantity, 0)
 
         return quantity
 
@@ -175,15 +186,18 @@ class DecentralizedMRP(object):
             result = -Constants.Infinity
             # for each resource:
             for q in self.Instance.RequieredProduct[p]:
-                #Compute the quantity of q reuire to produce p
-                print self.Instance.Requirements
-                requiredquantity = self.Instance.Requirements[q][p] * self.Solution.ProductionQuantity[0][t][p]
+                if self.Planned[t-self.Instance.Leadtimes[q]][q]:
+                    #Compute the quantity of q reuire to produce p
+                    requiredquantity = self.Instance.Requirements[q][p] * self.Solution.ProductionQuantity[0][t][p]
 
-                quantityviolation = requiredquantity -  self.Solution.ProductionQuantity[0][t-self.Instance.Leadtimes[p]][q]
-                if result < quantityviolation:
-                    result = quantityviolation
-
+                    quantityviolation = requiredquantity -  self.Solution.ProductionQuantity[0][t-self.Instance.Leadtimes[q]][q]
+                    if result < quantityviolation:
+                        result = quantityviolation
             return result
+
+    def GetViolation(self, p, t):
+        result = max( self.CheckRequirement( p, t ), self.CheckCapacity( p, t ) )
+        return result
 
     # This function return the quantity to remove to make the plan feasible according to capacities
     def MoveBackward(self, quantity,  p, t):
@@ -217,9 +231,9 @@ class DecentralizedMRP(object):
 
         else:
             print "chosen spreading %r" % bestspreading
-            self.Solution.ProductionQuantity[0][t][p] = self.Solution.ProductionQuantity[0][t][p] - quantity
+            self.Solution.ProductionQuantity[0][t][p] -= quantity
             for tau in range(t):
-                self.Solution.ProductionQuantity[0][tau][p] =  self.Solution.ProductionQuantity[0][tau][p]  + bestspreading[tau]
+                self.Solution.ProductionQuantity[0][tau][p] +=  bestspreading[tau]
             return True
 
     def ComputeCostReplan( self, spreading, p, t ):
@@ -233,18 +247,16 @@ class DecentralizedMRP(object):
             cost = cost + inventorycost + setupcost
         return cost
 
-    def GetViolation(self, p, t):
-        result = max( self.CheckRequirement( p, t ), self.CheckCapacity( p, t ) )
-        return result
 
     # This function return the quantity to remove to make the plan feasible according to capacities
-    def MoveForward(self, quantity, p, t):
+    def MoveForward(self, quantity, prod, time):
         remainingquantity = quantity
+        self.Solution.ProductionQuantity[0][time][prod] -= remainingquantity
         #for each time period greater than t, move as much as possible
-        for tau in range(t, self.Instance.NrTimeBucket):
+        for tau in range(time, self.Instance.NrTimeBucket):
             #get the quantity to move if the
-            quantityreplanattau2 = min(-self.CheckCapacity(p, tau), remainingquantity)
-            self.Solution.ProductionQuantity[0][tau][p] = quantityreplanattau2
+            quantityreplanattau2 = min(-self.CheckCapacity(prod, tau), remainingquantity)
+            self.Solution.ProductionQuantity[0][tau][prod] += quantityreplanattau2
             remainingquantity = remainingquantity - quantityreplanattau2
 
         #This replaning can lead to an infeasible downstream  schedule.
@@ -253,19 +265,22 @@ class DecentralizedMRP(object):
 
         # For each product, at each time periode, apply the decision rule to find the quantity to produce / order
         for l in self.LevelSet:
-            prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
-            for p in prodinlevel:
-                #For each downstream product (sorted by level)
-                quantitytoshift = 0
+            if l < self.Instance.Level[prod]:
+                prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
+                for p in prodinlevel:
+                    #For each downstream product (sorted by level)
+                    quantitytoshift = 0
 
-                #for each time period (from t to the end of horizon)
-                for t in self.Instance.TimeBucketSet:
-                    # compute the quantity to shift
-                    quantityinviolation = max( self.GetViolation(p, t), 0)
-                    quantitytoshift +=  quantityinviolation
-                    self.Solution.ProductionQuantity[0][t][p] -= quantityinviolation
-                    #Get the maximum quanitty which can be shifted to that period (consider capacity and raw material)
-                    maximumshiftable = max( - self.GetViolation(p, t+1), 0)
-                    self.Solution.ProductionQuantity[0][t+1][p] += maximumshiftable
-                    quantitytoshift -= maximumshiftable
+                    #for each time period (from t to the end of horizon)
+                    for t in self.Instance.TimeBucketSet:
+                        # compute the quantity to shift
+                        quantityinviolation = max( self.GetViolation(p, t), 0)
+                        quantitytoshift +=  quantityinviolation
+                        self.Solution.ProductionQuantity[0][t][p] -= quantityinviolation
+                        #Get the maximum quanitty which can be shifted to that period (consider capacity and raw material)
+                        if t < self.Instance.NrTimeBucket - 1:
+                            maximumshiftable = max( - self.GetViolation(p, t+1), 0)
+                            shiftedquantity = min( maximumshiftable,  quantitytoshift )
+                            self.Solution.ProductionQuantity[0][t+1][p] += shiftedquantity
+                            quantitytoshift -= shiftedquantity
         #At the end of the forward, some quantity might not be planned if capacity is very restrictive, but the solution is feasible

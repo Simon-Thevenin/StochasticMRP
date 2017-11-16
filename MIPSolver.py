@@ -1132,9 +1132,10 @@ class MIPSolver(object):
         #if self.Model == Constants.ModelYFix:
         #    self.Cplex.parameters.benders.strategy.set(3)
         self.Cplex.solve()
-
-
-        nrvariable, nrconstraints = self.ReadNrVariableConstraint("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename)
+        nrvariable= -1
+        nrconstraints = -1
+        if not self.EvaluateSolution:
+            nrvariable, nrconstraints = self.ReadNrVariableConstraint("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename)
 
         buildtime = end_modeling - start_time;
         solvetime = time.time() - end_modeling;
