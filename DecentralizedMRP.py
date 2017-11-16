@@ -240,4 +240,5 @@ class DecentralizedMRP(object):
                 #Get the maximum quanitty which can be shifted to that period (consider capacity and raw material)
 
 
+
         #At the end of the forward, some quantity might not be planned if capacity is very restrictive, but the solution is feasible
