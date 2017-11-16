@@ -259,13 +259,18 @@ class DecentralizedMRP(object):
             self.Solution.ProductionQuantity[0][tau][prod] += quantityreplanattau2
             remainingquantity = remainingquantity - quantityreplanattau2
 
+
+        self.RepairRequirement()
+
+    #Push the production forward to ensure the plan is feasible according to the requirments in components
+    def RepairRequirement(self, afterprod):
         #This replaning can lead to an infeasible downstream  schedule.
         # sort the prduct by level
         self.LevelSet = sorted(set(self.Instance.Level), reverse=True)
 
         # For each product, at each time periode, apply the decision rule to find the quantity to produce / order
         for l in self.LevelSet:
-            if l < self.Instance.Level[prod]:
+            if l < self.Instance.Level[afterprod]:
                 prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
                 for p in prodinlevel:
                     #For each downstream product (sorted by level)
