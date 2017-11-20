@@ -2,6 +2,7 @@ from Constants import Constants
 from ScenarioTreeNode import ScenarioTreeNode
 from MRPSolution import MRPSolution
 from ScenarioTree import ScenarioTree
+import math
 
 #This object contains logic and methods to compute the classical MRP in decentralized fashion
 class DecentralizedMRP(object):
@@ -12,17 +13,107 @@ class DecentralizedMRP(object):
     def __init__(self, mrpinstance):
         self.Instance =mrpinstance
         self.Solution = None
+        self.SafetyStock = None
+        self.EOQValues = None
+        self.FixUntil = -1
+        self.FixedSetup = False
 
         #This array indicates whether a produt and time period have already been planned
         self.Planned = [ [ False for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
 
+    # Compute the average (dependent) demand
+    def ComputeAverageDemand(self):
 
+        depdemand = [sum(self.Instance.ForecastedAverageDemand[t][p] for t in self.Instance.TimeBucketSet)
+                     / (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyBefore)  for p in self.Instance.ProductSet]
+
+        levelset = sorted(set(self.Instance.Level), reverse=False)
+
+        for l in levelset:
+            prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
+            for p in prodinlevel:
+                depdemand[p] = sum(depdemand[q] * self.Instance.Requirements[q][p] for q in self.Instance.ProductSet) \
+                               + depdemand[p]
+
+        return depdemand
+
+    def ComputeDependentDemandBasedOnProjectedInventory(self, product):
+        result = [ 0 for t in self.Instance.TimeBucketSet ]
+        previousprojected = 0
+        for t in self.Instance.TimeBucketSet:
+                    projectedbackorder, projectedinventory = self.GetProjetedInventory(t)
+                    result[t] += -projectedinventory[product] + previousprojected
+                    previousprojected = projectedinventory[product]
+
+        if self.FixUntil + 2 + self.Instance.Leadtimes[product] < self.Instance.NrTimeBucket:
+            result[self.FixUntil + 1 + self.Instance.Leadtimes[product]] = sum(
+                result[tau] for tau in range(self.FixUntil + 1, self.FixUntil + 2 + self.Instance.Leadtimes[product]))
+
+        return result
+
+    def ComputeDependentDemand( self, product ):
+        demand = [ self.Solution.Scenarioset[0].Demands[t][product] for t in self.Instance.TimeBucketSet ]
+
+        levelset = sorted(set(self.Instance.Level), reverse=False)
+
+        for l in levelset:
+            prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
+            for p in prodinlevel:
+                for t in self.Instance.TimeBucketSet:
+                    demand[t] += self.Solution.ProductionQuantity[0][t][p] * self.Instance.Requirements[p][product]
+
+        return demand
+
+    #this function compute the Economic order quantity for each item
+    def ComputeEOQ(self):
+
+        depdemand = self.ComputeAverageDemand()
+
+        #Use max, because some instance have products with 0 setup cost. EOQ should be greater than 0
+        eoq = [  max( round( math.sqrt(2.0 * self.Instance.SetupCosts[p] * depdemand[p] / self.Instance.InventoryCosts[p]), 0), 1) for p in self.Instance.ProductSet]
+
+        return eoq
+
+    #This function compute the period with order according to POQ
+    def ComputePOQ(self, product ):
+
+        depdemand = self.ComputeAverageDemand()
+
+        eoq = self.ComputeEOQ()
+
+        poq = [ int(eoq[p] / depdemand[p]) +1 for p in self.Instance.ProductSet ]
+
+        firstperiod = self.GetFirstPeriodOrder( product )
+        #print "first period:%r"%firstperiod
+        for t in self.Instance.TimeBucketSet:
+            if (t >= firstperiod and (((t - firstperiod) % poq[product]) == 0) ):
+                self.Solution.Production[0][t][product] = 1
+            else:
+                self.Solution.Production[0][t][product] = 0
+
+
+
+        return poq
+
+    #This return the first period with order (used for POQ and silver meal)
+    def GetFirstPeriodOrder(self, p):
+        #Find the period where the Projected inventory in negative
+        t = self.FixUntil +1
+        if  t + self.Instance.Leadtimes[p]< self.Instance.NrTimeBucket :
+            projectedbackorder, projectedinventory= self.GetProjetedInventory( t + self.Instance.Leadtimes[p] )
+            while projectedinventory[p] > 0 and t + self.Instance.Leadtimes[p]< self.Instance.NrTimeBucket:
+                projectedbackorder, projectedinventory = self.GetProjetedInventory(t + self.Instance.Leadtimes[p])
+                t += 1
+
+
+
+        return t
 
     def ComputeSafetyStock(self):
 
         safetystock = [ [ 0.0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
         for p in self.Instance.ProductWithExternalDemand:
-            for t in self.Instance.TimeBucketSet:
+            for t in range(self.FixUntil+1, self.Instance.NrTimeBucket):
 
                 ratio = float(self.Instance.BackorderCosts[p] ) / float((self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] ) )
 
@@ -34,8 +125,6 @@ class DecentralizedMRP(object):
                                                   [self.Instance.ForecastedAverageDemand[t][p]],
                                                   [self.Instance.ForcastedStandardDeviation[t][p]])[0][0]
 
-                if Constants.Debug:
-                    print "optimized %s forecast %r std %r  "%  (x, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p])
 
                 safetystock[t][p] = x - self.Instance.ForecastedAverageDemand[t][p]
 
@@ -68,12 +157,37 @@ class DecentralizedMRP(object):
         result.NotCompleteSolution = True
         return result
 
+
+    def FixGivenSolution(self, givensetup, givenquantities, demanduptotimet ):
+
+        self.FixedSetup = ( len(givensetup) > 0 )
+
+        if self.FixUntil  >= 0:
+            for p in self.Instance.ProductSet:
+                for t in self.Instance.TimeBucketSet:
+                    self.Solution.Production[0][t][p] = givensetup[t][p]
+                    if t <= self.FixUntil:
+                        self.Planned[t][p] = True
+                        self.Solution.ProductionQuantity[0][t][p] = givenquantities[t][p]
+                        self.Solution.Scenarioset[0].Demands[t][p] = demanduptotimet[t][p]
+
     #This method solve the instance given in argument wth the rule given in argument
     #The problem is decomposed by product, starting from end item to highest level component.
     #After each planning decision, the capacity is checked, and repair is applied if required.
-    def SolveWithSimpleRule( self,  rule ):
+    def SolveWithSimpleRule( self,  rule, givensetup =[], givenquantities =[], fixuntil = -1, demanduptotimet = [] ):
         # Create an empty solution
+
         self.Solution = self.GetEmptySolution()
+
+        #Fix given solution
+        self.FixUntil = fixuntil
+        self.FixGivenSolution(givensetup, givenquantities, demanduptotimet)
+
+        #Compute preliminary values
+        self.SafetyStock = self.ComputeSafetyStock()
+        if rule == Constants.EOQ:
+            self.EOQValues = self.ComputeEOQ()
+
 
         # sort the prduct by level
         self.LevelSet = sorted(set(self.Instance.Level), reverse=False)
@@ -82,26 +196,40 @@ class DecentralizedMRP(object):
         for l in self.LevelSet:
             prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
             for p in prodinlevel:
-                for t in  self.Instance .TimeBucketSet:
+                if rule == Constants.POQ and not self.FixedSetup:
+                    self.ComputePOQ(p)
+                if rule == Constants.SilverMeal and not  self.FixedSetup:
+                    firstperiod = self.GetFirstPeriodOrder(p)
+                    for t in range(firstperiod, self.Instance.NrTimeBucket):
+                        self.Solution.Production[0][t][p] = 1
+
+                for t in  range( fixuntil+1,  self.Instance.NrTimeBucket):
                     quantity = self.GetIdealQuantityToOrder( p, t, rule)
                     self.Solution.ProductionQuantity[0][t][p]  += quantity
                     self.Planned[t][p] = True
 
                     # After each decision, check capacity, and repair if necessary
                     self.RepairCapacity(p, t)
-
         self.RepairRequirement( None )
 
         self.InferY()
 
         self.InferInventory()
 
-        self.Solution.Print()
+        #self.Solution.Print()
 
         return self.Solution
 
     # This method apply lot for lot to solve the instance
     def GetIdealQuantityToOrder(self,  p, t, rule):
+
+        if Constants.Debug:
+            print "Plan prod %r periode %r"%(p,t)
+
+        #If setup are fixed quantity is 0 if no setup
+        if self.FixedSetup and self.Solution.Production[0][t][p] == 0:
+            return 0
+
         result = -1
         if rule == Constants.L4L:
             result = self.LotForLot( p, t)
@@ -117,28 +245,22 @@ class DecentralizedMRP(object):
     def GetProjetedInventory(self, time):
         prevquanity = [[self.Solution.ProductionQuantity[0][t1][p1] for p1 in self.Instance.ProductSet] for t1 in
                        self.Instance.TimeBucketSet]
-        print prevquanity
-        prevdemand = [[self.Solution.Scenarioset[0].Demands[t1][p1] for p1 in self.Instance.ProductSet] for t1 in
-                      self.Instance.TimeBucketSet]
-        print prevdemand
-        quantity = 0
+        prevdemand = [ [ self.Solution.Scenarioset[0].Demands[t1][p1] + self.SafetyStock[t1][p1]
+                       for p1 in self.Instance.ProductSet ]
+                      for t1 in self.Instance.TimeBucketSet ]
         projectedbackorder, projectedinventory, currrentstocklevel = self.Solution.GetCurrentStatus(prevdemand, prevquanity, time)
         return projectedbackorder, projectedinventory
 
     #return the quantity to order at time t for product p in instance with Lot for Lot rule
     def LotForLot( self, p, t ):
-        print "prodct %r time %r"%(p,t)
         quantity = 0
         if  t + self.Instance.Leadtimes[p] < self.Instance.NrTimeBucket:
             projectedbackorder, projectedinventory = self.GetProjetedInventory(  t + self.Instance.Leadtimes[p]   )
 
-            print projectedinventory
             quantity = - projectedinventory[p]
 
             if self.Instance.HasExternalDemand[p]:
                 quantity = quantity + projectedbackorder[ self.Instance.ProductWithExternalDemandIndex[p]]
-
-        print "Add quantity:%r"%( max( quantity, 0) )
 
 
         quantity = max( quantity, 0)
@@ -151,39 +273,81 @@ class DecentralizedMRP(object):
         if t + self.Instance.Leadtimes[p] < self.Instance.NrTimeBucket:
             projectedbackorder, projectedinventory = self.GetProjetedInventory(t + self.Instance.Leadtimes[p])
 
-            print projectedinventory
-            quantity = - projectedinventory[p]
-
-            if self.Instance.HasExternalDemand[p]:
-                quantity = quantity + projectedbackorder[self.Instance.ProductWithExternalDemandIndex[p]]
-
-        print "Add quantity:%r" % (max(quantity, 0))
-
-        quantity = max(quantity, 0)
+            if projectedinventory[p] < 0:
+                #Order a multiple of EOQ
+                quantity = ( int(-projectedinventory[p]/self.EOQValues[p])+1 ) * self.EOQValues[p]
 
         return quantity
 
+
+
     # return the quantity to order at time t for product p in instance with POQ
     def POQ(self, p, t):
-        return 0
+
+        quantity = 0
+        if self.Solution.Production[0][t][p] == 1 and  t + self.Instance.Leadtimes[p] < self.Instance.NrTimeBucket:
+            demand = self.ComputeDependentDemandBasedOnProjectedInventory( p )
+
+            #order the demand until the next order
+
+            time = t + self.Instance.Leadtimes[p]+1
+            quantity =  demand[t + self.Instance.Leadtimes[p]]
+            while time < self.Instance.NrTimeBucket and self.Solution.Production[0][time - self.Instance.Leadtimes[p]][p] == 0:
+                quantity += demand[ time ]
+                time += 1
+            time  = min( time, self.Instance.NrTimeBucket -1 )
+            projectedbackorder, projectedinventory = self.GetProjetedInventory(time)
+            quantity = -projectedinventory[p]
+
+        #print "Quanitity: %r"% quantity
+        return quantity
 
     # return the quantity to order at time t for product p in instance with SilverMeal
     def SilverMeal(self, p, t):
-        return 0
+
+        bestcost = Constants.Infinity
+        bestperiod = -1
+        demand = self.ComputeDependentDemandBasedOnProjectedInventory(p)
+
+
+
+
+
+        quantity = [0]
+        if self.Solution.Production[0][t][p] == 1 and t + self.Instance.Leadtimes[p]<self.Instance.NrTimeBucket:
+            maxperiod = self.Instance.NrTimeBucket - (t + self.Instance.Leadtimes[p]) +1
+            quantity = [0] * maxperiod
+            for nrperiod in range(1,maxperiod):
+                #Compute the cost associated with ordering until t
+                cost = (self.Instance.SetupCosts[p] + sum(tau * demand[t + tau+ self.Instance.Leadtimes[p]]  for tau in range( nrperiod )) ) /nrperiod
+                quantity[nrperiod] = sum( demand[t + tau + self.Instance.Leadtimes[p]]  for tau in range( nrperiod ))
+                if Constants.Debug:
+                    print "nr periods %r, quantity %r, cost %r"%(nrperiod, quantity, cost)
+                if cost < bestcost :
+                    bestperiod = nrperiod
+                    bestcost = cost
+        if quantity[bestperiod] > 0:
+            for period in range(1, bestperiod):
+                self.Solution.Production[0][t+period][p] = 0
+                self.Planned[t][p] = True
+
+        return quantity[bestperiod]
+
+
 
     #This method check if the quantity of product p inserted in period t violate the capacity contraitn
     def RepairCapacity( self, p, t ):
         #Check if the capacity is violated for product p at time t
         quantitytorepplan = self.CheckCapacity( p, t )
 
-        print "quantitytorepplan: %r"%quantitytorepplan
 
         if quantitytorepplan > 0:
             #Try to move the quantity backward
             success = self.MoveBackward( quantitytorepplan, p, t)
 
             if not success:
-                print "Backward failed"
+                if Constants.Debug:
+                    print "Backward failed"
                 self.MoveForward( quantitytorepplan, p, t)
             #Backward move fail, try to move the quantity forward
 
@@ -255,6 +419,7 @@ class DecentralizedMRP(object):
                         quantityviolation = requiredquantity
                     if result < quantityviolation:
                         result = quantityviolation
+
             return result
 
     def GetViolation(self, p, t):
@@ -272,27 +437,27 @@ class DecentralizedMRP(object):
             #while the remaining quantity is positive, replan as much as possible in the earliest period
             remainingquantity = quantity
             challengingspreading = [0 for tau2 in range(t) ]
-            for tau2 in reversed(range(tau + 1)):
+            for tau2 in reversed(range(  self.FixUntil+1, tau + 1)):
                 quantityreplanattau2 = min( -self.CheckCapacity(p, tau2), remainingquantity)
                 challengingspreading[tau2] = quantityreplanattau2
                 remainingquantity = remainingquantity - quantityreplanattau2
 
-            print "tentative psreading %r " % challengingspreading
             if remainingquantity == 0:
                 cost = self.ComputeCostReplan(challengingspreading, p, t)
-                print "cost %r" %cost
                 if cost < bestspreadingcost:
                     bestspreading = [ challengingspreading[tau2]  for tau2 in range(t) ]
                     bestspreadingcost = cost
             else:
-                print "spreading non feasible"
+                if Constants.Debug:
+                    print "spreading non feasible"
 
         #No feasible solution were found
         if bestspreadingcost == Constants.Infinity:
             return False
 
         else:
-            print "chosen spreading %r" % bestspreading
+            if Constants.Debug:
+                print "chosen spreading %r" % bestspreading
             self.Solution.ProductionQuantity[0][t][p] -= quantity
             for tau in range(t):
                 self.Solution.ProductionQuantity[0][tau][p] +=  bestspreading[tau]
@@ -341,7 +506,6 @@ class DecentralizedMRP(object):
         for t in self.Instance.TimeBucketSet:
             backorder, inventory = self.GetProjetedInventory( t )
             for p in self.Instance.ProductSet:
-                print inventory
                 self.Solution.InventoryLevel[0][t][p] = max( inventory[p], 0 )
                 if self.Instance.HasExternalDemand[p]:
-                    self.Solution.BackOrder[0][t][ self.Instance.ProductWithExternalDemandIndex[p] ] = backorder[p]
+                    self.Solution.BackOrder[0][t][ self.Instance.ProductWithExternalDemandIndex[p] ] = backorder[ self.Instance.ProductWithExternalDemandIndex[p] ]

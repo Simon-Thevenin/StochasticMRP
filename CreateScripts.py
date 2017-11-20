@@ -76,8 +76,8 @@ if __name__ == "__main__":
 
 
     #modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
-    modelset = ["YQFix",  "HeuristicYFix", "Average", "AverageSS", "YFix"]#, "HeuristicYFix", "YFix", "YQFix"]
-
+    modelset = ["YQFix",  "HeuristicYFix", "Average", "AverageSS", "YFix", "L4L", "EOQ", "POQ", "SilverMeal" ]#, "HeuristicYFix", "YFix", "YQFix"]
+    modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
     nrcenarioyfix =["6400" ]
     nrcenarioyfqix = ["500"]
     nrcenarioheuristicyfix = [  "6400" ] # scenarset = ["200", "512", "3200", "6400"]
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                      scenarset = nrcenarioyfqix
                      policyset = policyyqfix
                      generationset = Generationset
-                 if model == "Average" or model == "AverageSS":
+                 if model == "Average" or model == "AverageSS" or model =="L4L" or  model == "EOQ" or  model == "POQ" or  model =="SilverMeal":
                      scenarset = ["1"]
                      avg = True
                      generationset = ["MC"]

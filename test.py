@@ -321,11 +321,13 @@ def SolveYFix():
         RunEvaluation()
     GatherEvaluation()
 
-def SolveWithRule(rule):
+def SolveWithRule():
     decentralizedmrp = DecentralizedMRP(Instance)
-    solution = decentralizedmrp.SolveWithSimpleRule( Rule )
+    solution = decentralizedmrp.SolveWithSimpleRule( Model )
     PrintTestResult()
     PrintSolutionToFile(solution)
+    RunEvaluation()
+    GatherEvaluation()
 
 def GetPreviouslyFoundSolution():
     result = []
@@ -667,7 +669,7 @@ def parseArguments():
 def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve :
         policyset = ["Re-solve"]# "NNSAC", "NNDAC", "Re-solve"]
-        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS:
+        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or  IsRule(Model):
                 policyset = ["Fix", "Re-solve"]
         for policy in policyset:
                 jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
@@ -679,7 +681,7 @@ def RunEvaluationIfAllSolve(  ):
     solutions = GetPreviouslyFoundSolution()
     if len( solutions ) >= 5 :
         policyset = ["NNDAC", "NNSAC", "NND", "NNS", "Resolve"]
-        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS:
+        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or  IsRule(Model):
             policyset = ["Fix", "Resolve"]
 
 
@@ -919,7 +921,7 @@ if __name__ == "__main__":
                 SolveYFixHeuristic()
 
         if IsRule( Model ) :
-                SolveWithRule(Model)
+                SolveWithRule()
             #else:
             #    RunTestsAndEvaluation()
 

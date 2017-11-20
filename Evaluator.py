@@ -327,6 +327,24 @@ class Evaluator:
         else:
             quantitytofix = [[givenquantty[t][p] for p in self.Instance.ProductSet] for t in range(time)]
 
+
+            if model in [ Constants.L4L, Constants.EOQ, Constants.POQ, Constants.SilverMeal]:
+                result = self.ResolveRule(quantitytofix, model, givensetup, demanduptotimet , time)
+            else:
+                result, error = self.ResolveMIP(quantitytofix , model, givensetup, demanduptotimet, time )
+
+
+
+        return result, error
+
+    def ResolveRule(self, quantitytofix, model, givensetup, demanduptotimet, time):
+        decentralizedmrp = DecentralizedMRP(self.Instance)
+        solution = decentralizedmrp.SolveWithSimpleRule( model, givensetup, quantitytofix, time-1, demanduptotimet)
+
+        result = [solution.ProductionQuantity[0][time][p] for p in self.Instance.ProductSet]
+        return result
+
+    def ResolveMIP(self, quantitytofix, model, givensetup, demanduptotimet, time):
             if not self.IsDefineMIPResolveTime[time]:
                 treestructure = [1] \
                                 + [self.ReferenceTreeStructure[t - ( time - self.Instance.NrTimeBucketWithoutUncertaintyBefore)+ 1]
@@ -420,7 +438,7 @@ class Evaluator:
 
                 error = 1
 
-        return result, error
+            return result, error
 
 
 
