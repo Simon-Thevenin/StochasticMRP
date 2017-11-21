@@ -45,9 +45,14 @@ class DecentralizedMRP(object):
                     result[t] += -projectedinventory[product] + previousprojected
                     previousprojected = projectedinventory[product]
 
+
         if self.FixUntil + 2 + self.Instance.Leadtimes[product] < self.Instance.NrTimeBucket:
             result[self.FixUntil + 1 + self.Instance.Leadtimes[product]] = sum(
                 result[tau] for tau in range(self.FixUntil + 1, self.FixUntil + 2 + self.Instance.Leadtimes[product]))
+
+        #Do not consider negative demand
+        for t in self.Instance.TimeBucketSet:
+            result[t] = max( result[t], 0.0)
 
         return result
 
@@ -295,11 +300,13 @@ class DecentralizedMRP(object):
             while time < self.Instance.NrTimeBucket and self.Solution.Production[0][time - self.Instance.Leadtimes[p]][p] == 0:
                 quantity += demand[ time ]
                 time += 1
-            time  = min( time, self.Instance.NrTimeBucket -1 )
-            projectedbackorder, projectedinventory = self.GetProjetedInventory(time)
-            quantity = -projectedinventory[p]
+            #time  = min( time, self.Instance.NrTimeBucket -1 )
+            #projectedbackorder, projectedinventory = self.GetProjetedInventory(time)
+            #quantity = -projectedinventory[p]
 
-        #print "Quanitity: %r"% quantity
+        if Constants.Debug:
+            print "Quanitity: %r"% quantity
+
         return quantity
 
     # return the quantity to order at time t for product p in instance with SilverMeal
