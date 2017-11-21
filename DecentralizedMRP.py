@@ -42,7 +42,7 @@ class DecentralizedMRP(object):
         previousprojected = 0
         for t in self.Instance.TimeBucketSet:
                     projectedbackorder, projectedinventory = self.GetProjetedInventory(t)
-                    result[t] += -projectedinventory[product] + previousprojected
+                    result[t] += -projectedinventory[product] + min(previousprojected, 0)
                     previousprojected = projectedinventory[product]
 
 
@@ -106,9 +106,10 @@ class DecentralizedMRP(object):
         t = self.FixUntil +1
         if  t + self.Instance.Leadtimes[p]< self.Instance.NrTimeBucket :
             projectedbackorder, projectedinventory= self.GetProjetedInventory( t + self.Instance.Leadtimes[p] )
-            while projectedinventory[p] > 0 and t + self.Instance.Leadtimes[p]< self.Instance.NrTimeBucket:
-                projectedbackorder, projectedinventory = self.GetProjetedInventory(t + self.Instance.Leadtimes[p])
+            while projectedinventory[p] > 0 and t + self.Instance.Leadtimes[p]< self.Instance.NrTimeBucket -1:
                 t += 1
+                projectedbackorder, projectedinventory = self.GetProjetedInventory(t + self.Instance.Leadtimes[p])
+
 
 
 
@@ -418,12 +419,12 @@ class DecentralizedMRP(object):
                     #Compute the quantity of q reuire to produce p
                     requiredquantity = self.Instance.Requirements[p][q] * self.Solution.ProductionQuantity[0][t][p]
 
-                    if (t - self.Instance.Leadtimes[q]) >= 0 :
-                        projectedbackorder, projectedinventory = self.GetProjetedInventory( t )
+                   # if (t - self.Instance.Leadtimes[q]) >= 0 :
+                    projectedbackorder, projectedinventory = self.GetProjetedInventory( t )
 
-                        quantityviolation = min(requiredquantity, -( projectedinventory[q] / self.Instance.Requirements[p][q] ) )
-                    else:
-                        quantityviolation = requiredquantity
+                    quantityviolation = min(requiredquantity, -( projectedinventory[q] / self.Instance.Requirements[p][q] ) )
+                    #else:
+                    #    quantityviolation = requiredquantity
                     if result < quantityviolation:
                         result = quantityviolation
 
@@ -521,4 +522,4 @@ class DecentralizedMRP(object):
             for p in self.Instance.ProductSet:
                 self.Solution.InventoryLevel[0][t][p] = max( inventory[p], 0 )
                 if self.Instance.HasExternalDemand[p]:
-                    self.Solution.BackOrder[0][t][ self.Instance.ProductWithExternalDemandIndex[p] ] = backorder[ self.Instance.ProductWithExternalDemandIndex[p] ]
+                    self.Solution.BackOrder[0][t][ self.Instance.ProductWithExternalDemandIndex[p] ] =  max( -inventory[ p ], 0 )

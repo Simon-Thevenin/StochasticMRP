@@ -586,7 +586,7 @@ class MRPSolution:
 
         currentinventory = [ ( self.MRPInstance.StartingInventories[p]
                                   + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] , 0 ) ) )
-                                  - sum(  prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time +1 ) for q in self.MRPInstance.ProductSet)
+                                  - sum( prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time +1 ) for q in self.MRPInstance.ProductSet)
                                   - sum( prevdemand[t][p] for t in range( time ) ) )
                                     for p in self.MRPInstance.ProductSet ]
 
