@@ -429,6 +429,12 @@ class DecentralizedMRP(object):
 
             return result
 
+    def CheckFixedSetup(self, p, t):
+        if self.FixedSetup and self.Solution.Production[0][t][p] == 0:
+                return 0
+        else:
+            return Constants.Infinity
+
     def GetViolation(self, p, t):
         result = max( self.CheckRequirement( p, t ), self.CheckCapacity( p, t ) )
         return result
@@ -445,7 +451,7 @@ class DecentralizedMRP(object):
             remainingquantity = quantity
             challengingspreading = [0 for tau2 in range(t) ]
             for tau2 in reversed(range(  self.FixUntil+1, tau + 1)):
-                quantityreplanattau2 = min( -self.CheckCapacity(p, tau2), remainingquantity)
+                quantityreplanattau2 = min( -self.CheckCapacity(p, tau2), remainingquantity, self.CheckFixedSetup(p, tau2))
                 challengingspreading[tau2] = quantityreplanattau2
                 remainingquantity = remainingquantity - quantityreplanattau2
 
