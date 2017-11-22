@@ -63,7 +63,7 @@ if __name__ == "__main__":
        instancenameslist.append(row)
     InstanceSet = instancenameslist[0]
     modelset = ["YQFix",  "HeuristicYFix", "Average", "AverageSS", "YFix", "L4L", "EOQ", "POQ", "SilverMeal" ]#, "HeuristicYFix", "YFix", "YQFix"]
-    modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
+    #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
     nrcenarioyfix =["6400a", "6400b", "6400c", "6400d" ]
     nrcenarioyfqix = ["10", "50", "100", "200", "500"]
     nrcenarioheuristicyfix = ["6400c", "80000"]
