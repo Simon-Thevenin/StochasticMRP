@@ -8,4 +8,4 @@ rm ./Test/*
 rm ./Solutions/*
 rm ./Evaluations/*
 rm ./Jobs/*
-rm ../../output*
+rm ../../log/*
