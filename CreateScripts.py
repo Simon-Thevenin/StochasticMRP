@@ -23,12 +23,12 @@ def Createsolvejob(instance, model, nrscenar, generation, seed, method, mipsetti
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjob%s%s%s%s%s%s%s.txt
+#$ -o /home/thesim/log/outputjob%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
-mkdir /tmp/thesim
-mkdir /tmp/thesim/Evaluations
-mkdir /tmp/thesim/Solutions
-mkdir /tmp/thesim/CPLEXLog
+mkdir -p /tmp/thesim
+mkdir -p /tmp/thesim/Evaluations
+mkdir -p /tmp/thesim/Solutions
+mkdir -p /tmp/thesim/CPLEXLog
 python test.py Solve %s %s %s %s -s %s  -m %s --mipsetting %s -n %s
 """ % (instance, model, nrscenar, generation, seed, method, mipsetting, instance,
                           model, nrscenar, generation, seed, method, mipsetting, NrScenarioEvaluation))
@@ -44,12 +44,12 @@ def CreatePolicyJob(instance, model, nrscenar, generation, seed, Policy):
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjobevaluate%s%s%s%s%s%s%s.txt
+#$ -o /home/thesim/log/outputjobevaluate%s%s%s%s%s%s%s.txt
 ulimit -v 16000000
-mkdir /tmp/thesim
-mkdir /tmp/thesim/Evaluations
-mkdir /tmp/thesim/Solutions
-mkdir /tmp/thesim/CPLEXLog
+mkdir -p /tmp/thesim
+mkdir -p /tmp/thesim/Evaluations
+mkdir -p /tmp/thesim/Solutions
+mkdir -p /tmp/thesim/CPLEXLog
 python test.py Evaluate %s %s %s %s  -s %s -p %s -n %s
 """ % (instance,  model, nrscenar, generation, seed, Policy, NrScenarioEvaluation, instance, model, nrscenar,
         generation, seed, Policy, NrScenarioEvaluation))
@@ -141,12 +141,12 @@ if __name__ == "__main__":
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/outputjob%s.txt
+#$ -o /home/thesim/log/outputjob%s.txt
 ulimit -v 16000000
-mkdir /tmp/thesim
-mkdir /tmp/thesim/Evaluations
-mkdir /tmp/thesim/Solutions
-mkdir /tmp/thesim/CPLEXLog
+mkdir -p /tmp/thesim
+mkdir -p /tmp/thesim/Evaluations
+mkdir -p /tmp/thesim/Solutions
+mkdir -p /tmp/thesim/CPLEXLog
 python test.py Evaluate %s YQFix 1 RQMC -e -n 5000 -s 0
             """ % ( instance, instance) )
 
