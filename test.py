@@ -53,7 +53,6 @@ EVPI = False
 #ActuallyUseAnticipativity is set to False to compute the EPVI, otherwise, it is set to true to add the non anticipativity constraints
 #UseInmplicitAnticipativity = False
 #PrintScenarios is set to true if the scenario tree is printed in a file, this is usefull if the same scenario must be reloaded in a ater test.
-PrintScenarios = False
 NrScenario = -1
 
 #The attribut model refers to the model which is solved. It can take values in "Average, YQFix, YFix,_Fix"
@@ -85,6 +84,7 @@ MaxQuantities = []
 MinSetup = []
 MIPSetting = ""
 UseSS = False
+UseNonAnticipativity = True
 SeedArray = [ 2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788 ]
 
 #This list contain the information obtained after solving the problem
@@ -107,7 +107,8 @@ def PrintFinalResult():
     data = TestIdentifier + EvaluatorIdentifier +   InSampleKPIStat + OutOfSampleTestResult
     d = datetime.now()
     date = d.strftime('%m_%d_%Y_%H_%M_%S')
-    print "print the test result ./Test/TestResult_%s_%s.csv" % (GetTestDescription(), GetEvaluateDescription())
+    if Constants.Debug:
+        print "print the test result ./Test/TestResult_%s_%s.csv" % (GetTestDescription(), GetEvaluateDescription())
     myfile = open(r'./Test/TestResult_%s_%s.csv' % (GetTestDescription(), GetEvaluateDescription()), 'wb')
     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
     wr.writerow( data )
@@ -138,14 +139,12 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
                           mipsetting = MIPSetting,
                           warmstart = warmstart,
                           usesafetystock=UseSS,
-                          maxquantities = MaxQuantities,
-                          minsetup = MinSetup,
+                           minsetup = MinSetup,
                           logfile=GetTestDescription())
     if Constants.Debug:
         Instance.PrintInstance()
-        #for s in mipsolver.ScenarioSet:
-        #    print "Proba: %r, demand scenario %d:%r"%( mipsolver.Scenarios[s].Probability, s,mipsolver.Scenarios[s].Demands)
-    if PrintScenarios:
+
+    if Constants.PrintScenarios:
         mipsolver.PrintScenarioToFile(  )
 
     if Constants.Debug:
@@ -167,12 +166,6 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     #                n, bins, patches = ax1.hist(demands[t][p], bins=100,  facecolor='green')
     #                PLT.show()
     solution = mipsolver.Solve()
-   # result = solution.TotalCost, [ [ sum( solution.Production.get_value( Instance.ProductName[ p], t, w ) *  for w in Instance.ScenarioSet ) for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
-
-    if Constants.Debug:
-       #    solution.Print()
-           description = "%r_%r" % ( Model, ScenarioSeed )
-      #     solution.PrintToExcel( description )
 
     if recordsolveinfo:
         SolveInformation = mipsolver.SolveInfo
@@ -195,6 +188,7 @@ def GetEvaluateDescription():
 def SolveYQFix( ):
     global UseSS
     global Model
+    tmpmodel = Model
     start = time.time()
 
     if Constants.Debug:
@@ -220,6 +214,7 @@ def SolveYQFix( ):
     PrintSolutionToFile( solution )
     if EVPI:
         PrintFinalResult()
+    Model = tmpmodel
     RunEvaluation()
 
 
@@ -273,7 +268,7 @@ def SolveYFix():
     global Model
     global GivenSetup
     global ScenarioGeneration
-    global MaxQuantities
+   # global MaxQuantities
     global MinSetup
     if Constants.Debug:
         Instance.PrintInstance()
@@ -287,8 +282,7 @@ def SolveYFix():
     GivenSetup =  [[solution.Production[0][t][p] for p in Instance.ProductSet] for t in Instance.TimeBucketSet]
     Quanitties = [[solution.ProductionQuantity[0][t][p] for p in Instance.ProductSet] for t in Instance.TimeBucketSet]
     MinSetup = [sum(GivenSetup[t][p] for t in Instance.TimeBucketSet )  for  p in Instance.ProductSet ]
-    MaxQuantities = [100000 + max(Quanitties[t][p] for t in Instance.TimeBucketSet )  for  p in Instance.ProductSet ]
-    print "maxquanitity %r"%MaxQuantities
+    #MaxQuantities = [100000 + max(Quanitties[t][p] for t in Instance.TimeBucketSet )  for  p in Instance.ProductSet ]
     ScenarioGeneration = chosengeneration
     Model = Constants.ModelYFix
     treestructure = GetTreeStructure()
@@ -386,6 +380,7 @@ def EvaluateSingleSol(  ):
    # ComputeInSampleStatistis()
     global OutOfSampleTestResult
     global Model
+    tmpmodel = Model
    # solutions = GetPreviouslyFoundSolution()
     filedescription = GetTestDescription()
 
@@ -411,6 +406,9 @@ def EvaluateSingleSol(  ):
 
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  MIPModel, saveevaluatetab= True, filename = GetEvaluationFileName(), evpi=EVPI  )
    # PrintFinalResult()
+
+
+    Model = tmpmodel
     GatherEvaluation()
 
 def GatherEvaluation():
@@ -426,7 +424,7 @@ def GatherEvaluation():
             ScenarioSeed = seed
             filename =  GetEvaluationFileName()
             TestIdentifier[5] = seed
-            print "open file %rEvaluator.txt"%filename
+            #print "open file %rEvaluator.txt"%filename
             with open(filename + "Evaluator.txt", 'rb') as f:
                 list = pickle.load(f)
                 EvaluationTab.append( list )
@@ -465,31 +463,9 @@ def GetTreeStructure():
         stochasticparttreestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
         nrtimebucketstochastic = Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyBefore  - Instance.NrTimeBucketWithoutUncertaintyAfter
 
-        if NrScenario == 512:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [8, 8, 8]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [8, 8, 4, 2]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 2, 2, 2]
 
-        if NrScenario == 200:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [200, 1, 1]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [200, 1, 1, 1]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [200, 1, 1, 1, 1]
 
-        if NrScenario == 500:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [500, 1, 1, 1, 1]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [500, 1, 1, 1]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [500, 1, 1, 1, 1]
-
-        if NrScenario == 4:
+        if NrScenario == "4":
             if nrtimebucketstochastic == 1:
                 stochasticparttreestructure = [4]
             if nrtimebucketstochastic == 2:
@@ -501,7 +477,25 @@ def GetTreeStructure():
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [8, 8, 2, 2, 2]
 
-        if NrScenario == 6400:
+
+
+        if NrScenario == "6400a":
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [6400, 1, 1]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [6400, 1, 1, 1]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [6400, 1, 1, 1, 1]
+
+        if NrScenario == "6400b":
+            if nrtimebucketstochastic == 3:
+                stochasticparttreestructure = [200, 32, 1]
+            if nrtimebucketstochastic == 4:
+                stochasticparttreestructure = [200, 32, 1, 1]
+            if nrtimebucketstochastic == 5:
+                stochasticparttreestructure = [200, 32, 1, 1]
+
+        if NrScenario == "6400c":
             if nrtimebucketstochastic == 3:
                 stochasticparttreestructure = [50, 32, 4]
             if nrtimebucketstochastic == 4:
@@ -509,29 +503,13 @@ def GetTreeStructure():
             if nrtimebucketstochastic == 5:
                 stochasticparttreestructure = [50, 8, 4, 2, 2]
 
-        if NrScenario == 4096:
+        if NrScenario == "6400d":
             if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [16, 16, 16]
+                stochasticparttreestructure = [20, 20, 16]
             if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [8, 8, 8, 8]
+                stochasticparttreestructure = [10, 10, 8, 8]
             if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 4, 4, 4]
-
-        if NrScenario == 80000:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [50, 50, 32]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [50, 25, 8, 8]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [50, 25, 8, 4, 2]
-
-        if NrScenario == 3200:
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [200, 16, 1]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [200, 16, 1, 1]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [200, 16, 1, 1, 1]
+                stochasticparttreestructure = [8, 8, 5, 5, 4]
 
         k= 0
         for i in range( Instance.NrTimeBucketWithoutUncertaintyBefore+1, Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyAfter+1):
@@ -588,7 +566,7 @@ def parseArguments():
     parser.add_argument("Action", help="Evaluate, Solve, VSS, EVPI", type=str)
     parser.add_argument("Instance", help="Cname of the instance.", type=str)
     parser.add_argument("Model", help="Average/YQFix/YFiz .", type=str)
-    parser.add_argument("NrScenario", help="the number of scenario used for optimization", type=int)
+    parser.add_argument("NrScenario", help="the number of scenario used for optimization", type=str)
     parser.add_argument("ScenarioGeneration", help="MC,/RQMC.", type=str)
     parser.add_argument("-s", "--ScenarioSeed", help="The seed used for scenario generation", type=int, default= -1 )
 
@@ -612,8 +590,7 @@ def parseArguments():
     global NrScenario
     global ScenarioGeneration
     global ScenarioSeed
-    global TestIdentifier
-    global EvaluatorIdentifier
+
     global PolicyGeneration
     global NrEvaluation
     global SeedIndex
@@ -646,12 +623,15 @@ def parseArguments():
     else:
         NearestNeighborStrategy = PolicyGeneration #to have something in the table of results
     NrEvaluation = args.nrevaluation
-    TestIdentifier = [ InstanceName,  Model, Method, ScenarioGeneration, NrScenario, ScenarioSeed, EVPI ]
-    EvaluatorIdentifier = [ PolicyGeneration, NearestNeighborStrategy, NrEvaluation]
 
-
-
+    SetTestIdentifierValue()
     return args
+
+def SetTestIdentifierValue():
+    global TestIdentifier
+    global EvaluatorIdentifier
+    TestIdentifier = [InstanceName, Model, Method, ScenarioGeneration, NrScenario, ScenarioSeed, EVPI]
+    EvaluatorIdentifier = [PolicyGeneration, NearestNeighborStrategy, NrEvaluation]
 
 #Save the scenario tree in a file
 #def ReadCompleteInstanceFromFile( name, nrbranch ):
@@ -672,9 +652,18 @@ def RunEvaluation(  ):
         if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or  IsRule(Model):
                 policyset = ["Fix", "Re-solve"]
         for policy in policyset:
+            if Constants.RunEvaluationInSeparatedJob:
                 jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
                     TestIdentifier[0],  TestIdentifier[1],   TestIdentifier[4], TestIdentifier[3],  TestIdentifier[2],  policy, SeedIndex)
                 subprocess.call( ["qsub", jobname]  )
+            else:
+                global PolicyGeneration
+                global NearestNeighborStrategy
+                PolicyGeneration = policy
+                NearestNeighborStrategy = policy
+                SetTestIdentifierValue()
+                EvaluateSingleSol()
+
 #This function runs the evaluation jobs when the method is solved for the 5 seed:
 def RunEvaluationIfAllSolve(  ):
     #Check among the available files, if one of the sceed is not solve
@@ -686,10 +675,18 @@ def RunEvaluationIfAllSolve(  ):
 
 
         for policy in policyset:
-            jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
-                TestIdentifier[0], TestIdentifier[1],  TestIdentifier[4],
-                TestIdentifier[3], TestIdentifier[2], policy, SeedIndex)
-            subprocess.call( ["qsub", jobname]  )
+            if Constants.RunEvaluationInSeparatedJob:
+                jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
+                    TestIdentifier[0], TestIdentifier[1],  TestIdentifier[4],
+                    TestIdentifier[3], TestIdentifier[2], policy, SeedIndex)
+                subprocess.call( ["qsub", jobname]  )
+            else:
+                global PolicyGeneration
+                global NearestNeighborStrategy
+                PolicyGeneration = policy
+                NearestNeighborStrategy = policy
+                SetTestIdentifierValue()
+                EvaluateSingleSol()
 
 def RunTestsAndEvaluation():
     global ScenarioSeed
@@ -881,40 +878,20 @@ if __name__ == "__main__":
     instancename = ""
     try:
         args = parseArguments()
-        #ScenarioNr = scenarionr
-        #Instance.ScenarioNr = scenarionr
-        UseNonAnticipativity = True
-
-        #if Model == "YFix" or Model == "YQFix":  UseInmplicitAnticipativity = True
-        Instance.Average = False
-        #Instance.BranchingStrategy = nrbranch
-
-        Instance.LoadScenarioFromFile = False
-        PrintScenarios = False
-
-        #Instance.DefineAsSuperSmallIntance()
-        #
-
 
         Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
 
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
-      
-    #MRP() #[1, 2, 1, 1, 1, 1, 0 ])
-   # ComputeVSS()
-   # ComputeAverageGeneraor()
+
 
     if Action == Constants.Solve:
 
         if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS:
-            #if Constants.LauchEvalAfterSolve :
                 SolveYQFix()
-            #else: RunTestsAndEvaluation()
 
         if Model == Constants.ModelYFix:
-            #if Constants.LauchEvalAfterSolve:
                 SolveYFix(  )
 
         if Model == Constants.ModelHeuristicYFix:
@@ -922,12 +899,9 @@ if __name__ == "__main__":
 
         if IsRule( Model ) :
                 SolveWithRule()
-            #else:
-            #    RunTestsAndEvaluation()
 
     if Action == Constants.VSS:
         ComputeVSS( )
-
 
     if Action == Constants.Evaluate:
         if ScenarioSeed == -1:
@@ -935,10 +909,3 @@ if __name__ == "__main__":
         else:
             EvaluateSingleSol()
 
-
-
-#    CompactSolveInformation = [CompactSolveInformation[i] /  int( nrsolve ) for i in range( 3) ]
-#    PrintFinalResult()
-
-  #  PrintResult()
-  # end = raw_input( "press enter" )

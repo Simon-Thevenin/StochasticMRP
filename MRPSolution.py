@@ -15,7 +15,7 @@ class MRPSolution:
 
     def GetSolutionFileName(self, description):
         if Constants.PrintSolutionFileInTMP:
-            result = "/tmp/Solutions/" + description + "_Solution.xlsx"
+            result = "/tmp/thesim/Solutions/" + description + "_Solution.xlsx"
         else:
             result ="./Solutions/"+  description + "_Solution.xlsx"
         return result
@@ -126,7 +126,8 @@ class MRPSolution:
             prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadPickleFiles( description )
 
         self.MRPInstance = MRPInstance()
-        print instanceinfo.get_value('Name', 0)
+        if Constants.Debug:
+            print "Load instance:%r"% instanceinfo.get_value('Name', 0)
         self.MRPInstance.ReadInstanceFromExelFile(instanceinfo.get_value('Name', 0) )
 
 

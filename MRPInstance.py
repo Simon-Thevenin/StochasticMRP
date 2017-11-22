@@ -190,8 +190,6 @@ class MRPInstance:
 
 
         #If this is true, a single scenario with average demand is generated
-        self.Average = False
-        self.LoadScenarioFromFile = False
         self.BranchingStrategy = 3
 
     #Compute the lead time from a product to its component with the largest sum of lead time

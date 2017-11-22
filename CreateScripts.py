@@ -7,6 +7,7 @@
 import os
 import subprocess
 import csv
+from Constants import Constants
 
 NrScenarioEvaluation = "5000"
 
@@ -28,9 +29,9 @@ mkdir /tmp/thesim
 mkdir /tmp/thesim/Evaluations
 mkdir /tmp/thesim/Solutions
 mkdir /tmp/thesim/CPLEXLog
-python test.py Solve %s %s %s %s -s %s  -m %s --mipsetting %s
+python test.py Solve %s %s %s %s -s %s  -m %s --mipsetting %s -n %s
 """ % (instance, model, nrscenar, generation, seed, method, mipsetting, instance,
-                          model, nrscenar, generation, seed, method, mipsetting))
+                          model, nrscenar, generation, seed, method, mipsetting, NrScenarioEvaluation))
 
 
 def CreatePolicyJob(instance, model, nrscenar, generation, seed, Policy):
@@ -61,30 +62,15 @@ if __name__ == "__main__":
     for row in data_reader:
        instancenameslist.append(row)
     InstanceSet = instancenameslist[0]
-    #InstanceSet = ["G5047323b2"]
-    # for InstanceName in instancenameslist:#["01", "02", "03", "04", "05"]:
-    #InstanceSet = [ "00", "01", "02", "03", "04", "05" ]
-    #InstanceSet = ["05_C=2"]
-
-    #["00", "01", "02", "03", "04", "05" ]
-               #    "01_Theta4", "02_Theta4", "03_Theta4", "04_Theta4", "05_Theta4",
-               #    "00_b=2h", "01_b=2h", "02_b=2h", "03_b=2h", "04_b=2h", "05_b=2h",
-               #    "00_b=50h", "01_b=50h", "02_b=50h", "03_b=50h", "04_b=50h", "05_b=50h",
-               #    "00_C=2", "01_C=2", "02_C=2", "03_C=2", "04_C=2", "05_C=2",
-               #    "00_OneResourcePerLevelC=2", "01_OneResourcePerLevelC=2", "02_OneResourcePerLevelC=2", "03_OneResourcePerLevelC=2", "04_OneResourcePerLevelC=2", "05_OneResourcePerLevelC=2" ]
-               #    "00_OneResourcePerLevelC=1", "01_OneResourcePerLevelC=1", "02_OneResourcePerLevelC=1", "03_OneResourcePerLevelC=1", "04_OneResourcePerLevelC=1", "05_OneResourcePerLevelC=1" ]
-
-
-    #modelset = [ "Average", "YQFix", "YFix", "HeuristicYFix"]
     modelset = ["YQFix",  "HeuristicYFix", "Average", "AverageSS", "YFix", "L4L", "EOQ", "POQ", "SilverMeal" ]#, "HeuristicYFix", "YFix", "YQFix"]
     modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
     nrcenarioyfix =["6400" ]
-    nrcenarioyfqix = ["500"]
-    nrcenarioheuristicyfix = [  "6400" ] # scenarset = ["200", "512", "3200", "6400"]
+    nrcenarioyfqix = ["10", "50", "100", "200", "500"]
+    nrcenarioheuristicyfix = ["6400a", "6400b", "6400c", "6400d"]
 
     policyyqfix = ["Fix", "Re-solve"]
     policyyfix = ["Re-solve"]
-    Generationset = [ "RQMC"]#, "MC"]cd J
+    Generationset = [ "RQMC",  "MC"]
     methodset = ["MIP"]
     Nrseed = 1
 
@@ -132,23 +118,18 @@ if __name__ == "__main__":
                      for generation in generationset:
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):
-                                   for mipsetting in[ "Default"]:#, "pathcut2", "mircut2","gomor2"]: #"CutFactor10", "emphasis0","emphasis1",
-                                                    #"emphasis2", "emphasis3", "emphasis4", "localbranching","heuristicfreq10", "feasibilitypomp0" ,"feasibilitypomp1",
-                                                    #"feasibilitypomp2", "BB" ,"flowcovers1", "flowcovers2", "pathcut1", "pathcut2", "gomory1", "gomor2",
-                                                    #"zerohalfcut1", "zerohalfcut2" ,"mircut1", "mircut2" , "implied1" ,"implied2", "gubcovers1" , "gubcovers2",
-                                                    #"disjunctive1", "disjunctive2", "disjunctive3", "covers1", "covers2",
-                                                    #"covers3", "cliques1", "cliques2", "cliques3", "allcutmax", "variableselect00",
-                                                    #"variableselect1", "variableselect2", "variableselect3", "variableselect4" ]:
+                                   for mipsetting in[ "Default"]:
 
                                     Createsolvejob(instance, model, nrscenar, generation, seed, method, mipsetting)
                                     filesolve.write("qsub ./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
                                                     instance, model, nrscenar, generation, seed, method, mipsetting))
 
-                                    for Policy in policyset:
-                                        CreatePolicyJob(instance, model, nrscenar, generation, seed,
-                                                        Policy)
-                                        fileeval.write("qsub ./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
-                                            instance, model, nrscenar, generation, method, Policy, seed))
+                                    if Constants.RunEvaluationInSeparatedJob:
+                                        for Policy in policyset:
+                                            CreatePolicyJob(instance, model, nrscenar, generation, seed,
+                                                            Policy)
+                                            fileeval.write("qsub ./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
+                                                instance, model, nrscenar, generation, method, Policy, seed))
 
     for instance in InstanceSet:
         print "job_evpi_%s" % (instance )

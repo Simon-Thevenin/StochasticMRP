@@ -61,7 +61,7 @@ class GraveInstanceReader(InstanceReader):
 
     def GenerateTimeHorizon(self):
         # Consider a time horizon of 20 days plus the total lead time
-        self.Instance.NrTimeBucket =  self.Instance.MaxLeadTime
+        self.Instance.NrTimeBucket =  self.Instance.MaxLeadTime +1
         self.Instance.NrTimeBucketWithoutUncertaintyBefore = 0
         self.Instance.NrTimeBucketWithoutUncertaintyAfter = 0
         self.Instance.ComputeIndices()

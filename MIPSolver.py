@@ -29,7 +29,7 @@ class MIPSolver(object):
                  mipsetting = "",
                  warmstart = False,
                  usesafetystock = False,
-                 maxquantities = [],
+                 #maxquantities = [],
                  minsetup = [],
                  logfile = ""):
 
@@ -97,11 +97,11 @@ class MIPSolver(object):
 
         self.QuantityConstraintNR = []
 
-        self.MaxQuantities = maxquantities
+        #self.MaxQuantities = maxquantities
         self.MinSetup = minsetup
 
-        if len(self.MaxQuantities) == 0:
-            self.MaxQuantities = [1000000000 for p in self.Instance.ProductSet]
+        #if len(self.MaxQuantities) == 0:
+        #    self.MaxQuantities = [1000000000 for p in self.Instance.ProductSet]
 
             # Compute the start of index and the number of variables for the considered instance
     def ComputeIndices( self ):
@@ -408,7 +408,7 @@ class MIPSolver(object):
                         upperbound[self.GetIndexQuantityVariable(p,t,w)] =  max((setup) * self.M,0.0)
 
 
-        self.Cplex.variables.add(obj=[0.0] * nrquantityvariable,
+        self.Cplex.variables.add(obj= [0.0] * nrquantityvariable,
                                 lb=[0.0] * nrquantityvariable,
                                 ub= upperbound)
 
@@ -509,22 +509,14 @@ class MIPSolver(object):
                         vars = [indexvariable]
                         AlreadyAdded[indexvariable] = True
                         coeff = [1.0]
-                        #righthandside =  [ float(  Decimal( "%r"%(self.GivenQuantity[t][p])  ).quantize(Decimal('0.0001'), rounding= ROUND_HALF_DOWN )  ) ]
 
                         righthandside = [ self.GivenQuantity[t][p] ]
-                        #print "Value: %+18.16e" % self.GivenQuantity[t][p]
-                        # PrintConstraint( vars, coeff, righthandside )
-                        #righthandside[0] = righthandside[0]  + 0.1
-                        #righthandside[0] = righthandside[0]
+
                         self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["E"],
                                                            rhs=righthandside ,
                                                            names = ["LQuantitya%da%da%d"%(p,t,w)])
-                        #righthandside[0] = righthandside[0]  - 0.1
-                        #self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
-                        #                                   senses=["G"],
-                        #                                   rhs=righthandside ,
-                        #                                   names = ["GQuantitya%da%da%d"%(p,t,w)])
+
                         self.QuantityConstraintNR[w][p][t] = "Quantitya%da%da%d"%(p,t,w)
 
     def CreateCopyGivenSetupConstraints(self):
@@ -570,7 +562,7 @@ class MIPSolver(object):
         if self.UseSafetyStock:
            decentralized = DecentralizedMRP( self.Instance )
            safetystock  = decentralized.ComputeSafetyStock()
-           print safetystock
+
 
 
         self.FlowConstraintNR = [[[ "" for t in self.Instance.TimeBucketSet]  for p in self.Instance.ProductSet] for w in self.ScenarioSet]
@@ -925,7 +917,6 @@ class MIPSolver(object):
             self.CreateCopyGivenSetupConstraints()
 
         if self.WamStart:
-            print "Use warm start"
             self.WarmStartGivenSetupConstraints()
 
         #if self.UseSafetyStock:
@@ -1096,7 +1087,8 @@ class MIPSolver(object):
                     line = line.split()
                     nrvariable = int(line[5])
                     nrconstraints = int(line[3])
-                    print "there are %r variable and %r constraint"%(nrvariable, nrconstraints)
+                    if Constants.Debug:
+                        print "there are %r variable and %r constraint"%(nrvariable, nrconstraints)
         return nrvariable, nrconstraints
 
     #This function set the parameter of CPLEX, run Cplex, and return a solution
@@ -1107,13 +1099,13 @@ class MIPSolver(object):
         self.Cplex.objective.set_sense(self.Cplex.objective.sense.minimize)
         if Constants.Debug:
             self.Cplex.write("mrp.lp")
-        else:
-            #name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
-            #file = open("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename, 'w')
-            self.Cplex.set_log_stream("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename)
-            self.Cplex.set_results_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
-            self.Cplex.set_warning_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
-            self.Cplex.set_error_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
+
+        #name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
+        #file = open("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename, 'w')
+        self.Cplex.set_log_stream("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename)
+        self.Cplex.set_results_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
+        self.Cplex.set_warning_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
+        self.Cplex.set_error_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
 
         # tune the paramters
         self.Cplex.parameters.timelimit.set( Constants.AlgorithmTimeLimit )

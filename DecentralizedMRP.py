@@ -39,11 +39,14 @@ class DecentralizedMRP(object):
 
     def ComputeDependentDemandBasedOnProjectedInventory(self, product):
         result = [ 0 for t in self.Instance.TimeBucketSet ]
-        previousprojected = 0
+        previousdemand = 0
         for t in self.Instance.TimeBucketSet:
                     projectedbackorder, projectedinventory = self.GetProjetedInventory(t)
-                    result[t] += -projectedinventory[product] + min(previousprojected, 0)
-                    previousprojected = projectedinventory[product]
+                    #result[t] += -min(projectedinventory[product], 0) + previousprojected
+                    #previousprojected = min(projectedinventory[product], 0)
+                    demand = max(-projectedinventory[product], 0)
+                    result[t] +=  demand - previousdemand
+                    previousdemand = demand
 
 
         if self.FixUntil + 2 + self.Instance.Leadtimes[product] < self.Instance.NrTimeBucket:
@@ -221,8 +224,8 @@ class DecentralizedMRP(object):
         self.InferY()
 
         self.InferInventory()
-
-        #self.Solution.Print()
+        if Constants.Debug:
+            self.Solution.Print()
 
         return self.Solution
 

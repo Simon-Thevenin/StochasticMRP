@@ -143,7 +143,8 @@ class Evaluator:
         OutOfSampleSolution.ComputeStatistics()
 
         duration = time.time() - start_time
-        print "Duration od evaluation: %r, outofsampl cost:%r total proba:%r" % (duration, average, totalproba)  # %r"%( duration, Evaluated )
+        if Constants.Debug:
+            print "Duration od evaluation: %r, outofsampl cost:%r total proba:%r" % (duration, average, totalproba)  # %r"%( duration, Evaluated )
         self.EvaluationDuration = duration
 
         KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed, duration, False )
@@ -422,13 +423,17 @@ class Evaluator:
             if Constants.Debug:
                 print "End solving"
 
+
             #self.MIPResolveTime[time].Cplex.write("MRP-Re-Solve.lp")
             # Get the corresponding node:
+            error = 0
             sol = self.MIPResolveTime[time].Cplex.solution
             if sol.is_primal_feasible():
                 array = [self.MIPResolveTime[time].GetIndexQuantityVariable(p, time, 0) for p in self.Instance.ProductSet];
 
                 result = sol.get_values(array)
+                if Constants.Debug:
+                    print result
                 #result = [solution.ProductionQuantity[0][time][p] for p in
                 #          self.Instance.ProductSet]
             else:
