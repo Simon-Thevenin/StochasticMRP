@@ -195,7 +195,7 @@ def SolveYQFix( ):
         Instance.PrintInstance()
 
     average = False
-    nrscenario = NrScenario
+    nrscenario = int(NrScenario)
     if Model == Constants.Average or Model == Constants.AverageSS:
         average = True
         nrscenario = 1
@@ -292,7 +292,7 @@ def SolveYFix():
             solution, mipsolver = MRP(treestructure, averagescenario=False, recordsolveinfo=True, warmstart = True)
 
     if Method == "SDDP":
-         sddpsolver = SDDP( Instance, ScenarioSeed, nrscenarioperiteration = NrScenario, generationmethod = ScenarioGeneration  )
+         sddpsolver = SDDP( Instance, ScenarioSeed, nrscenarioperiteration = int(NrScenario), generationmethod = ScenarioGeneration  )
          sddpsolver.Run()
 
          SolveInformation = sddpsolver.SolveInfo
@@ -456,7 +456,7 @@ def GetTreeStructure():
         treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
 
     if Model == Constants.ModelYQFix:
-        treestructure = [1, NrScenario] + [1] * (Instance.NrTimeBucket - 1) + [0]
+        treestructure = [1, int(NrScenario)] + [1] * (Instance.NrTimeBucket - 1) + [0]
 
     if Model == Constants.ModelYFix:
         treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]

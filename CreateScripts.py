@@ -64,9 +64,9 @@ if __name__ == "__main__":
     InstanceSet = instancenameslist[0]
     modelset = ["YQFix",  "HeuristicYFix", "Average", "AverageSS", "YFix", "L4L", "EOQ", "POQ", "SilverMeal" ]#, "HeuristicYFix", "YFix", "YQFix"]
     modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
-    nrcenarioyfix =["6400" ]
+    nrcenarioyfix =["6400a", "6400b", "6400c", "6400d" ]
     nrcenarioyfqix = ["10", "50", "100", "200", "500"]
-    nrcenarioheuristicyfix = ["6400a", "6400b", "6400c", "6400d"]
+    nrcenarioheuristicyfix = ["6400c", "80000"]
 
     policyyqfix = ["Fix", "Re-solve"]
     policyyfix = ["Re-solve"]
