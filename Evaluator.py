@@ -390,6 +390,21 @@ class Evaluator:
 
 
 
+                # scenario = mipsolver.Scenarios
+                # for s in scenario:
+                #     print s.Probability
+                # demands = [ [ [ scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet ] for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet ]
+                # for t in self.Instance.TimeBucketSet:
+                #       for p in self.Instance.ProductWithExternalDemand:
+                #           print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
+                #           with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
+                #                 #v_hist = np.ravel(v)  # 'flatten' v
+                #                fig = PLT.figure()
+                #                ax1 = fig.add_subplot(111)
+                #                n, bins, patches = ax1.hist(demands[t][p], bins=100,  facecolor='green')
+                #                PLT.show()
+                #
+
                 mipsolver.BuildModel()
                 self.MIPResolveTime[time] = mipsolver
                 self.IsDefineMIPResolveTime[time] = True

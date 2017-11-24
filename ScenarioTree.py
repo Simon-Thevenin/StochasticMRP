@@ -7,7 +7,7 @@ import os
 from Constants import Constants
 import math
 from ast import literal_eval
-from matplotlib import pyplot as PLT
+#from matplotlib import pyplot as PLT
 
 class ScenarioTree:
     #Constructor
@@ -91,16 +91,16 @@ class ScenarioTree:
 
 
         if self.ScenarioGenerationMethod == Constants.RQMC and self.GenerateRQMCForYQFix:
-
+             firstuknown = len(self.GivenFirstPeriod)
              timebucketswithuncertainty = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore , self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter )
-             nrtimebucketswithuncertainty =len( timebucketswithuncertainty )
-             avgvector = [  self.Instance.ForecastedAverageDemand[t +  self.Instance.NrTimeBucketWithoutUncertaintyBefore ][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebucketswithuncertainty ) ]
-             stdvector = [  self.Instance.ForcastedStandardDeviation[t +  self.Instance.NrTimeBucketWithoutUncertaintyBefore ][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebucketswithuncertainty ) ]
+             nrtimebucketswithuncertainty =len( timebucketswithuncertainty) - firstuknown
+             avgvector = [  self.Instance.ForecastedAverageDemand[t +  self.Instance.NrTimeBucketWithoutUncertaintyBefore + firstuknown ][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebucketswithuncertainty ) ]
+             stdvector = [  self.Instance.ForcastedStandardDeviation[t +  self.Instance.NrTimeBucketWithoutUncertaintyBefore  + firstuknown][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebucketswithuncertainty ) ]
              dimension = len( self.Instance.ProductWithExternalDemand ) * (nrtimebucketswithuncertainty)
 
              nrscenarion = max( self.NrBranches[i] for i in range( len(self.NrBranches ) ) )
-             rqmcpoint01 = RQMCGenerator.RQMC01( nrscenarion , dimension  )
-
+             rqmcpoint01 = RQMCGenerator.RQMC01( nrscenarion , dimension, withweight=True  )
+             #rqmcpoint01, proba = ScenarioTreeNode.GeneratePoints(Constants.RQMC,nrscenarion,dimension, self.Instance.Distribution, avgvector, stdvector )
              # for d in range(dimension):
              #     pts = [rqmcpoint01[p][d] for p in range(nrscenarion)]
              #     print "The point at dim %d at time : %r  " % (d, pts)
@@ -115,22 +115,21 @@ class ScenarioTree:
              rmcpoint = ScenarioTreeNode.TransformInverse( rqmcpoint01, nrscenarion, dimension, self.Instance.Distribution, avgvector, stdvector )
 
 
-             self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebucketswithuncertainty + t ][s]
-                                          if  self.Instance.HasExternalDemand[p]
+             self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebucketswithuncertainty + (t-firstuknown) ][s]
+                                          if  self.Instance.HasExternalDemand[p] and t >= firstuknown
                                           else 0.0
                                         for p in self.Instance.ProductSet ]
-                                      for t in range( nrtimebucketswithuncertainty ) ]
+                                      for t in range( nrtimebucketswithuncertainty + firstuknown ) ]
                                      for s in range( nrscenarion )]
 
              # for p in self.Instance.ProductSet:
-             #     for t in range(nrtimebuckets):
+             #     for t in range( nrtimebucketswithuncertainty + firstuknown ) :
              #        pts = [self.DemandYQFixRQMC[ s][t][p] for s in range( nrscenarion ) ]
              #        print "The transformed point at dim %d at time %d : %r  " % (p,t, pts)
              #        with open('Histpoints%dt%d.csv' % (p, t), 'w+') as f:
              #            # v_hist = np.ravel(v)  # 'flatten' v
              #            fig = PLT.figure()
              #            ax1 = fig.add_subplot(111)
-             #
              #            n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
              #            PLT.show()
 

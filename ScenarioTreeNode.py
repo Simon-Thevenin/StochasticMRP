@@ -25,7 +25,7 @@ class ScenarioTreeNode:
         self.NodeNumber = ScenarioTreeNode.NrNode;
         ScenarioTreeNode.NrNode = ScenarioTreeNode.NrNode + 1;
         self.FirstBranchID = firstbranchid
-        if time > max( self.Owner.FollowGivenUntil, 1):
+        if time > max( self.Owner.FollowGivenUntil+1, 1):
             self.FirstBranchID = self.Parent.FirstBranchID
         t = time + 1
 
@@ -284,7 +284,7 @@ class ScenarioTreeNode:
                 idnonzero = [  p  for p in range( dimensionpoint ) if average[p] > 0 ]
                 avg = [ average[prod] for prod in idnonzero ]
                 stddev = [std[prod] for prod in idnonzero ]
-                pointsin01 = RQMCGenerator.RQMC01(newnrpoints, nrnonzero)
+                pointsin01 = RQMCGenerator.RQMC01(newnrpoints, nrnonzero, withweight=False)
 
                 rqmcpoints = ScenarioTreeNode.TransformInverse( pointsin01, newnrpoints, nrnonzero, distribution, avg, stddev )
 
