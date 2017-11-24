@@ -1,7 +1,7 @@
 #from __future__ import absolute_import, division, print_function
 from __future__ import division
 #print "Attention matplt is avctivee"
-#from matplotlib import pyplot as PLT
+from matplotlib import pyplot as PLT
 
 import cplex
 import pandas as pd
@@ -122,7 +122,6 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
     scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed,
                                      averagescenariotree=averagescenario,
                                      scenariogenerationmethod = ScenarioGeneration,
-                                     generateRQMCForYQfix = ( Model  == Constants.ModelYQFix and ScenarioGeneration == Constants.RQMC ),
                                      model= Model)
 
     MIPModel = Model
@@ -155,16 +154,19 @@ def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, record
 
 
     # scenario = mipsolver.Scenarios
+    # for s in scenario:
+    #     print s.Probability
     # demands = [ [ [ scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet ] for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
     # for t in Instance.TimeBucketSet:
     #       for p in Instance.ProductWithExternalDemand:
-    #            print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
-    #            with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
-    #                #v_hist = np.ravel(v)  # 'flatten' v
+    #           print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
+    #           with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
+    #                 #v_hist = np.ravel(v)  # 'flatten' v
     #                fig = PLT.figure()
     #                ax1 = fig.add_subplot(111)
     #                n, bins, patches = ax1.hist(demands[t][p], bins=100,  facecolor='green')
     #                PLT.show()
+
     solution = mipsolver.Solve()
 
     if recordsolveinfo:

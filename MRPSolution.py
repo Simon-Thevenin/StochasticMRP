@@ -143,7 +143,6 @@ class MRPSolution:
                                            seed = scenariotreeseed,
                                            averagescenariotree =  avgscenariotree,
                                            scenariogenerationmethod =  scenariogenerationm,
-                                           generateRQMCForYQfix = RQMCForYQfix,
                                            model = model)
 
         self.IsPartialSolution = instanceinfo.get_value('IsPartialSolution', 0)

@@ -11,7 +11,7 @@ from matplotlib import pyplot as PLT
 
 class ScenarioTree:
     #Constructor
-    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateRQMCForYQfix = False, generateasYQfix = False, model = "YFix", CopyscenariofromYFIX=False ):
+    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateasYQfix = False, model = "YFix", CopyscenariofromYFIX=False ):
         self.CopyscenariofromYFIX= CopyscenariofromYFIX
         self.Seed = seed
         if Constants.Debug:
@@ -48,8 +48,8 @@ class ScenarioTree:
                                                                                for w in range(len(YQFixSceanrios) )  ]
 
         self.DemandYQFixRQMC = []
-        self.GenerateRQMCForYQFix = generateRQMCForYQfix
         self.Model = model
+        self.GenerateRQMCForYQFix = (self.ScenarioGenerationMethod == Constants.RQMC and self.Model == Constants.ModelYQFix)
         if self.ScenarioGenerationMethod == Constants.All and model == Constants.ModelYQFix:
             sizefixed = len( givenfirstperiod)
             nrscenario = int( max( math.pow( 8 , 3-sizefixed), 1) )
@@ -60,8 +60,7 @@ class ScenarioTree:
             temporaryscenariotree = ScenarioTree(self.Instance, temporarytreestructur, self.Seed,
                                         averagescenariotree=False,
                                         scenariogenerationmethod=Constants.All,
-                                        givenfirstperiod=givenfirstperiod,
-                                        generateRQMCForYQfix=False)
+                                        givenfirstperiod=givenfirstperiod)
             temporaryscenarios = temporaryscenariotree.GetAllScenarios( False )
             self.DemandToFollowMultipleSceario = [[[temporaryscenarios[s].Demands[t][p]
                                                       if self.Instance.HasExternalDemand[p]
@@ -91,13 +90,15 @@ class ScenarioTree:
         #     self.ProbabilityToFollowMultipleSceario = [temporaryscenarios[s].Probability for s in range(nrscenario)]
 
 
-        if self.ScenarioGenerationMethod == Constants.RQMC and generateRQMCForYQfix:
+        if self.ScenarioGenerationMethod == Constants.RQMC and self.GenerateRQMCForYQFix:
+
              timebucketswithuncertainty = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore , self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter )
              nrtimebucketswithuncertainty =len( timebucketswithuncertainty )
              avgvector = [  self.Instance.ForecastedAverageDemand[t +  self.Instance.NrTimeBucketWithoutUncertaintyBefore ][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebucketswithuncertainty ) ]
              stdvector = [  self.Instance.ForcastedStandardDeviation[t +  self.Instance.NrTimeBucketWithoutUncertaintyBefore ][p] for p in self.Instance.ProductWithExternalDemand for t in range( nrtimebucketswithuncertainty ) ]
              dimension = len( self.Instance.ProductWithExternalDemand ) * (nrtimebucketswithuncertainty)
-             nrscenarion = self.NrBranches[1]
+
+             nrscenarion = max( self.NrBranches[i] for i in range( len(self.NrBranches ) ) )
              rqmcpoint01 = RQMCGenerator.RQMC01( nrscenarion , dimension  )
 
              # for d in range(dimension):

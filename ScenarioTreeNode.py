@@ -43,6 +43,7 @@ class ScenarioTreeNode:
                 #    nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
                 if (self.Owner.ScenarioGenerationMethod == Constants.RQMC
                     and self.Owner.GenerateRQMCForYQFix
+                    and t> self.Owner.FollowGivenUntil
                     and not time >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
                     and not time < (  self.Instance.NrTimeBucketWithoutUncertaintyBefore ) ):
                     #print "stochastisity at time: %d"%time
