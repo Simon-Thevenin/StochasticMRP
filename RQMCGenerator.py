@@ -7,6 +7,8 @@ class RQMCGenerator:
 	#This method generate a set of points in [0,1] using RQMC. The points are generated with the library given on the website of P. Lecuyer
     @staticmethod
     def RQMC01( nrpoints, dimensionpoint ):
+        saved = dimensionpoint
+        dimensionpoint = 50
         randomizer = [np.random.uniform( 0.0 , 10000000000.0)  for i in range(dimensionpoint)]
         result=[]
         #For dimension 3 only, and nr point in 2, 4, 8, 16, 32
@@ -6010,10 +6012,10 @@ class RQMCGenerator:
         if nrpoints == 2998 :
         	if dimensionpoint == 50: n = 2998; a = [1, 1145, 1397, 831, 1171, 1045, 295, 757, 1429, 605, 1109, 493, 395, 805, 955, 1441, 1039, 963, 569, 859, 541, 761, 507, 1463, 57, 561, 1235, 1241, 795, 433, 711, 1187, 883, 1141, 345, 939, 385, 1207, 1133, 1013, 259, 995, 1447, 1113, 335, 1409, 821, 1161, 683, 631] 
         if nrpoints == 2999 :
-        	if dimensionpoint == 50: n = 2999; a = [1, 1267, 830, 654, 292, 1430, 1134, 771, 226, 1224, 1376, 1147, 351, 487, 92, 1321, 597, 983, 971, 198, 1396, 1091, 696, 762, 631, 913, 392, 1219, 412, 1337, 1164, 423, 1437, 364, 790, 63, 111, 44, 535, 919, 681, 603, 497, 1414, 826, 574, 1203, 369, 1366, 578] 
+        	if dimensionpoint == 50: n = 2999; a = [1, 1267, 830, 654, 292, 1430, 1134, 771, 226, 1224, 1376, 1147, 351, 487, 92, 1321, 597, 983, 971, 198, 1396, 1091, 696, 762, 631, 913, 392, 1219, 412, 1337, 1164, 423, 1437, 364, 790, 63, 111, 44, 535, 919, 681, 603, 497, 1414, 826, 574, 1203, 369, 1366, 578]
 
-       
-	    a = [ a[d] for d in range( dimensionpoint )]
+        dimensionpoint = saved
+        a = [ a[d] for d in range( dimensionpoint )]
         result = [[ ( (i * a[d] % n) / float(n) + randomizer[d] ) % 1 for d in range( dimensionpoint )] for i in range(n)]
       
         return result

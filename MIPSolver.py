@@ -310,6 +310,13 @@ class MIPSolver(object):
     def CreateVariable( self ):
         # Define the cost vector for each variable. As the numbber of variable changes when non anticipativity is used the cost are created differently
         if  not  self.UseImplicitNonAnticipativity:
+
+            variableproductioncosts =  [ 0
+                                          for w in self.ScenarioSet
+                                             for t in self.Instance.TimeBucketSet
+                                                for p in self.Instance.ProductSet ]
+
+
             inventorycosts = [ self.Instance.InventoryCosts[p]
                                * self.Scenarios[w].Probability
                                * math.pow( self.Instance.Gamma, t)
@@ -349,6 +356,7 @@ class MIPSolver(object):
             nrinventoryvariable = self.NrInventoryVariableWithoutNonAnticipativity
             nrbackordervariable = self.NrBackorderVariableWithoutNonAnticipativity
             nrproductionvariable = self.NrProductionVariableWithoutNonAnticipativity
+            variableproductioncosts = [0] * nrquantityvariable
             inventorycosts = [0] * nrinventoryvariable
             setupcosts = [0] * nrproductionvariable
             backordercosts = [0] * nrbackordervariable
@@ -359,6 +367,13 @@ class MIPSolver(object):
                         inventorycostindex = self.Scenarios[w].InventoryVariable[t][p] - self.StartInventoryVariableWithoutNonAnticipativity
                         inventorycosts[inventorycostindex] = inventorycosts[inventorycostindex] \
                                                              + self.Instance.InventoryCosts[p] * self.Scenarios[w].Probability * np.power( self.Instance.Gamma, t )
+
+                        # Add the cost of the cariable representing multiple scenarios
+                        #quantityindex = self.Scenarios[w].QuanitityVariable[t][p] - self.StartQuantityVariableWithoutNonAnticipativity
+                        #print quantityindex
+                        #for q in self.Instance.ProductSet:
+                        #    variableproductioncosts[quantityindex] = variableproductioncosts[quantityindex] \
+                        #                                     +  self.Instance.Requirements[p][q]*self.Instance.InventoryCosts[q] * self.Scenarios[w].Probability * np.power(self.Instance.Gamma, t)
 
                         if self.Model <> Constants.ModelYFix and self.Model <> Constants.ModelYQFix :
                             setupcostindex = self.Scenarios[w].ProductionVariable[t][
@@ -408,7 +423,7 @@ class MIPSolver(object):
                         upperbound[self.GetIndexQuantityVariable(p,t,w)] =  max((setup) * self.M,0.0)
 
 
-        self.Cplex.variables.add(obj= [0.0] * nrquantityvariable,
+        self.Cplex.variables.add(obj= variableproductioncosts,
                                 lb=[0.0] * nrquantityvariable,
                                 ub= upperbound)
 
