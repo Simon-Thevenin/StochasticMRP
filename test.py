@@ -17,7 +17,7 @@ import numpy as np
 import csv
 import math
 from datetime import datetime
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 import cPickle as pickle
 from Constants import Constants
 from Evaluator import Evaluator

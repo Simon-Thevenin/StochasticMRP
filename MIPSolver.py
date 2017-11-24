@@ -311,7 +311,9 @@ class MIPSolver(object):
         # Define the cost vector for each variable. As the numbber of variable changes when non anticipativity is used the cost are created differently
         if  not  self.UseImplicitNonAnticipativity:
 
-            variableproductioncosts =  [ 0
+            variableproductioncosts =  [  0.0
+                                          #( sum( self.Instance.Requirements[p][q]*self.Instance.InventoryCosts[q] for q in self.Instance.ProductSet ) \
+                                          #                      * self.Scenarios[w].Probability * np.power(self.Instance.Gamma, t) )
                                           for w in self.ScenarioSet
                                              for t in self.Instance.TimeBucketSet
                                                 for p in self.Instance.ProductSet ]
@@ -371,9 +373,9 @@ class MIPSolver(object):
                         # Add the cost of the cariable representing multiple scenarios
                         #quantityindex = self.Scenarios[w].QuanitityVariable[t][p] - self.StartQuantityVariableWithoutNonAnticipativity
                         #print quantityindex
-                        #for q in self.Instance.ProductSet:
-                        #    variableproductioncosts[quantityindex] = variableproductioncosts[quantityindex] \
-                        #                                     +  self.Instance.Requirements[p][q]*self.Instance.InventoryCosts[q] * self.Scenarios[w].Probability * np.power(self.Instance.Gamma, t)
+                        #variableproductioncosts[quantityindex] = variableproductioncosts[quantityindex] \
+                        #                                        +  ( sum( self.Instance.Requirements[p][q]*self.Instance.InventoryCosts[q] for q in self.Instance.ProductSet ) \
+                        #                                        * self.Scenarios[w].Probability * np.power(self.Instance.Gamma, t) )
 
                         if self.Model <> Constants.ModelYFix and self.Model <> Constants.ModelYQFix :
                             setupcostindex = self.Scenarios[w].ProductionVariable[t][
