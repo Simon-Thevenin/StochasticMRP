@@ -1,6 +1,8 @@
+from __future__ import division
 import pandas as pd
 import numpy as np
 import openpyxl as opxl
+
 
 import math
 from ScenarioTree import ScenarioTree
@@ -26,6 +28,7 @@ class TemplemeierInstanceReader( InstanceReader ):
         self.DatFile = None
         self.TMPFile = None
         self.TBOFile = None
+        self.Filename = ""
 
     def ReadProductList(self):
         self.Instance.NrProduct = int( self.DatFile[0][0] )
@@ -145,18 +148,22 @@ class TemplemeierInstanceReader( InstanceReader ):
 
         return result
 
-    def GenerateTimeHorizon(self):
+    def GenerateTimeHorizon(self, largetimehorizon = False):
         self.Instance.ComputeLevel()
         self.Instance.ComputeMaxLeadTime()
         self.Instance.ComputeIndices()
-        # Consider a time horizon of 20 days plus the total lead time
+
         self.Instance.NrTimeBucketWithoutUncertaintyBefore = self.Instance.MaxLeadTime
         self.Instance.NrTimeBucketWithoutUncertaintyAfter = 0#self.Instance.MaxLeadTime
         self.Instance.NrTimeBucket = self.Instance.NrTimeBucketWithoutUncertaintyBefore  + self.Instance.NrTimeBucketWithoutUncertaintyAfter + int(self.TMPFile[1][1])
 
+        # Consider a time horizon of 20 days plus the total lead time
+        if largetimehorizon:
+            self.Instance.NrTimeBucket = self.Instance.NrTimeBucketWithoutUncertaintyBefore + self.Instance.NrTimeBucketWithoutUncertaintyAfter + 20
+
         self.Instance.ComputeIndices()
 
-    def GenerateDistribution(self, forecasterror, rateknown = 90):
+    def GenerateDistribution(self, forecasterror, rateknown = 90, longtimehorizon= False):
             self.Instance.ForecastError = [forecasterror for p in self.Instance.ProductSet]
             self.Instance.RateOfKnownDemand = [math.pow(rateknown, (t - self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1) ) for t in self.Instance.TimeBucketSet]
             self.Instance.ForecastedAverageDemand = [ [ 0.0 for p in self.Instance.ProductSet ]
@@ -167,22 +174,47 @@ class TemplemeierInstanceReader( InstanceReader ):
                 if sum( 1 for q in self.Instance.ProductSet if self.Instance.Requirements[q][p]) == 0:
                     finishproduct.append( p )
 
-            prodindex = 0
-            for p in range( len( finishproduct ) ):
-                prodindex = finishproduct[p]
-                timeindex = 0
-                stochastictime = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore, self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
-                for t in stochastictime:
-                    timeindex += 1
+            if longtimehorizon:
+                #get the average demand and the coefficient of variation
+                self.Instance.YearlyAverageDemand = [0 for p in self.Instance.ProductSet]
+                for p in range(len(finishproduct)):
+                    prodindex = finishproduct[p]
+                    self.Instance.YearlyAverageDemand[prodindex] = int(self.DTFile[0][p])
 
-                    if t <>  self.Instance.NrTimeBucketWithoutUncertaintyBefore + int(self.DTFile[timeindex][0]) - 1:
-                        raise NameError( "Wrong time %d - %d -%d"%( t , int(self.DTFile[timeindex][0]) - 1 , timeindex ) )
+                coefficientofvariation = float(self.Filename[3])/10.0
 
-                    self.Instance.ForecastedAverageDemand[t][prodindex] = float( self.DTFile[timeindex][p+1] )
+                #generate the demand following a normal distribution and the coefficient of variation
+                self.Instance.ForecastedAverageDemand = [[ np.floor( np.random.normal(self.Instance.YearlyAverageDemand[p],
+                                                                                     coefficientofvariation * self.Instance.YearlyAverageDemand[p], 1).clip( min=0.0)).tolist()[0]
+                                                          if self.Instance.YearlyAverageDemand[p] > 0
+                                                          else 0
+                                                          for p in self.Instance.ProductSet]
+                                                            for t in self.Instance.TimeBucketSet]
+                print  self.Instance.YearlyAverageDemand
+                print coefficientofvariation
+                print  self.Instance.ForecastedAverageDemand
+            else:
+                prodindex = 0
+                for p in range( len( finishproduct ) ):
+                    prodindex = finishproduct[p]
+                    timeindex = 0
+                    stochastictime = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore, self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
+                    for t in stochastictime:
+                        timeindex += 1
 
-                for t in range( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter,  self.Instance.NrTimeBucket):
-                    self.Instance.ForecastedAverageDemand[t][prodindex] = sum( self.Instance.ForecastedAverageDemand[t2][prodindex]
-                                                                               for t2 in stochastictime  ) / len(stochastictime)
+                        if t <>  self.Instance.NrTimeBucketWithoutUncertaintyBefore + int(self.DTFile[timeindex][0]) - 1:
+                            raise NameError( "Wrong time %d - %d -%d"%( t , int(self.DTFile[timeindex][0]) - 1 , timeindex ) )
+
+                        self.Instance.ForecastedAverageDemand[t][prodindex] = float( self.DTFile[timeindex][p+1] )
+
+                    for t in range( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter,  self.Instance.NrTimeBucket):
+                        self.Instance.ForecastedAverageDemand[t][prodindex] = sum( self.Instance.ForecastedAverageDemand[t2][prodindex]
+                                                                                   for t2 in stochastictime  ) / len(stochastictime)
+
+                    self.Instance.YearlyAverageDemand = [sum(self.Instance.ForecastedAverageDemand[t][p]
+                                                             for t in
+                                                             self.Instance.TimeBucketSet) / self.Instance.NrTimeBucket
+                                                         for p in self.Instance.ProductSet]
 
             self.Instance.ForcastedStandardDeviation = [ [ (1 - self.Instance.RateOfKnownDemand[t])
                                                            * self.Instance.ForecastError[p]
@@ -192,9 +224,7 @@ class TemplemeierInstanceReader( InstanceReader ):
                                                            for p in self.Instance.ProductSet ]
                                                          for t in self.Instance.TimeBucketSet]
 
-            self.Instance.YearlyAverageDemand = [ sum( self.Instance.ForecastedAverageDemand[t][p]
-                                                       for t in self.Instance.TimeBucketSet ) / self.Instance.NrTimeBucket
-                                                  for p in self.Instance.ProductSet]
+
 
             self.Instance.YearlyStandardDevDemands = [sum(self.Instance.ForcastedStandardDeviation[t][p]
                                              for t in self.Instance.TimeBucketSet) / self.Instance.NrTimeBucket

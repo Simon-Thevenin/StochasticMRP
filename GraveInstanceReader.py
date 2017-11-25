@@ -59,14 +59,17 @@ class GraveInstanceReader(InstanceReader):
          result =  [self.Datasheetdf.get_value(self.Instance.ProductName[p], 'relDepth') for p in self.Instance.ProductSet]
          return result
 
-    def GenerateTimeHorizon(self):
+    def GenerateTimeHorizon(self, largetimehorizon = False):
         # Consider a time horizon of 20 days plus the total lead time
         self.Instance.NrTimeBucket =  self.Instance.MaxLeadTime +1
+
+        if largetimehorizon:
+            self.Instance.NrTimeBucket = 20
         self.Instance.NrTimeBucketWithoutUncertaintyBefore = 0
         self.Instance.NrTimeBucketWithoutUncertaintyAfter = 0
         self.Instance.ComputeIndices()
 
-    def GenerateDistribution(self, forecasterror, rateknown):
+    def GenerateDistribution(self, forecasterror, rateknown, longtimehorizon = False):
         # Generate the sets of scenarios
         self.Instance.YearlyAverageDemand = [ self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand')
                                               for p in self.Instance.ProductSet]

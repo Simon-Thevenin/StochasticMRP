@@ -29,8 +29,6 @@ class MIPSolver(object):
                  mipsetting = "",
                  warmstart = False,
                  usesafetystock = False,
-                 #maxquantities = [],
-                 minsetup = [],
                  logfile = ""):
 
         # Define some attributes and functions which help to et the index of the variable.
@@ -98,12 +96,12 @@ class MIPSolver(object):
         self.QuantityConstraintNR = []
 
         #self.MaxQuantities = maxquantities
-        self.MinSetup = minsetup
+        #self.MinSetup = minsetup
 
         #if len(self.MaxQuantities) == 0:
         #    self.MaxQuantities = [1000000000 for p in self.Instance.ProductSet]
 
-            # Compute the start of index and the number of variables for the considered instance
+    # Compute the start of index and the number of variables for the considered instance
     def ComputeIndices( self ):
 
             scenariotimeproduct = self.Instance.NrProduct * self.Instance.NrTimeBucket * self.NrScenario

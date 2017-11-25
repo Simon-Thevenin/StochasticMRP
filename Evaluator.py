@@ -340,6 +340,7 @@ class Evaluator:
         return result, error
 
     def ResolveRule(self, quantitytofix, model, givensetup, demanduptotimet, time):
+
         decentralizedmrp = DecentralizedMRP(self.Instance)
         solution = decentralizedmrp.SolveWithSimpleRule( model, givensetup, quantitytofix, time-1, demanduptotimet)
 

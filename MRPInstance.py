@@ -278,12 +278,12 @@ class MRPInstance:
 
 
     #This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile( self, instancename, distribution, b = 2, fe= 25, e="n", rk = 50, leadtimestructure =1, lostsale = 2):
+    def ReadFromFile( self, instancename, distribution, b = 2, fe= 25, e="n", rk = 50, leadtimestructure =1, lostsale = 2, longtimehoizon = False):
         if instancename[0] == "0":
             reader = GraveInstanceReader( self )
         else:
             reader = TemplemeierInstanceReader(self)
-        reader.ReadFromFile(instancename, distribution, b, fe, e, rk, leadtimestructure, lostsale )
+        reader.ReadFromFile(instancename, distribution, b, fe, e, rk, leadtimestructure, lostsale, longtimehoizon )
 
 
 

@@ -50,3 +50,8 @@ class Constants:
     AlgorithmTimeLimit = 36000.0
     AlgorithmOptimalityTolerence = 0.00001
     SDDPIterationLimit = 10000
+
+    @staticmethod
+    def IsRule( s ):
+       result =  s == Constants.L4L or s == Constants.EOQ or s == Constants.POQ or s == Constants.SilverMeal
+       return result

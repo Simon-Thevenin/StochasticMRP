@@ -2,6 +2,7 @@ from Constants import Constants
 from ScenarioTreeNode import ScenarioTreeNode
 from MRPSolution import MRPSolution
 from ScenarioTree import ScenarioTree
+from Solver import Solver
 import math
 
 #This object contains logic and methods to compute the classical MRP in decentralized fashion
@@ -10,7 +11,7 @@ class DecentralizedMRP(object):
 
     # constructor
 
-    def __init__(self, mrpinstance):
+    def __init__(self,  mrpinstance):
         self.Instance =mrpinstance
         self.Solution = None
         self.SafetyStock = None
@@ -139,32 +140,10 @@ class DecentralizedMRP(object):
 
         return safetystock
 
-    def GetAverageDemandScenarioTree(self):
-        scenariotree = ScenarioTree( self.Instance,
-                                     [1]*(self.Instance.NrTimeBucket+1) + [0],
-                                     0,
-                                     averagescenariotree=True,
-                                     scenariogenerationmethod=Constants.MonteCarlo,
-                                     model = "YQFix" )
 
-        return scenariotree
 
-    def GetEmptySolution(self):
-        scenariotree = self.GetAverageDemandScenarioTree()
-        scenarioset = scenariotree.GetAllScenarios(False)
-        production = [ [ [  0 for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet ] for w in scenarioset ]
-        quanitity = [ [ [  0 for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet ] for w in scenarioset ]
-        stock = [ [ [  0 for p in self.Instance.ProductSet ] for t in self.Instance.TimeBucketSet ] for w in scenarioset ]
-        backorder = [ [ [  0 for p in self.Instance.ProductWithExternalDemand ] for t in self.Instance.TimeBucketSet ] for w in scenarioset ]
-        result = MRPSolution( instance=self.Instance,
-                              scenriotree=scenariotree,
-                              scenarioset=scenarioset,
-                              solquantity=quanitity,
-                              solproduction=production,
-                              solbackorder=backorder,
-                              solinventory=stock)
-        result.NotCompleteSolution = True
-        return result
+
+
 
 
     def FixGivenSolution(self, givensetup, givenquantities, demanduptotimet ):
@@ -186,7 +165,7 @@ class DecentralizedMRP(object):
     def SolveWithSimpleRule( self,  rule, givensetup =[], givenquantities =[], fixuntil = -1, demanduptotimet = [] ):
         # Create an empty solution
 
-        self.Solution = self.GetEmptySolution()
+        self.Solution = Solver.GetEmptySolution( self.Instance )
 
         #Fix given solution
         self.FixUntil = fixuntil

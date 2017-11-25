@@ -9,6 +9,7 @@ import openpyxl as opxl
 from MRPInstance import MRPInstance
 from MRPSolution import MRPSolution
 from MIPSolver import MIPSolver
+from Solver import Solver
 from ScenarioTreeNode import ScenarioTreeNode
 from ScenarioTree import ScenarioTree
 import time
@@ -25,7 +26,7 @@ from SDDP import SDDP
 import argparse
 import subprocess
 from ScenarioTreeNode import ScenarioTreeNode
-from DecentralizedMRP import DecentralizedMRP
+
 import glob as glob
 #pass Debug to true to get some debug information printed
 #
@@ -72,18 +73,16 @@ ScenarioGeneration = "MC"
 Solution = None
 #Evaluate solution is true, the solution in the variable "GivenQuantities" is given to CPLEX to compute the associated costs
 EvaluateSolution = False
-FixUntilTime = 0
-GivenQuantities =[]
-GivenSetup = []
+
+
 VSS = []
 ScenarioSeed = 1
 SeedIndex = -1
 TestIdentifier = []
 EvaluatorIdentifier = []
-MaxQuantities = []
-MinSetup = []
+
 MIPSetting = ""
-UseSS = False
+
 UseNonAnticipativity = True
 SeedArray = [ 2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788 ]
 
@@ -114,65 +113,7 @@ def PrintFinalResult():
     wr.writerow( data )
     myfile.close()
 
-#This function creates the CPLEX model and solves it.
-def MRP( treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False, yfixheuristic = False, warmstart = False ):
 
-    global SolveInformation
-    global CompactSolveInformation
-    scenariotree = ScenarioTree( Instance, treestructur, ScenarioSeed,
-                                     averagescenariotree=averagescenario,
-                                     scenariogenerationmethod = ScenarioGeneration,
-                                     model= Model)
-
-    MIPModel = Model
-    if Model == Constants.Average:
-        MIPModel = Constants.ModelYQFix
-
-    mipsolver = MIPSolver(Instance, MIPModel, scenariotree, evpi = EVPI,
-                          implicitnonanticipativity=(not EVPI),
-                          evaluatesolution = EvaluateSolution,
-                          yfixheuristic= yfixheuristic,
-                          givenquantities = GivenQuantities,
-                          givensetups = GivenSetup,
-                          fixsolutionuntil = FixUntilTime,
-                          mipsetting = MIPSetting,
-                          warmstart = warmstart,
-                          usesafetystock=UseSS,
-                           minsetup = MinSetup,
-                          logfile=GetTestDescription())
-    if Constants.Debug:
-        Instance.PrintInstance()
-
-    if Constants.PrintScenarios:
-        mipsolver.PrintScenarioToFile(  )
-
-    if Constants.Debug:
-        print "Start to model in Cplex"
-    mipsolver.BuildModel()
-    if Constants.Debug:
-        print "Start to solve instance %s with Cplex"% Instance.InstanceName;
-
-
-    # scenario = mipsolver.Scenarios
-    # for s in scenario:
-    #     print s.Probability
-    # demands = [ [ [ scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet ] for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
-    # for t in Instance.TimeBucketSet:
-    #       for p in Instance.ProductWithExternalDemand:
-    #           print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
-    #           with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
-    #                 #v_hist = np.ravel(v)  # 'flatten' v
-    #                fig = PLT.figure()
-    #                ax1 = fig.add_subplot(111)
-    #                n, bins, patches = ax1.hist(demands[t][p], bins=100,  facecolor='green')
-    #                PLT.show()
-
-    solution = mipsolver.Solve()
-
-    if recordsolveinfo:
-        SolveInformation = mipsolver.SolveInfo
-
-    return solution, mipsolver
 
 def GetTestDescription():
     result = JoinList( TestIdentifier)
@@ -186,38 +127,7 @@ def GetEvaluateDescription():
     result = JoinList(EvaluatorIdentifier)
     return result
 
-#Solve the two-stage version of the problem
-def SolveYQFix( ):
-    global UseSS
-    global Model
-    tmpmodel = Model
-    start = time.time()
 
-    if Constants.Debug:
-        Instance.PrintInstance()
-
-    average = False
-    nrscenario = int(NrScenario)
-    if Model == Constants.Average or Model == Constants.AverageSS:
-        average = True
-        nrscenario = 1
-
-        if Model == Constants.AverageSS:
-             UseSS = True
-             Model = Constants.Average
-
-    treestructure = [1, nrscenario] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
-    solution, mipsolver = MRP( treestructure, average, recordsolveinfo=True )
-
-    end = time.time()
-    solution.TotalTime = end - start
-
-    PrintTestResult()
-    PrintSolutionToFile( solution )
-    if EVPI:
-        PrintFinalResult()
-    Model = tmpmodel
-    RunEvaluation()
 
 
 def PrintSolutionToFile( solution  ):
@@ -228,98 +138,18 @@ def PrintSolutionToFile( solution  ):
         solution.PrintToPickle(testdescription)
 
 
-#Run the method Heuristic YFix: First solve the 2-stage problem to fix the Y variables, then solve the multi-stages problem on large scenario tree.
-def SolveYFixHeuristic():
-    global SolveInformation
-    global Model
-    global GivenSetup
-    global ScenarioGeneration
-
-    start = time.time()
-    treestructure = [1, 500] +  [1] * ( Instance.NrTimeBucket - 1 ) +[ 0 ]
-    Model = Constants.ModelYQFix
-    chosengeneration = ScenarioGeneration
-    ScenarioGeneration = Constants.RQMC
-    solution, mipsolver = MRP( treestructure, False, recordsolveinfo=True )
-    GivenSetup = [[solution.Production[0][t][p] for p in Instance.ProductSet]  for t in Instance.TimeBucketSet]
-
-    if Constants.Debug:
-        Instance.PrintInstance()
-
-    ScenarioGeneration = chosengeneration
-    Model = Constants.ModelYFix
-    treestructure = GetTreeStructure()
-    solution, mipsolver = MRP(treestructure,
-                              averagescenario=False,
-                              recordsolveinfo=True,
-                              yfixheuristic = True)
-
-    end = time.time()
-    solution.TotalTime = end - start
-
-    PrintTestResult()
-
-    if Method == "MIP":
-        PrintSolutionToFile(solution)
-        RunEvaluation()
-    GatherEvaluation()
-
-def SolveYFix():
-    start = time.time()
-    global SolveInformation
-    global Model
-    global GivenSetup
-    global ScenarioGeneration
-   # global MaxQuantities
-    global MinSetup
-    if Constants.Debug:
-        Instance.PrintInstance()
 
 
-    treestructure = [1, 200] + [1] * (Instance.NrTimeBucket - 1) + [0]
-    Model = Constants.ModelYQFix
-    chosengeneration = ScenarioGeneration
-    ScenarioGeneration = "RQMC"
-    solution, mipsolver = MRP(treestructure, False, recordsolveinfo=True)
-    GivenSetup =  [[solution.Production[0][t][p] for p in Instance.ProductSet] for t in Instance.TimeBucketSet]
-    Quanitties = [[solution.ProductionQuantity[0][t][p] for p in Instance.ProductSet] for t in Instance.TimeBucketSet]
-    MinSetup = [sum(GivenSetup[t][p] for t in Instance.TimeBucketSet )  for  p in Instance.ProductSet ]
-    #MaxQuantities = [100000 + max(Quanitties[t][p] for t in Instance.TimeBucketSet )  for  p in Instance.ProductSet ]
-    ScenarioGeneration = chosengeneration
-    Model = Constants.ModelYFix
-    treestructure = GetTreeStructure()
 
+def Solve():
 
-    if Method == "MIP" :
-            solution, mipsolver = MRP(treestructure, averagescenario=False, recordsolveinfo=True, warmstart = True)
+    solver = Solver (Instance, TestIdentifier, mipsetting=MIPSetting, testdescription= GetTestDescription(), evaluatesol = EvaluateSolution, treestructure=GetTreeStructure())
 
-    if Method == "SDDP":
-         sddpsolver = SDDP( Instance, ScenarioSeed, nrscenarioperiteration = int(NrScenario), generationmethod = ScenarioGeneration  )
-         sddpsolver.Run()
+    if Instance.NrTimeBucket > 5:
+        solution =solver.RollingHorizonSolve()
+    else:
+        solution = solver.Solve()
 
-         SolveInformation = sddpsolver.SolveInfo
-         evaluator = Evaluator(Instance, [], [sddpsolver], optimizationmethod = Constants.SDDP)
-
-
-         OutOfSampleTestResult = evaluator.EvaluateYQFixSolution(TestIdentifier, EvaluatorIdentifier, Model,
-                                                            saveevaluatetab=True, filename=GetEvaluationFileName())
-    # PrintFinalResult()
-
-    end = time.time()
-    solution.TotalTime = end - start
-    PrintTestResult()
-    #if EVPI:
-    #    PrintSolutionToFile(solution)
-    #    ComputeInSampleStatistis()
-    #    PrintFinalResult()
-    if   Method == "MIP" :
-        PrintSolutionToFile( solution )
-        RunEvaluation()
-    GatherEvaluation()
-
-def SolveWithRule():
-    decentralizedmrp = DecentralizedMRP(Instance)
-    solution = decentralizedmrp.SolveWithSimpleRule( Model )
     PrintTestResult()
     PrintSolutionToFile(solution)
     RunEvaluation()
@@ -335,16 +165,9 @@ def GetPreviouslyFoundSolution():
             solution.ReadFromFile( filedescription )
             result.append( solution )
 
-            #for s in range(len(solution.Scenarioset)):
-            #    print "Scenario with demand:%r" % solution.Scenarioset[s].Demands
-            #    print "quantity %r" % [ [solution.ProductionQuantity.loc[solution.MRPInstance.ProductName[p], (time, s)] for p in
-            #                           solution.MRPInstance.ProductSet ] for time in solution.MRPInstance.TimeBucketSet ]
-
         except IOError:
             if Constants.Debug:
                 print "No solution found for seed %d"%s
-
-
 
     return result
 
@@ -378,6 +201,64 @@ def GetEvaluationFileName():
     #result = "./Evaluations/" + GetTestDescription() + GetEvaluateDescription()
     return result
 
+#Define the tree  structur do be used
+def GetTreeStructure( ):
+        treestructure = []
+        if Model == Constants.Average or Model == Constants.AverageSS:
+            treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
+
+        if Model == Constants.ModelYQFix:
+            treestructure = [1, int(NrScenario)] + [1] * (Instance.NrTimeBucket - 1) + [0]
+
+        if Model == Constants.ModelYFix or Model ==Constants.ModelHeuristicYFix:
+            treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
+            stochasticparttreestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
+            nrtimebucketstochastic = Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyBefore - Instance.NrTimeBucketWithoutUncertaintyAfter
+
+            if NrScenario == "4":
+                if nrtimebucketstochastic == 1:
+                    stochasticparttreestructure = [4]
+                if nrtimebucketstochastic == 2:
+                    stochasticparttreestructure = [4, 1]
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [4, 1, 1]
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [4, 1, 1, 1]
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [8, 8, 2, 2, 2]
+
+            if NrScenario == "6400a":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [200, 32, 1]
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [200, 32, 1, 1]
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [200, 32, 1, 1, 1]
+
+            if NrScenario == "6400b":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [50, 32, 4]
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [50, 8, 4, 4]
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [50, 8, 4, 2, 2]
+
+            if NrScenario == "6400c":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [20, 20, 16]
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [10, 10, 8, 8]
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [8, 8, 5, 5, 4]
+
+            k = 0
+            for i in range(Instance.NrTimeBucketWithoutUncertaintyBefore + 1,
+                           Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyAfter + 1):
+                treestructure[i] = stochasticparttreestructure[k]
+                k += 1
+
+        return treestructure
+
 def EvaluateSingleSol(  ):
    # ComputeInSampleStatistis()
     global OutOfSampleTestResult
@@ -398,8 +279,6 @@ def EvaluateSingleSol(  ):
     if Model == Constants.ModelHeuristicYFix:
         MIPModel = Constants.ModelYFix
         Model = Constants.ModelYFix
-    #if  IsRule( Model ) :
-    #   Model =  Constants.ModelYQFix
 
     evaluator = Evaluator(Instance, [solution], [], PolicyGeneration, evpi=EVPI,
                       scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(),
@@ -407,8 +286,6 @@ def EvaluateSingleSol(  ):
                       evpiseed=SeedArray[0])
 
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  MIPModel, saveevaluatetab= True, filename = GetEvaluationFileName(), evpi=EVPI  )
-   # PrintFinalResult()
-
 
     Model = tmpmodel
     GatherEvaluation()
@@ -451,106 +328,35 @@ def GatherEvaluation():
     TestIdentifier[5] = currentseedvalue
 
 
-#Define the tree structur do be used
-def GetTreeStructure():
-    treestructure = []
-    if Model == Constants.Average or Model == Constants.AverageSS:
-        treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
-
-    if Model == Constants.ModelYQFix:
-        treestructure = [1, int(NrScenario)] + [1] * (Instance.NrTimeBucket - 1) + [0]
-
-    if Model == Constants.ModelYFix:
-        treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
-        stochasticparttreestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
-        nrtimebucketstochastic = Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyBefore  - Instance.NrTimeBucketWithoutUncertaintyAfter
+#
 
 
+# #This function compute some statistic about the genrated trees. It is usefull to check if the generator works as expected.
+# def ComputeAverageGeneraor():
+#     offset=1000
+#     nrscenario = 10000
+#     Average = [ 0  ] * Instance.NrProduct
+#     data = [0] * nrscenario
+#     for myseed in range(offset, nrscenario + offset, 1):
+#         #Generate a random scenario
+#         tree = ScenarioTree(  instance = Instance, branchperlevel = [1] * Instance.NrTimeBucket + [0] , seed = myseed, mipsolver = None, averagescenariotree = False, slowmoving = True )
+#         mipsolver = MIPSolver(Instance, Model, tree, UseNonAnticipativity,
+#                               implicitnonanticipativity=True,
+#                               evaluatesolution=EvaluateSolution,
+#                               givensolution=GivenQuantities,
+#                               fixsolutionuntil=FixUntilTime )
+#
+#         scenarios = tree.GetAllScenarios( True )
+#
+#         data[myseed - offset] = scenarios[0].Demands[0][7]
+#         for p in Instance.ProductSet:
+#             Average[p] = Average[p] + scenarios[0].Demands[0][p]
+#
+#     for p in Instance.ProductSet:
+#         Average[p] = Average[p] / nrscenario
+#
+#     print Average
 
-        if NrScenario == "4":
-            if nrtimebucketstochastic == 1:
-                stochasticparttreestructure = [4]
-            if nrtimebucketstochastic == 2:
-                stochasticparttreestructure = [4,1]
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [4, 1, 1]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [4, 1, 1, 1]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 2, 2, 2]
-
-
-
-        if NrScenario == "6400a":
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [200, 32, 1]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [200, 32, 1, 1]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [200, 32, 1, 1, 1]
-
-        if NrScenario == "6400b":
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [50, 32, 4]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [50, 8, 4, 4]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [50, 8, 4, 2, 2]
-
-        if NrScenario == "6400c":
-            if nrtimebucketstochastic == 3:
-                stochasticparttreestructure = [20, 20, 16]
-            if nrtimebucketstochastic == 4:
-                stochasticparttreestructure = [10, 10, 8, 8]
-            if nrtimebucketstochastic == 5:
-                stochasticparttreestructure = [8, 8, 5, 5, 4]
-
-        k= 0
-        for i in range( Instance.NrTimeBucketWithoutUncertaintyBefore+1, Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyAfter+1):
-            treestructure[i] = stochasticparttreestructure[ k]
-            k+=1
-
-    return treestructure
-
-
-#This function compute some statistic about the genrated trees. It is usefull to check if the generator works as expected.
-def ComputeAverageGeneraor():
-    offset=1000
-    nrscenario = 10000
-    Average = [ 0  ] * Instance.NrProduct
-    data = [0] * nrscenario
-    for myseed in range(offset, nrscenario + offset, 1):
-        #Generate a random scenario
-        tree = ScenarioTree(  instance = Instance, branchperlevel = [1] * Instance.NrTimeBucket + [0] , seed = myseed, mipsolver = None, averagescenariotree = False, slowmoving = True )
-        mipsolver = MIPSolver(Instance, Model, tree, UseNonAnticipativity,
-                              implicitnonanticipativity=True,
-                              evaluatesolution=EvaluateSolution,
-                              givensolution=GivenQuantities,
-                              fixsolutionuntil=FixUntilTime )
-
-        scenarios = tree.GetAllScenarios( True )
-
-        data[myseed - offset] = scenarios[0].Demands[0][7]
-        for p in Instance.ProductSet:
-            Average[p] = Average[p] + scenarios[0].Demands[0][p]
-
-    for p in Instance.ProductSet:
-        Average[p] = Average[p] / nrscenario
-
-    print Average
-
-    # fixed bin size
-    bins = np.arange(0, 1000, 1)  # fixed bin size
-
-    plt.xlim([min(data) - 5, max(data) + 5])
-
-    plt.hist(data, bins=bins, alpha=0.5, normed=1)
-    plt.title('Shifted poisson distribution')
-    axes = plt.gca()
-    axes.set_ylim( [0, 0.02 ] )
-    plt.xlabel('Demand')
-    plt.ylabel('Frequency')
-    plt.show()
 
 
 def parseArguments():
@@ -643,7 +449,7 @@ def SetTestIdentifierValue():
 def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve :
         policyset = ["Re-solve"]# "NNSAC", "NNDAC", "Re-solve"]
-        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or  IsRule(Model):
+        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or  Constants.IsRule(Model):
                 policyset = ["Fix", "Re-solve"]
         for policy in policyset:
             if Constants.RunEvaluationInSeparatedJob:
@@ -658,111 +464,110 @@ def RunEvaluation(  ):
                 SetTestIdentifierValue()
                 EvaluateSingleSol()
 
-#This function runs the evaluation jobs when the method is solved for the 5 seed:
-def RunEvaluationIfAllSolve(  ):
-    #Check among the available files, if one of the sceed is not solve
-    solutions = GetPreviouslyFoundSolution()
-    if len( solutions ) >= 5 :
-        policyset = ["NNDAC", "NNSAC", "NND", "NNS", "Resolve"]
-        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or  IsRule(Model):
-            policyset = ["Fix", "Resolve"]
-
-
-        for policy in policyset:
-            if Constants.RunEvaluationInSeparatedJob:
-                jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
-                    TestIdentifier[0], TestIdentifier[1],  TestIdentifier[4],
-                    TestIdentifier[3], TestIdentifier[2], policy, SeedIndex)
-                subprocess.call( ["qsub", jobname]  )
-            else:
-                global PolicyGeneration
-                global NearestNeighborStrategy
-                PolicyGeneration = policy
-                NearestNeighborStrategy = policy
-                SetTestIdentifierValue()
-                EvaluateSingleSol()
-
-def RunTestsAndEvaluation():
-    global ScenarioSeed
-    global SeedIndex
-    for s in range( 5 ):
-        SeedIndex = s
-        ScenarioSeed = SeedArray[ s ]
-        TestIdentifier[6] = ScenarioSeed
-        if Model == Constants.ModelYQFix:
-            SolveYQFix()
-        if Model == Constants.ModelYFix:
-            SolveYFix()
-        EvaluateSingleSol()
-
-# Compute the value of VSS as  defined in the paper: "The value of the stochastic solution in multistage problems" Laureano F. Escudero  Araceli Garin  Maria Merino  Gloria Perez
-def ComputeVSS( ):
-
-    global GivenQuantities
-    global GivenSetup
-    global EvaluateSolution
-    global FixUntilTime
-
-    print "Compute VSS"
-    # Get the YQFix solution
-    #TestIdentifier[2] = Constants.ModelYQFix
-    filedescription = GetTestDescription()
-    yqfixsolution = MRPSolution()
-    yqfixsolution.ReadFromFile(filedescription)
-    oldtest2 = TestIdentifier[2]
-    oldtest3 = TestIdentifier[3]
-    oldtest4 = TestIdentifier[4]
-    oldtest5 = TestIdentifier[5]
-
-    # Get the average value solution
-    TestIdentifier[2] = Constants.Average
-    TestIdentifier[3] = Constants.MIP
-    TestIdentifier[4] = Constants.MonteCarlo
-    TestIdentifier[5] = 1
-    filedescription = GetTestDescription()
-    averagesolution = MRPSolution()
-    averagesolution.ReadFromFile(filedescription)
-
-
-    TestIdentifier[2] = oldtest2
-    TestIdentifier[3] = oldtest3
-    TestIdentifier[4] = oldtest4
-    TestIdentifier[5] = oldtest5
-    EvaluateSolution = True
-    # Run the MIP with the additional constraint to fix the average solution up to the first fixuntiltime stages
-    treestructure = GetTreeStructure()
-
-    # Get the setup quantitities associated with the solultion
-    GivenSetup = [[averagesolution.Production[0][t][p]  for p in averagesolution.MRPInstance.ProductSet] for t in averagesolution.MRPInstance.TimeBucketSet]
-
-    GivenQuantities = [[averagesolution.ProductionQuantity[0][t][p] for p in averagesolution.MRPInstance.ProductSet]
-                        for t in averagesolution.MRPInstance.TimeBucketSet ]
-
-
-    if FixUntilTime == 0:
-        GivenSetup = []
-        GivenQuantities = []
-        EvaluateSolution = False
-
-    if TestIdentifier[2] == Constants.ModelYQFix and  FixUntilTime > 0:
-        FixUntilTime = Instance.NrTimeBucket
-
-    solution, mipsolver = MRP(treestructure, False, recordsolveinfo=True)
-
-    # Something need to be printed....
-    Parameter =  [ UseNonAnticipativity, Model, ComputeAverageSolution, ScenarioSeed]
-    data = TestIdentifier + SolveInformation +  Parameter + [ FixUntilTime , solution.TotalCost - yqfixsolution.TotalCost ]
-    d = datetime.now()
-    date = d.strftime('%m_%d_%Y_%H_%M_%S')
-    myfile = open(r'./Test/VSS/TestResult_%s_%s.csv' % (GetTestDescription(), FixUntilTime  ), 'wb')
-    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-    wr.writerow( data )
-    myfile.close()
-   # PrintTestResult()
-   # PrintFinalResult()
+# #This function runs the evaluation jobs when the method is solved for the 5 seed:
+# def RunEvaluationIfAllSolve(  ):
+#     #Check among the available files, if one of the sceed is not solve
+#     solutions = GetPreviouslyFoundSolution()
+#     if len( solutions ) >= 5 :
+#         policyset = ["NNDAC", "NNSAC", "NND", "NNS", "Resolve"]
+#         if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or  Constants.IsRule(Model):
+#             policyset = ["Fix", "Resolve"]
+#
+#
+#         for policy in policyset:
+#             if Constants.RunEvaluationInSeparatedJob:
+#                 jobname = "./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s" % (
+#                     TestIdentifier[0], TestIdentifier[1],  TestIdentifier[4],
+#                     TestIdentifier[3], TestIdentifier[2], policy, SeedIndex)
+#                 subprocess.call( ["qsub", jobname]  )
+#             else:
+#                 global PolicyGeneration
+#                 global NearestNeighborStrategy
+#                 PolicyGeneration = policy
+#                 NearestNeighborStrategy = policy
+#                 SetTestIdentifierValue()
+#                 EvaluateSingleSol()
+#
+# def RunTestsAndEvaluation():
+#     global ScenarioSeed
+#     global SeedIndex
+#     for s in range( 5 ):
+#         SeedIndex = s
+#         ScenarioSeed = SeedArray[ s ]
+#         TestIdentifier[6] = ScenarioSeed
+#         if Model == Constants.ModelYQFix:
+#             SolveYQFix()
+#         if Model == Constants.ModelYFix:
+#             SolveYFix()
+#         EvaluateSingleSol()
+#
+# # Compute the value of VSS as  defined in the paper: "The value of the stochastic solution in multistage problems" Laureano F. Escudero  Araceli Garin  Maria Merino  Gloria Perez
+# def ComputeVSS( ):
+#
+#     global GivenQuantities
+#     global GivenSetup
+#     global EvaluateSolution
+#     global FixUntilTime
+#
+#     print "Compute VSS"
+#     # Get the YQFix solution
+#     #TestIdentifier[2] = Constants.ModelYQFix
+#     filedescription = GetTestDescription()
+#     yqfixsolution = MRPSolution()
+#     yqfixsolution.ReadFromFile(filedescription)
+#     oldtest2 = TestIdentifier[2]
+#     oldtest3 = TestIdentifier[3]
+#     oldtest4 = TestIdentifier[4]
+#     oldtest5 = TestIdentifier[5]
+#
+#     # Get the average value solution
+#     TestIdentifier[2] = Constants.Average
+#     TestIdentifier[3] = Constants.MIP
+#     TestIdentifier[4] = Constants.MonteCarlo
+#     TestIdentifier[5] = 1
+#     filedescription = GetTestDescription()
+#     averagesolution = MRPSolution()
+#     averagesolution.ReadFromFile(filedescription)
+#
+#
+#     TestIdentifier[2] = oldtest2
+#     TestIdentifier[3] = oldtest3
+#     TestIdentifier[4] = oldtest4
+#     TestIdentifier[5] = oldtest5
+#     EvaluateSolution = True
+#     # Run the MIP with the additional constraint to fix the average solution up to the first fixuntiltime stages
+#     treestructure = GetTreeStructure()
+#
+#     # Get the setup quantitities associated with the solultion
+#     GivenSetup = [[averagesolution.Production[0][t][p]  for p in averagesolution.MRPInstance.ProductSet] for t in averagesolution.MRPInstance.TimeBucketSet]
+#
+#     GivenQuantities = [[averagesolution.ProductionQuantity[0][t][p] for p in averagesolution.MRPInstance.ProductSet]
+#                         for t in averagesolution.MRPInstance.TimeBucketSet ]
+#
+#
+#     if FixUntilTime == 0:
+#         GivenSetup = []
+#         GivenQuantities = []
+#         EvaluateSolution = False
+#
+#     if TestIdentifier[2] == Constants.ModelYQFix and  FixUntilTime > 0:
+#         FixUntilTime = Instance.NrTimeBucket
+#
+#     solution, mipsolver = MRP(treestructure, False, recordsolveinfo=True)
+#
+#     # Something need to be printed....
+#     Parameter =  [ UseNonAnticipativity, Model, ComputeAverageSolution, ScenarioSeed]
+#     data = TestIdentifier + SolveInformation +  Parameter + [ FixUntilTime , solution.TotalCost - yqfixsolution.TotalCost ]
+#     d = datetime.now()
+#     date = d.strftime('%m_%d_%Y_%H_%M_%S')
+#     myfile = open(r'./Test/VSS/TestResult_%s_%s.csv' % (GetTestDescription(), FixUntilTime  ), 'wb')
+#     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+#     wr.writerow( data )
+#     myfile.close()
+#    # PrintTestResult()
+#    # PrintFinalResult()
 
 def GenerateInstances( ):
-
 
     csvfile = open("./Instances/InstanceNameTemp.csv", 'rb')
     data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
@@ -779,94 +584,101 @@ def GenerateInstances( ):
     #        Instance.SaveCompleteInstanceInExelFile()
     #        instancecreated = instancecreated + [Instance.InstanceName]
 
-    Instance.ReadFromFile("01", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    Instance.ReadFromFile("01", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, longtimehoizon = True)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
 
-    Instance.ReadFromFile("02", "Normal", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
 
-    Instance.ReadFromFile("01",  "Lumpy", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("04", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("02", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("01", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("02", "Lumpy", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("04", "NonStationary", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("04", "SlowMoving", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("04", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("G5047424", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="l", rk=25, leadtimestructure=1, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("K5014141", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("G0047232", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("K0014232", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("G5047141", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("K5014424", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("G0047313", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("01", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("02", "Normal", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("01",  "Lumpy", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("04", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("02", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("01", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("02", "Lumpy", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("04", "NonStationary", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("04", "SlowMoving", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("04", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("G5047424", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="l", rk=25, leadtimestructure=1, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K5014141", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("G0047232", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K0014232", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("G5047141", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K5014424", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("G0047313", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
 
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
     data_rwriter.writerow(instancecreated)
 
-def IsRule( s ):
-   result =  Model == Constants.L4L or Model == Constants.EOQ or Model == Constants.POQ or Model == Constants.SilverMeal
-   return result
+
 
 if __name__ == "__main__":
     instancename = ""
@@ -881,21 +693,9 @@ if __name__ == "__main__":
 
 
     if Action == Constants.Solve:
+        Solve()
 
-        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS:
-                SolveYQFix()
 
-        if Model == Constants.ModelYFix:
-                SolveYFix(  )
-
-        if Model == Constants.ModelHeuristicYFix:
-                SolveYFixHeuristic()
-
-        if IsRule( Model ) :
-                SolveWithRule()
-
-    if Action == Constants.VSS:
-        ComputeVSS( )
 
     if Action == Constants.Evaluate:
         if ScenarioSeed == -1:

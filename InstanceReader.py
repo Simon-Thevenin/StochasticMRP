@@ -26,6 +26,7 @@ class InstanceReader:
         self.InstanceType = ""
         self.Level = [] #indicates the level of each produce
         self.LevelSet= []
+        self.Filename = ""
 
 
 
@@ -172,11 +173,11 @@ class InstanceReader:
         self.Instance.LostSaleCost = [lostsale * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
 
     # This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile(self, instancename, distribution = "NonStationary", b=2, forcasterror = 25, e="n", rateknown = 90, leadtimestructure = 1, lostsale = 2):
+    def ReadFromFile(self, instancename, distribution = "NonStationary", b=2, forcasterror = 25, e="n", rateknown = 90, leadtimestructure = 1, lostsale = 2, longtimehoizon = False):
 
-        self.Instance.InstanceName = "%s_%s_b%s_fe%s_e%s_rk%s_ll%s_l%s"%(instancename, distribution, b, forcasterror, e, rateknown, leadtimestructure, lostsale)
+        self.Instance.InstanceName = "%s_%s_b%s_fe%s_e%s_rk%s_ll%s_l%s_H%s"%(instancename, distribution, b, forcasterror, e, rateknown, leadtimestructure, lostsale, longtimehoizon)
         self.Instance.Distribution = distribution
-
+        self.Filename = instancename
         self.OpenFiles(instancename)
 
         self.ReadProductList()
@@ -190,8 +191,8 @@ class InstanceReader:
 
 
         self.Instance.ComputeMaxLeadTime()
-        self.GenerateTimeHorizon()
-        self.GenerateDistribution( float(forcasterror/100.0), float( rateknown/100.0 ) )
+        self.GenerateTimeHorizon( longtimehoizon )
+        self.GenerateDistribution( float(forcasterror/100.0), float( rateknown/100.0 ), longtimehorizon = longtimehoizon )
         self.ComputeAverageDependentDemand()
         self.GenerateStartinInventory()
         self.GenerateSetup(e)
