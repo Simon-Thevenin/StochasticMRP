@@ -422,7 +422,7 @@ class MIPSolver(object):
                         upperbound[self.GetIndexQuantityVariable(p,t,w)] =  max((setup) * self.M,0.0)
 
 
-        self.Cplex.variables.add(obj= variableproductioncosts, #[0.0] * nrquantityvariable,#
+        self.Cplex.variables.add(obj= [0.0] * nrquantityvariable,#variableproductioncosts, #
                                 lb=[0.0] * nrquantityvariable,
                                 ub= upperbound)
 
