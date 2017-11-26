@@ -3,20 +3,10 @@ from __future__ import division
 #print "Attention matplt is avctivee"
 #from matplotlib import pyplot as PLT
 
-import cplex
-import pandas as pd
-import openpyxl as opxl
 from MRPInstance import MRPInstance
 from MRPSolution import MRPSolution
-from MIPSolver import MIPSolver
 from Solver import Solver
-from ScenarioTreeNode import ScenarioTreeNode
-from ScenarioTree import ScenarioTree
-import time
-import sys
-import numpy as np
 import csv
-import math
 from datetime import datetime
 #from matplotlib import pyplot as plt
 import cPickle as pickle
@@ -145,7 +135,7 @@ def Solve():
 
     solver = Solver (Instance, TestIdentifier, mipsetting=MIPSetting, testdescription= GetTestDescription(), evaluatesol = EvaluateSolution, treestructure=GetTreeStructure())
 
-    if Instance.NrTimeBucket > 5:
+    if Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyBefore > 5:
         solution =solver.RollingHorizonSolve()
     else:
         solution = solver.Solve()

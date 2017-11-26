@@ -1,5 +1,4 @@
 
-
 class Constants:
     Lumpy = "Lumpy"
     SlowMoving = "SlowMoving"
@@ -34,7 +33,7 @@ class Constants:
     POQ = "POQ"
     SilverMeal  = "SilverMeal"
 
-    Debug = False
+    Debug = True
     PrintSolutionFileToExcel = False
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = True

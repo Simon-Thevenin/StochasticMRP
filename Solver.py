@@ -1,7 +1,7 @@
 from Constants import Constants
 from ScenarioTree import ScenarioTree
 import time
-import MIPSolver
+from MIPSolver import MIPSolver
 import DecentralizedMRP
 import copy
 
@@ -233,37 +233,6 @@ class Solver:
 
         return result
 
-    #return the scenario tree of the average demand
-    @staticmethod
-    def GetAverageDemandScenarioTree(instance):
-        scenariotree = ScenarioTree( instance,
-                                     [1]*(instance.NrTimeBucket+1) + [0],
-                                     0,
-                                     averagescenariotree=True,
-                                     scenariogenerationmethod=Constants.MonteCarlo,
-                                     model = "YQFix" )
-
-        return scenariotree
-
-    #Create an empty solution (all decisions = 0) for the problem
-    @staticmethod
-    def GetEmptySolution( instance ):
-        scenariotree = Solver.GetAverageDemandScenarioTree( instance )
-        scenarioset = scenariotree.GetAllScenarios(False)
-        production = [ [ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ] for w in scenarioset ]
-        quanitity = [ [ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ] for w in scenarioset ]
-        stock = [ [ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ] for w in scenarioset ]
-        backorder = [ [ [  0 for p in instance.ProductWithExternalDemand ] for t in instance.TimeBucketSet ] for w in scenarioset ]
-        result = MRPSolution( instance=instance,
-                              scenriotree=scenariotree,
-                              scenarioset=scenarioset,
-                              solquantity=quanitity,
-                              solproduction=production,
-                              solbackorder=backorder,
-                              solinventory=stock)
-
-        result.NotCompleteSolution = True
-        return result
 
     #This method update the inital state of the instance according to the last solved in the rolling horizon.
     def UpdateState( self, instance, previousstate ):
@@ -286,7 +255,7 @@ class Solver:
         #Create a subinstance for each window
         instances = self.CreateSubInstances()
 
-        globalsolution = Solver.GetEmptySolution( self.Instance )
+        globalsolution = MRPSolution.GetEmptySolution( self.Instance )
 
         previousstate= None
 

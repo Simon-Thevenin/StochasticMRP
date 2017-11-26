@@ -1,8 +1,8 @@
 from Constants import Constants
 from ScenarioTreeNode import ScenarioTreeNode
 from MRPSolution import MRPSolution
-from ScenarioTree import ScenarioTree
-from Solver import Solver
+#from Solver import Solver
+
 import math
 
 #This object contains logic and methods to compute the classical MRP in decentralized fashion
@@ -10,7 +10,6 @@ class DecentralizedMRP(object):
 
 
     # constructor
-
     def __init__(self,  mrpinstance):
         self.Instance =mrpinstance
         self.Solution = None
@@ -165,7 +164,7 @@ class DecentralizedMRP(object):
     def SolveWithSimpleRule( self,  rule, givensetup =[], givenquantities =[], fixuntil = -1, demanduptotimet = [] ):
         # Create an empty solution
 
-        self.Solution = Solver.GetEmptySolution( self.Instance )
+        self.Solution = MRPSolution.GetEmptySolution( self.Instance )
 
         #Fix given solution
         self.FixUntil = fixuntil

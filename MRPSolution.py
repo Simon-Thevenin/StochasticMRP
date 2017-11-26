@@ -847,3 +847,36 @@ class MRPSolution:
 
         if Constants.Debug:
             print "The value of S is: %r" % (self.SValue)
+
+
+    #return the scenario tree of the average demand
+    @staticmethod
+    def GetAverageDemandScenarioTree(instance):
+        scenariotree = ScenarioTree( instance,
+                                     [1]*(instance.NrTimeBucket+1) + [0],
+                                     0,
+                                     averagescenariotree=True,
+                                     scenariogenerationmethod=Constants.MonteCarlo,
+                                     model = "YQFix" )
+
+        return scenariotree
+
+    #Create an empty solution (all decisions = 0) for the problem
+    @staticmethod
+    def GetEmptySolution( instance ):
+        scenariotree = MRPSolution.GetAverageDemandScenarioTree( instance )
+        scenarioset = scenariotree.GetAllScenarios(False)
+        production = [ [ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ] for w in scenarioset ]
+        quanitity = [ [ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ] for w in scenarioset ]
+        stock = [ [ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ] for w in scenarioset ]
+        backorder = [ [ [  0 for p in instance.ProductWithExternalDemand ] for t in instance.TimeBucketSet ] for w in scenarioset ]
+        result = MRPSolution( instance=instance,
+                              scenriotree=scenariotree,
+                              scenarioset=scenarioset,
+                              solquantity=quanitity,
+                              solproduction=production,
+                              solbackorder=backorder,
+                              solinventory=stock)
+
+        result.NotCompleteSolution = True
+        return result
