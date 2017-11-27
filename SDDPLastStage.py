@@ -1,7 +1,6 @@
 import cplex
 import math
 from Constants import Constants
-from SDDPCut import SDDPCut
 from SDDPStage import SDDPStage
 import numpy as np
 

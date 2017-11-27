@@ -3,10 +3,8 @@ from Scenario import Scenario
 import cPickle as pickle
 import numpy as np
 from RQMCGenerator import RQMCGenerator
-import os
 from Constants import Constants
 import math
-from ast import literal_eval
 #from matplotlib import pyplot as PLT
 
 class ScenarioTree:

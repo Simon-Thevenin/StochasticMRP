@@ -7,8 +7,6 @@ from MIPSolver import MIPSolver
 import numpy as np
 import math
 import time
-import cPickle
-import dill as pickle
 # This class contains the attributes and methodss allowing to define the SDDP algorithm.
 class SDDP:
 
