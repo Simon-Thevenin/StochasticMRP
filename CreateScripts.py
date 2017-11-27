@@ -4,8 +4,6 @@
 # script de lancement pour les fichiers
 
 
-import os
-import subprocess
 import csv
 from Constants import Constants
 

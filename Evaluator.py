@@ -1,4 +1,4 @@
-import pandas as pd
+#import pandas as pd
 #from matplotlib import pyplot as PLT
 from MIPSolver import MIPSolver
 from ScenarioTree import ScenarioTree
@@ -10,10 +10,9 @@ from datetime import datetime
 import csv
 from scipy import stats
 import numpy as np
-from MRPSolution import MRPSolution
-from decimal import Decimal, ROUND_HALF_DOWN
+#from MRPSolution import MRPSolution
+#from decimal import Decimal, ROUND_HALF_DOWN
 import pickle
-import cplex
 #from matplotlib import pyplot as PLT
 
 class Evaluator:
@@ -41,6 +40,9 @@ class Evaluator:
 
     #This function evaluate the performance of a set of solutions obtain with the same method (different solutions due to randomness in the method)
     def EvaluateYQFixSolution( self, testidentifier, evaluateidentificator, model, saveevaluatetab = False, filename = "", evpi = False):
+
+
+
         # Compute the average value of the demand
         nrscenario = evaluateidentificator[2]
         start_time = time.time()
@@ -50,6 +52,8 @@ class Evaluator:
         mipsolver = None
         firstsolution = True
         nrerror = 0
+
+
 
         for n in range( self.NrSolutions ):
                 if not evpi:
@@ -117,7 +121,11 @@ class Evaluator:
                     mipsolver.Cplex.parameters.advance = 0
                     #mipsolver.Cplex.parameters.lpmethod = 2
                     mipsolver.Cplex.parameters.lpmethod.set(mipsolver.Cplex.parameters.lpmethod.values.barrier)
+
+
                     solution = mipsolver.Solve()
+
+
                     #CPLEX should always find a solution due to complete recourse
                     if solution == None:
                         if Constants.Debug:
@@ -141,6 +149,7 @@ class Evaluator:
                         for s in OutOfSampleSolution.Scenarioset:
                             s.Probability = 1.0/ len(  OutOfSampleSolution.Scenarioset )
 
+
         OutOfSampleSolution.ComputeStatistics()
 
         duration = time.time() - start_time
@@ -158,11 +167,12 @@ class Evaluator:
                 with open(filename+"KPIStat.txt", "w+") as fp:
                     pickle.dump(KPIStat, fp)
 
-
         if Constants.PrintDetailsExcelFiles:
             namea = "_".join(str(elm) for elm in testidentifier)
             nameb = "_".join(str(elm) for elm in evaluateidentificator)
             OutOfSampleSolution.PrintToExcel(namea+nameb+".xlsx")
+
+
 
     #This function return the setup decision and quantity to produce for the scenario given in argument
     def GetDecisionFromSolutionForScenario(self, sol, model, scenario):
@@ -410,6 +420,7 @@ class Evaluator:
                 self.MIPResolveTime[time] = mipsolver
                 self.IsDefineMIPResolveTime[time] = True
             else:
+
                 self.MIPResolveTime[time].ModifyMipForScenario(demanduptotimet, time)
                 self.MIPResolveTime[time].ModifyMipForFixQuantity(quantitytofix, fixuntil=time)
 
@@ -431,7 +442,10 @@ class Evaluator:
             self.MIPResolveTime[time].Cplex.parameters.advance = 1
             #self.MIPResolveTime[time].Cplex.parameters.lpmethod = 2
             self.MIPResolveTime[time].Cplex.parameters.lpmethod.set(self.MIPResolveTime[time].Cplex.parameters.lpmethod.values.barrier)
+
             solution = self.MIPResolveTime[time].Solve( createsolution = False)
+
+
 
             #if time == 4:
             #    solution = self.MIPResolveTime[time].Solve()

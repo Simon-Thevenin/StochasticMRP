@@ -1,9 +1,11 @@
 import pandas as pd
+from Tool import Tool
 import openpyxl as opxl
 import cPickle as pickle
-from Tool import Tool
 from GraveInstanceReader import GraveInstanceReader
 from TemplemeierInstanceReader import TemplemeierInstanceReader
+
+
 
 class MRPInstance:
 

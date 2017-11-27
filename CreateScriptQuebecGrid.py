@@ -2,9 +2,6 @@
 # script de lancement pour les fichiers
 
 
-import os
-import subprocess
-
 if __name__ == "__main__":
 
     for instance in ["00", "01", "02", "03", "04", "05" ]:

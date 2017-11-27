@@ -7,6 +7,8 @@ from Constants import Constants
 import math
 #from matplotlib import pyplot as PLT
 
+
+
 class ScenarioTree:
     #Constructor
     def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateasYQfix = False, model = "YFix", CopyscenariofromYFIX=False ):

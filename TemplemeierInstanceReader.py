@@ -1,4 +1,4 @@
-from __future__ import division
+#from __future__ import division
 import numpy as np
 from InstanceReader import InstanceReader
 from Constants import Constants
