@@ -92,7 +92,8 @@ class ScenarioTree:
 
         if self.ScenarioGenerationMethod == Constants.RQMC and self.GenerateRQMCForYQFix:
              firstuknown = len(self.GivenFirstPeriod)
-             timebucketswithuncertainty = range( max(self.Instance.NrTimeBucketWithoutUncertaintyBefore, firstuknown) , self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter )
+             firststochastic =  max(self.Instance.NrTimeBucketWithoutUncertaintyBefore, firstuknown)
+             timebucketswithuncertainty = range(firststochastic, self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter )
              nrtimebucketswithuncertainty =len( timebucketswithuncertainty)
              avgvector = [  self.Instance.ForecastedAverageDemand[t ][p] for p in self.Instance.ProductWithExternalDemand for t in timebucketswithuncertainty ]
              stdvector = [  self.Instance.ForcastedStandardDeviation[t ][p] for p in self.Instance.ProductWithExternalDemand for t in timebucketswithuncertainty ]
@@ -115,14 +116,17 @@ class ScenarioTree:
              rmcpoint = ScenarioTreeNode.TransformInverse( rqmcpoint01, nrscenarion, dimension, self.Instance.Distribution, avgvector, stdvector )
 
 
-             self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebucketswithuncertainty + (t-firstuknown) ][s]
-                                          if  self.Instance.HasExternalDemand[p] and t >= firstuknown
+             self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebucketswithuncertainty + (t-firststochastic ) ][s]
+                                          if  self.Instance.HasExternalDemand[p] and t >= firststochastic
                                           else 0.0
                                         for p in self.Instance.ProductSet ]
-                                      for t in range( nrtimebucketswithuncertainty + firstuknown ) ]
+                                      for t in self.Instance.TimeBucketSet ]
                                      for s in range( nrscenarion )]
-
-             # for p in self.Instance.ProductSet:
+             for s in range(nrscenarion):
+                 for t in range(self.Instance.NrTimeBucketWithoutUncertaintyBefore,  firstuknown):
+                     for p in self.Instance.ProductSet:
+                        self.DemandYQFixRQMC[s][t][p] = self.GivenFirstPeriod[t][p]
+                 # for p in self.Instance.ProductSet:
              #     for t in range( nrtimebucketswithuncertainty + firstuknown ) :
              #        pts = [self.DemandYQFixRQMC[ s][t][p] for s in range( nrscenarion ) ]
              #        print "The transformed point at dim %d at time %d : %r  " % (p,t, pts)

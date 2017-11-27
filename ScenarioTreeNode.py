@@ -47,7 +47,8 @@ class ScenarioTreeNode:
                     and not time >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
                     and not time < (  self.Instance.NrTimeBucketWithoutUncertaintyBefore ) ):
                     #print "stochastisity at time: %d"%time
-                    nextdemands = self.GetDemandRQMCForYQFix(t - 1 - self.Instance.NrTimeBucketWithoutUncertaintyBefore, nrbranch, firstbranchid)
+                    #nextdemands = self.GetDemandRQMCForYQFix(t - 1 - self.Instance.NrTimeBucketWithoutUncertaintyBefore, nrbranch, firstbranchid)
+                    nextdemands = self.GetDemandRQMCForYQFix(t-1 ,  nrbranch, firstbranchid)
 
                 elif t <= self.Owner.FollowGivenUntil:
                     nextdemands = self.GetDemandToFollowFirstPeriods(t - 1)

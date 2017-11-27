@@ -204,12 +204,13 @@ class Solver:
     #Create the set of dubinstance to colve in a rolling horizon approach
     def CreateSubInstances(self):
         windowsize = self.Instance.MaxLeadTime
-        nrshift = self.Instance.NrTimeBuckets - windowsize
+        nrshift = self.Instance.NrTimeBucket - windowsize
 
         result = [ None for i in range(nrshift) ]
         """ :type result: [MRPInstance]"""
+        t=0
         for i in range(nrshift):
-            startwindow = i
+            startwindow = t
             endwindow = startwindow + windowsize
 
             result[i] = copy.deepcopy(self.Instance)
@@ -218,15 +219,8 @@ class Solver:
                 result[i].ForecastedAverageDemand = [ self.Instance.ForecastedAverageDemand[startwindow + t] for t in range(result[i].NrTimeBucket) ]
                 result[i].ForcastedStandardDeviation = [self.Instance.ForcastedStandardDeviation[startwindow + t] for t in
                                                      range(result[i].NrTimeBucket)]
-                result[i].RateOfKnownDemand = [self.Instance.RateOfKnownDemand[startwindow + t] for t
-                                                        in
-                                                        range(result[i].NrTimeBucket)]
-                result[i].ForecastError = [self.Instance.ForecastError[startwindow + t] for t
-                                                        in
-                                                        range(result[i].NrTimeBucket)]
-
                 result[i].ComputeIndices()
-
+            t += 1
 
         print "to be implemented"
 
