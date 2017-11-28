@@ -60,11 +60,11 @@ if __name__ == "__main__":
     for row in data_reader:
        instancenameslist.append(row)
     InstanceSet = instancenameslist[0]
-    modelset = ["YQFix"]#,  "Average", "AverageSS", "YFix", "L4L", "EOQ", "POQ", "SilverMeal" ]#, "HeuristicYFix", "YFix", "YQFix"]
+    modelset = ["HeuristicYFix"]#,  "Average", "AverageSS", "YFix", "L4L", "EOQ", "POQ", "SilverMeal" ]#, "HeuristicYFix", "YFix", "YQFix"]
     #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
     nrcenarioyfix =["6400a", "6400b", "6400c" ]
     nrcenarioyfqix = ["10", "50", "100", "200", "500"]
-    nrcenarioheuristicyfix = ["6400c", "80000"]
+    nrcenarioheuristicyfix = ["6400b", "3200", "1600", "800", "12800", "25600", "51200", "102400"]
 
     policyyqfix = ["Fix", "Re-solve"]
     policyyfix = ["Re-solve"]

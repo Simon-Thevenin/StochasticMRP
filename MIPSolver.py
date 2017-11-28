@@ -422,9 +422,10 @@ class MIPSolver(object):
                         upperbound[self.GetIndexQuantityVariable(p,t,w)] =  max((setup) * self.M,0.0)
 
 
-        self.Cplex.variables.add(obj= variableproductioncosts, #[0.0] * nrquantityvariable,#
+        self.Cplex.variables.add(obj= [0.0] * nrquantityvariable,#variableproductioncosts, #
                                 lb=[0.0] * nrquantityvariable,
                                 ub= upperbound)
+
 
         # the variable inventory_prod_time_scenario_p_t_w indicated the inventory level of product p at time t in scneario w
         self.Cplex.variables.add(obj= inventorycosts,
