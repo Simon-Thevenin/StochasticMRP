@@ -3,6 +3,7 @@ import numpy as np
 from InstanceReader import InstanceReader
 from Constants import Constants
 import csv
+import math
 
 class TemplemeierInstanceReader( InstanceReader ):
 
@@ -171,7 +172,7 @@ class TemplemeierInstanceReader( InstanceReader ):
                 #generate the demand following a normal distribution and the coefficient of variation
                 self.Instance.ForecastedAverageDemand = [[ np.floor( np.random.normal(self.Instance.YearlyAverageDemand[p],
                                                                                      coefficientofvariation * self.Instance.YearlyAverageDemand[p], 1).clip( min=0.0)).tolist()[0]
-                                                          if self.Instance.YearlyAverageDemand[p] > 0
+                                                          if self.Instance.YearlyAverageDemand[p] > 0 and t >= self.Instance.NrTimeBucketWithoutUncertaintyBefore
                                                           else 0
                                                           for p in self.Instance.ProductSet]
                                                             for t in self.Instance.TimeBucketSet]

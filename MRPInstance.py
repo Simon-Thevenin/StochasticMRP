@@ -135,7 +135,13 @@ class MRPInstance:
                                                                     for p in self.ProductSet ]
         self.ComputeHasExternalDemand()
         self.ComputeUseForFabrication()
-    #Constructor
+
+        self.VariableCost = [ sum( self.Requirements[p][q]*self.InventoryCosts[q] for q in self.ProductSet )
+                              for p in self.ProductSet ]
+
+
+
+        #Constructor
     def __init__( self ):
         self.InstanceName = ""
         self.NrProduct = -1
@@ -169,7 +175,7 @@ class MRPInstance:
         self.HasExternalDemand = []
         #The set of product which are required for production of each product.
         self.RequieredProduct = []
-
+        self.VariableCost = []
         self.ProductName = ""
         #Compute some statistic about the instance
         self.MaxLeadTime = -1

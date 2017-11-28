@@ -2,7 +2,7 @@ from Constants import Constants
 from ScenarioTree import ScenarioTree
 import time
 from MIPSolver import MIPSolver
-import DecentralizedMRP
+from DecentralizedMRP import DecentralizedMRP
 import copy
 
 from MRPSolution import MRPSolution
@@ -130,13 +130,12 @@ class Solver:
 
     #Solve the problem with rule based heurisitcs (L4L, EOQ, POQ, Silver-Meal)
     def SolveWithRule( self ):
-        decentralizedmrp = DecentralizedMRP(self, self.Instance)
+        decentralizedmrp = DecentralizedMRP( self.Instance)
         solution = decentralizedmrp.SolveWithSimpleRule( self.Model )
         return solution
 
     # Run the method Heuristic YFix: First solve the 2-stage problem to fix the Y variables, then solve the multi-stages problem on large scenario tree.
     def SolveYFixHeuristic( self ):
-
 
         start = time.time()
         treestructure = [1, 500] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
@@ -203,26 +202,23 @@ class Solver:
 
     #Create the set of dubinstance to colve in a rolling horizon approach
     def CreateSubInstances(self):
-        windowsize = self.Instance.MaxLeadTime
+        """ :type result: [ {MRPInstance} ]"""
+        windowsize = self.Instance.MaxLeadTime +1
         nrshift = self.Instance.NrTimeBucket - windowsize
 
-        result = [ None for i in range(nrshift) ]
-        """ :type result: [MRPInstance]"""
-        t=0
+        result = [ None for i in range( nrshift ) ]
+
+        startwindow = -1
         for i in range(nrshift):
-            startwindow = t
+            startwindow += 1
             endwindow = startwindow + windowsize
 
-            result[i] = copy.deepcopy(self.Instance)
+            result[i] = copy.deepcopy( self.Instance )
             result[i].NrTimeBucket = windowsize
-            for i in range(result[i].NrTimeBucket):
-                result[i].ForecastedAverageDemand = [ self.Instance.ForecastedAverageDemand[startwindow + t] for t in range(result[i].NrTimeBucket) ]
-                result[i].ForcastedStandardDeviation = [self.Instance.ForcastedStandardDeviation[startwindow + t] for t in
-                                                     range(result[i].NrTimeBucket)]
-                result[i].ComputeIndices()
-            t += 1
-
-        print "to be implemented"
+            result[i].ForecastedAverageDemand = [ self.Instance.ForecastedAverageDemand[startwindow + t] for t in range(result[i].NrTimeBucket) ]
+            result[i].ForcastedStandardDeviation = [self.Instance.ForcastedStandardDeviation[startwindow + t] for t in range(result[i].NrTimeBucket)]
+            result[i].NrTimeBucketWithoutUncertaintyBefore = max( 0 , self.Instance.NrTimeBucketWithoutUncertaintyBefore -  startwindow )
+            result[i].ComputeIndices()
 
 
         return result
@@ -238,8 +234,17 @@ class Solver:
 
 
 
-    def CopyFirstStageDecision(self, solution, globalsoltuion ):
-        print "to be implemented"
+    def CopyFirstStageDecision(self, solution, globalsoltuion, time ):
+
+        #Copy the Setup decision for the first day:
+        for p in self.Instance.ProductSet:
+            globalsoltuion.Production[0][time][p] = solution.Production[0][time][p]
+
+        #Copy the production quantity for the first day:
+        if time == 0:
+            for p in self.Instance.ProductSet:
+                globalsoltuion.ProductionQuantity[0][time][p] = solution.ProductionQuantity[0][time][p]
+
 
     #This method call the right method
     def RollingHorizonSolve(self):
@@ -254,7 +259,12 @@ class Solver:
         previousstate= None
 
         #For each instance
+        starttimewindow = 0
         for instance in instances:
+            starttimewindow += 1
+            endtimewindow = starttimewindow + instance.NrTimeBucket
+            if Constants.Debug:
+                print " Solve instance with time window [ %r, %r]"%( starttimewindow, endtimewindow )
             # set the starting inventory of the next period
             if not previousstate is None:
                 self.UpdateState( instance, previousstate )

@@ -210,8 +210,7 @@ class DecentralizedMRP(object):
     # This method apply lot for lot to solve the instance
     def GetIdealQuantityToOrder(self,  p, t, rule):
 
-        if Constants.Debug:
-            print "Plan prod %r periode %r"%(p,t)
+
 
         #If setup are fixed quantity is 0 if no setup
         if self.FixedSetup and self.Solution.Production[0][t][p] == 0:
@@ -226,6 +225,10 @@ class DecentralizedMRP(object):
             result = self.POQ( p, t)
         if rule == Constants.SilverMeal:
             result = self.SilverMeal( p, t )
+
+        if Constants.Debug:
+            print "Plan prod %r periode %r: suggested quantity: %r" % (p, t, result)
+
         return result
 
 

@@ -309,9 +309,7 @@ class MIPSolver(object):
         # Define the cost vector for each variable. As the numbber of variable changes when non anticipativity is used the cost are created differently
         if  not  self.UseImplicitNonAnticipativity:
 
-            variableproductioncosts =  [
-                                          ( sum( self.Instance.Requirements[p][q]*self.Instance.InventoryCosts[q] for q in self.Instance.ProductSet ) \
-                                                                * self.Scenarios[w].Probability * np.power(self.Instance.Gamma, t) )
+            variableproductioncosts =  [ ( self.Instance.VariableCost[ p ]  * self.Scenarios[w].Probability * np.power(self.Instance.Gamma, t) )
                                           for w in self.ScenarioSet
                                              for t in self.Instance.TimeBucketSet
                                                 for p in self.Instance.ProductSet ]
@@ -371,7 +369,7 @@ class MIPSolver(object):
                         # Add the cost of the cariable representing multiple scenarios
                         quantityindex = self.GetIndexQuantityVariable(p, t, w) - self.StartQuantityVariableWithoutNonAnticipativity
                         variableproductioncosts[quantityindex] = variableproductioncosts[quantityindex] \
-                                                                +  ( sum( self.Instance.Requirements[p][q]*self.Instance.InventoryCosts[q] for q in self.Instance.ProductSet ) \
+                                                                + ( self.Instance.VariableCost[ p ]
                                                                 * self.Scenarios[w].Probability * np.power(self.Instance.Gamma, t) )
 
                         if self.Model <> Constants.ModelYFix and self.Model <> Constants.ModelYQFix :
@@ -422,7 +420,7 @@ class MIPSolver(object):
                         upperbound[self.GetIndexQuantityVariable(p,t,w)] =  max((setup) * self.M,0.0)
 
 
-        self.Cplex.variables.add(obj= [0.0] * nrquantityvariable,#variableproductioncosts, #
+        self.Cplex.variables.add(obj= variableproductioncosts, #
                                 lb=[0.0] * nrquantityvariable,
                                 ub= upperbound)
 
@@ -1180,6 +1178,7 @@ class MIPSolver(object):
                                 Solution.InventoryCost,
                                 Solution.BackOrderCost,
                                 Solution.SetupCost,
+                                Solution.VariableCost,
                                 #averagecost,
                                 #std_devcost,
                                 self.Instance.NrLevel,
@@ -1216,8 +1215,7 @@ class MIPSolver(object):
 
 
     def CreateMRPSolution(self, sol, solvetime):
-        if Constants.Debug:
-            print "Start to create a solution..."
+
         scenarioset = self.ScenarioSet
         scenarios = self.Scenarios
         timebucketset = self.Instance.TimeBucketSet
@@ -1227,60 +1225,43 @@ class MIPSolver(object):
             timebucketset = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore +1 )
             scenarios = [self.Scenarios[0]]
             partialsol = True
-        if Constants.Debug:
-            print "read  quanity..."
+
         objvalue = sol.get_objective_value()
         array = [self.GetIndexQuantityVariable(p, t, w) for p in self.Instance.ProductSet for t in timebucketset for w
                  in scenarioset];
         # testarray = [ "p:%st:%sw:%s"%(p, t, w)  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet ]
-        if Constants.Debug:
-            print "call cplex..."
         solquantity = sol.get_values(array)
-        if Constants.Debug:
-            print "transform to 3d array......"
+
         solquantity = Tool.Transform3d(solquantity, self.Instance.NrProduct, len(timebucketset), len(scenarioset))
 
-        if Constants.Debug:
-            print "read  setup..."
+
         # here self.Instance.TimeBucketSet is used because the setups are decided for the complete time horizon in YFix
         array = [self.GetIndexProductionVariable(p, t, w) for p in self.Instance.ProductSet for t in
                  self.Instance.TimeBucketSet for w in scenarioset]
         solproduction = sol.get_values(array)
-        if Constants.Debug:
-            print "transform to 3d array......"
+
 
         solproduction = Tool.Transform3d(solproduction, self.Instance.NrProduct, len(self.Instance.TimeBucketSet),
                                          len(scenarioset))
 
-        if Constants.Debug:
-            print "read  inventory..."
 
         array = [self.GetIndexInventoryVariable(p, t, w) for p in self.Instance.ProductSet for t in timebucketset for w
                  in scenarioset]
         solinventory = sol.get_values(array)
-        if Constants.Debug:
-            print "transform to 3d array......"
 
         solinventory = Tool.Transform3d(solinventory, self.Instance.NrProduct, len(timebucketset), len(scenarioset))
 
-        if Constants.Debug:
-            print "read  backorders..."
         array = [self.GetIndexBackorderVariable(p, t, w)
                  for p in self.Instance.ProductWithExternalDemand for t in timebucketset for w in scenarioset]
         solbackorder = sol.get_values(array)
-        if Constants.Debug:
-            print "transform to 3d array......"
+
         solbackorder = Tool.Transform3d(solbackorder, len(self.Instance.ProductWithExternalDemand), len(timebucketset),
                                         len(scenarioset))
 
-        if Constants.Debug:
-            print "update scenario tree......"
 
         if self.Model <> Constants.ModelYQFix:
             self.DemandScenarioTree.FillQuantityToOrder(sol)
 
-        if Constants.Debug:
-            print "Create soluton object......"
         Solution = MRPSolution(self.Instance, solquantity, solproduction, solinventory, solbackorder, scenarios,
                                self.DemandScenarioTree, partialsolution=partialsol)
         Solution.CplexCost = objvalue

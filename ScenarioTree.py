@@ -15,7 +15,7 @@ class ScenarioTree:
         self.CopyscenariofromYFIX= CopyscenariofromYFIX
         self.Seed = seed
         if Constants.Debug:
-            print "Seed %r brance %r"%(seed, branchperlevel)
+            print "Createa tree with seed %r structure: %r"%(seed, branchperlevel)
         np.random.seed( seed )
         self.Nodes = []
         self.Owner = mipsolver

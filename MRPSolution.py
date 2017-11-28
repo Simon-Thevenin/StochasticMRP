@@ -177,7 +177,7 @@ class MRPSolution:
 
     #This funciton conpute the different costs (inventory, backorder, setups) associated with the solution.
     def ComputeCost(self):
-             self.TotalCost, self.InventoryCost, self.BackOrderCost,  self.SetupCost, self.LostsaleCost = self.GetCostInInterval(  self.MRPInstance.TimeBucketSet )
+             self.TotalCost, self.InventoryCost, self.BackOrderCost,  self.SetupCost, self.LostsaleCost, self.VariableCost = self.GetCostInInterval(  self.MRPInstance.TimeBucketSet )
 
 
     #This function return the costs encountered in a specific time interval
@@ -187,6 +187,7 @@ class MRPSolution:
         backordercost = 0
         setupcost = 0
         lostsalecost = 0
+        variablecost = 0
         gammas = [math.pow(self.MRPInstance.Gamma, t) for t in self.MRPInstance.TimeBucketSet]
 
         for w in range(len(self.Scenarioset)):
@@ -201,6 +202,11 @@ class MRPSolution:
                                       * self.MRPInstance.SetupCosts[p] \
                                       * gammas[t] \
                                       * self.Scenarioset[w].Probability
+
+                    variablecost += self.ProductionQuantity[w][t][p] \
+                                          * self.MRPInstance.VariableCost[p] \
+                                          * gammas[t] \
+                                          * self.Scenarioset[w].Probability
 
 
                     if self.MRPInstance.HasExternalDemand[p]:
@@ -217,8 +223,8 @@ class MRPSolution:
                                                  * gammas[t] \
                                                  * self.Scenarioset[w].Probability
 
-                totalcost = inventorycost + backordercost + setupcost + lostsalecost
-        return totalcost, inventorycost, backordercost, setupcost, lostsalecost
+                totalcost = inventorycost + backordercost + setupcost + lostsalecost + variablecost
+        return totalcost, inventorycost, backordercost, setupcost, lostsalecost, variablecost
 
     def GetConsideredTimeBucket(self):
         result = self.MRPInstance.TimeBucketSet
@@ -305,6 +311,7 @@ class MRPSolution:
         self.InventoryCost = -1
         self.BackOrderCost = -1
         self.LostsaleCost =-1
+        self.VariableCost = -1
         self.InSamplePercentOnTime = -1
         self.SetupCost = -1
         self.TotalCost =-1
@@ -538,7 +545,8 @@ class MRPSolution:
             inventorycoststochasticperiod, \
             backordercoststochasticperiod, \
             setupcoststochasticperiod,\
-            lostsalecoststochasticperiod = self.GetCostInInterval( stochasticperiod )
+            lostsalecoststochasticperiod, \
+            variablecost= self.GetCostInInterval( stochasticperiod )
 
         kpistat = [ self.CplexCost,
                     self.CplexTime,
@@ -551,6 +559,7 @@ class MRPSolution:
                     self.InSamplePercentOnTime,
                     self.BackOrderCost,
                     self.LostsaleCost,
+                    self.VariableCost,
                     inventorycoststochasticperiod,
                     setupcoststochasticperiod,
                     backordercoststochasticperiod,
