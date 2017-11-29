@@ -136,7 +136,7 @@ class MRPInstance:
         self.ComputeHasExternalDemand()
         self.ComputeUseForFabrication()
 
-        self.VariableCost = [ sum( self.Requirements[p][q]*self.InventoryCosts[q] for q in self.ProductSet )
+        self.VariableCost = [ 0.0# sum( self.Requirements[p][q]*self.InventoryCosts[q] for q in self.ProductSet )
                               for p in self.ProductSet ]
 
 

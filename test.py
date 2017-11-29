@@ -289,13 +289,37 @@ def GetTreeStructure( ):
                 if nrtimebucketstochastic == 5:
                     stochasticparttreestructure = [50, 8, 8, 4, 2]
 
-            if NrScenario == "51200":
+            if NrScenario == "51200b":
                 if nrtimebucketstochastic == 3:
-                    stochasticparttreestructure = [100, 32, 16]
+                    stochasticparttreestructure = [50, 32, 32]
                 if nrtimebucketstochastic == 4:
                     stochasticparttreestructure = [50, 32, 8, 4]
                 if nrtimebucketstochastic == 5:
                     stochasticparttreestructure = [50, 16, 8, 4, 2]
+
+            if NrScenario == "102400b":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [100, 32, 32]
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [50, 32, 8, 8]
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [50, 16, 8, 4, 4]
+
+            if NrScenario == "153600":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [100, 48, 32]
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [75, 32, 8, 8]
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [75, 16, 8, 4, 4]
+
+            if NrScenario == "204800":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [100, 64, 32]
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [50, 32, 16, 8]
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [50, 16, 8, 8, 4]
 
             if NrScenario == "102400":
                 if nrtimebucketstochastic == 3:
