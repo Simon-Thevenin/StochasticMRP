@@ -157,6 +157,11 @@ class InstanceReader:
         self.Instance.BackorderCosts = [b * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
         self.Instance.LostSaleCost = [lostsale * self.Instance.InventoryCosts[p] for p in self.Instance.ProductSet]
 
+    def GenerateVariableCost(self):
+         self.Instance.VariableCost = [ sum( self.Instance.Requirements[p][q] * self.Instance.InventoryCosts[q]
+                                              for q in self.Instance.ProductSet )
+                                         for p in self.Instance.ProductSet ]
+
     # This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
     def ReadFromFile(self, instancename, distribution = "NonStationary", b=2, forcasterror = 25, e="n", rateknown = 90, leadtimestructure = 1, lostsale = 2, longtimehoizon = False):
 
@@ -183,5 +188,6 @@ class InstanceReader:
         self.GenerateSetup(e)
         self.GenerateCapacity()
         self.GenerateCostParameters( b, lostsale )
+        self.GenerateVariableCost()
         self.Instance.SaveCompleteInstanceInExelFile()
         self.Instance.ComputeInstanceData()

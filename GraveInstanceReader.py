@@ -126,7 +126,7 @@ class GraveInstanceReader(InstanceReader):
                   else sum(self.Actualstd[t][p] for t in range(self.TimeBetweenOrder, min(2 * self.TimeBetweenOrder, self.Instance.NrTimeBucket)))
                   for p in self.Instance.ProductSet]
 
-        servicelevel = 0.75
+        servicelevel = 0.5
 
         print "Level of product %r"%self.Level
         #if self.Instance.Distribution == Constants.Lumpy:

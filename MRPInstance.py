@@ -71,6 +71,7 @@ class MRPInstance:
 
         self.StartingInventories = [10.0, 100.0, 100.0, 100.0, 100.0]
         self.InventoryCosts = [15.0, 4.0, 3.0, 2.0, 1.0]
+        self.VariableCost = [4.0, 3.0, 2.0, 1.0,0.0 ]
         self.SetupCosts = [10000.0, 1.0, 1.0, 1.0, 1.0]
         self.BackorderCosts = [100000.0, 0.0, 0.0, 0.0, 0.0]  # for now assume no external demand for components
         self.Capacity = [ 15, 15, 15, 15, 15 ]
@@ -121,6 +122,7 @@ class MRPInstance:
 
         self.StartingInventories = [ 10.0, 10.0 ]
         self.InventoryCosts = [ 10.0, 5.0 ]
+        self.VariableCost = [5.0, 0.0 ]
         self.SetupCosts = [ 5.0, 5.0 ]
         self.BackorderCosts = [ 100.0, 0.0 ]  # for now assume no external demand for components
         self.LostSaleCost = [1000.0, 0.0]
@@ -136,8 +138,6 @@ class MRPInstance:
         self.ComputeHasExternalDemand()
         self.ComputeUseForFabrication()
 
-        self.VariableCost = [ 0.0# sum( self.Requirements[p][q]*self.InventoryCosts[q] for q in self.ProductSet )
-                              for p in self.ProductSet ]
 
 
 
@@ -309,8 +309,8 @@ class MRPInstance:
 
         productdata = [ self.Leadtimes, self.StartingInventories, self.InventoryCosts,
                         self.SetupCosts, self.BackorderCosts, self.YearlyAverageDemand, self.YearlyStandardDevDemands,
-                        self.LostSaleCost ]
-        col = [ "Leadtimes", "StartingInventories", "InventoryCosts", "SetupCosts", "BackorderCosts", "AverageDemand", "StandardDevDemands", "LostSale" ]
+                        self.LostSaleCost, self.VariableCost ]
+        col = [ "Leadtimes", "StartingInventories", "InventoryCosts", "SetupCosts", "BackorderCosts", "AverageDemand", "StandardDevDemands", "LostSale", "VariableCosts" ]
         print self.ProductName
         print productdata
         productdatadf = pd.DataFrame( productdata, columns=self.ProductName, index=col).transpose();
@@ -355,6 +355,7 @@ class MRPInstance:
         self.BackorderCosts = Productdatadf['BackorderCosts'].tolist()
         self.StartingInventories = Productdatadf['StartingInventories'].tolist()
         self.SetupCosts = Productdatadf['SetupCosts'].tolist()
+        self.VariableCost = Productdatadf['VariableCosts'].tolist()
         self.LostSaleCost = Productdatadf['LostSale'].tolist()
         self.ComputeIndices()
         Requirementdf = Tool.ReadDataFrame( wb2, "Requirement" )
