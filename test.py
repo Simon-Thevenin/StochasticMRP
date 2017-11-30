@@ -347,7 +347,7 @@ def EvaluateSingleSol(  ):
 
     solution = MRPSolution()
 
-    if not EVPI: #In evpi mode, a solution is computed for each scenario
+    if not EVPI and not PolicyGeneration == Constants.RollingHorizon: #In evpi mode, a solution is computed for each scenario
         solution.ReadFromFile(filedescription)
 
 
@@ -666,15 +666,15 @@ def GenerateInstances( ):
     #Instance.SaveCompleteInstanceInExelFile()
     #instancecreated = instancecreated + [Instance.InstanceName]
 
-    # Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
+    #Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
+    #Instance.SaveCompleteInstanceInExelFile()
+    #instancecreated = instancecreated + [Instance.InstanceName]
 
 
     Instance.ReadFromFile("01", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
-
+    #
     Instance.ReadFromFile("02", "Normal", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
@@ -706,7 +706,7 @@ def GenerateInstances( ):
     Instance.ReadFromFile("04", "SlowMoving", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
-    #
+     #
     Instance.ReadFromFile("04", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
@@ -738,7 +738,7 @@ def GenerateInstances( ):
     Instance.ReadFromFile("G5047141", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
-
+    #
     Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
@@ -750,7 +750,6 @@ def GenerateInstances( ):
     Instance.ReadFromFile("G0047313", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
-
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
@@ -765,6 +764,7 @@ if __name__ == "__main__":
 
         Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
+
 
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"

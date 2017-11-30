@@ -129,8 +129,8 @@ class GraveInstanceReader(InstanceReader):
         servicelevel = 0.5
 
         print "Level of product %r"%self.Level
-        #if self.Instance.Distribution == Constants.Lumpy:
-        #    servicelevel = 0.95
+        if self.Instance.Distribution == Constants.Lumpy:
+            servicelevel = 0.75
 
         self.Instance.StartingInventories = [ ScenarioTreeNode.TransformInverse([[servicelevel]],
                                                                        1,

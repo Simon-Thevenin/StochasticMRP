@@ -4,6 +4,7 @@ from MIPSolver import MIPSolver
 from ScenarioTree import ScenarioTree
 from Constants import Constants
 from DecentralizedMRP import DecentralizedMRP
+from RollingHorizonSolver import RollingHorizonSolver
 import time
 import math
 from datetime import datetime
@@ -37,11 +38,12 @@ class Evaluator:
         self.EvaluateAverage = evaluateaverage
         self.UseSafetyStock = usesafetystock
 
+        if policy == Constants.RollingHorizon:
+            self.RollingHorizonSolver = RollingHorizonSolver( self.Instance )
+
 
     #This function evaluate the performance of a set of solutions obtain with the same method (different solutions due to randomness in the method)
     def EvaluateYQFixSolution( self, testidentifier, evaluateidentificator, model, saveevaluatetab = False, filename = "", evpi = False):
-
-
 
         # Compute the average value of the demand
         nrscenario = evaluateidentificator[2]
@@ -177,34 +179,40 @@ class Evaluator:
     #This function return the setup decision and quantity to produce for the scenario given in argument
     def GetDecisionFromSolutionForScenario(self, sol, model, scenario):
 
-        # The setups are fixed in the first stage
-        givensetup = [[ (sol.Production[0][t][p] ) for p in self.Instance.ProductSet]
-                        for t in self.Instance.TimeBucketSet]
+        givenquantty = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+        givensetup = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+        if self.Policy == Constants.RollingHorizon:
+            givensetup, givenquantty = self.RollingHorizonSolver.ApplyRollingHorizonSimulation( scenario )
 
-        # For model YQFix, the quatities are fixed, and can be taken from the solution
-        if self.Policy == "Fix":
-            givenquantty = [[ sol.ProductionQuantity[0][t][p]
-                                     for p in self.Instance.ProductSet]
-                                     for t in self.Instance.TimeBucketSet]
-
-        # For model YFix, the quantities depend on the scenarion
         else:
-            givenquantty = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+            # The setups are fixed in the first stage
+            givensetup = [[ (sol.Production[0][t][p] ) for p in self.Instance.ProductSet]
+                            for t in self.Instance.TimeBucketSet]
 
-            previousnode = sol.ScenarioTree.RootNode
-            #At each time period the quantity to produce is decided based on the demand known up to now
-            for ti in self.Instance.TimeBucketSet:
-                demanduptotimet = [[scenario.Demands[t][p] for p in self.Instance.ProductSet] for t in range(ti)]
-                if self.Policy == Constants.NearestNeighbor:
-                    givenquantty[ti], previousnode, error = sol.GetQuantityToOrder(self.NearestNeighborStrategy, ti,
-                                                                                    demanduptotimet, givenquantty,
-                                                                                    previousnode)
-                if self.Policy == Constants.InferS:
-                    givenquantty[ti], error = sol.GetQuantityToOrderS( ti,demanduptotimet, givenquantty )
+            # For model YQFix, the quatities are fixed, and can be taken from the solution
+            if self.Policy == Constants.Fix:
+                givenquantty = [[ sol.ProductionQuantity[0][t][p]
+                                         for p in self.Instance.ProductSet]
+                                         for t in self.Instance.TimeBucketSet]
 
-                if self.Policy == Constants.Resolve:
-                     givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,
-                                                                        givensetup, model)
+            # For model YFix, the quantities depend on the scenarion
+            else:
+                givenquantty = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+
+                previousnode = sol.ScenarioTree.RootNode
+                #At each time period the quantity to produce is decided based on the demand known up to now
+                for ti in self.Instance.TimeBucketSet:
+                    demanduptotimet = [[scenario.Demands[t][p] for p in self.Instance.ProductSet] for t in range(ti)]
+                    if self.Policy == Constants.NearestNeighbor:
+                        givenquantty[ti], previousnode, error = sol.GetQuantityToOrder(self.NearestNeighborStrategy, ti,
+                                                                                        demanduptotimet, givenquantty,
+                                                                                        previousnode)
+                    if self.Policy == Constants.InferS:
+                        givenquantty[ti], error = sol.GetQuantityToOrderS( ti,demanduptotimet, givenquantty )
+
+                    if self.Policy == Constants.Resolve:
+                         givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,
+                                                                            givensetup, model)
 
         return givensetup, givenquantty
 
@@ -357,6 +365,8 @@ class Evaluator:
         result = [solution.ProductionQuantity[0][time][p] for p in self.Instance.ProductSet]
         return result
 
+
+
     def ResolveMIP(self, quantitytofix, model, givensetup, demanduptotimet, time):
             if not self.IsDefineMIPResolveTime[time]:
                 treestructure = [1] \
@@ -475,6 +485,5 @@ class Evaluator:
                 error = 1
 
             return result, error
-
 
 
