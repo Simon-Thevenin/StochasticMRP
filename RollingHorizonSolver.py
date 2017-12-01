@@ -9,19 +9,40 @@ from MRPSolution import MRPSolution
 
 class RollingHorizonSolver:
 
-    def __init__(self, instance ):
+    def __init__(self, instance, treestructure, model, seed ):
         self.GlobalInstance = instance
         self.WindowSize = self.GlobalInstance.MaxLeadTime + 1
-        self.SubInstance = []
 
-        self.CreateSubInstances()
-        self.DefineMIPsRollingHorizonSimulation()
+        self.Seed = seed
+        self.Treestructure =treestructure
+        self.Model = model
 
+        self.SubInstance = self.CreateSubInstances()
+        self.RollingHorizonMIPs =  self.DefineMIPsRollingHorizonSimulation()
 
     #This function define a set of MIP, each MIP correspond to a slice of the horizon
     def DefineMIPsRollingHorizonSimulation(self):
+        result = []
+
         # For each subinstance, Create a tree, and generate a MIP
-        print "To be implemented"
+        for instance in self.SubInstance:
+            instance.PrintInstance()
+            print "To be implemented"
+
+            scenariotree = ScenarioTree(instance, self.Treestructure, self.Seed,
+                                        averagescenariotree=self.EvaluateAverage,
+                                        scenariogenerationmethod=self.ScenarioGenerationResolvePolicy,
+                                        model=self.Model)
+
+            mipsolver = MIPSolver(instance, self.Model, scenariotree,
+                                  self.EVPI,
+                                  implicitnonanticipativity=(not self.EVPI),
+                                  evaluatesolution=True,
+                                  usesafetystock=self.UseSafetyStock)
+
+            result.append( mipsolver )
+
+        return result
 
 
     # Create the set of subinstance to solve in a rolling horizon approach

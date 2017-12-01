@@ -18,7 +18,7 @@ import pickle
 
 class Evaluator:
 
-    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False, usesafetystock = False, evpiseed = -1 ):
+    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False, usesafetystock = False, evpiseed = -1, model = "YQFix" ):
         self.Instance = instance
         self.Solutions = solutions
         self.SDDPs = sddps
@@ -28,7 +28,7 @@ class Evaluator:
 
         self.ScenarioGenerationResolvePolicy = scenariogenerationresolve
         self.EVPI = evpi
-        if evpi:
+        if evpi or self.Policy == Constants.RollingHorizon:
             self.EVPISeed = evpiseed
         self.MIPResolveTime = [ None for t in instance.TimeBucketSet  ]
         self.IsDefineMIPResolveTime = [False for t in instance.TimeBucketSet]
@@ -37,13 +37,14 @@ class Evaluator:
         self.OptimizationMethod = optimizationmethod
         self.EvaluateAverage = evaluateaverage
         self.UseSafetyStock = usesafetystock
+        self.Model = model
 
         if policy == Constants.RollingHorizon:
-            self.RollingHorizonSolver = RollingHorizonSolver( self.Instance )
+            self.RollingHorizonSolver = RollingHorizonSolver( self.Instance,  self.Model , self.ReferenceTreeStructure,  self.EVPISeed  )
 
 
     #This function evaluate the performance of a set of solutions obtain with the same method (different solutions due to randomness in the method)
-    def EvaluateYQFixSolution( self, testidentifier, evaluateidentificator, model, saveevaluatetab = False, filename = "", evpi = False):
+    def EvaluateYQFixSolution( self, testidentifier, evaluateidentificator, saveevaluatetab = False, filename = "", evpi = False):
 
         # Compute the average value of the demand
         nrscenario = evaluateidentificator[2]
@@ -58,10 +59,11 @@ class Evaluator:
 
 
         for n in range( self.NrSolutions ):
-                if not evpi:
+                sol = None
+                if not evpi and not self.Policy == Constants.RollingHorizon:
                     if self.OptimizationMethod == Constants.MIP:
                         sol = self.Solutions[n]
-                        if model == Constants.ModelYFix and not sol.IsPartialSolution:
+                        if self.Model == Constants.ModelYFix and not sol.IsPartialSolution:
                             sol.ComputeAverageS()
                         seed = sol.ScenarioTree.Seed
                 else:
@@ -85,7 +87,7 @@ class Evaluator:
 
                     if not evpi:
                         if self.OptimizationMethod == Constants.MIP:
-                            givensetup, givenquantty = self.GetDecisionFromSolutionForScenario(sol, model, scenario)
+                            givensetup, givenquantty = self.GetDecisionFromSolutionForScenario(sol, self.Model, scenario)
 
                         if self.OptimizationMethod == Constants.SDDP:
                             givensetup, givenquantty = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
@@ -111,7 +113,7 @@ class Evaluator:
                                                               givensetups=givensetup,
                                                               fixsolutionuntil=self.Instance.NrTimeBucket)
                         else:
-                            mipsolver = MIPSolver(self.Instance, model, scenariotree,
+                            mipsolver = MIPSolver(self.Instance, self.Model, scenariotree,
                                                   evpi=True )
                         mipsolver.BuildModel()
                     else:
@@ -177,7 +179,7 @@ class Evaluator:
 
 
     #This function return the setup decision and quantity to produce for the scenario given in argument
-    def GetDecisionFromSolutionForScenario(self, sol, model, scenario):
+    def GetDecisionFromSolutionForScenario(self, sol,  scenario):
 
         givenquantty = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         givensetup = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
@@ -212,7 +214,7 @@ class Evaluator:
 
                     if self.Policy == Constants.Resolve:
                          givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,
-                                                                            givensetup, model)
+                                                                            givensetup, self.Model)
 
         return givensetup, givenquantty
 
@@ -290,7 +292,7 @@ class Evaluator:
 
         return EvaluateInfo
 
-    def ComputeStatistic(self, Evaluated, nrscenario, testidentifier, evaluateidentificator, KPIStat, nrerror, model  ):
+    def ComputeStatistic(self, Evaluated, nrscenario, testidentifier, evaluateidentificator, KPIStat, nrerror  ):
         mean = np.mean(Evaluated)
         variance = math.pow(np.std(Evaluated), 2)
         K =  len(Evaluated)
@@ -316,7 +318,7 @@ class Evaluator:
             columnstab = ["Instance", "Distribution", "Model", "NrInSampleScenario", "Identificator", "Mean", "Variance",
                       "Covariance", "LB", "UB", "Min Average", "Max Average", "nrerror"]
             myfile = open(r'./Test/Bounds/TestResultOfEvaluated_%s_%r_%s_%s.csv' % (
-                            self.Instance.InstanceName, evaluateidentificator[0], model, date), 'wb')
+                            self.Instance.InstanceName, evaluateidentificator[0], self.Model, date), 'wb')
             wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
             wr.writerow(general)
             myfile.close()
@@ -331,7 +333,7 @@ class Evaluator:
         #Get the required number of scenario
         self.GetScenarioSet()
 
-    def GetQuantityByResolve(self, demanduptotimet, time, givenquantty, solution, givensetup, model):
+    def GetQuantityByResolve(self, demanduptotimet, time, givenquantty, solution, givensetup ):
         result = [0 for p in self.Instance.ProductSet]
         error = 0
         # decentralized = DecentralizedMRP(self.Instance)
@@ -348,26 +350,26 @@ class Evaluator:
             quantitytofix = [[givenquantty[t][p] for p in self.Instance.ProductSet] for t in range(time)]
 
 
-            if model in [ Constants.L4L, Constants.EOQ, Constants.POQ, Constants.SilverMeal]:
-                result = self.ResolveRule(quantitytofix, model, givensetup, demanduptotimet , time)
+            if self.Model in [ Constants.L4L, Constants.EOQ, Constants.POQ, Constants.SilverMeal]:
+                result = self.ResolveRule(quantitytofix,  givensetup, demanduptotimet , time)
             else:
-                result, error = self.ResolveMIP(quantitytofix , model, givensetup, demanduptotimet, time )
+                result, error = self.ResolveMIP(quantitytofix , givensetup, demanduptotimet, time )
 
 
 
         return result, error
 
-    def ResolveRule(self, quantitytofix, model, givensetup, demanduptotimet, time):
+    def ResolveRule(self, quantitytofix,  givensetup, demanduptotimet, time):
 
         decentralizedmrp = DecentralizedMRP(self.Instance)
-        solution = decentralizedmrp.SolveWithSimpleRule( model, givensetup, quantitytofix, time-1, demanduptotimet)
+        solution = decentralizedmrp.SolveWithSimpleRule( self.Model, givensetup, quantitytofix, time-1, demanduptotimet)
 
         result = [solution.ProductionQuantity[0][time][p] for p in self.Instance.ProductSet]
         return result
 
 
 
-    def ResolveMIP(self, quantitytofix, model, givensetup, demanduptotimet, time):
+    def ResolveMIP(self, quantitytofix,  givensetup, demanduptotimet, time):
             if not self.IsDefineMIPResolveTime[time]:
                 treestructure = [1] \
                                 + [self.ReferenceTreeStructure[t - ( time - self.Instance.NrTimeBucketWithoutUncertaintyBefore)+ 1]
@@ -375,7 +377,7 @@ class Evaluator:
                                    else 1 for
                                     t in range(self.Instance.NrTimeBucket)] \
                                 + [0]
-                if model == Constants.ModelYQFix:
+                if self.Model == Constants.ModelYQFix:
                     treestructure = [1] \
                                     + [self.ReferenceTreeStructure[1]
                                        if (t == time )
@@ -383,7 +385,7 @@ class Evaluator:
                                        t in range(self.Instance.NrTimeBucket)] \
                                     + [0]
 
-                if model == Constants.ModelYQFix and self.ScenarioGenerationResolvePolicy == Constants.All :
+                if self.Model == Constants.ModelYQFix and self.ScenarioGenerationResolvePolicy == Constants.All :
                     treestructure = [1] \
                                 + [ int( math.pow(8,3-time) )
                                    if (  t == time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)  ) )
@@ -396,9 +398,9 @@ class Evaluator:
                                             averagescenariotree = self.EvaluateAverage,
                                             givenfirstperiod=demanduptotimet,
                                             scenariogenerationmethod=self.ScenarioGenerationResolvePolicy,
-                                            model= model)
+                                            model= self.Model)
 
-                mipsolver = MIPSolver(self.Instance, model, scenariotree,
+                mipsolver = MIPSolver(self.Instance, self.Model, scenariotree,
                                       self.EVPI,
                                       implicitnonanticipativity=( not self.EVPI),
                                       evaluatesolution=True,

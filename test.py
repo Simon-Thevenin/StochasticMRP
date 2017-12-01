@@ -190,8 +190,8 @@ def Evaluate():
     ComputeInSampleStatistis()
     global OutOfSampleTestResult
     solutions = GetPreviouslyFoundSolution()
-    evaluator = Evaluator( Instance, solutions, [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy )
-    OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  Model )
+    evaluator = Evaluator( Instance, solutions, [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy, model=Model )
+    OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier )
     PrintFinalResult()
 
 def GetEvaluationFileName():
@@ -361,9 +361,10 @@ def EvaluateSingleSol(  ):
     evaluator = Evaluator(Instance, [solution], [], PolicyGeneration, evpi=EVPI,
                       scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(),
                       nearestneighborstrategy=NearestNeighborStrategy, evaluateaverage=(Model == Constants.Average or Model == Constants.AverageSS), usesafetystock = (Model == Constants.AverageSS),
-                      evpiseed=SeedArray[0])
+                      evpiseed=SeedArray[0],
+                      model = MIPModel)
 
-    OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier,  MIPModel, saveevaluatetab= True, filename = GetEvaluationFileName(), evpi=EVPI  )
+    OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier, saveevaluatetab= True, filename = GetEvaluationFileName(), evpi=EVPI  )
 
     Model = tmpmodel
     GatherEvaluation()
@@ -371,7 +372,7 @@ def EvaluateSingleSol(  ):
 def GatherEvaluation():
     global ScenarioSeed
     currentseedvalue = ScenarioSeed
-    evaluator = Evaluator(Instance, [], [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure())
+    evaluator = Evaluator(Instance, [], [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), model = Model)
     EvaluationTab = []
     KPIStats = []
     nrfile = 0
@@ -398,7 +399,7 @@ def GatherEvaluation():
         KPIStat = [sum(e) / len(e) for e in zip(*KPIStats)]
 
         global OutOfSampleTestResult
-        OutOfSampleTestResult =      evaluator.ComputeStatistic(EvaluationTab, NrEvaluation, TestIdentifier,EvaluatorIdentifier, KPIStat, -1, Model)
+        OutOfSampleTestResult =      evaluator.ComputeStatistic(EvaluationTab, NrEvaluation, TestIdentifier,EvaluatorIdentifier, KPIStat, -1)
         if Method == Constants.MIP and not EVPI:
             ComputeInSampleStatistis()
         PrintFinalResult()
