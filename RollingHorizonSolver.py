@@ -9,13 +9,14 @@ from MRPSolution import MRPSolution
 
 class RollingHorizonSolver:
 
-    def __init__(self, instance, treestructure, model, seed ):
+    def __init__(self, instance, treestructure, model, seed, scenariogenerationmethod ):
         self.GlobalInstance = instance
         self.WindowSize = self.GlobalInstance.MaxLeadTime + 1
 
         self.Seed = seed
         self.Treestructure =treestructure
         self.Model = model
+        self.ScenarioGenerationResolvePolicy = scenariogenerationmethod
 
         self.SubInstance = self.CreateSubInstances()
         self.RollingHorizonMIPs =  self.DefineMIPsRollingHorizonSimulation()
@@ -30,7 +31,7 @@ class RollingHorizonSolver:
             print "To be implemented"
 
             scenariotree = ScenarioTree(instance, self.Treestructure, self.Seed,
-                                        averagescenariotree=self.EvaluateAverage,
+                                        averagescenariotree=False,
                                         scenariogenerationmethod=self.ScenarioGenerationResolvePolicy,
                                         model=self.Model)
 

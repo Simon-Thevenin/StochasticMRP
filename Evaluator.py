@@ -40,7 +40,7 @@ class Evaluator:
         self.Model = model
 
         if policy == Constants.RollingHorizon:
-            self.RollingHorizonSolver = RollingHorizonSolver( self.Instance,  self.Model , self.ReferenceTreeStructure,  self.EVPISeed  )
+            self.RollingHorizonSolver = RollingHorizonSolver( self.Instance,  self.Model , self.ReferenceTreeStructure,  self.EVPISeed, self.ScenarioGenerationResolvePolicy  )
 
 
     #This function evaluate the performance of a set of solutions obtain with the same method (different solutions due to randomness in the method)

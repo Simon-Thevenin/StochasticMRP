@@ -32,7 +32,7 @@ class Constants:
     EOQ  = "EOQ"
     POQ = "POQ"
     SilverMeal  = "SilverMeal"
-    RollingHorizon = "RH"
+    RollingHorizon = "RH-"
 
     Debug = False
     PrintSolutionFileToExcel = False
