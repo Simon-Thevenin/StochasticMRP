@@ -87,7 +87,7 @@ class Evaluator:
 
                     if not evpi:
                         if self.OptimizationMethod == Constants.MIP:
-                            givensetup, givenquantty = self.GetDecisionFromSolutionForScenario(sol, self.Model, scenario)
+                            givensetup, givenquantty = self.GetDecisionFromSolutionForScenario(sol,  scenario)
 
                         if self.OptimizationMethod == Constants.SDDP:
                             givensetup, givenquantty = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
@@ -213,8 +213,7 @@ class Evaluator:
                         givenquantty[ti], error = sol.GetQuantityToOrderS( ti,demanduptotimet, givenquantty )
 
                     if self.Policy == Constants.Resolve:
-                         givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,
-                                                                            givensetup, self.Model)
+                         givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,  givensetup)
 
         return givensetup, givenquantty
 

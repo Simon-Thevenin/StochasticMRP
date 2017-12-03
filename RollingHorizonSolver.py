@@ -9,7 +9,7 @@ from MRPSolution import MRPSolution
 
 class RollingHorizonSolver:
 
-    def __init__(self, instance, treestructure, model, seed, scenariogenerationmethod ):
+    def __init__(self, instance,  model, treestructure, seed, scenariogenerationmethod ):
         self.GlobalInstance = instance
         self.WindowSize = self.GlobalInstance.MaxLeadTime + 1
 
@@ -28,18 +28,18 @@ class RollingHorizonSolver:
         # For each subinstance, Create a tree, and generate a MIP
         for instance in self.SubInstance:
             instance.PrintInstance()
-            print "To be implemented"
-
             scenariotree = ScenarioTree(instance, self.Treestructure, self.Seed,
                                         averagescenariotree=False,
                                         scenariogenerationmethod=self.ScenarioGenerationResolvePolicy,
                                         model=self.Model)
 
+            print "Check what happen with average SS"
             mipsolver = MIPSolver(instance, self.Model, scenariotree,
-                                  self.EVPI,
-                                  implicitnonanticipativity=(not self.EVPI),
-                                  evaluatesolution=True,
-                                  usesafetystock=self.UseSafetyStock)
+                                  False,
+                                  implicitnonanticipativity=True,
+                                  evaluatesolution=False,
+                                  usesafetystock=(self.Model == Constants.AverageSS),
+                                  rollinghorizon= True)
 
             result.append( mipsolver )
 
@@ -49,17 +49,19 @@ class RollingHorizonSolver:
     # Create the set of subinstance to solve in a rolling horizon approach
     def CreateSubInstances( self ):
             """ :type result: [ {MRPInstance} ]"""
-            nrshift = self.GlobalInstance.NrTimeBucket - self.WindowSize
+            nrshift = self.GlobalInstance.NrTimeBucket +1  - self.WindowSize - self.GlobalInstance.NrTimeBucketWithoutUncertaintyBefore
 
             result = [None for i in range(nrshift)]
 
             startwindow = -1
+            previousnrperiodwithoutuncertaintybefore = 0
             for i in range(nrshift):
-                startwindow += 1
-                endwindow = startwindow + self.WindowSize
+                startwindow += 1 + previousnrperiodwithoutuncertaintybefore
+                nrperiodwithoutuncertaintybefore = max(0, self.GlobalInstance.NrTimeBucketWithoutUncertaintyBefore - startwindow)
+                endwindow = startwindow + self.WindowSize + nrperiodwithoutuncertaintybefore
 
                 result[i] = copy.deepcopy(self.GlobalInstance)
-                result[i].NrTimeBucket = self.WindowSize
+                result[i].NrTimeBucket = self.WindowSize + nrperiodwithoutuncertaintybefore
                 result[i].ForecastedAverageDemand = [self.GlobalInstance.ForecastedAverageDemand[startwindow + t] for t in
                                                      range(result[i].NrTimeBucket)]
                 result[i].ForcastedStandardDeviation = [self.GlobalInstance.ForcastedStandardDeviation[startwindow + t] for t
@@ -67,6 +69,8 @@ class RollingHorizonSolver:
                 result[i].NrTimeBucketWithoutUncertaintyBefore = max(0,
                                                                      self.GlobalInstance.NrTimeBucketWithoutUncertaintyBefore - startwindow)
                 result[i].ComputeIndices()
+
+                previousnrperiodwithoutuncertaintybefore = nrperiodwithoutuncertaintybefore
 
             return result
 
@@ -101,7 +105,7 @@ class RollingHorizonSolver:
     #This function return the ending inventory at time t
     def GetEndingInventoryAt(self, t, givenquantity):
 
-        Endininventory = [ 0 for p in self.Instance.ProductSet ]
+        Endininventory = [ 0 for p in self.GlobalInstance.ProductSet ]
 
         print "to be implemented "
 

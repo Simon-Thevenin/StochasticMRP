@@ -29,6 +29,7 @@ class MIPSolver(object):
                  mipsetting = "",
                  warmstart = False,
                  usesafetystock = False,
+                 rollinghorizon = False,
                  logfile = ""):
 
         # Define some attributes and functions which help to et the index of the variable.
@@ -94,6 +95,8 @@ class MIPSolver(object):
         self.FlowConstraintNR = []
 
         self.QuantityConstraintNR = []
+
+        self.RollingHorizon = rollinghorizon
 
         #self.MaxQuantities = maxquantities
         #self.MinSetup = minsetup
@@ -201,6 +204,11 @@ class MIPSolver(object):
 
         return "b_%d_%d_%d" % (p, t, scenarioindex)
 
+
+    # This function returns the name of the backorder variable for product p and time t
+    def GetNameStartingInventory(self, p):
+        return "starting_inventory_%d"%(p)
+
     # the function GetIndexQuantityVariable returns the index of the variable Q_{p, t}. Quantity of product p produced at time t
     def GetIndexQuantityVariable( self, p, t, w ):
 
@@ -248,6 +256,12 @@ class MIPSolver(object):
     #This function return the index of the variable known demand. They are ordered by product (only for products wiht external demands)
     def GetIndexKnownDemand(self, p):
         return self.GetStartKnownDemand() + self.Instance.ProductWithExternalDemandIndex[p]
+
+    #This function return the index of the variable initial inventory (which should not be used with knowndemand)
+    def GetIndexInitialInventoryInRollingHorizon(self, p):
+        if self.DemandKnownUntil >= 0:
+            raise NameError( "The intial inventory cannot be used with known demande" )
+        return self.GetStartKnownDemand() + p #
 
     def GetStartKnownDemand(self):
         if not self.UseImplicitNonAnticipativity: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
@@ -461,7 +475,10 @@ class MIPSolver(object):
             self.Cplex.variables.add(obj=[0.0] * nrknowndemand,
                                          lb=value,
                                          ub=value)
-
+        if self.RollingHorizon:
+            self.Cplex.variables.add(obj=[0.0] * len(self.Instance.ProductSet),
+                                     lb=0,
+                                     ub=0)
         # self.Cplex.variables.add(obj=[1.0],
         #                           lb=[0.0],
         #                           ub=[self.M] )
@@ -479,6 +496,7 @@ class MIPSolver(object):
             inventoryvars = []
             productionvars = []
             backordervars = []
+            initialinventoryvar = []
             for p in self.Instance.ProductSet:
                 for t in self.Instance.TimeBucketSet:
                     for w in self.ScenarioSet:
@@ -487,13 +505,17 @@ class MIPSolver(object):
                         inventoryvars.append( ( (int)(self.GetIndexInventoryVariable(p, t, w) ), self.GetNameInventoryVariable(p, t, w) ) )
                         if self.Instance.HasExternalDemand[p] :
                             backordervars.append( ( (int)( self.GetIndexBackorderVariable(p, t, w) ), self.GetNameBackOrderQuantity(p, t, w) ) )
-
+                if self.RollingHorizon:
+                    initialinventoryvar.append( ( (int)(self.GetIndexInitialInventoryInRollingHorizon( p )), self.GetNameStartingInventory( p )))
             quantityvars = list( set( quantityvars ) )
             productionvars = list( set( productionvars ) )
             inventoryvars = list( set( inventoryvars ) )
             backordervars = list( set( backordervars ) )
-            varnames = quantityvars + inventoryvars + productionvars + backordervars
+            initialinventoryvar =list( set( initialinventoryvar ) )
+            varnames = quantityvars + inventoryvars + productionvars + backordervars + initialinventoryvar
             self.Cplex.variables.set_names(varnames)
+
+
 
     # Print a constraint (usefull for debugging)
     def PrintConstraint( self, vars, coeff, righthandside):
@@ -623,12 +645,19 @@ class MIPSolver(object):
                             knondemand = [self.GetIndexKnownDemand(p)]
                             knondemandcoeff = [-1]
 
-                    vars = inventoryvar + backordervar + quantityvar + dependentdemandvar + knondemand
+                    startinginventoryinrollinghorizon = []
+                    startinginventoryinrollinghorizoncoeff = []
+                    if self.RollingHorizon:
+                        startinginventoryinrollinghorizon = [self.GetIndexInitialInventoryInRollingHorizon(p)]
+                        startinginventoryinrollinghorizoncoeff = [1]
+
+                    vars = inventoryvar + backordervar + quantityvar + dependentdemandvar + knondemand + startinginventoryinrollinghorizon
                     coeff = [-1] * len(inventoryvar) \
                                 + [1] * len(backordervar) \
                                 + quantityvarceoff \
                                 + dependentdemandvarcoeff \
-                                + knondemandcoeff
+                                + knondemandcoeff \
+                                + startinginventoryinrollinghorizoncoeff
 
                     if len(vars) > 0:
                             if  not AlreadyAdded[indexinventoryvar]:
@@ -1396,3 +1425,8 @@ class MIPSolver(object):
 
 
             self.Cplex.linear_constraints.set_rhs( constrainttuples )
+
+    def UpdateStartingInventory(self, startinginventories):
+        startinginventotytuples = [ ( self.GetIndexInitialInventoryInRollingHorizon(p), startinginventories[p] )  for p in self.Instance.ProductSet]
+        self.Cplex.variables.set_lower_bounds(startinginventotytuples)
+        self.Cplex.variables.set_upper_bounds(startinginventotytuples)
