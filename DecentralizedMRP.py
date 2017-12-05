@@ -99,8 +99,6 @@ class DecentralizedMRP(object):
             else:
                 self.Solution.Production[0][t][product] = 0
 
-
-
         return poq
 
     #This return the first period with order (used for POQ and silver meal)

@@ -28,8 +28,9 @@ class Evaluator:
 
         self.ScenarioGenerationResolvePolicy = scenariogenerationresolve
         self.EVPI = evpi
-        if evpi or self.Policy == Constants.RollingHorizon:
+        if evpi:
             self.EVPISeed = evpiseed
+
         self.MIPResolveTime = [ None for t in instance.TimeBucketSet  ]
         self.IsDefineMIPResolveTime = [False for t in instance.TimeBucketSet]
         self.ReferenceTreeStructure = treestructure
@@ -40,7 +41,7 @@ class Evaluator:
         self.Model = model
 
         if policy == Constants.RollingHorizon:
-            self.RollingHorizonSolver = RollingHorizonSolver( self.Instance,  self.Model , self.ReferenceTreeStructure,  self.EVPISeed, self.ScenarioGenerationResolvePolicy  )
+            self.RollingHorizonSolver = RollingHorizonSolver( self.Instance,  self.Model , self.ReferenceTreeStructure,  self.StartSeedResolve, self.ScenarioGenerationResolvePolicy  )
 
 
     #This function evaluate the performance of a set of solutions obtain with the same method (different solutions due to randomness in the method)
@@ -67,7 +68,10 @@ class Evaluator:
                             sol.ComputeAverageS()
                         seed = sol.ScenarioTree.Seed
                 else:
-                    seed = self.EVPISeed
+                    if  evpi:
+                        seed = self.EVPISeed
+                    else:
+                        seed = self.StartSeedResolve
 
 
                 if self.OptimizationMethod == Constants.SDDP:
@@ -122,6 +126,9 @@ class Evaluator:
                         if not self.Policy == Constants.Fix and not evpi:
                             mipsolver.ModifyMipForFixQuantity( givenquantty )
 
+                        if self.Policy == Constants.RollingHorizon:
+                            mipsolver.ModifyMIPForSetup(givensetup)
+
                     mipsolver.Cplex.parameters.advance = 0
                     #mipsolver.Cplex.parameters.lpmethod = 2
                     mipsolver.Cplex.parameters.lpmethod.set(mipsolver.Cplex.parameters.lpmethod.values.barrier)
@@ -134,6 +141,8 @@ class Evaluator:
                     if solution == None:
                         if Constants.Debug:
                             mipsolver.Cplex.write("mrp.lp")
+                            print givensetup
+                            print givenquantty
                             raise NameError("error at seed %d with given qty %r"%(indexscenario, givenquantty))
                             nrerror = nrerror +1
                     else:
@@ -185,6 +194,8 @@ class Evaluator:
         givensetup = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         if self.Policy == Constants.RollingHorizon:
             givensetup, givenquantty = self.RollingHorizonSolver.ApplyRollingHorizonSimulation( scenario )
+            print givensetup
+            print givenquantty
 
         else:
             # The setups are fixed in the first stage
@@ -486,5 +497,3 @@ class Evaluator:
                 error = 1
 
             return result, error
-
-

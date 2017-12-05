@@ -47,7 +47,6 @@ class Solver:
 
     #This function creates the CPLEX model and solves it.
     def MRP( self, treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False, yfixheuristic = False, warmstart = False ):
-
         scenariotree = ScenarioTree( self.Instance, treestructur, self.ScenarioSeed,
                                          averagescenariotree=averagescenario,
                                          scenariogenerationmethod = self.ScenarioGeneration,

@@ -95,7 +95,7 @@ class MIPSolver(object):
         self.FlowConstraintNR = []
 
         self.QuantityConstraintNR = []
-
+        self.SetupConstraint= []
         self.RollingHorizon = rollinghorizon
 
         #self.MaxQuantities = maxquantities
@@ -476,9 +476,9 @@ class MIPSolver(object):
                                          lb=value,
                                          ub=value)
         if self.RollingHorizon:
-            self.Cplex.variables.add(obj=[0.0] * len(self.Instance.ProductSet),
-                                     lb=0,
-                                     ub=0)
+            self.Cplex.variables.add(obj=[0.0] * len( self.Instance.ProductSet ),
+                                     lb=[0.0] * len( self.Instance.ProductSet ),
+                                     ub=[0.0] * len( self.Instance.ProductSet ) )
         # self.Cplex.variables.add(obj=[1.0],
         #                           lb=[0.0],
         #                           ub=[self.M] )
@@ -555,6 +555,11 @@ class MIPSolver(object):
                         self.QuantityConstraintNR[w][p][t] = "Quantitya%da%da%d"%(p,t,w)
 
     def CreateCopyGivenSetupConstraints(self):
+
+         self.SetupConstraint = [[["" for t in self.Instance.TimeBucketSet] for p in self.Instance.ProductSet] for w
+                                     in
+                                     self.ScenarioSet]
+
          AlreadyAdded = [False for v in range(self.GetNrProductionVariable())]
          # Setup equal to the given ones
          for p in self.Instance.ProductSet:
@@ -569,9 +574,12 @@ class MIPSolver(object):
                             coeff = [1.0]
                             righthandside = [round(self.GivenSetup[t][p], 2)]
                             # PrintConstraint( vars, coeff, righthandside )
+                            name =  "Setup%da%da%d" % (p, t, w)
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                               senses=["E"],
-                                                              rhs=righthandside)
+                                                              rhs=righthandside,
+                                                              names = [name])
+                            self.SetupConstraint[w][p][t] = name
 
     def WarmStartGivenSetupConstraints(self):
          AlreadyAdded = [False for v in range(self.GetNrProductionVariable())]
@@ -1426,7 +1434,29 @@ class MIPSolver(object):
 
             self.Cplex.linear_constraints.set_rhs( constrainttuples )
 
+    def ModifyMIPForSetup(self, givensetup ):
+        # setup constraint
+        constrainttuples = []
+        for p in self.Instance.ProductSet:
+            for t in self.Instance.TimeBucketSet:
+                tuples = [ ( self.GetIndexProductionVariable(p, t, w), givensetup[t][p]) for w in self.ScenarioSet   ]
+                self.Cplex.variables.set_lower_bounds(tuples)
+                self.Cplex.variables.set_upper_bounds(tuples)
+                tuples = [(self.GetIndexQuantityVariable(p, t, w),  max((givensetup[t][p]) * self.M, 0.0)) for w in self.ScenarioSet]
+                self.Cplex.variables.set_upper_bounds(tuples)
+                righthandside = givensetup[t][p]  #
+                constrnr =  self.SetupConstraint[0][p][t]
+                constrainttuples.append((constrnr, righthandside))
+        self.Cplex.write("mrp.lp")
+        print constrainttuples
+        self.Cplex.linear_constraints.set_rhs(constrainttuples)
+
+
+
+
     def UpdateStartingInventory(self, startinginventories):
+
         startinginventotytuples = [ ( self.GetIndexInitialInventoryInRollingHorizon(p), startinginventories[p] )  for p in self.Instance.ProductSet]
         self.Cplex.variables.set_lower_bounds(startinginventotytuples)
         self.Cplex.variables.set_upper_bounds(startinginventotytuples)
+

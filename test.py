@@ -143,10 +143,7 @@ def Solve():
 
     solver = Solver (Instance, TestIdentifier, mipsetting=MIPSetting, testdescription= GetTestDescription(), evaluatesol = EvaluateSolution, treestructure=GetTreeStructure())
 
-    if Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyBefore > 5:
-        solution =solver.RollingHorizonSolve()
-    else:
-        solution = solver.Solve()
+    solution = solver.Solve()
 
     PrintTestResult()
     PrintSolutionToFile(solution)
@@ -202,16 +199,22 @@ def GetEvaluationFileName():
 #Define the tree  structur do be used
 def GetTreeStructure( ):
         treestructure = []
+        nrtimebucketconsidered = Instance.NrTimeBucket
+        if PolicyGeneration == Constants.RollingHorizon:
+            nrtimebucketconsidered = Instance.MaxLeadTime + 3
         if Model == Constants.Average or Model == Constants.AverageSS:
-            treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
+            treestructure = [1, 1] + [1] * (nrtimebucketconsidered - 1) + [0]
 
         if Model == Constants.ModelYQFix:
-            treestructure = [1, int(NrScenario)] + [1] * (Instance.NrTimeBucket - 1) + [0]
+            treestructure = [1, int(NrScenario)] + [1] * (nrtimebucketconsidered- 1) + [0]
 
         if Model == Constants.ModelYFix or Model ==Constants.ModelHeuristicYFix:
-            treestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
-            stochasticparttreestructure = [1, 1] + [1] * (Instance.NrTimeBucket - 1) + [0]
-            nrtimebucketstochastic = Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyBefore - Instance.NrTimeBucketWithoutUncertaintyAfter
+            treestructure = [1, 1] + [1] * (nrtimebucketconsidered - 1) + [0]
+            stochasticparttreestructure = [1, 1] + [1] * (nrtimebucketconsidered- 1) + [0]
+            if PolicyGeneration == Constants.RollingHorizon:
+                nrtimebucketstochastic = nrtimebucketconsidered
+            else:
+                nrtimebucketstochastic = Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyBefore - Instance.NrTimeBucketWithoutUncertaintyAfter
 
             if NrScenario == "4":
                 if nrtimebucketstochastic == 1:
@@ -372,7 +375,7 @@ def EvaluateSingleSol(  ):
 def GatherEvaluation():
     global ScenarioSeed
     currentseedvalue = ScenarioSeed
-    evaluator = Evaluator(Instance, [], [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), model = Model)
+    evaluator = Evaluator(Instance, [], [], "", ScenarioGeneration, treestructure=GetTreeStructure(), model = Model)
     EvaluationTab = []
     KPIStats = []
     nrfile = 0
