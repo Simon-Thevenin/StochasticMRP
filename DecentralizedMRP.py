@@ -118,11 +118,36 @@ class DecentralizedMRP(object):
 
     def ComputeSafetyStock(self):
 
+        self.LevelSet = sorted(set(self.Instance.Level), reverse=False)
+        incrementalinventorycost = [ [ self.Instance.InventoryCosts[p]
+                                       for p in self.Instance.ProductWithExternalDemand ]
+                                            for t in self.Instance.TimeBucketSet ]
+
+        cumulativerequirement = [[ self.Instance.Requirements[p][q]
+                                    for q in self.Instance.ProductSet]
+                                 for p in self.Instance.ProductWithExternalDemand]
+
+        for l in self.LevelSet:
+            if l>2:
+                prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
+                for q in prodinlevel:
+                    for p in self.Instance.ProductWithExternalDemand:
+                        cumulativerequirement[p][q] = sum( self.Instance.Requirements[q2][q] * cumulativerequirement[p][q2]
+                                                           for q2 in self.Instance.ProductSet )
+        for l in self.LevelSet:
+           for p in self.Instance.ProductWithExternalDemand:
+                 if self.FixUntil + l < self.Instance.NrTimeBucket:
+                    incrementalinventorycost[self.FixUntil + l][p] = self.Instance.InventoryCosts[p]  \
+                                                     - sum (cumulativerequirement[p][q] * self.Instance.InventoryCosts[q]
+                                                            for q in self.Instance.ProductSet if self.Instance.Level[q] == l)
+
         safetystock = [ [ 0.0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
         for p in self.Instance.ProductWithExternalDemand:
             for t in range(self.FixUntil+1, self.Instance.NrTimeBucket):
 
-                ratio = float(self.Instance.BackorderCosts[p] ) / float((self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] ) )
+                #ratio = float(self.Instance.BackorderCosts[p] ) / float((self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] ) )
+                ratio = float(self.Instance.BackorderCosts[p]) / float(
+                    (self.Instance.BackorderCosts[p] + incrementalinventorycost[t][p]))
 
                 #value = norm.ppf( ratio, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p] )
                 x = ScenarioTreeNode.TransformInverse([[ratio]],
