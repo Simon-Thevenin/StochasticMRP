@@ -11,7 +11,7 @@ class RollingHorizonSolver:
 
     def __init__(self, instance,  model, treestructure, seed, scenariogenerationmethod ):
         self.GlobalInstance = instance
-        self.WindowSize = self.GlobalInstance.MaxLeadTime + 1
+        self.WindowSize = self.GlobalInstance.MaxLeadTime + 3
 
         self.Seed = seed
         self.Treestructure =treestructure
@@ -148,7 +148,7 @@ class RollingHorizonSolver:
         prevdemand = [ [ scenario.Demands[t1][p1]
                          for p1 in self.GlobalInstance.ProductSet ]
                        for t1 in self.GlobalInstance.TimeBucketSet ]
-        projectedbackorder, Endininventory, currrentstocklevel = self.Solution.GetCurrentStatus(prevdemand,
+        projectedbackorder, projininventory, Endininventory = self.Solution.GetCurrentStatus(prevdemand,
                                                                                                 prevquanity,
                                                                                                 t)
         return Endininventory
@@ -157,6 +157,7 @@ class RollingHorizonSolver:
     #This function save the frist stage decision in the solution of the MIP
     def CopyFirstStageDecision(self, solution, time ):
 
+        qty = []
         if  solution.MRPInstance.NrTimeBucketWithoutUncertaintyBefore  > 0:
             periodstocopy =  range(solution.MRPInstance.NrTimeBucketWithoutUncertaintyBefore)  + [solution.MRPInstance.NrTimeBucketWithoutUncertaintyBefore ]
         else:
@@ -169,4 +170,6 @@ class RollingHorizonSolver:
             #Copy the production quantity for the first day:
             for p in self.GlobalInstance.ProductSet:
                 self.Solution.ProductionQuantity[0][tau][p] = solution.ProductionQuantity[0][tau - time][p]
+                qty.append( self.Solution.ProductionQuantity[0][tau][p] )
 
+        print qty

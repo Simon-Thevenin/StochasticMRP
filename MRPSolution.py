@@ -583,7 +583,7 @@ class MRPSolution:
         projectedinventory = [ 0 for  p in self.MRPInstance.ProductSet ]
         projectedbackorder = [ 0 for p in self.MRPInstance.ProductWithExternalDemand ]
         currentbackorder = [ 0 for  p in self.MRPInstance.ProductWithExternalDemand ]
-        currrentstocklevel = [ 0 for p in self.MRPInstance.ProductSet ]
+        currentinventory = [ 0 for p in self.MRPInstance.ProductSet ]
 
         # sum of quantity and initial inventory minus demands
         projinventory = [ ( self.MRPInstance.StartingInventories[p]
@@ -593,7 +593,7 @@ class MRPSolution:
                                     for p in self.MRPInstance.ProductSet ]
 
         currentinventory = [ ( self.MRPInstance.StartingInventories[p]
-                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] , 0 ) ) )
+                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] + 1 , 0 ) ) )
                                   - sum( prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time +1 ) for q in self.MRPInstance.ProductSet)
                                   - sum( prevdemand[t][p] for t in range( time ) ) )
                                     for p in self.MRPInstance.ProductSet ]
@@ -607,7 +607,7 @@ class MRPSolution:
                      projectedbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
 
 
-        return projectedbackorder, projinventory, currrentstocklevel
+        return projectedbackorder, projinventory, currentinventory
 
 
     def GetFeasibleNodesAtTime( self, time, currentlevelofinventory ):

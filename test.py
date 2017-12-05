@@ -201,7 +201,7 @@ def GetTreeStructure( ):
         treestructure = []
         nrtimebucketconsidered = Instance.NrTimeBucket
         if PolicyGeneration == Constants.RollingHorizon:
-            nrtimebucketconsidered = Instance.MaxLeadTime + 1
+            nrtimebucketconsidered = Instance.MaxLeadTime + 3
         if Model == Constants.Average or Model == Constants.AverageSS:
             treestructure = [1, 1] + [1] * (nrtimebucketconsidered - 1) + [0]
 
