@@ -258,7 +258,7 @@ class TemplemeierInstanceReader( InstanceReader ):
             print "setupcost: %r"%self.Instance.SetupCosts
         self.Instance.SetupCosts = [ computedsetup[p ] for p in  self.Instance.ProductSet ]
 
-    def GenerateCapacity(self):
+    def GenerateCapacity(self, capacityfactor):
 
         startcapacity = 5 + 2 * self.Instance.NrProduct
         startsetup = 3

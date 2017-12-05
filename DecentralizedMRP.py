@@ -145,9 +145,9 @@ class DecentralizedMRP(object):
         for p in self.Instance.ProductWithExternalDemand:
             for t in range(self.FixUntil+1, self.Instance.NrTimeBucket):
 
-                #ratio = float(self.Instance.BackorderCosts[p] ) / float((self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] ) )
-                ratio = float(self.Instance.BackorderCosts[p]) / float(
-                    (self.Instance.BackorderCosts[p] + incrementalinventorycost[t][p]))
+                ratio = float(self.Instance.BackorderCosts[p] ) / float((self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] ) )
+                #ratio = float(self.Instance.BackorderCosts[p]) / float(
+                #    (self.Instance.BackorderCosts[p] + incrementalinventorycost[t][p]))
 
                 #value = norm.ppf( ratio, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p] )
                 x = ScenarioTreeNode.TransformInverse([[ratio]],

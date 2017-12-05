@@ -162,14 +162,14 @@ class GraveInstanceReader(InstanceReader):
                               * (self.TimeBetweenOrder) * (self.TimeBetweenOrder ) )
                            for p in self.Instance.ProductSet ]
 
-    def GenerateCapacity(self):
+    def GenerateCapacity(self, capacityfactor):
         self.Instance.NrResource = self.Instance.NrLevel
         self.Instance.ProcessingTime = [[self.Datasheetdf.get_value(self.Instance.ProductName[p], 'stageTime')
                                             if (self.Level[p] == k)   else 0.0
 
                                             for k in range(self.Instance.NrResource)]
                                            for p in self.Instance.ProductSet]
-        capacityfactor = 5;
+
         self.Instance.Capacity = [ capacityfactor * sum( self.DependentAverageDemand[p] * self.Instance.ProcessingTime[p][k]
                                                          for p in self.Instance.ProductSet)
                                    for k in range(self.Instance.NrResource)]

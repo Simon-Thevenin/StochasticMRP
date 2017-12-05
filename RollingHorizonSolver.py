@@ -11,7 +11,7 @@ class RollingHorizonSolver:
 
     def __init__(self, instance,  model, treestructure, seed, scenariogenerationmethod ):
         self.GlobalInstance = instance
-        self.WindowSize = self.GlobalInstance.MaxLeadTime + 3
+        self.WindowSize = self.GlobalInstance.MaxLeadTime + 1
 
         self.Seed = seed
         self.Treestructure =treestructure
@@ -57,7 +57,7 @@ class RollingHorizonSolver:
     # Create the set of subinstance to solve in a rolling horizon approach
     def CreateSubInstances( self ):
             """ :type result: [ {MRPInstance} ]"""
-            nrshift = self.GlobalInstance.NrTimeBucket +1  - self.WindowSize - self.GlobalInstance.NrTimeBucketWithoutUncertaintyBefore
+            nrshift = self.GlobalInstance.NrTimeBucket  - self.GlobalInstance.NrTimeBucketWithoutUncertaintyBefore
 
             result = [None for i in range(nrshift)]
 
@@ -72,11 +72,11 @@ class RollingHorizonSolver:
                 result[i].NrTimeBucket = self.WindowSize + nrperiodwithoutuncertaintybefore
                 result[i].ForecastedAverageDemand = [self.GlobalInstance.ForecastedAverageDemand[startwindow + t]
                                                      if startwindow + t < self.GlobalInstance.NrTimeBucket
-                                                     else 0.0
+                                                     else [0.0]*self.GlobalInstance.NrProduct
                                                      for t in range(result[i].NrTimeBucket)]
                 result[i].ForcastedStandardDeviation = [self.GlobalInstance.ForcastedStandardDeviation[startwindow + t]
                                                         if startwindow + t < self.GlobalInstance.NrTimeBucket
-                                                        else 0.0
+                                                        else [0.0]*self.GlobalInstance.NrProduct
                                                         for t in range(result[i].NrTimeBucket) ]
                 result[i].NrTimeBucketWithoutUncertaintyBefore = max(0,
                                                                      self.GlobalInstance.NrTimeBucketWithoutUncertaintyBefore - startwindow)
