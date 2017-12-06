@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     nrcenarioyfix =[  "6400b" ]
     nrcenarioyfqix = [ "200"]
-    #nrcenarioheuristicyfix = ["6400b",  "102400b"]
+    nrcenarioheuristicyfix = ["6400b",  "102400b"]
 
     policyyqfix = [ "RH" ]
     policyyfix = [ "RH" ]
