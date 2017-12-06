@@ -53,7 +53,7 @@ python test.py Evaluate %s %s %s %s  -s %s -p %s -n %s
         generation, seed, Policy, NrScenarioEvaluation))
 
 
-def CreateRHJob(instance, model, nrscenar, generation, seed, Policy, timehorizon ):
+def CreateRHJob(instance, model, nrscenar,  seed,  timehorizon ):
     qsub_filename = "./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s" % (
         instance, model, nrscenar, seed, NrScenarioEvaluation, timehorizon)
     qsub_file = open(qsub_filename, 'w')
@@ -94,8 +94,8 @@ if __name__ == "__main__":
     nrcenarioyfqix = [ "200"]
     nrcenarioheuristicyfix = ["6400b",  "102400b"]
 
-    policyyqfix = [ "RH", "Fix", "Re-solve" ]
-    policyyfix = [ "RH", "Fix" ]
+    policyyqfix = [  "Fix", "Re-solve" ]
+    policyyfix = [  "Fix" ]
     Generationset = [ "RQMC" ]
 
 
@@ -166,8 +166,8 @@ if __name__ == "__main__":
                                             fileeval.write("qsub ./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
                                                 instance, model, nrscenar, generation, method, Policy, seed))
 
-                                    CreateRHJob(instance, model, nrscenar, generation, seed, Policy, timehorizon = 1)
-                                    CreateRHJob(instance, model, nrscenar, generation, seed, Policy, timehorizon = 3)
+                                    CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = 1)
+                                    CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = 3)
                                     fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
                                         instance, model, nrscenar, seed, NrScenarioEvaluation, 1) )
                                     fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
