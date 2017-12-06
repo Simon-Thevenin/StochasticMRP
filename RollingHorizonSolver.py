@@ -33,6 +33,7 @@ class RollingHorizonSolver:
     def DefineMIPsRollingHorizonSimulation(self):
         result = []
 
+
         # For each subinstance, Create a tree, and generate a MIP
         for instance in self.SubInstance:
             treestructure =  copy.deepcopy(self.Treestructure)
@@ -48,15 +49,18 @@ class RollingHorizonSolver:
                                         scenariogenerationmethod=self.ScenarioGenerationResolvePolicy,
                                         model=self.Model)
 
+            logfilename = "%s_%s_%r_%r_%r"%(instance.InstanceName, self.Model, len(result), scenariotree.TreeStructure, self.UseSafetyStock)
 
             mipsolver = MIPSolver(instance, self.Model, scenariotree,
                                   False,
                                   implicitnonanticipativity=True,
                                   evaluatesolution=False,
                                   usesafetystock= self.UseSafetyStock,
-                                  rollinghorizon= True)
+                                  rollinghorizon= True,
+                                  logfile= logfilename )
             mipsolver.BuildModel()
             result.append( mipsolver )
+
 
         return result
 
@@ -106,6 +110,7 @@ class RollingHorizonSolver:
             timedemandknownuntil = timetodecide - 1
 
             startinginventory = self.GetEndingInventoryAt(timetodecide ,   scenario)
+
             wronginventory = False
             for  p in self.GlobalInstance.ProductSet:
                 if ( not self.GlobalInstance.HasExternalDemand[p] ) \
@@ -169,6 +174,9 @@ class RollingHorizonSolver:
         projectedbackorder, projininventory, Endininventory = self.Solution.GetCurrentStatus(prevdemand,
                                                                                                 prevquanity,
                                                                                                 t)
+        #Remove starting inventory to not count it twice
+        Endininventory = [ Endininventory[p] - self.GlobalInstance.StartingInventories[p] for p in self.GlobalInstance.ProductSet ]
+
         return Endininventory
 
 
