@@ -35,7 +35,6 @@ class RollingHorizonSolver:
 
         # For each subinstance, Create a tree, and generate a MIP
         for instance in self.SubInstance:
-            instance.PrintInstance()
             treestructure =  copy.deepcopy(self.Treestructure)
             if self.Model == Constants.ModelYFix:
                 treestructure =  [1] * (instance.NrTimeBucketWithoutUncertaintyBefore+1)  + treestructure + [0]
@@ -44,7 +43,6 @@ class RollingHorizonSolver:
 
             if len( treestructure )> instance.NrTimeBucket + 2:
                 treestructure = treestructure[:instance.NrTimeBucket + 1] + [0]
-            print treestructure
             scenariotree = ScenarioTree(instance=instance, branchperlevel=treestructure, seed = self.Seed,
                                         averagescenariotree=self.Owner.EvaluateAverage,
                                         scenariogenerationmethod=self.ScenarioGenerationResolvePolicy,
