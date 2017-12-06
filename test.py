@@ -66,6 +66,7 @@ Rule = "L4L"
 PolicyGeneration = "NearestNeighbor"
 NearestNeighborStrategy = ""
 NrEvaluation = 500
+TimeHorizon = 1
 ScenarioGeneration = "MC"
 #When a solution is obtained, it is recorded in Solution. This is used to compute VSS for instance.
 Solution = None
@@ -187,7 +188,7 @@ def Evaluate():
     ComputeInSampleStatistis()
     global OutOfSampleTestResult
     solutions = GetPreviouslyFoundSolution()
-    evaluator = Evaluator( Instance, solutions, [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy, model=Model )
+    evaluator = Evaluator( Instance, solutions, [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy, model=Model, timehorizon= TimeHorizon )
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier )
     PrintFinalResult()
 
@@ -201,7 +202,7 @@ def GetTreeStructure( ):
         treestructure = []
         nrtimebucketconsidered = Instance.NrTimeBucket
         if PolicyGeneration == Constants.RollingHorizon:
-            nrtimebucketconsidered = Instance.MaxLeadTime + 3
+            nrtimebucketconsidered = Instance.MaxLeadTime + TimeHorizon
         if Model == Constants.Average or Model == Constants.AverageSS:
             treestructure = [1, 1] + [1] * (nrtimebucketconsidered - 1) + [0]
 
@@ -226,7 +227,7 @@ def GetTreeStructure( ):
                 if nrtimebucketstochastic == 4:
                     stochasticparttreestructure = [4, 1, 1, 1]
                 if nrtimebucketstochastic == 5:
-                    stochasticparttreestructure = [8, 8, 2, 2, 2]
+                    stochasticparttreestructure = [4, 1, 1, 1, 1]
 
             if NrScenario == "6400a":
                 if nrtimebucketstochastic == 3:
@@ -243,6 +244,8 @@ def GetTreeStructure( ):
                     stochasticparttreestructure = [50, 8, 4, 4]
                 if nrtimebucketstochastic == 5:
                     stochasticparttreestructure = [50, 8, 4, 2, 2]
+                if nrtimebucketstochastic == 6:
+                    stochasticparttreestructure = [50, 8, 4, 2, 2, 2]
 
             if NrScenario == "6400c":
                 if nrtimebucketstochastic == 3:
@@ -332,12 +335,14 @@ def GetTreeStructure( ):
                 if nrtimebucketstochastic == 5:
                     stochasticparttreestructure = [50, 16, 8, 4, 4]
 
-            k = 0
-            for i in range(Instance.NrTimeBucketWithoutUncertaintyBefore + 1,
-                           Instance.NrTimeBucket - Instance.NrTimeBucketWithoutUncertaintyAfter + 1):
-                treestructure[i] = stochasticparttreestructure[k]
-                k += 1
-
+            if not  PolicyGeneration == Constants.RollingHorizon:
+                k = 0
+                for i in range(Instance.NrTimeBucketWithoutUncertaintyBefore + 1,
+                               nrtimebucketconsidered  - Instance.NrTimeBucketWithoutUncertaintyAfter + 1):
+                    treestructure[i] = stochasticparttreestructure[k]
+                    k += 1
+            else:
+                treestructure = stochasticparttreestructure
         return treestructure
 
 def EvaluateSingleSol(  ):
@@ -361,11 +366,12 @@ def EvaluateSingleSol(  ):
         MIPModel = Constants.ModelYFix
         Model = Constants.ModelYFix
 
-    evaluator = Evaluator(Instance, [solution], [], PolicyGeneration, evpi=EVPI,
-                      scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(),
-                      nearestneighborstrategy=NearestNeighborStrategy, evaluateaverage=(Model == Constants.Average or Model == Constants.AverageSS), usesafetystock = (Model == Constants.AverageSS),
-                      evpiseed=SeedArray[0],
-                      model = MIPModel)
+    evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, evpi=EVPI,
+                          scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(),
+                          nearestneighborstrategy=NearestNeighborStrategy, evaluateaverage=(Model == Constants.Average or Model == Constants.AverageSS), usesafetystock = (Model == Constants.AverageSS),
+                          evpiseed=SeedArray[0],
+                          model = MIPModel,
+                          timehorizon=TimeHorizon )
 
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier, saveevaluatetab= True, filename = GetEvaluationFileName(), evpi=EVPI  )
 
@@ -459,6 +465,7 @@ def parseArguments():
     parser.add_argument("-f", "--fixuntil", help="Use with VSS action, howmany periods are fixed", type=int, default=0)
     parser.add_argument("-e", "--evpi", help="if true the evpi model is consdiered",  default=False, action='store_true')
     parser.add_argument("-c", "--mipsetting", help="test a specific mip solver parameter",  default="")
+    parser.add_argument("-t", "--timehorizon", help="the time horizon used in shiting window.", type=int, default=1)
     # Print version
     parser.add_argument("--version", action="version", version='%(prog)s - Version 1.0')
 
@@ -481,6 +488,8 @@ def parseArguments():
     global FixUntilTime
     global EVPI
     global MIPSetting
+    global TimeHorizon
+
 
     Action = args.Action
     InstanceName = args.Instance
@@ -494,6 +503,7 @@ def parseArguments():
     FixUntilTime = args.fixuntil
     EVPI = args.evpi
     MIPSetting = args.mipsetting
+    TimeHorizon = args.timehorizon
     if EVPI:
         PolicyGeneration ="EVPI"
         NearestNeighborStrategy = "EVPI"
@@ -666,94 +676,94 @@ def GenerateInstances( ):
     #        Instance.SaveCompleteInstanceInExelFile()
     #        instancecreated = instancecreated + [Instance.InstanceName]
 
-    #Instance.ReadFromFile("01", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, longtimehoizon = False)
-    #Instance.SaveCompleteInstanceInExelFile()
-    #instancecreated = instancecreated + [Instance.InstanceName]
+    Instance.ReadFromFile("01", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, longtimehoizon = True, capacity=2)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
 
-    #Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
-    #Instance.SaveCompleteInstanceInExelFile()
-    #instancecreated = instancecreated + [Instance.InstanceName]
+    Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
 
-
-    Instance.ReadFromFile("01", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, capacity= 5 )
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
     #
-    Instance.ReadFromFile("02", "Normal", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, capacity= 2 )
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("01",  "Lumpy", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, capacity= 5 )
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("04", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, capacity= 2 )
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("02", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, capacity= 2 )
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("01", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, capacity= 5 )
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("02", "Lumpy", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, capacity= 2 )
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("04", "NonStationary", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, capacity= 5 )
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("04", "SlowMoving", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, capacity= 2 )
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-     #
-    Instance.ReadFromFile("04", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, capacity= 5 )
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("G5047424", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="l", rk=25, leadtimestructure=1, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("K5014141", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("G0047232", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("K0014232", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("G5047141", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("K5014424", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-    #
-    Instance.ReadFromFile("G0047313", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
+    # Instance.ReadFromFile("01", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, capacity= 5 )
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("02", "Normal", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, capacity= 2 )
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("01",  "Lumpy", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, capacity= 5 )
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("04", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, capacity= 2 )
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("02", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, capacity= 2 )
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("01", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, capacity= 5 )
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("02", "Lumpy", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, capacity= 2 )
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("04", "NonStationary", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, capacity= 5 )
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("04", "SlowMoving", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, capacity= 2 )
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #  #
+    # Instance.ReadFromFile("04", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, capacity= 5 )
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("G5047424", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="l", rk=25, leadtimestructure=1, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("K5014141", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("G0047232", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("K0014232", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("G5047141", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("K5014424", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    # Instance.ReadFromFile("G0047313", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)

@@ -53,6 +53,26 @@ python test.py Evaluate %s %s %s %s  -s %s -p %s -n %s
         generation, seed, Policy, NrScenarioEvaluation))
 
 
+def CreateRHJob(instance, model, nrscenar, generation, seed, Policy, timehorizon ):
+    qsub_filename = "./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s" % (
+        instance, model, nrscenar, seed, NrScenarioEvaluation, timehorizon)
+    qsub_file = open(qsub_filename, 'w')
+    qsub_file.write("""
+#!/bin/bash -l
+#
+#$ -cwd
+#$ -q idra
+#$ -j y
+#$ -o /home/thesim/log/outputjobevaluate%s%s%s%s%s%s.txt
+ulimit -v 16000000
+mkdir -p /tmp/thesim
+mkdir -p /tmp/thesim/Evaluations
+mkdir -p /tmp/thesim/Solutions
+mkdir -p /tmp/thesim/CPLEXLog
+python test.py Evaluate %s %s %s RQMC  -s %s -p RH -n %s --timehorizon %s
+""" % (instance, model, nrscenar, seed,  NrScenarioEvaluation, timehorizon,
+       instance, model, nrscenar, seed,  NrScenarioEvaluation, timehorizon))
+
 if __name__ == "__main__":
     csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
     data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
@@ -60,15 +80,25 @@ if __name__ == "__main__":
     for row in data_reader:
        instancenameslist.append(row)
     InstanceSet = instancenameslist[0]
-    modelset = [ "Average", "AverageSS", "YQFix", "YFix", "HeuristicYFix", "L4L", "EOQ", "POQ", "SilverMeal" ]#, "HeuristicYFix", "YFix", "YQFix"]
+    modelset = [ "Average", "AverageSS", "YQFix", "YFix",  "L4L", "EOQ", "POQ", "SilverMeal" ]#, "HeuristicYFix", "YFix", "YQFix"]
     #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
-    nrcenarioyfix =[  "800", "1600", "3200", "6400a", "6400b", "6400c",  "12800", "25600", "51200b", "102400b", "153600" ]
-    nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
-    nrcenarioheuristicyfix = ["6400b",  "102400b"]
+    #nrcenarioyfix =[  "800", "1600", "3200", "6400a", "6400b", "6400c",  "12800", "25600", "51200b", "102400b", "153600" ]
+    #nrcenarioyfqix = [ "10", "25", "50", "1q00", "200", "500", "1000"]
+    #nrcenarioheuristicyfix = ["6400b",  "102400b"]
 
-    policyyqfix = ["Fix", "Re-solve"]
-    policyyfix = ["Re-solve"]
-    Generationset = [ "RQMC",  "MC" ]
+    #policyyqfix = ["Fix", "Re-solve"]
+    #policyyfix = ["Re-solve"]
+    #Generationset = [ "RQMC",  "MC" ]
+
+    nrcenarioyfix =[  "6400b" ]
+    nrcenarioyfqix = [ "200"]
+    #nrcenarioheuristicyfix = ["6400b",  "102400b"]
+
+    policyyqfix = [ "RH" ]
+    policyyfix = [ "RH" ]
+    Generationset = [ "RQMC" ]
+
+
     methodset = ["MIP"]
     Nrseed = 1
 
@@ -88,6 +118,13 @@ if __name__ == "__main__":
 #
 """)
 
+    # Create the sh file for resolution
+    fileeval = "runalljobrollinghorizon.sh"
+    fileeval = open(filesolvename, 'w')
+    fileeval.write("""
+    #!/bin/bash -l
+    #
+    """)
 
     for instance in InstanceSet :
              for model in modelset:
@@ -128,6 +165,15 @@ if __name__ == "__main__":
                                                             Policy)
                                             fileeval.write("qsub ./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
                                                 instance, model, nrscenar, generation, method, Policy, seed))
+
+                                    CreateRHJob(instance, model, nrscenar, generation, seed, Policy, timehorizon = 1)
+                                    CreateRHJob(instance, model, nrscenar, generation, seed, Policy, timehorizon = 3)
+                                    fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
+                                        instance, model, nrscenar, seed, NrScenarioEvaluation, 1) )
+                                    fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
+                                        instance, model, nrscenar, seed, NrScenarioEvaluation, 2) )
+                                    fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
+                                        instance, model, nrscenar, seed, NrScenarioEvaluation, 3) )
 
     for instance in InstanceSet:
         print "job_evpi_%s" % (instance )

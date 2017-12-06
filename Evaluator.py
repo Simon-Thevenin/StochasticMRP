@@ -18,7 +18,7 @@ import pickle
 
 class Evaluator:
 
-    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False, usesafetystock = False, evpiseed = -1, model = "YQFix" ):
+    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False, usesafetystock = False, evpiseed = -1, model = "YQFix", timehorizon = 1 ):
         self.Instance = instance
         self.Solutions = solutions
         self.SDDPs = sddps
@@ -41,7 +41,9 @@ class Evaluator:
         self.Model = model
 
         if policy == Constants.RollingHorizon:
-            self.RollingHorizonSolver = RollingHorizonSolver( self.Instance,  self.Model , self.ReferenceTreeStructure,  self.StartSeedResolve, self.ScenarioGenerationResolvePolicy  )
+            self.RollingHorizonSolver = RollingHorizonSolver( self.Instance,  self.Model , self.ReferenceTreeStructure,
+                                                              self.StartSeedResolve, self.ScenarioGenerationResolvePolicy,
+                                                              timehorizon, usesafetystock, self  )
 
 
     #This function evaluate the performance of a set of solutions obtain with the same method (different solutions due to randomness in the method)
@@ -194,8 +196,7 @@ class Evaluator:
         givensetup = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         if self.Policy == Constants.RollingHorizon:
             givensetup, givenquantty = self.RollingHorizonSolver.ApplyRollingHorizonSimulation( scenario )
-            print givensetup
-            print givenquantty
+
 
         else:
             # The setups are fixed in the first stage

@@ -1447,8 +1447,6 @@ class MIPSolver(object):
                 righthandside = givensetup[t][p]  #
                 constrnr =  self.SetupConstraint[0][p][t]
                 constrainttuples.append((constrnr, righthandside))
-        self.Cplex.write("mrp.lp")
-        print constrainttuples
         self.Cplex.linear_constraints.set_rhs(constrainttuples)
 
 

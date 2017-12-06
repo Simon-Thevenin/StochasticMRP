@@ -233,8 +233,6 @@ class DecentralizedMRP(object):
     # This method apply lot for lot to solve the instance
     def GetIdealQuantityToOrder(self,  p, t, rule):
 
-
-
         #If setup are fixed quantity is 0 if no setup
         if self.FixedSetup and self.Solution.Production[0][t][p] == 0:
             return 0

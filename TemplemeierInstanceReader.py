@@ -145,7 +145,7 @@ class TemplemeierInstanceReader( InstanceReader ):
 
         # Consider a time horizon of 20 days plus the total lead time
         if largetimehorizon:
-            self.Instance.NrTimeBucket = self.Instance.NrTimeBucketWithoutUncertaintyBefore + self.Instance.NrTimeBucketWithoutUncertaintyAfter + 20
+            self.Instance.NrTimeBucket = self.Instance.NrTimeBucketWithoutUncertaintyBefore + self.Instance.NrTimeBucketWithoutUncertaintyAfter + 10
 
         self.Instance.ComputeIndices()
 
