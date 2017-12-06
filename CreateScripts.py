@@ -94,8 +94,8 @@ if __name__ == "__main__":
     nrcenarioyfqix = [ "200"]
     nrcenarioheuristicyfix = ["6400b",  "102400b"]
 
-    policyyqfix = [ "RH" ]
-    policyyfix = [ "RH" ]
+    policyyqfix = [ "RH", "Fix", "Re-solve" ]
+    policyyfix = [ "RH", "Fix" ]
     Generationset = [ "RQMC" ]
 
 
