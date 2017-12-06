@@ -119,8 +119,8 @@ if __name__ == "__main__":
 """)
 
     # Create the sh file for resolution
-    fileeval = "runalljobrollinghorizon.sh"
-    fileeval = open(filesolvename, 'w')
+    fileevalname = "runalljobrollinghorizon.sh"
+    fileeval = open(fileevalname, 'w')
     fileeval.write("""
     #!/bin/bash -l
     #
@@ -167,6 +167,7 @@ if __name__ == "__main__":
                                                 instance, model, nrscenar, generation, method, Policy, seed))
 
                                     CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = 1)
+                                    CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = 2)
                                     CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = 3)
                                     fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
                                         instance, model, nrscenar, seed, NrScenarioEvaluation, 1) )
