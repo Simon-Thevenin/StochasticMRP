@@ -80,7 +80,7 @@ if __name__ == "__main__":
     for row in data_reader:
        instancenameslist.append(row)
     InstanceSet = instancenameslist[0]
-    modelset = [  "AverageSS",  "L4L", "EOQ", "POQ", "SilverMeal" ]#, "HeuristicYFix", "YFix", "YQFix"]
+    modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal", "YFix", "YQFix"]
     #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
     #nrcenarioyfix =[  "800", "1600", "3200", "6400a", "6400b", "6400c",  "12800", "25600", "51200b", "102400b", "153600" ]
     #nrcenarioyfqix = [ "10", "25", "50", "1q00", "200", "500", "1000"]
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     #Generationset = [ "RQMC",  "MC" ]
 
     nrcenarioyfix =[  "6400b" ]
-    nrcenarioyfqix = [ "200"]
+    nrcenarioyfqix = [ "500"]
     nrcenarioheuristicyfix = ["6400b",  "102400b"]
 
     policyyqfix = [  "Fix", "Re-solve" ]

@@ -667,22 +667,36 @@ def GenerateInstances( ):
     instancenameslist = []
     for row in data_reader:
         instancenameslist.append(row)
-    instancenameslist = instancenameslist[0] #instancenameslist:#
-    #for InstanceName in ["01", "02", "03", "04", "05"]:
-       # Distribution = "NonStationary"
-    #    for Distribution in ["SlowMoving", "Normal", "Lumpy", "Uniform"]:
+    instancenameslist = ["01", "02", "04"] #instancenameslist[0]
+    for InstanceName in instancenameslist:
+        #Distribution = "NonStationary"
+        for Distribution in ["SlowMoving", "Normal", "Lumpy", "NonStationary"]:
          #     "NonStationary"]:
-    #        Instance.ReadFromFile(InstanceName, Distribution, 2, 25, e="n", rk = 50, leadtimestructure = 0 , lostsale = 20)
-    #        Instance.SaveCompleteInstanceInExelFile()
-    #        instancecreated = instancecreated + [Instance.InstanceName]
+            possiblerateofknown = [50]
+            if Distribution == "NonStationary":
+                possiblerateofknown = [50, 75, 90]
+            for rateknown in possiblerateofknown:
+                for backordercost in [2, 4]:
+                    for cap in [2, 5]:
+                    #for holdingcost in ["n", "l", "l2"]:
+                        leadtimes = 0
+                        holdingcost="n"
+        #            for leadtimes in [0,1,2,3,4,5]:
+                        Instance.ReadFromFile(InstanceName, Distribution, backordercost,
+                                              25, e=holdingcost, rk = rateknown,
+                                              leadtimestructure = leadtimes ,
+                                              lostsale = 10 *backordercost,
+                                              capacity=cap)
+                        Instance.SaveCompleteInstanceInExelFile()
+                        instancecreated = instancecreated + [Instance.InstanceName]
 
-    Instance.ReadFromFile("01", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, longtimehoizon = True, capacity=2)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
+    #Instance.ReadFromFile("01", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, longtimehoizon = True, capacity=2)
+    #Instance.SaveCompleteInstanceInExelFile()
+    #instancecreated = instancecreated + [Instance.InstanceName]
 
-    Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
+    #Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
+    #Instance.SaveCompleteInstanceInExelFile()
+    #instancecreated = instancecreated + [Instance.InstanceName]
 
     #
     # Instance.ReadFromFile("01", "SlowMoving", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, capacity= 5 )
