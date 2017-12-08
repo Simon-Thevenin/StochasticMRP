@@ -152,8 +152,11 @@ class RollingHorizonSolver:
                                    for p in self.GlobalInstance.ProductSet]
 
 
+        if Constants.Debug:
+            print "non rounded solution:"
+            print self.Solution.ProductionQuantity
 
-        quantity = [[ round( self.Solution.ProductionQuantity[0][t][p], 2) for p in self.GlobalInstance.ProductSet] for t in self.GlobalInstance.TimeBucketSet]
+        quantity = [[  self.Solution.ProductionQuantity[0][t][p] for p in self.GlobalInstance.ProductSet] for t in self.GlobalInstance.TimeBucketSet]
         setups = [[ round(self.Solution.Production[0][t][p],0)  for p in self.GlobalInstance.ProductSet] for t in self.GlobalInstance.TimeBucketSet]
 
 
