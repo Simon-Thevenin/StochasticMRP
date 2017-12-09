@@ -1190,7 +1190,7 @@ class MIPSolver(object):
         if sol.is_primal_feasible():
             if createsolution:
 
-                Solution = self.CreateMRPSolution(sol, solvetime)
+                Solution = self.CreateMRPSolution(sol, solvetime, nrvariable, nrconstraints)
                 #costperscenarios, averagecost, std_devcost = self.ComputeCostPerScenario()
 
                 if Constants.Debug:
@@ -1251,7 +1251,7 @@ class MIPSolver(object):
         writer.save()
 
 
-    def CreateMRPSolution(self, sol, solvetime):
+    def CreateMRPSolution(self, sol, solvetime, nrvariable, nrconstraints):
 
         scenarioset = self.ScenarioSet
         scenarios = self.Scenarios
@@ -1303,8 +1303,8 @@ class MIPSolver(object):
                                self.DemandScenarioTree, partialsolution=partialsol)
         Solution.CplexCost = objvalue
         Solution.CplexGap = 0
-        Solution.CplexNrVariables = self.Cplex.variables.get_num()
-        Solution.CplexNrConstraints = self.Cplex.linear_constraints.get_num()
+        Solution.CplexNrVariables = nrvariable
+        Solution.CplexNrConstraints = nrconstraints
         if not self.EvaluateSolution and not self.YFixHeuristic:
             Solution.CplexGap = sol.MIP.get_mip_relative_gap()
         Solution.CplexTime = solvetime

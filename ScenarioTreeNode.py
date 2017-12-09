@@ -76,8 +76,8 @@ class ScenarioTreeNode:
             #        nextdemands, probabilities = ScenarioTreeNode.Aggregate(nextdemands, probabilities)
                 nrbranch = len(nextdemands[0])
 
-                self.Owner.NrBranches[time] =  nrbranch
-                self.Owner.TreeStructure[time] = nrbranch
+                self.Owner.NrBranches[t] =  nrbranch
+                self.Owner.TreeStructure[t] = nrbranch
 
 
             usaverageforbranch =  ( t   >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter) )\
@@ -278,7 +278,7 @@ class ScenarioTreeNode:
             newnrpoints = nrpoints
             nextdemands = [[]]
             while len( nextdemands[0] ) < nrpoints and newnrpoints <= 1000:
-                if Constants.Debug:
+                if Constants.Debug and len(nextdemands[0])>0:
                     print "try with %r points because only %r  points were generated )" %(newnrpoints, len( nextdemands[0]) )
                 points = [[0.0 for pt in range(newnrpoints)] for p in range(dimensionpoint)]
                 nrnonzero = sum( 1  for p in range( dimensionpoint ) if average[p] > 0 )
