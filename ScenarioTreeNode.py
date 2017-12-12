@@ -307,7 +307,7 @@ class ScenarioTreeNode:
                             points[idnonzero[p]] [i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
 
 
-        if method == "all" and distribution <> Constants.Binomial:
+        if method == Constants.All and distribution <> Constants.Binomial:
             points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
             nrnonzero = sum(1 for p in range(dimensionpoint) if average[p] > 0)
             idnonzero = [p for p in range(dimensionpoint) if average[p] > 0]
@@ -317,10 +317,11 @@ class ScenarioTreeNode:
                 for i in range(nrpoints):
                     points[idnonzero[p]][i] = nonzeropoints[p][i]
 
-        if method == "all" and distribution == Constants.Binomial:
+        if method == Constants.All  and distribution == Constants.Binomial:
             points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
             nrnonzero = sum(1 for p in range(dimensionpoint) if average[p] > 0)
             idnonzero = [p for p in range(dimensionpoint) if average[p] > 0]
+
             if nrnonzero > 1 or nrpoints <> 8:
                 raise NameError( "binomial implemented only for dimension 1 and 8 points not %r -%r" %(nrnonzero, nrpoints) )
 
@@ -342,7 +343,7 @@ class ScenarioTreeNode:
 
         probability =   [  float( 1.0/ max( nrdemand, 1))  for i in range( max( nrdemand, 1)  ) ]
 
-        if not average:
+        if not average and nrdemand>0:
             points, probability = ScenarioTreeNode.GeneratePoints( method= scenariogenerationmethod,
                                                                    nrpoints=nrdemand,
                                                                    dimensionpoint = len(instance.ProductWithExternalDemand) ,

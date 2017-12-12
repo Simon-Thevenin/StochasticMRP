@@ -162,6 +162,58 @@ class InstanceReader:
                                               for q in self.Instance.ProductSet )
                                          for p in self.Instance.ProductSet ]
 
+
+    def GetfinishProduct(self):
+
+        finishproduct = []
+        for p in self.Instance.ProductSet:
+            if sum(1 for q in self.Instance.ProductSet if self.Instance.Requirements[q][p]) == 0:
+                finishproduct.append(p)
+
+        return finishproduct
+
+
+    def IsStationnaryDistribution(self):
+        stationarydistribution = (self.Instance.Distribution == Constants.Normal) \
+                                 or (self.Instance.Distribution == Constants.SlowMoving) \
+                                 or (self.Instance.Distribution == Constants.Lumpy) \
+                                 or (self.Instance.Distribution == Constants.Uniform) \
+                                 or (self.Instance.Distribution == Constants.Binomial)
+        return stationarydistribution
+
+    def GenerateStationaryDistribution(self ):
+
+        finishproduct = self.GetfinishProduct()
+
+        # Generate the sets of scenarios
+        if self.Instance.Distribution == Constants.SlowMoving:
+            self.Instance.YearlyAverageDemand = [ 1 if  p in finishproduct else 0 for p in self.Instance.ProductSet]
+
+            self.Instance.YearlyStandardDevDemands = [ 1 if p in finishproduct else 0 for p in self.Instance.ProductSet]
+
+        if self.Instance.Distribution == Constants.Binomial:
+            self.Instance.YearlyAverageDemand = [ 3.5 if p in finishproduct else 0 for p in self.Instance.ProductSet]
+
+            self.Instance.YearlyStandardDevDemands = [1 if p in finishproduct else 0 for p in self.Instance.ProductSet]
+
+        if self.Instance.Distribution == Constants.Uniform:
+            self.Instance.YearlyAverageDemand = [ 0.5 if p  in finishproduct else 0 for p in self.Instance.ProductSet]
+
+        self.Instance.ForecastedAverageDemand = [ [self.Instance.YearlyAverageDemand[p]
+                                                 if t >= self.Instance.NrTimeBucketWithoutUncertaintyBefore
+                                                 else 0
+                                                 for p in self.Instance.ProductSet ]
+                                                 for t in self.Instance.TimeBucketSet]
+
+        self.Instance.ForcastedStandardDeviation = [ [ self.Instance.YearlyStandardDevDemands[p]
+                                                    if t >= self.Instance.NrTimeBucketWithoutUncertaintyBefore
+                                                    else 0
+                                                    for p in self.Instance.ProductSet ]
+                                                    for t in self.Instance.TimeBucketSet]
+        self.Instance.ForecastError = [-1 for t in self.Instance.TimeBucketSet]
+        self.Instance.RateOfKnownDemand = 0.0
+
+
     # This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
     def ReadFromFile(self, instancename, distribution = "NonStationary", b=2, forcasterror = 25, e="n", rateknown = 90, leadtimestructure = 1, lostsale = 2, longtimehoizon = False, capacityfactor = 2):
 

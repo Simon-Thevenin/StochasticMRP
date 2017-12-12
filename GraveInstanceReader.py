@@ -69,33 +69,30 @@ class GraveInstanceReader(InstanceReader):
 
         self.Instance.YearlyStandardDevDemands = [self.Datasheetdf.get_value(self.Instance.ProductName[p], 'stdDevDemand')
                                                     for p in self.Instance.ProductSet]
+        #
+        # if self.Instance.Distribution == Constants.SlowMoving:
+        #     self.Instance.YearlyAverageDemand = [1 if self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand') > 0
+        #                                           else 0
+        #                                         for p in self.Instance.ProductSet]
+        #     self.Instance.YearlyStandardDevDemands = [1 if self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand') > 0
+        #                                           else 0
+        #                                         for p in self.Instance.ProductSet]
+        #
+        # if self.Instance.Distribution == Constants.Uniform:
+        #     self.Instance.YearlyAverageDemand = [0.5 if self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand') > 0
+        #                                          else 0
+        #                                          for p in self.Instance.ProductSet]
 
-        if self.Instance.Distribution == Constants.SlowMoving:
-            self.Instance.YearlyAverageDemand = [1 if self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand') > 0
-                                                  else 0
-                                                for p in self.Instance.ProductSet]
-            self.Instance.YearlyStandardDevDemands = [1 if self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand') > 0
-                                                  else 0
-                                                for p in self.Instance.ProductSet]
 
-        if self.Instance.Distribution == Constants.Uniform:
-            self.Instance.YearlyAverageDemand = [0.5 if self.Datasheetdf.get_value(self.Instance.ProductName[p], 'avgDemand') > 0
-                                                 else 0
-                                                 for p in self.Instance.ProductSet]
-
-
-        stationarydistribution = ( self.Instance.Distribution == Constants.Normal) \
-                                 or ( self.Instance.Distribution == Constants.SlowMoving) \
-                                 or ( self.Instance.Distribution  == Constants.Lumpy) \
-                                 or ( self.Instance.Distribution  == Constants.Uniform) \
-                                 or ( self.Instance.Distribution  == Constants.Binomial)
+        stationarydistribution = self.IsStationnaryDistribution()
 
         if stationarydistribution:
-            self.Instance.ForecastedAverageDemand = [ self.Instance.YearlyAverageDemand for t in self.Instance.TimeBucketSet]
-            self.Instance.ForcastedStandardDeviation = [ self.Instance.YearlyStandardDevDemands for t in self.Instance.TimeBucketSet]
-            self.Instance.ForecastError = [-1
-                                           for t in  self.Instance.TimeBucketSet ]
-            self.Instance.RateOfKnownDemand = 0.0
+            self.GenerateStationaryDistribution()
+            # self.Instance.ForecastedAverageDemand = [ self.Instance.YearlyAverageDemand for t in self.Instance.TimeBucketSet]
+            # self.Instance.ForcastedStandardDeviation = [ self.Instance.YearlyStandardDevDemands for t in self.Instance.TimeBucketSet]
+            # self.Instance.ForecastError = [-1
+            #                                for t in  self.Instance.TimeBucketSet ]
+            # self.Instance.RateOfKnownDemand = 0.0
         else:
             self.Instance.ForecastError = [ forecasterror for p in self.Instance.ProductSet]
             self.Instance.RateOfKnownDemand = [math.pow(rateknown, t + 1) for t in self.Instance.TimeBucketSet]

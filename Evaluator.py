@@ -51,6 +51,7 @@ class Evaluator:
 
         # Compute the average value of the demand
         nrscenario = evaluateidentificator[2]
+        allscenario = evaluateidentificator[4]
         start_time = time.time()
         Evaluated = [ -1 for e in range(nrscenario) ]
 
@@ -79,7 +80,7 @@ class Evaluator:
                 if self.OptimizationMethod == Constants.SDDP:
                     sddp = self.SDDPs[n]
                     seed = sddp.StartingSeed
-                evaluatoinscenarios, scenariotrees =self.GetScenarioSet(seed, nrscenario)
+                evaluatoinscenarios, scenariotrees =self.GetScenarioSet(seed, nrscenario, allscenario)
                 if self.OptimizationMethod == Constants.SDDP:
                     self.ForwardPassOnScenarios( sddp, evaluatoinscenarios)
                 firstscenario = True
@@ -259,36 +260,41 @@ class Evaluator:
 
         return givensetup, givenquantty
 
-    def GetScenarioSet(self, solveseed, nrscenario):
+    def GetScenarioSet(self, solveseed, nrscenario, allscenarios):
         scenarioset = []
         treeset = []
         # Use an offset in the seed to make sure the scenario used for evaluation are different from the scenario used for optimization
         offset = solveseed + 999323
 
-        for seed in range(offset, nrscenario + offset, 1):
-           # Generate a random scenario
-           ScenarioSeed = seed
-           # Evaluate the solution on the scenario
-           treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
-
-           scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True, scenariogenerationmethod="MC")
-           scenario = scenariotree.GetAllScenarios(False)[0]
-           scenarioset.append( scenario )
-           treeset.append( scenariotree)
 
         #Uncoment to generate all the scenario if a  distribution with smallll support is used
-        # scenariotree = ScenarioTree(self.Instance, [1, 8, 8, 8, 1, 1, 1, 0], offset,
-        #                             scenariogenerationmethod=Constants.All,
-        #                             generateRQMCForYQfix=False,
-        #                             model= Constants.ModelYFix)
-        # scenarioset = scenariotree.GetAllScenarios(False)
-        #
-        # for s in range( len( scenarioset ) ):
-        #     tree = ScenarioTree(self.Instance, [1, 1, 1, 1, 1, 1, 1, 0], offset,
-        #                                 generateRQMCForYQfix=False,
-        #                                 model=Constants.ModelYFix,
-        #                         givenfirstperiod=  scenarioset[s].Demands )
-        #     treeset.append( tree )
+        if allscenarios==1:
+            if Constants.Debug:
+                    print "Generate all the scenarios"
+
+            scenariotree = ScenarioTree(self.Instance, [1]+ [1]*self.Instance.NrTimeBucketWithoutUncertaintyBefore + [ 8, 8, 8, 8, 0], offset,
+                                         scenariogenerationmethod=Constants.All,
+                                         model= Constants.ModelYFix)
+            scenarioset = scenariotree.GetAllScenarios(False)
+
+            for s in range( len( scenarioset ) ):
+                tree = ScenarioTree(self.Instance, [1, 1, 1, 1, 1, 1, 1, 1, 0], offset,
+                                            model=Constants.ModelYFix,
+                                    givenfirstperiod=  scenarioset[s].Demands )
+                treeset.append( tree )
+
+        else:
+            for seed in range(offset, nrscenario + offset, 1):
+                # Generate a random scenario
+                ScenarioSeed = seed
+                # Evaluate the solution on the scenario
+                treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
+
+                scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True,
+                                            scenariogenerationmethod="MC")
+                scenario = scenariotree.GetAllScenarios(False)[0]
+                scenarioset.append(scenario)
+                treeset.append(scenariotree)
 
         return scenarioset, treeset
 
@@ -398,7 +404,7 @@ class Evaluator:
 
                 if self.Model == Constants.ModelYQFix and self.ScenarioGenerationResolvePolicy == Constants.All :
                     treestructure = [1] \
-                                + [ int( math.pow(8,3-time) )
+                                + [ int( math.pow(8,4-time) )
                                    if (  t == time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)  ) )
                                    else 1 for
                                     t in range(self.Instance.NrTimeBucket)] \

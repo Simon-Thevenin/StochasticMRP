@@ -80,24 +80,26 @@ if __name__ == "__main__":
     for row in data_reader:
        instancenameslist.append(row)
     InstanceSet = instancenameslist[0]
-    modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix", "YFix"]
+    modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix", "YFix", "HeuristicYFix" ]
     #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
-    nrcenarioyfix =[  "800", "1600", "3200", "6400a", "6400b", "6400c",  "12800", "25600", "51200b", "102400b", "153600" ]
-    nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
+    #nrcenarioyfix =[  "800", "1600", "3200", "6400a", "6400b", "6400c",  "12800", "25600", "51200b", "102400b", "153600" ]
+    #nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
     #nrcenarioheuristicyfix = ["6400b",  "102400b"]
 
     #policyyqfix = ["Fix", "Re-solve"]
     #policyyfix = ["Re-solve"]
     #Generationset = [ "RQMC",  "MC" ]
 
-    #nrcenarioyfix =[  "6400b" ]
-    #nrcenarioyfqix = [ "500"]
-    nrcenarioheuristicyfix = ["6400b",  "102400b"]
+    nrcenarioyfix =[  "6400b" ]
+    nrcenarioyfqix = [ "500"]
+    nrcenarioheuristicyfix = ["6400b"]
+
+    scenarsetall = ["4096"]
 
     policyyqfix = [  "Fix", "Re-solve" ]
     policyyfix = [  "Fix" ]
-    Generationset = [ "RQMC" ]
-
+    #Generationset = [ "RQMC" ]
+    Generationset = ["all", "MC", "RQMC"]
 
     methodset = ["MIP"]
     Nrseed = 1
@@ -133,24 +135,28 @@ if __name__ == "__main__":
                  methodset = ["MIP"]
                  avg = False
                  if model == "YFix":
-                     scenarset= nrcenarioyfix
+                     scenarsetsampling= nrcenarioyfix
                      generationset = Generationset
                      policyset = policyyfix
                  if model == "HeuristicYFix":
-                    scenarset = nrcenarioheuristicyfix
-                    generationset = Generationset
-                    policyset = policyyfix
+                     scenarsetsampling = nrcenarioheuristicyfix
+                     generationset = Generationset
+                     policyset = policyyfix
                  if model == "YQFix":
-                     scenarset = nrcenarioyfqix
+                     scenarsetsampling = nrcenarioyfqix
                      policyset = policyyqfix
                      generationset = Generationset
                  if model == "Average" or model == "AverageSS" or model =="L4L" or  model == "EOQ" or  model == "POQ" or  model =="SilverMeal":
-                     scenarset = ["1"]
+                     scenarsetsampling = ["1"]
                      avg = True
                      generationset = ["MC"]
                      policyset = policyyqfix
                  for method in methodset:
                      for generation in generationset:
+                         if generation == "all":
+                             scenarset = scenarsetall
+                         else:
+                             scenarset = scenarsetsampling
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):
                                    for mipsetting in[ "Default"]:

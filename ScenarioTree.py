@@ -50,12 +50,21 @@ class ScenarioTree:
         self.DemandYQFixRQMC = []
         self.Model = model
         self.GenerateRQMCForYQFix = (self.ScenarioGenerationMethod == Constants.RQMC and self.Model == Constants.ModelYQFix)
+
+        firstuknown = len(self.GivenFirstPeriod)
+        firststochastic = max(self.Instance.NrTimeBucketWithoutUncertaintyBefore, firstuknown)
+        timebucketswithuncertainty = range(firststochastic,
+                                           self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
+        nrtimebucketswithuncertainty = len(timebucketswithuncertainty)
+
         if self.ScenarioGenerationMethod == Constants.All and model == Constants.ModelYQFix:
-            sizefixed = len( givenfirstperiod)
-            nrscenario = int( max( math.pow( 8 , 3-sizefixed), 1) )
-            temporarytreestructur = [1] +[1]*sizefixed+ [8] * (3-sizefixed ) +  [1, 1, 1, 0]
+
+            sizefixed = max( len( givenfirstperiod) - instance.NrTimeBucketWithoutUncertaintyBefore , 0)
+
+            nrscenario = int( max( math.pow( 8 , 4-sizefixed), 1) )
+            temporarytreestructur = [1] +[1]*firststochastic+ [8] * (nrtimebucketswithuncertainty ) +  [ 0]
             if nrscenario == 1:
-                temporarytreestructur = [ 1, 1, 1, 1, 1, 1, 1, 0 ]
+                temporarytreestructur = [ 1, 1, 1, 1, 0 ]
 
             temporaryscenariotree = ScenarioTree(self.Instance, temporarytreestructur, self.Seed,
                                         averagescenariotree=False,
@@ -91,10 +100,6 @@ class ScenarioTree:
 
 
         if self.ScenarioGenerationMethod == Constants.RQMC and self.GenerateRQMCForYQFix:
-             firstuknown = len(self.GivenFirstPeriod)
-             firststochastic =  max(self.Instance.NrTimeBucketWithoutUncertaintyBefore, firstuknown)
-             timebucketswithuncertainty = range(firststochastic, self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter )
-             nrtimebucketswithuncertainty =len( timebucketswithuncertainty)
              avgvector = [  self.Instance.ForecastedAverageDemand[t ][p] for p in self.Instance.ProductWithExternalDemand for t in timebucketswithuncertainty ]
              stdvector = [  self.Instance.ForcastedStandardDeviation[t ][p] for p in self.Instance.ProductWithExternalDemand for t in timebucketswithuncertainty ]
              dimension = len( self.Instance.ProductWithExternalDemand ) * (nrtimebucketswithuncertainty)

@@ -14,6 +14,7 @@ class TemplemeierInstanceReader( InstanceReader ):
         self.DatFile = None
         self.TMPFile = None
         self.TBOFile = None
+        self.CapFile = None
         self.Filename = ""
 
     def ReadProductList(self):
@@ -66,6 +67,16 @@ class TemplemeierInstanceReader( InstanceReader ):
         nametbofile[6] = instancename[6]
         nametbofile = "".join(nametbofile)
         self.TBOFile = self.ReadTemplmeierFile("./Instances/TempleMeierFiles/PROBA/%s" %nametbofile )
+
+        namecapfile = list("G004_2__.CAP")
+        namecapfile[0] = instancename[0]
+        namecapfile[1] = instancename[1]
+        namecapfile[2] = instancename[2]
+        namecapfile[3] = instancename[3]
+        namecapfile[5] = instancename[5]
+        namecapfile = "".join(namecapfile)
+        self.CapFile = self.ReadTemplmeierFile("./Instances/TempleMeierFiles/PROBA/%s" % namecapfile)
+
 
     def ReadNrResource(self):
         self.Instance.NrResource = int( self.TMPFile[1][5] )
@@ -149,72 +160,79 @@ class TemplemeierInstanceReader( InstanceReader ):
 
         self.Instance.ComputeIndices()
 
+
+
     def GenerateDistribution(self, forecasterror, rateknown = 90, longtimehorizon= False):
-            self.Instance.ForecastError = [forecasterror for p in self.Instance.ProductSet]
-            self.Instance.RateOfKnownDemand = [math.pow(rateknown, (t - self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1) ) for t in self.Instance.TimeBucketSet]
-            self.Instance.ForecastedAverageDemand = [ [ 0.0 for p in self.Instance.ProductSet ]
-                                                      for t in self.Instance.TimeBucketSet]
 
-            finishproduct =[]
-            for p in self.Instance.ProductSet:
-                if sum( 1 for q in self.Instance.ProductSet if self.Instance.Requirements[q][p]) == 0:
-                    finishproduct.append( p )
 
-            if longtimehorizon:
-                #get the average demand and the coefficient of variation
-                self.Instance.YearlyAverageDemand = [0 for p in self.Instance.ProductSet]
-                for p in range(len(finishproduct)):
-                    prodindex = finishproduct[p]
-                    self.Instance.YearlyAverageDemand[prodindex] = int(self.DTFile[0][p])
+            finishproduct = self.GetfinishProduct()
 
-                coefficientofvariation = float(self.Filename[3])/10.0
+            stationarydistribution = self.IsStationnaryDistribution()
 
-                #generate the demand following a normal distribution and the coefficient of variation
-                self.Instance.ForecastedAverageDemand = [[ np.floor( np.random.normal(self.Instance.YearlyAverageDemand[p],
-                                                                                     coefficientofvariation * self.Instance.YearlyAverageDemand[p], 1).clip( min=0.0)).tolist()[0]
-                                                          if self.Instance.YearlyAverageDemand[p] > 0 and t >= self.Instance.NrTimeBucketWithoutUncertaintyBefore
-                                                          else 0
-                                                          for p in self.Instance.ProductSet]
-                                                            for t in self.Instance.TimeBucketSet]
-                print  self.Instance.YearlyAverageDemand
-                print coefficientofvariation
-                print  self.Instance.ForecastedAverageDemand
+            if stationarydistribution:
+                self.GenerateStationaryDistribution()
             else:
-                prodindex = 0
-                for p in range( len( finishproduct ) ):
-                    prodindex = finishproduct[p]
-                    timeindex = 0
-                    stochastictime = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore, self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
-                    for t in stochastictime:
-                        timeindex += 1
-
-                        if t <>  self.Instance.NrTimeBucketWithoutUncertaintyBefore + int(self.DTFile[timeindex][0]) - 1:
-                            raise NameError( "Wrong time %d - %d -%d"%( t , int(self.DTFile[timeindex][0]) - 1 , timeindex ) )
-
-                        self.Instance.ForecastedAverageDemand[t][prodindex] = float( self.DTFile[timeindex][p+1] )
-
-                    for t in range( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter,  self.Instance.NrTimeBucket):
-                        self.Instance.ForecastedAverageDemand[t][prodindex] = sum( self.Instance.ForecastedAverageDemand[t2][prodindex]
-                                                                                   for t2 in stochastictime  ) / len(stochastictime)
-
-                    self.Instance.YearlyAverageDemand = [sum(self.Instance.ForecastedAverageDemand[t][p]
-                                                             for t in
-                                                             self.Instance.TimeBucketSet) / self.Instance.NrTimeBucket
-                                                         for p in self.Instance.ProductSet]
-
-            self.Instance.ForcastedStandardDeviation = [ [ (1 - self.Instance.RateOfKnownDemand[t])
-                                                           * self.Instance.ForecastError[p]
-                                                           * self.Instance.ForecastedAverageDemand[t][p]
-                                                           if t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
-                                                           else 0.0
-                                                           for p in self.Instance.ProductSet ]
+                self.Instance.ForecastError = [forecasterror for p in self.Instance.ProductSet]
+                self.Instance.RateOfKnownDemand = [
+                    math.pow(rateknown, (t - self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1)) for t in
+                    self.Instance.TimeBucketSet]
+                self.Instance.ForecastedAverageDemand = [[0.0 for p in self.Instance.ProductSet]
                                                          for t in self.Instance.TimeBucketSet]
+                if longtimehorizon:
+                    #get the average demand and the coefficient of variation
+                    self.Instance.YearlyAverageDemand = [0 for p in self.Instance.ProductSet]
+                    for p in range(len(finishproduct)):
+                        prodindex = finishproduct[p]
+                        self.Instance.YearlyAverageDemand[prodindex] = int(self.DTFile[0][p])
+
+                    coefficientofvariation = float(self.Filename[3])/10.0
+
+                    #generate the demand following a normal distribution and the coefficient of variation
+                    self.Instance.ForecastedAverageDemand = [[ np.floor( np.random.normal(self.Instance.YearlyAverageDemand[p],
+                                                                                         coefficientofvariation * self.Instance.YearlyAverageDemand[p], 1).clip( min=0.0)).tolist()[0]
+                                                              if self.Instance.YearlyAverageDemand[p] > 0 and t >= self.Instance.NrTimeBucketWithoutUncertaintyBefore
+                                                              else 0
+                                                              for p in self.Instance.ProductSet]
+                                                                for t in self.Instance.TimeBucketSet]
+                    print  self.Instance.YearlyAverageDemand
+                    print coefficientofvariation
+                    print  self.Instance.ForecastedAverageDemand
+                else:
+                    prodindex = 0
+                    for p in range( len( finishproduct ) ):
+                        prodindex = finishproduct[p]
+                        timeindex = 0
+                        stochastictime = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore, self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
+                        for t in stochastictime:
+                            timeindex += 1
+
+                            if t <>  self.Instance.NrTimeBucketWithoutUncertaintyBefore + int(self.DTFile[timeindex][0]) - 1:
+                                raise NameError( "Wrong time %d - %d -%d"%( t , int(self.DTFile[timeindex][0]) - 1 , timeindex ) )
+
+                            self.Instance.ForecastedAverageDemand[t][prodindex] = float( self.DTFile[timeindex][p+1] )
+
+                        for t in range( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter,  self.Instance.NrTimeBucket):
+                            self.Instance.ForecastedAverageDemand[t][prodindex] = sum( self.Instance.ForecastedAverageDemand[t2][prodindex]
+                                                                                       for t2 in stochastictime  ) / len(stochastictime)
+
+                        self.Instance.YearlyAverageDemand = [sum(self.Instance.ForecastedAverageDemand[t][p]
+                                                                 for t in
+                                                                 self.Instance.TimeBucketSet) / self.Instance.NrTimeBucket
+                                                             for p in self.Instance.ProductSet]
+
+                self.Instance.ForcastedStandardDeviation = [ [ (1 - self.Instance.RateOfKnownDemand[t])
+                                                               * self.Instance.ForecastError[p]
+                                                               * self.Instance.ForecastedAverageDemand[t][p]
+                                                               if t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
+                                                               else 0.0
+                                                               for p in self.Instance.ProductSet ]
+                                                             for t in self.Instance.TimeBucketSet]
 
 
 
-            self.Instance.YearlyStandardDevDemands = [sum(self.Instance.ForcastedStandardDeviation[t][p]
-                                             for t in self.Instance.TimeBucketSet) / self.Instance.NrTimeBucket
-                                         for p in self.Instance.ProductSet]
+                self.Instance.YearlyStandardDevDemands = [sum(self.Instance.ForcastedStandardDeviation[t][p]
+                                                 for t in self.Instance.TimeBucketSet) / self.Instance.NrTimeBucket
+                                             for p in self.Instance.ProductSet]
 
     #This function generate the starting inventory
     def GenerateStartinInventory(self):
@@ -258,6 +276,8 @@ class TemplemeierInstanceReader( InstanceReader ):
             print "setupcost: %r"%self.Instance.SetupCosts
         self.Instance.SetupCosts = [ computedsetup[p ] for p in  self.Instance.ProductSet ]
 
+
+
     def GenerateCapacity(self, capacityfactor):
 
         startcapacity = 5 + 2 * self.Instance.NrProduct
@@ -278,4 +298,16 @@ class TemplemeierInstanceReader( InstanceReader ):
                                             else 0.0
                                             for k in range(self.Instance.NrResource)]
                                            for p in self.Instance.ProductSet]
+
+        #As the average change, the capacity must change
+        if ((self.Instance.Distribution == Constants.SlowMoving) \
+             or (self.Instance.Distribution == Constants.Lumpy) \
+             or (self.Instance.Distribution == Constants.Uniform) \
+             or (self.Instance.Distribution == Constants.Binomial) ):
+            for k in range(self.Instance.NrResource):
+
+                self.Instance.Capacity[k] = float( sum( self.DependentAverageDemand[p] * self.Instance.ProcessingTime[p][k]
+                                                        for p in self.Instance.ProductSet ) \
+                                                   /  float(self.CapFile[k][1]) )
+
 
