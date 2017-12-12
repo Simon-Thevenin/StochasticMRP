@@ -110,8 +110,6 @@ class GraveInstanceReader(InstanceReader):
                                                             for p in self.Instance.ProductSet ]
                                                          for t in self.Instance.TimeBucketSet]
 
-
-
         #This function generate the starting inventory
     def GenerateStartinInventory(self):
 

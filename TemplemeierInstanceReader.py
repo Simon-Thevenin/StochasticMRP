@@ -164,8 +164,10 @@ class TemplemeierInstanceReader( InstanceReader ):
 
     def GenerateDistribution(self, forecasterror, rateknown = 90, longtimehorizon= False):
 
-
             finishproduct = self.GetfinishProduct()
+
+            self.Instance.YearlyAverageDemand = [ int( self.DTFile[0][p] ) if p in finishproduct else 0 for p in self.Instance.ProductSet ]
+            self.Instance.YearlyStandardDevDemands = [ 0 for p in self.Instance.ProductSet]
 
             stationarydistribution = self.IsStationnaryDistribution()
 
@@ -195,7 +197,7 @@ class TemplemeierInstanceReader( InstanceReader ):
                                                               for p in self.Instance.ProductSet]
                                                                 for t in self.Instance.TimeBucketSet]
                     print  self.Instance.YearlyAverageDemand
-                    print coefficientofvariation
+                    print  coefficientofvariation
                     print  self.Instance.ForecastedAverageDemand
                 else:
                     prodindex = 0
@@ -227,8 +229,6 @@ class TemplemeierInstanceReader( InstanceReader ):
                                                                else 0.0
                                                                for p in self.Instance.ProductSet ]
                                                              for t in self.Instance.TimeBucketSet]
-
-
 
                 self.Instance.YearlyStandardDevDemands = [sum(self.Instance.ForcastedStandardDeviation[t][p]
                                                  for t in self.Instance.TimeBucketSet) / self.Instance.NrTimeBucket
