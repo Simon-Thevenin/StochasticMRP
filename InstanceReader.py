@@ -203,7 +203,7 @@ class InstanceReader:
                                                  if t >= self.Instance.NrTimeBucketWithoutUncertaintyBefore
                                                  else 0
                                                  for p in self.Instance.ProductSet ]
-                                                 for t in self.Instance.TimeBucketSet]
+                                                 for t in self.Instance.TimeBucketSet ]
 
         self.Instance.ForcastedStandardDeviation = [ [ self.Instance.YearlyStandardDevDemands[p]
                                                     if t >= self.Instance.NrTimeBucketWithoutUncertaintyBefore

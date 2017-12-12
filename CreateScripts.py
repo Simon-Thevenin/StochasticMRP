@@ -82,24 +82,24 @@ if __name__ == "__main__":
     InstanceSet = instancenameslist[0]
     modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix", "YFix", "HeuristicYFix" ]
     #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
-    #nrcenarioyfix =[  "800", "1600", "3200", "6400a", "6400b", "6400c",  "12800", "25600", "51200b", "102400b", "153600" ]
-    #nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
-    #nrcenarioheuristicyfix = ["6400b",  "102400b"]
+    nrcenarioyfix =[  "800", "1600", "3200", "6400a", "6400b", "6400c",  "12800", "25600", "51200b", "102400b", "153600" ]
+    nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
+    nrcenarioheuristicyfix = ["6400b" ]
 
-    #policyyqfix = ["Fix", "Re-solve"]
-    #policyyfix = ["Re-solve"]
-    #Generationset = [ "RQMC",  "MC" ]
+    policyyqfix = ["Fix", "Re-solve"]
+    policyyfix = ["Re-solve"]
+    Generationset = [ "RQMC",  "MC" ]
 
-    nrcenarioyfix =[  "6400b" ]
-    nrcenarioyfqix = [ "500"]
-    nrcenarioheuristicyfix = ["6400b"]
+    #nrcenarioyfix =[  "6400b" ]
+    #nrcenarioyfqix = [ "500"]
+    #nrcenarioheuristicyfix = ["6400b"]
 
     scenarsetall = ["4096"]
 
-    policyyqfix = [  "Fix", "Re-solve" ]
-    policyyfix = [  "Fix" ]
+    #policyyqfix = [  "Fix", "Re-solve" ]
+    #policyyfix = [  "Fix" ]
     #Generationset = [ "RQMC" ]
-    Generationset = ["all", "MC", "RQMC"]
+    #Generationset = ["all", "MC", "RQMC"]
 
     methodset = ["MIP"]
     Nrseed = 1
