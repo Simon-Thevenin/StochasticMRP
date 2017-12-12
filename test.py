@@ -573,9 +573,14 @@ def RunEvaluation(  ):
                     global PolicyGeneration
                     global NearestNeighborStrategy
                     global AllScenario
+                    global NrEvaluation
                     PolicyGeneration = policy
                     NearestNeighborStrategy = policy
                     AllScenario = perfectsenarioset
+                    if AllScenario == 1:
+                        NrEvaluation = 4096
+                    else:
+                        NrEvaluation = 5000
                     SetTestIdentifierValue()
 
 
