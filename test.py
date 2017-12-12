@@ -905,7 +905,7 @@ def GenerateInstancesAllScenario():
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
 
-    csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
+    csvfile = open("./Instances/InstancesToSolveBinomial.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
     data_rwriter.writerow(instancecreated)
 
@@ -919,7 +919,7 @@ if __name__ == "__main__":
         Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
         #GenerateInstancesPreliminary()
-        #GenerateInstancesAllScenario
+        #GenerateInstancesAllScenario()
 
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
