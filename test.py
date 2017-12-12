@@ -769,46 +769,56 @@ def GenerateInstances( ):
     # Instance.SaveCompleteInstanceInExelFile()
     # instancecreated = instancecreated + [Instance.InstanceName]
     # # #
-    # Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
-    # # #
-    # Instance.ReadFromFile("G5047424", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40, longtimehoizon = True)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
-    # # #
-    # Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="l", rk=25, leadtimestructure=1, lostsale=20, longtimehoizon = True)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # Instancecreated = instancecreated + [Instance.InstanceName]
-    # # #
-    # Instance.ReadFromFile("K5014141", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40, longtimehoizon = True)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
-    # # #
-    # Instance.ReadFromFile("G0047232", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20, longtimehoizon = True)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
-    # # #
-    # Instance.ReadFromFile("K0014232", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
-    # # #
-    # Instance.ReadFromFile("G5047141", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40, longtimehoizon = True)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
-    # # #
-    # Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20, longtimehoizon = True)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
-    # # #
-    # Instance.ReadFromFile("K5014424", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40, longtimehoizon = True)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
-    # # #
-    # Instance.ReadFromFile("G0047313", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20, longtimehoizon = True)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
 
+def GenerateInstancesPreliminary():
+    instancecreated = []
+    Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    Instance.ReadFromFile("G5047424", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40, longtimehoizon = True)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+    # # #
+    Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="l", rk=25, leadtimestructure=1, lostsale=20, longtimehoizon = True)
+    Instance.SaveCompleteInstanceInExelFile()
+    Instancecreated = instancecreated + [Instance.InstanceName]
+    # # #
+    Instance.ReadFromFile("K5014141", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40, longtimehoizon = True)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+    # # #
+    Instance.ReadFromFile("G0047232", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20, longtimehoizon = True)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+     # #
+    Instance.ReadFromFile("K0014232", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    Instance.ReadFromFile("G5047141", "NonStationary", 4, 25, e="n", rk=75, leadtimestructure=0, lostsale=40, longtimehoizon = True)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+    # # #
+    Instance.ReadFromFile("G0041535", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20, longtimehoizon = True)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+    # # #
+    Instance.ReadFromFile("K5014424", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40, longtimehoizon = True)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+    # # #
+    Instance.ReadFromFile("G0047313", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20, longtimehoizon = True)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+
+    csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
+    data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
+    data_rwriter.writerow(instancecreated)
+
+def GenerateInstancesAllScenario():
+
+    instancecreated = []
     Instance.ReadFromFile("K0011111", "Binomial", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = False)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
@@ -861,7 +871,8 @@ if __name__ == "__main__":
 
         Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
-
+        #GenerateInstancesPreliminary()
+        #GenerateInstancesAllScenario
 
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
