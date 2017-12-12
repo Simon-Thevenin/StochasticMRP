@@ -301,13 +301,12 @@ class TemplemeierInstanceReader( InstanceReader ):
 
         #As the average change, the capacity must change
         if ((self.Instance.Distribution == Constants.SlowMoving) \
-             or (self.Instance.Distribution == Constants.Lumpy) \
              or (self.Instance.Distribution == Constants.Uniform) \
              or (self.Instance.Distribution == Constants.Binomial) ):
             for k in range(self.Instance.NrResource):
-
-                self.Instance.Capacity[k] = float( sum( self.DependentAverageDemand[p] * self.Instance.ProcessingTime[p][k]
+                self.ComputeAverageDependentDemand()
+                self.Instance.Capacity[k] = math.ceil(float( sum( self.DependentAverageDemand[p] * self.Instance.ProcessingTime[p][k]
                                                         for p in self.Instance.ProductSet ) \
-                                                   /  float(self.CapFile[k][1]) )
+                                                   /  float(self.CapFile[k][1]) ) )
 
 
