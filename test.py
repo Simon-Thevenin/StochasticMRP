@@ -561,7 +561,7 @@ def RunEvaluation(  ):
                 policyset = ["Fix", "Re-solve"]
 
         perfectsenarioset = [0]
-        if ScenarioGeneration == Constants.All:
+        if Instance.Distribution == Constants.Binomial:
             perfectsenarioset = [0, 1]
         for policy in policyset:
             for perfectset in perfectsenarioset:
