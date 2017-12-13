@@ -218,8 +218,9 @@ class TemplemeierInstanceReader( InstanceReader ):
                                                                                        for t2 in stochastictime  ) / len(stochastictime)
 
                         self.Instance.YearlyAverageDemand = [sum(self.Instance.ForecastedAverageDemand[t][p]
-                                                                 for t in
-                                                                 self.Instance.TimeBucketSet) / self.Instance.NrTimeBucket
+                                                                 for t in self.Instance.TimeBucketSet
+                                                                 if t >= self.Instance.NrTimeBucketWithoutUncertaintyBefore )
+                                                             / (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyBefore)
                                                              for p in self.Instance.ProductSet]
 
                 self.Instance.ForcastedStandardDeviation = [ [ (1 - self.Instance.RateOfKnownDemand[t])

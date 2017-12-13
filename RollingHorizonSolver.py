@@ -120,7 +120,7 @@ class RollingHorizonSolver:
             timedemandknownuntil = timetodecide - 1
 
             startinginventory = self.GetEndingInventoryAt(timetodecide ,   scenario)
-
+            mip = None
             wronginventory = False
             for  p in self.GlobalInstance.ProductSet:
                 if ( not self.GlobalInstance.HasExternalDemand[p] ) \
@@ -159,10 +159,10 @@ class RollingHorizonSolver:
                 else:
                     mip.UpdateSetup(mip.GivenSetup)
                 # Solve the MIP
-                solution = mip.Solve()
+                solution = mip.Solve( False )
 
             # Save the relevant values
-            self.CopyFirstStageDecision( solution,  timetodecide )
+            self.CopyFirstStageDecision( solution,  timetodecide, instance, mip )
 
             timetodecide += 1 + instance.NrTimeBucketWithoutUncertaintyBefore
             decisionstage += 1
@@ -207,20 +207,27 @@ class RollingHorizonSolver:
 
 
     #This function save the frist stage decision in the solution of the MIP
-    def CopyFirstStageDecision(self, solution, time ):
+    def CopyFirstStageDecision(self, solution, time, instance, mip ):
 
-        if  solution.MRPInstance.NrTimeBucketWithoutUncertaintyBefore  > 0:
-            periodstocopy =  range(solution.MRPInstance.NrTimeBucketWithoutUncertaintyBefore)  + [solution.MRPInstance.NrTimeBucketWithoutUncertaintyBefore ]
+        if  instance.NrTimeBucketWithoutUncertaintyBefore  > 0:
+            periodstocopy =  range(instance.NrTimeBucketWithoutUncertaintyBefore)  + [instance.NrTimeBucketWithoutUncertaintyBefore ]
         else:
             periodstocopy = [time]
 
+        if Constants.IsRule(self.Model):
+            for tau in periodstocopy:
+                #Copy the Setup decision for the first day:
+                for p in self.GlobalInstance.ProductSet:
 
-
-        for tau in periodstocopy:
-            #Copy the Setup decision for the first day:
-            for p in self.GlobalInstance.ProductSet:
-                self.Solution.Production[0][tau][p] = solution.Production[0][tau - time ][p]
-
-            #Copy the production quantity for the first day:
-            for p in self.GlobalInstance.ProductSet:
-                self.Solution.ProductionQuantity[0][tau][p] = solution.ProductionQuantity[0][tau - time][p]
+                        self.Solution.Production[0][tau][p] = solution.Production[0][tau - time ][p]
+                        self.Solution.ProductionQuantity[0][tau][p] = solution.ProductionQuantity[0][tau - time][p]
+        else:
+            array = [mip.GetIndexProductionVariable(p, tau - time, 0) for p in  self.GlobalInstance.ProductSet for tau in periodstocopy]
+            productionvalues = mip.Cplex.solution.get_values(array)
+            array = [mip.GetIndexQuantityVariable(p, tau - time, 0) for p in self.GlobalInstance.ProductSet for tau in periodstocopy]
+            quantityvalues = mip.Cplex.solution.get_values(array)
+            for tau in periodstocopy:
+                # Copy the Setup decision for the first day:
+                for p in self.GlobalInstance.ProductSet:
+                    self.Solution.Production[0][tau][p] = productionvalues[(tau - time) + len( periodstocopy) * p]
+                    self.Solution.ProductionQuantity[0][tau][p] = quantityvalues[(tau - time) + len( periodstocopy) * p]
