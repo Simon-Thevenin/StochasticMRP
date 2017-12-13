@@ -249,7 +249,7 @@ class TemplemeierInstanceReader( InstanceReader ):
                 finishproduct.append(p)
         avgdemand =  [  0.0 for p in  self.Instance.ProductSet ]
         for p in range(len(finishproduct)):
-           avgdemand[ finishproduct[p]] = float(self.DTFile[0][p ])
+           avgdemand[ finishproduct[p]] = float(self.Instance.YearlyAverageDemand[p ])
 
         for l in self.LevelSet:
             prodinlevel = [p for p in self.Instance.ProductSet if self.Level[p] == l]
