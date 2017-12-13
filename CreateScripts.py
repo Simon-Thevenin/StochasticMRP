@@ -84,12 +84,12 @@ if __name__ == "__main__":
     if sys.argv[1] == "preliminary":
         modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix", "YFix", "HeuristicYFix" ]
         #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
-        nrcenarioyfix =[  "800", "1600", "3200", "6400a", "6400b", "6400c",  "12800", "25600", "51200b", "102400b", "153600" ]
+        nrcenarioyfix =[  "800", "1600", "3200", "6400a", "6400b", "6400c",  "12800"]#, "25600", "51200b", "102400b", "153600" ]
         nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
         nrcenarioheuristicyfix = ["6400b" ]
 
         instancetosolvename = "./Instances/InstancesToSolve.csv"
-        instancetosolvename = "./Instances/InstancesToSolveUncapacitated.csv"
+#        instancetosolvename = "./Instances/InstancesToSolveUncapacitated.csv"
 
 
 

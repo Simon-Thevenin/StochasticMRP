@@ -799,7 +799,7 @@ def GenerateInstancesPreliminary():
     instancecreated = []
     ##
     Instance.ReadFromFile("K0014111", "Lumpy", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20,
-                          longtimehoizon=False)
+                          longtimehoizon=False, capacity=10)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
     # #
@@ -826,7 +826,7 @@ def GenerateInstancesPreliminary():
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
     # #
-    Instance.ReadFromFile("G0044431", "SlowMoving", 4, 0, e="n", rk=0, leadtimestructure=0, lostsale=40, longtimehoizon=False)
+    Instance.ReadFromFile("G0044431", "SlowMoving", 4, 0, e="n", rk=0, leadtimestructure=0, lostsale=40, longtimehoizon=False, capacity=10)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
     # # #
@@ -842,7 +842,7 @@ def GenerateInstancesPreliminary():
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
     ##
-    Instance.ReadFromFile("G5044325", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = False)
+    Instance.ReadFromFile("G5044325", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = False, capacity=10)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
     # #
@@ -870,7 +870,7 @@ def GenerateInstancesPreliminary():
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
     # # #
-    Instance.ReadFromFile("K5017522", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20, longtimehoizon = False)
+    Instance.ReadFromFile("K5017522", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20, longtimehoizon = False, capacity=10)
     Instance.SaveCompleteInstanceInExelFile()
     instancecreated = instancecreated + [Instance.InstanceName]
     # # #
