@@ -89,6 +89,7 @@ if __name__ == "__main__":
         nrcenarioheuristicyfix = ["6400b" ]
 
         instancetosolvename = "./Instances/InstancesToSolve.csv"
+        instancetosolvename = "./Instances/InstancesToSolveUncapacitated.csv"
 
 
 
@@ -100,6 +101,8 @@ if __name__ == "__main__":
         Generationset = ["all", "MC", "RQMC"]
         instancetosolvename = "./Instances/InstancesToSolveBinomial.csv"
     #nrcenarioheuristicyfix = ["6400b"]
+
+
 
     policyyqfix = ["Fix", "Re-solve"]
     policyyfix = ["Re-solve"]

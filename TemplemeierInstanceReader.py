@@ -310,3 +310,8 @@ class TemplemeierInstanceReader( InstanceReader ):
                                                    /  float(self.CapFile[k][1]) ) )
 
 
+        if capacityfactor <> 0:
+            for k in range(self.Instance.NrResource):
+                self.ComputeAverageDependentDemand()
+                self.Instance.Capacity[k] = math.ceil(float( sum( self.DependentAverageDemand[p] * self.Instance.ProcessingTime[p][k]
+                                                        for p in self.Instance.ProductSet )* capacityfactor ) )

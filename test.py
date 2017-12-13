@@ -770,7 +770,30 @@ def GenerateInstances( ):
     # instancecreated = instancecreated + [Instance.InstanceName]
     # # #
 
+def GenerateInstancesUncapacitated():
+    instancecreated = []
+    ##
+    Instance.ReadFromFile("K0014111", "Lumpy", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20,
+                          longtimehoizon=False, capacity=10)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+    # #
+    Instance.ReadFromFile("G0044431", "SlowMoving", 4, 0, e="n", rk=0, leadtimestructure=0, lostsale=40, longtimehoizon=False,  capacity=10)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+    Instance.ReadFromFile("G5047534", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40,
+                          longtimehoizon=False, capacity=10)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
+    # # #
+    Instance.ReadFromFile("K0011113", "NonStationary", 2, 25, e="n", rk=25, leadtimestructure=0, lostsale=20,
+                          longtimehoizon=False, capacity=10)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
 
+    csvfile = open("./Instances/InstancesToSolveUncapacitated.csv", 'wb')
+    data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
+    data_rwriter.writerow(instancecreated)
 
 def GenerateInstancesPreliminary():
     instancecreated = []
@@ -916,10 +939,11 @@ if __name__ == "__main__":
     try:
         args = parseArguments()
 
-        Instance.ReadInstanceFromExelFile( InstanceName )
+        #Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
         #GenerateInstancesPreliminary()
         #GenerateInstancesAllScenario()
+        GenerateInstancesUncapacitated()
 
     except KeyError:
         print "This instance does not exist. Instance should be in 01, 02, 03, ... , 38"
