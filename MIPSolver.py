@@ -1256,7 +1256,7 @@ class MIPSolver(object):
         scenarioset = self.ScenarioSet
         scenarios = self.Scenarios
         timebucketset = self.Instance.TimeBucketSet
-        partialsol = Constants.PrintOnlyFirstStageDecision and self.Model == Constants.ModelYFix and not self.EvaluateSolution
+        partialsol = Constants.PrintOnlyFirstStageDecision and (self.Model == Constants.ModelYFix or self.Model == Constants.ModelHeuristicYFix) and not self.EvaluateSolution
         if partialsol:
             scenarioset = [0]
             timebucketset = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore +1 )
@@ -1457,4 +1457,11 @@ class MIPSolver(object):
         startinginventotytuples = [ ( self.GetIndexInitialInventoryInRollingHorizon(p), startinginventories[p] )  for p in self.Instance.ProductSet]
         self.Cplex.variables.set_lower_bounds(startinginventotytuples)
         self.Cplex.variables.set_upper_bounds(startinginventotytuples)
+
+
+    def UpdateSetup(self, givensetup):
+
+        setuptuples = [ ( self.GetIndexProductionVariable(p, t, w), givensetup[t][p] )  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
+        self.Cplex.variables.set_lower_bounds(setuptuples)
+        self.Cplex.variables.set_upper_bounds(setuptuples)
 

@@ -26,6 +26,16 @@ class RollingHorizonSolver:
         else:
             self.RollingHorizonMIPs = self.DefineMIPsRollingHorizonSimulation()
             self.HeuristicSolvers = [None for instance in self.SubInstance]
+            print "define the second set of MIP for solving 2 stage as warm start"
+
+            savetreestructure = copy.deepcopy(self.Treestructure)
+            savemodel = self.Model
+            self.Treestructure = [ 1, 500 ] + [1] *   self.WindowSize
+            self.Model = Constants.ModelYQFix
+            self.RollingHorizonMIPWarmStarts = self.DefineMIPsRollingHorizonSimulation()
+            self.Treestructure = savetreestructure
+            self.Model = savemodel
+
         self.Solution = MRPSolution.GetEmptySolution( instance )
 
 
@@ -131,10 +141,23 @@ class RollingHorizonSolver:
                 solution = self.HeuristicSolvers[decisionstage].SolveWithSimpleRule( self.Model)
 
             else:
+                mipwarmstart = self.RollingHorizonMIPWarmStarts[decisionstage]
+                mipwarmstart.UpdateStartingInventory(startinginventory)
+                solutionwarmstart = mipwarmstart.Solve( False )
+
                 mip = self.RollingHorizonMIPs[decisionstage]
                 # Update the starting inventory, and the known Y values
                 mip.UpdateStartingInventory(startinginventory)
+                array = [mipwarmstart.GetIndexProductionVariable(p, t, 0) for p in instance.ProductSet for t in instance.TimeBucketSet ]
+                values= mipwarmstart.Cplex.solution.get_values(array)
 
+                mip.GivenSetup = [[values[p * (len(instance.TimeBucketSet) ) + t  ]
+                                     for p in instance.ProductSet] for t in instance.TimeBucketSet]
+
+                if self.Model == Constants.ModelYFix:
+                    mip.WarmStartGivenSetupConstraints
+                else:
+                    mip.UpdateSetup(mip.GivenSetup)
                 # Solve the MIP
                 solution = mip.Solve()
 
@@ -190,6 +213,9 @@ class RollingHorizonSolver:
             periodstocopy =  range(solution.MRPInstance.NrTimeBucketWithoutUncertaintyBefore)  + [solution.MRPInstance.NrTimeBucketWithoutUncertaintyBefore ]
         else:
             periodstocopy = [time]
+
+
+
         for tau in periodstocopy:
             #Copy the Setup decision for the first day:
             for p in self.GlobalInstance.ProductSet:

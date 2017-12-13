@@ -81,6 +81,10 @@ if __name__ == "__main__":
        instancenameslist.append(row)
     InstanceSet = instancenameslist[0]
     instancetosolvename = ""
+    policyyqfix = ["Fix", "Re-solve"]
+    policyyfix = ["Re-solve"]
+    Generationset = ["RQMC", "MC"]
+    scenarsetall = ["4096"]
     if sys.argv[1] == "preliminary":
         modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix", "YFix", "HeuristicYFix" ]
         #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
@@ -102,12 +106,19 @@ if __name__ == "__main__":
         instancetosolvename = "./Instances/InstancesToSolveBinomial.csv"
     #nrcenarioheuristicyfix = ["6400b"]
 
+    if sys.argv[1] == "rollinghorizon":
+
+        modelset = [ "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal", "YQFix", "HeuristicYFix"]
+
+        nrcenarioyfix =[  "6400b" ]
+        nrcenarioheuristicyfix = ["6400b"]
+        nrcenarioyfqix = [ "50"]
+        Generationset = ["RQMC"]
+        NrScenarioEvaluation = "100"
+        instancetosolvename = "./Instances/InstancesToSolveRH.csv"
 
 
-    policyyqfix = ["Fix", "Re-solve"]
-    policyyfix = ["Re-solve"]
-    Generationset = ["RQMC", "MC"]
-    scenarsetall = ["4096"]
+
 
     #policyyqfix = [  "Fix", "Re-solve" ]
     #policyyfix = [  "Fix" ]
