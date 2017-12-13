@@ -1035,8 +1035,8 @@ if __name__ == "__main__":
 
         Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
-        GenerateInstancesPreliminary()
-        GenerateInstancesAllScenario()
+        #GenerateInstancesPreliminary()
+        #GenerateInstancesAllScenario()
         #GenerateInstancesRH()
 
     except KeyError:
