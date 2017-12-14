@@ -568,6 +568,8 @@ def RunEvaluation(  ):
         if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or  Constants.IsRule(Model):
                 policyset = ["Fix", "Re-solve"]
 
+        if Instance.NrTimeBucket >= 10:
+            policyset = ["Fix"]
         perfectsenarioset = [0]
         if Instance.Distribution == Constants.Binomial:
             perfectsenarioset = [0, 1]
