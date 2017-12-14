@@ -108,7 +108,7 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "rollinghorizon":
 
-        modelset = [ "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal", "YQFix", "HeuristicYFix"]
+        modelset = [ "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal", "YQFix"]#, "HeuristicYFix"]
 
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
