@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
-        nrcenarioyfqix = [ "50"]
+        nrcenarioyfqix = [ "500"]
         Generationset = ["RQMC"]
         NrScenarioEvaluation = "100"
         instancetosolvename = "./Instances/InstancesToSolveRH.csv"

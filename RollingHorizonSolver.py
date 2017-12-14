@@ -26,7 +26,8 @@ class RollingHorizonSolver:
         else:
             self.RollingHorizonMIPs = self.DefineMIPsRollingHorizonSimulation()
             self.HeuristicSolvers = [None for instance in self.SubInstance]
-            print "define the second set of MIP for solving 2 stage as warm start"
+            if Constants.Debug:
+                print "define the second set of MIP for solving 2 stage as warm start"
 
             savetreestructure = copy.deepcopy(self.Treestructure)
             savemodel = self.Model
