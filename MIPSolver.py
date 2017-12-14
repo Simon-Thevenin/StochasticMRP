@@ -93,6 +93,7 @@ class MIPSolver(object):
 
         #This list will contain the set of constraint number for each flow constraint
         self.FlowConstraintNR = []
+        self.BigMConstraintNR =[]
 
         self.QuantityConstraintNR = []
         self.SetupConstraint= []
@@ -700,6 +701,7 @@ class MIPSolver(object):
     def CreateProductionConstraints( self ):
         n = self.GetNrQuantityVariable()
         AlreadyAdded = [ [ False ] * n  for w in range( self.GetNrProductionVariable() ) ]
+        self.BigMConstraintNR = [[["" for t in self.Instance.TimeBucketSet] for p in self.Instance.ProductSet] for w in  self.ScenarioSet]
 
         BigM = [MIPSolver.GetBigMValue(self.Instance, self.Scenarios, p)  for p in self.Instance.ProductSet ]
 
@@ -728,7 +730,10 @@ class MIPSolver(object):
 
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                               senses=["G"],
-                                                             rhs=righthandside)#
+                                                              rhs=righthandside,
+                                                              names=["BigM%da%da%d" % (p, t, w)])#
+
+                        self.BigMConstraintNR[w][p][t] = "BigM%da%da%d" % (p, t, w)
 
     # This function add the objective function as a variable
     def CreateTotalCostConstraint(self):
@@ -1185,7 +1190,7 @@ class MIPSolver(object):
         # Handle the results
         sol = self.Cplex.solution
         if Constants.Debug:
-            print "CPLEx Solve Time: %r   CPLEX build time %s  feasible %s" % (solvetime, buildtime, sol.is_primal_feasible())
+            print "CPLEx Solve Time: %r   CPLEX build time %s  feasible %s cost: %s" % (solvetime, buildtime, sol.is_primal_feasible(), sol.get_objective_value())
 
         if sol.is_primal_feasible():
             if createsolution:
@@ -1345,24 +1350,29 @@ class MIPSolver(object):
 
     #This function return the upperbound on hte quantities infered from the demand
     @staticmethod
-    def GetBigMDemValue( instance, scenarioset, p ):
+    def GetBigMDemValue( instance, scenarioset, p, totaldemandatt = None ):
         #mdem = 10000000
         if instance.HasExternalDemand[ p ] :
-            mdem = ( sum( max( s.Demands[t][p] for s in scenarioset ) for t in instance.TimeBucketSet ) ) + instance.StartingInventories[p]
+            mdem = ( sum( max( s.Demands[t][p] for s in scenarioset ) for t in instance.TimeBucketSet ) )
+
+            if not totaldemandatt is  None :
+                mdem +=  max( -totaldemandatt[instance.ProductWithExternalDemandIndex[p]], 0 )
+
         else :
-            mdem = sum( instance.Requirements[q][p] * MIPSolver.GetBigMDemValue( instance, scenarioset, q ) for q in instance.RequieredProduct[p] ) + instance.StartingInventories[p]
+            mdem = sum( instance.Requirements[q][p] * MIPSolver.GetBigMDemValue( instance, scenarioset, q ) for q in instance.RequieredProduct[p] )
 
 
         return mdem
 
     #This function return the value of the big M variable
     @staticmethod
-    def GetBigMValue( instance, scenarioset, p ):
-        mdem = MIPSolver.GetBigMDemValue(instance, scenarioset, p)
+    def GetBigMValue( instance, scenarioset, p, totaldemandatt):
+        mdem = MIPSolver.GetBigMDemValue(instance, scenarioset, p, totaldemandatt)
 
         #compute m based on the capacity of the resource
         mres = min( instance.Capacity[k] / instance.ProcessingTime[p][k]  if instance.ProcessingTime[p][k] > 0  else Constants.Infinity for k in range( instance.NrResource ) )
         m = min( [ mdem, mres ] )
+
         return m
 
     def ModifyMipForScenarioTree(self, scenariotree):
@@ -1383,6 +1393,21 @@ class MIPSolver(object):
                     constrainttuples.append((constrnr, righthandside))
 
         self.Cplex.linear_constraints.set_rhs(constrainttuples)
+        constrainttuples =[]
+        if self.EVPI:
+            #Recompute the value of M
+            for p in self.Instance.ProductSet:
+                for w in self.ScenarioSet:
+                    for t in self.Instance.TimeBucketSet:
+
+
+
+                        column = self.GetIndexProductionVariable(p,t,w)
+                        coeff = self.GetBigMValue( self.Instance, self.Scenarios, p)
+                        constrnr = self.BigMConstraintNR[w][p][t]
+                        constrainttuples.append((constrnr, column, coeff))
+            self.Cplex.linear_constraints.set_coefficients(constrainttuples)
+
     #This function modify the MIP tosolve the scenario tree given in argument.
     #It is assumed that both the initial scenario tree and the new one have a single scenario
     def ModifyMipForScenario(self, demanduptotime, time):
@@ -1410,9 +1435,24 @@ class MIPSolver(object):
                         constrainttuples.append((constrnr, righthandside))
                         self.Cplex.linear_constraints.set_rhs( constrainttuples )
 
+        totaldemandattime = [ sum(demanduptotime[t][p] for t in range( time ))for p in self.Instance.ProductWithExternalDemand]
+
+
         knowndemandtuples = [ ( self.GetIndexKnownDemand(p),  sum(demanduptotime[t][p] for t in range( time )) )  for p in self.Instance.ProductWithExternalDemand]
         self.Cplex.variables.set_lower_bounds(knowndemandtuples)
         self.Cplex.variables.set_upper_bounds(knowndemandtuples)
+
+
+        # for p in self.Instance.ProductSet:
+        #     for w in self.ScenarioSet:
+        #         for t in self.Instance.TimeBucketSet:
+        #             column = self.GetIndexProductionVariable(p, t, w)
+        #             coeff = self.GetBigMValue(self.Instance, self.Scenarios, p, totaldemandattime)
+        #             constrnr = self.BigMConstraintNR[w][p][t]
+        #             constrainttuples.append((constrnr, column, coeff))
+        # self.Cplex.linear_constraints.set_coefficients(constrainttuples)
+
+
         # This function modify the MIP tosolve the scenario tree given in argument.
         # It is assumed that both the initial scenario tree and the new one have a single scenario
 

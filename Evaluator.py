@@ -132,6 +132,7 @@ class Evaluator:
                         if self.Policy == Constants.RollingHorizon:
                             mipsolver.ModifyMIPForSetup(givensetup)
 
+
                     mipsolver.Cplex.parameters.advance = 0
                     #mipsolver.Cplex.parameters.lpmethod = 2
                     mipsolver.Cplex.parameters.lpmethod.set(mipsolver.Cplex.parameters.lpmethod.values.barrier)
@@ -150,7 +151,7 @@ class Evaluator:
                             nrerror = nrerror +1
                     else:
                         Evaluated[ indexscenario ] = solution.TotalCost
-                        if not allscenario:
+                        if allscenario ==  0:
                             scenario.Probability = 1.0 / float( nrscenario )
                         Probabilities[ indexscenario ] = scenario.Probability
                         average +=  solution.TotalCost * scenario.Probability
@@ -300,8 +301,10 @@ class Evaluator:
                 scenariotree = ScenarioTree(self.Instance, treestructure, ScenarioSeed, evaluationscenario=True,
                                             scenariogenerationmethod="MC")
                 scenario = scenariotree.GetAllScenarios(False)[0]
+
                 scenarioset.append(scenario)
                 treeset.append(scenariotree)
+
 
         return scenarioset, treeset
 
@@ -411,11 +414,12 @@ class Evaluator:
                                     + [0]
 
                 if self.Model == Constants.ModelYQFix and self.ScenarioGenerationResolvePolicy == Constants.All :
+                    nrstochasticperiod = self.Instance.NrTimeBucket - time
                     treestructure = [1] \
-                                + [ int( math.pow(8,4-time) )
+                                + [ int( math.pow(8,nrstochasticperiod) )
                                    if (  t == time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)  ) )
-                                   else 1 for
-                                    t in range(self.Instance.NrTimeBucket)] \
+                                   else 1
+                                   for t in range(self.Instance.NrTimeBucket)] \
                                 + [0]
 
                 self.StartSeedResolve = self.StartSeedResolve + 1

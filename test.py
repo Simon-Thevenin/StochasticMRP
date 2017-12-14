@@ -987,19 +987,21 @@ def GenerateInstancesRH():
 
 def GenerateInstancesAllScenario():
 
-
+    instancecreated = []
     for TB0 in ["1",  "3"]:
         for  Capacity in  ["1",  "3"]:
             for echelonconst in ["n", "l"]:
                 for b in [2, 4]:
                     for ll in [0,1]:
+                        if TB0 == "1" and Capacity == "1" and b == 4:
+                            nameinstance = "K0011"+ Capacity + TB0+ "1"
 
-                        nameinstance = "K0011"+ Capacity + TB0+ "1"
-                        instancecreated = []
-                        Instance.ReadFromFile(nameinstance, "Binomial", b, 0, e=echelonconst, rk=0, leadtimestructure=ll, lostsale=b*10, longtimehoizon = False)
-                        Instance.SaveCompleteInstanceInExelFile()
-                        instancecreated = instancecreated + [Instance.InstanceName]
-
+                            Instance.ReadFromFile(nameinstance, "Binomial", b, 0, e=echelonconst, rk=0, leadtimestructure=ll, lostsale=b*10, longtimehoizon = False)
+                            Instance.SaveCompleteInstanceInExelFile()
+                            instancecreated = instancecreated + [Instance.InstanceName]
+    csvfile = open("./Instances/InstancesToSolveBinomial.csv", 'wb')
+    data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
+    data_rwriter.writerow(instancecreated)
     # Instance.ReadFromFile("K0011151", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
     # Instance.SaveCompleteInstanceInExelFile()
     # instancecreated = instancecreated + [Instance.InstanceName]
@@ -1036,9 +1038,7 @@ def GenerateInstancesAllScenario():
     # Instance.SaveCompleteInstanceInExelFile()
     # instancecreated = instancecreated + [Instance.InstanceName]
 
-    csvfile = open("./Instances/InstancesToSolveBinomial.csv", 'wb')
-    data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
-    data_rwriter.writerow(instancecreated)
+
 
 
 
