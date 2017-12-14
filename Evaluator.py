@@ -54,7 +54,7 @@ class Evaluator:
         allscenario = evaluateidentificator[4]
         start_time = time.time()
         Evaluated = [ -1 for e in range(nrscenario) ]
-
+        Probabilities = [ -1 for e in range(nrscenario) ]
         OutOfSampleSolution = None
         mipsolver = None
         firstsolution = True
@@ -150,6 +150,9 @@ class Evaluator:
                             nrerror = nrerror +1
                     else:
                         Evaluated[ indexscenario ] = solution.TotalCost
+                        if not allscenario:
+                            scenario.Probability = 1.0 / float( nrscenario )
+                        Probabilities[ indexscenario ] = scenario.Probability
                         average +=  solution.TotalCost * scenario.Probability
                         totalproba += scenario.Probability
                         #Record the obtain solution in an MRPsolution  OutOfSampleSolution
@@ -180,6 +183,10 @@ class Evaluator:
         if saveevaluatetab:
                 with open(filename+"Evaluator.txt", "w+") as fp:
                     pickle.dump(Evaluated, fp)
+
+                with open(filename + "Probabilities.txt", "w+") as fp:
+                    pickle.dump(Probabilities, fp)
+
                 with open(filename+"KPIStat.txt", "w+") as fp:
                     pickle.dump(KPIStat, fp)
 
@@ -309,8 +316,9 @@ class Evaluator:
 
         return EvaluateInfo
 
-    def ComputeStatistic(self, Evaluated, nrscenario, testidentifier, evaluateidentificator, KPIStat, nrerror  ):
-        mean = np.mean(Evaluated)
+    def ComputeStatistic(self, Evaluated, Probabilities, nrscenario, testidentifier, evaluateidentificator, KPIStat, nrerror  ):
+
+        mean = float( sum( np.dot(Evaluated[k], Probabilities[k]) for k in range( len(Evaluated) ) ) / float( len(Evaluated) ) )
         variance = math.pow(np.std(Evaluated), 2)
         K =  len(Evaluated)
         M = nrscenario

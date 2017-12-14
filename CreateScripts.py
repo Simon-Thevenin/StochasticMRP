@@ -214,9 +214,13 @@ if __name__ == "__main__":
                                         instance, model, nrscenar, seed, NrScenarioEvaluation, 3) )
 
     for instance in InstanceSet:
-        print "job_evpi_%s" % (instance )
+        print "job_evpi_%s " % (instance )
         qsub_filename = "./Jobs/job_evpi_%s" % (instance )
         qsub_file = open(qsub_filename, 'w')
+        allscenario = 0
+        if 'Binomial' in instance:
+            allscenario = 1
+            NrScenarioEvaluation = 4096
         qsub_file.write("""
 #!/bin/bash -l
 #
@@ -229,8 +233,8 @@ mkdir -p /tmp/thesim
 mkdir -p /tmp/thesim/Evaluations
 mkdir -p /tmp/thesim/Solutions
 mkdir -p /tmp/thesim/CPLEXLog
-python test.py Evaluate %s YQFix 1 RQMC -e -n 5000 -s 0
-            """ % ( instance, instance) )
+python test.py Evaluate %s YQFix 1 RQMC -e -n %s -s 0 -a %s
+            """ % ( instance, instance, NrScenarioEvaluation, allscenario) )
 
 
   # Create the sh file

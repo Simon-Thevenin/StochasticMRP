@@ -398,6 +398,7 @@ def GatherEvaluation():
     currentseedvalue = ScenarioSeed
     evaluator = Evaluator(Instance, [], [], "", ScenarioGeneration, treestructure=GetTreeStructure(), model = Model)
     EvaluationTab = []
+    ProbabilitiesTab =[]
     KPIStats = []
     nrfile = 0
     #Creat the evaluation table
@@ -410,6 +411,11 @@ def GatherEvaluation():
             with open(filename + "Evaluator.txt", 'rb') as f:
                 list = pickle.load(f)
                 EvaluationTab.append( list )
+
+            with open(filename + "Probabilities.txt", 'rb') as f:
+                list = pickle.load(f)
+                ProbabilitiesTab.append(list)
+
             with open(filename + "KPIStat.txt", "rb") as f:  # Pickling
                 list = pickle.load(f)
                 KPIStats.append( list )
@@ -423,7 +429,7 @@ def GatherEvaluation():
         KPIStat = [sum(e) / len(e) for e in zip(*KPIStats)]
 
         global OutOfSampleTestResult
-        OutOfSampleTestResult =      evaluator.ComputeStatistic(EvaluationTab, NrEvaluation, TestIdentifier,EvaluatorIdentifier, KPIStat, -1)
+        OutOfSampleTestResult =      evaluator.ComputeStatistic(EvaluationTab, ProbabilitiesTab, NrEvaluation, TestIdentifier,EvaluatorIdentifier, KPIStat, -1)
         if Method == Constants.MIP and not EVPI:
             ComputeInSampleStatistis()
         PrintFinalResult()
@@ -981,46 +987,54 @@ def GenerateInstancesRH():
 
 def GenerateInstancesAllScenario():
 
-    instancecreated = []
-    Instance.ReadFromFile("K0011111", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
 
-    Instance.ReadFromFile("K0011151", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
+    for TB0 in ["1",  "3"]:
+        for  Capacity in  ["1",  "3"]:
+            for echelonconst in ["n", "l"]:
+                for b in [2, 4]:
+                    for ll in [0,1]:
 
-    Instance.ReadFromFile("K0011211", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
+                        nameinstance = "K0011"+ Capacity + TB0+ "1"
+                        instancecreated = []
+                        Instance.ReadFromFile(nameinstance, "Binomial", b, 0, e=echelonconst, rk=0, leadtimestructure=ll, lostsale=b*10, longtimehoizon = False)
+                        Instance.SaveCompleteInstanceInExelFile()
+                        instancecreated = instancecreated + [Instance.InstanceName]
 
-    Instance.ReadFromFile("K0011251", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("K0011311", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("K0011351", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("K0011411", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("K0011451", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("K0011511", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
-
-    Instance.ReadFromFile("K0011551", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
-    Instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [Instance.InstanceName]
+    # Instance.ReadFromFile("K0011151", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K0011211", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K0011251", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K0011311", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=1, lostsale=20, longtimehoizon = False)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K0011351", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K0011411", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K0011451", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K0011511", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
+    #
+    # Instance.ReadFromFile("K0011551", "Binomial", 2, 0, e="n", rk=0, leadtimestructure=0, lostsale=20, longtimehoizon = False)
+    # Instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [Instance.InstanceName]
 
     csvfile = open("./Instances/InstancesToSolveBinomial.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
