@@ -99,8 +99,10 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "perfectinfo":
         modelset = [ "YQFix", "YFix"]
+        modelset = [ "HeuristicYFix"]
 
         nrcenarioyfix =[  "6400b" ]
+        nrcenarioheuristicyfix = ["6400b"]
         nrcenarioyfqix = [ "500"]
         Generationset = ["all", "MC", "RQMC"]
         instancetosolvename = "./Instances/InstancesToSolveBinomial.csv"
@@ -108,7 +110,6 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "rollinghorizon":
 
-        modelset = [ "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal", "YQFix"]#,
         modelset = [ "HeuristicYFix"]
 
         nrcenarioyfix =[  "6400b" ]
