@@ -118,7 +118,16 @@ if __name__ == "__main__":
         NrScenarioEvaluation = "100"
         instancetosolvename = "./Instances/InstancesToSolveRH.csv"
 
+    if sys.argv[1] == "rollinghorizon2":
 
+        modelset = [ "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal", "YQFix"]
+
+        nrcenarioyfix =[  "6400b" ]
+        nrcenarioheuristicyfix = ["6400b"]
+        nrcenarioyfqix = [ "500"]
+        Generationset = ["RQMC"]
+        NrScenarioEvaluation = "100"
+        instancetosolvename = "./Instances/InstancesToSolveRH.csv"
 
 
     #policyyqfix = [  "Fix", "Re-solve" ]
