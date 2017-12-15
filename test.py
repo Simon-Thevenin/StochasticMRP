@@ -1052,9 +1052,9 @@ if __name__ == "__main__":
     try:
         args = parseArguments()
 
-        #Instance.ReadInstanceFromExelFile( InstanceName )
+        Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
-        GenerateInstancesPreliminary()
+        #GenerateInstancesPreliminary()
         #GenerateInstancesAllScenario()
         #GenerateInstancesRH()
 

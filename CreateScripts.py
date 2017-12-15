@@ -172,16 +172,6 @@ if __name__ == "__main__":
     """)
 
     for instance in InstanceSet :
-
-             if sys.argv[1] == "preliminary" :
-                 if 'Lumpy' in instance:
-                     nrcenarioyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b"]
-                     nrcenarioheuristicyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b", "102400b", "153600"]
-                 else:
-                     nrcenarioyfix = [ "25600", "51200b"]
-                     nrcenarioheuristicyfix = [ "25600",  "51200b", "102400b", "153600" ]
-
-
              for model in modelset:
 
                  policyset = [ "Fix"]
