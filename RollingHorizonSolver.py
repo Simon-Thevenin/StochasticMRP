@@ -16,7 +16,6 @@ class RollingHorizonSolver:
         self.Seed = seed
         self.Treestructure =treestructure
         self.Model = model
-        print self.Model
         self.UseSafetyStock = usesafetystock
         self.ScenarioGenerationResolvePolicy = scenariogenerationmethod
 
