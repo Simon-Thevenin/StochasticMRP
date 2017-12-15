@@ -86,7 +86,7 @@ if __name__ == "__main__":
     Generationset = ["RQMC", "MC"]
     scenarsetall = ["4096"]
     if sys.argv[1] == "preliminary":
-        modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix", "YFix", "HeuristicYFix" ]
+        modelset = [ "YFix", "HeuristicYFix" ] #[  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix",]
         #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
         nrcenarioyfix =[  "800", "1600", "3200", "6400a", "6400b", "6400c",  "12800"]#, "25600", "51200b", "102400b", "153600" ]
         nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
@@ -108,7 +108,8 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "rollinghorizon":
 
-        modelset = [ "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal", "YQFix"]#, "HeuristicYFix"]
+        modelset = [ "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal", "YQFix"]#,
+        modelset = [ "HeuristicYFix"]
 
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
@@ -160,6 +161,16 @@ if __name__ == "__main__":
     """)
 
     for instance in InstanceSet :
+
+             if sys.argv[1] == "preliminary" :
+                 if 'Lumpy' in instance:
+                     nrcenarioyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b"]
+                     nrcenarioheuristicyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b", "102400b", "153600"]
+                 else:
+                     nrcenarioyfix = [ "25600", "51200b"]
+                     nrcenarioheuristicyfix = [ "25600",  "51200b", "102400b", "153600" ]
+
+
              for model in modelset:
 
                  policyset = [ "Fix"]

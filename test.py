@@ -373,7 +373,7 @@ def EvaluateSingleSol(  ):
     if not EVPI and not PolicyGeneration == Constants.RollingHorizon: #In evpi mode, a solution is computed for each scenario
         solution.ReadFromFile(filedescription)
 
-
+    yeuristicyfix = False
     MIPModel = Model
     if Model == Constants.Average or Model == Constants.AverageSS:
         MIPModel = Constants.ModelYQFix
@@ -381,12 +381,15 @@ def EvaluateSingleSol(  ):
         MIPModel = Constants.ModelYFix
         Model = Constants.ModelYFix
 
+
+        yeuristicyfix = True
+
     evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, evpi=EVPI,
                           scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(),
                           nearestneighborstrategy=NearestNeighborStrategy, evaluateaverage=(Model == Constants.Average or Model == Constants.AverageSS), usesafetystock = (Model == Constants.AverageSS),
                           evpiseed=SeedArray[0],
                           model = MIPModel,
-                          timehorizon=TimeHorizon )
+                          timehorizon=TimeHorizon, yeuristicyfix = yeuristicyfix )
 
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier, saveevaluatetab= True, filename = GetEvaluationFileName(), evpi=EVPI  )
 

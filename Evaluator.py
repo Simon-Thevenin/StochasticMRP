@@ -18,7 +18,7 @@ import pickle
 
 class Evaluator:
 
-    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False, usesafetystock = False, evpiseed = -1, model = "YQFix", timehorizon = 1 ):
+    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False, usesafetystock = False, evpiseed = -1, model = "YQFix", timehorizon = 1, yeuristicyfix = False ):
         self.Instance = instance
         self.Solutions = solutions
         self.SDDPs = sddps
@@ -39,7 +39,7 @@ class Evaluator:
         self.EvaluateAverage = evaluateaverage
         self.UseSafetyStock = usesafetystock
         self.Model = model
-
+        self.YeuristicYfix = yeuristicyfix
         if policy == Constants.RollingHorizon:
             self.RollingHorizonSolver = RollingHorizonSolver( self.Instance,  self.Model , self.ReferenceTreeStructure,
                                                               self.StartSeedResolve, self.ScenarioGenerationResolvePolicy,

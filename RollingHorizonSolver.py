@@ -16,6 +16,7 @@ class RollingHorizonSolver:
         self.Seed = seed
         self.Treestructure =treestructure
         self.Model = model
+        print self.Model
         self.UseSafetyStock = usesafetystock
         self.ScenarioGenerationResolvePolicy = scenariogenerationmethod
 
@@ -62,13 +63,20 @@ class RollingHorizonSolver:
 
             logfilename = "%s_%s_%r_%r_%r"%(instance.InstanceName, self.Model, len(result), scenariotree.TreeStructure, self.UseSafetyStock)
 
+            givensetups = []
+
+            if self.Owner.YeuristicYfix:
+                givensetups = [ [ 1 for p in self.GlobalInstance.ProductSet ] for t in self.GlobalInstance.TimeBucketSet ]
+
             mipsolver = MIPSolver(instance, self.Model, scenariotree,
                                   False,
-                                  implicitnonanticipativity=True,
-                                  evaluatesolution=False,
-                                  usesafetystock= self.UseSafetyStock,
-                                  rollinghorizon= True,
-                                  logfile= logfilename )
+                                  implicitnonanticipativity = True,
+                                  evaluatesolution = False,
+                                  usesafetystock = self.UseSafetyStock,
+                                  rollinghorizon = True,
+                                  logfile = logfilename,
+                                  yfixheuristic = self.Owner.YeuristicYfix,
+                                  givensetups = givensetups)
             mipsolver.BuildModel()
             result.append( mipsolver )
 

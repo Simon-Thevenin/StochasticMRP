@@ -1366,7 +1366,7 @@ class MIPSolver(object):
 
     #This function return the value of the big M variable
     @staticmethod
-    def GetBigMValue( instance, scenarioset, p, totaldemandatt):
+    def GetBigMValue( instance, scenarioset, p, totaldemandatt=None):
         mdem = MIPSolver.GetBigMDemValue(instance, scenarioset, p, totaldemandatt)
 
         #compute m based on the capacity of the resource

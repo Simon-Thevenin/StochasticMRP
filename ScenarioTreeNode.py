@@ -279,7 +279,7 @@ class ScenarioTreeNode:
             nextdemands = [[]]
             while len( nextdemands[0] ) < nrpoints and newnrpoints <= 1000:
                 if Constants.Debug and len(nextdemands[0])>0:
-                    print "try with %r points because only %r  points were generated )" %(newnrpoints, len( nextdemands[0]) )
+                    print "try with %r points because only %r  points were generated, required: %r" %(newnrpoints, len( nextdemands[0]), nrpoints )
                 points = [[0.0 for pt in range(newnrpoints)] for p in range(dimensionpoint)]
                 nrnonzero = sum( 1  for p in range( dimensionpoint ) if average[p] > 0 )
                 idnonzero = [  p  for p in range( dimensionpoint ) if average[p] > 0 ]
@@ -300,7 +300,7 @@ class ScenarioTreeNode:
                     newnrpoints = newnrpoints + 1
                 rqmcpoints = nextdemands
 
-            nrpoints = len(nextdemands[0])
+            nrpoints = min( len(nextdemands[0]), nrpoints)
             points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
             for p in range( nrnonzero ):  # instance.ProductWithExternalDemand:
                         for i in range(nrpoints):
