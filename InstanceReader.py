@@ -77,11 +77,13 @@ class InstanceReader:
 
     def ComputeAverageDependentDemand(self):
         self.Level = self.GetProductLevel()
-        self.ActualAvgdemand = [math.ceil( float( sum(self.Instance.ForecastedAverageDemand[t][p] for t in
-                                    self.Instance.TimeBucketSet) ) / float(self.Instance.NrTimeBucket )) for p
+        self.ActualAvgdemand = [ math.ceil( float( sum(self.Instance.ForecastedAverageDemand[t][p]
+                                                       for t in self.Instance.TimeBucketSet) ) \
+                                            / float(self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyBefore ) )
+                                 for p
                                 in self.Instance.ProductSet]
-        self.Actualdepdemand = [[self.Instance.ForecastedAverageDemand[t][p] for p in self.Instance.ProductSet] for t in
-                                self.Instance.TimeBucketSet]
+        self.Actualdepdemand = [ [ self.Instance.ForecastedAverageDemand[t][p] for p in self.Instance.ProductSet ] for t in
+                                self.Instance.TimeBucketSet ]
 
         self.DependentAverageDemand = [self.ActualAvgdemand[p] for p in self.Instance.ProductSet]
         self.LevelSet = sorted(set(self.Level), reverse=False)

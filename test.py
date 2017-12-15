@@ -994,11 +994,11 @@ def GenerateInstancesAllScenario():
 
     instancecreated = []
     for TB0 in ["1",  "3"]:
-        for  Capacity in  ["1",  "3"]:
+        for  Capacity in  ["3", "5"]:
             for echelonconst in ["n", "l"]:
                 for b in [2, 4]:
                     for ll in [0,1]:
-                        if TB0 == "1" and Capacity == "1" and b == 4:
+                        if TB0 == "1" and Capacity == "3" and b == 4:
                             nameinstance = "K0011"+ Capacity + TB0+ "1"
 
                             Instance.ReadFromFile(nameinstance, "Binomial", b, 0, e=echelonconst, rk=0, leadtimestructure=ll, lostsale=b*10, longtimehoizon = False)
