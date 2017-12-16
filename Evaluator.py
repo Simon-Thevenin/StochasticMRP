@@ -11,6 +11,7 @@ from datetime import datetime
 import csv
 from scipy import stats
 import numpy as np
+import itertools
 #from MRPSolution import MRPSolution
 #from decimal import Decimal, ROUND_HALF_DOWN
 import pickle
@@ -324,10 +325,22 @@ class Evaluator:
         mean = float( sum( np.dot(Evaluated[k], Probabilities[k]) for k in range( len(Evaluated) ) ) / float( len(Evaluated) ) )
         K =  len(Evaluated)
         M = nrscenario
-        variance2 = ((1.0 / K) * sum(  (1.0 / M) * sum(math.pow(Evaluated[k][seed], 2) for seed in range(M)) for k in range(K))) - math.pow(mean,  2)
-        covariance = ( ((1.0 / K) * sum(math.pow(sum(Evaluated[k][seed] for seed in range(M)) / M, 2) for k in range(K))) - math.pow( mean, 2))
+        variancepondere = (1.0 / K) * \
+                           sum(   Probabilities[k][seed] * math.pow(Evaluated[k][seed]- mean, 2)
+                                   for seed in range(M)
+                                   for k in range(K))
 
-        term =  stats.norm.ppf(1 - 0.05) * math.sqrt((variance2 + (covariance * (M - 1))) / (K * M))
+
+        variance2 = ((1.0 / K) * sum(  (1.0 / M) * sum(math.pow(Evaluated[k][seed], 2) for seed in range(M)) for k in range(K))) - math.pow(mean,  2)
+        covariance = 0
+
+        for seed in range(M):
+            step = 1
+            for k in range(K):
+                step *=   (Evaluated[k][seed] - mean)
+            covariance +=   Probabilities[0][seed] * 1/K *step
+
+        term =  stats.norm.ppf(1 - 0.05) * math.sqrt((variancepondere + (covariance * (M - 1))) / (K * M))
         LB = mean - term
         UB = mean + term
         d = datetime.now()
