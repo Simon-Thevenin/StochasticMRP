@@ -31,9 +31,12 @@ class RollingHorizonSolver:
 
             savetreestructure = copy.deepcopy(self.Treestructure)
             savemodel = self.Model
-            self.Treestructure = [ 1, 500 ] + [1] *   self.WindowSize
+            savedheuristicyfix = self.Owner.YeuristicYfix
+            self.Treestructure = [  500 ] + [1] *  ( self.WindowSize  + 1)
             self.Model = Constants.ModelYQFix
+            self.Owner.YeuristicYfix = False
             self.RollingHorizonMIPWarmStarts = self.DefineMIPsRollingHorizonSimulation()
+            self.Owner.YeuristicYfix =  savedheuristicyfix
             self.Treestructure = savetreestructure
             self.Model = savemodel
 
@@ -151,6 +154,7 @@ class RollingHorizonSolver:
             else:
                 mipwarmstart = self.RollingHorizonMIPWarmStarts[decisionstage]
                 mipwarmstart.UpdateStartingInventory(startinginventory)
+
                 solutionwarmstart = mipwarmstart.Solve( False )
 
                 mip = self.RollingHorizonMIPs[decisionstage]
@@ -164,8 +168,9 @@ class RollingHorizonSolver:
 
                 if self.Model == Constants.ModelYFix:
                     mip.WarmStartGivenSetupConstraints
-                else:
+                if self.Owner.YeuristicYfix:
                     mip.UpdateSetup(mip.GivenSetup)
+                    mip.ModifyMIPForSetup(mip.GivenSetup)
                 # Solve the MIP
                 solution = mip.Solve( False )
 

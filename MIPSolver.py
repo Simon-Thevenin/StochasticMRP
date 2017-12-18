@@ -1189,10 +1189,12 @@ class MIPSolver(object):
 
         # Handle the results
         sol = self.Cplex.solution
-        if Constants.Debug:
-            print "CPLEx Solve Time: %r   CPLEX build time %s  feasible %s cost: %s" % (solvetime, buildtime, sol.is_primal_feasible(), sol.get_objective_value())
 
         if sol.is_primal_feasible():
+            if Constants.Debug:
+                print "CPLEx Solve Time: %r   CPLEX build time %s  feasible %s cost: %s" % (
+                solvetime, buildtime, sol.is_primal_feasible(), sol.get_objective_value())
+
             if createsolution:
 
                 Solution = self.CreateMRPSolution(sol, solvetime, nrvariable, nrconstraints)

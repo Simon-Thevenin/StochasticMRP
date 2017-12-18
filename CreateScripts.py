@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "rollinghorizon":
 
-        modelset = [ "HeuristicYFix"]
+        modelset = [ "HeuristicYFix", "YQFix"]
 
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
