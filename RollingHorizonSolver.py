@@ -32,7 +32,7 @@ class RollingHorizonSolver:
             savetreestructure = copy.deepcopy(self.Treestructure)
             savemodel = self.Model
             savedheuristicyfix = self.Owner.YeuristicYfix
-            self.Treestructure = [  500 ] + [1] *  ( self.WindowSize  + 1)
+            self.Treestructure = [1] + [  500 ] + [1] *  ( self.WindowSize  + 1)
             self.Model = Constants.ModelYQFix
             self.Owner.YeuristicYfix = False
             self.RollingHorizonMIPWarmStarts = self.DefineMIPsRollingHorizonSimulation()
@@ -154,16 +154,17 @@ class RollingHorizonSolver:
             else:
                 mipwarmstart = self.RollingHorizonMIPWarmStarts[decisionstage]
                 mipwarmstart.UpdateStartingInventory(startinginventory)
-
+                #mipwarmstart.Cplex.write("lpfile.lp")
                 solutionwarmstart = mipwarmstart.Solve( False )
 
                 mip = self.RollingHorizonMIPs[decisionstage]
                 # Update the starting inventory, and the known Y values
                 mip.UpdateStartingInventory(startinginventory)
+                #mip.Cplex.write("lpfile.lp")
                 array = [mipwarmstart.GetIndexProductionVariable(p, t, 0) for p in instance.ProductSet for t in instance.TimeBucketSet ]
                 values= mipwarmstart.Cplex.solution.get_values(array)
 
-                mip.GivenSetup = [[values[p * (len(instance.TimeBucketSet) ) + t  ]
+                mip.GivenSetup = [ [ values[p * (len(instance.TimeBucketSet) ) + t  ]
                                      for p in instance.ProductSet] for t in instance.TimeBucketSet]
 
                 if self.Model == Constants.ModelYFix:
@@ -197,8 +198,6 @@ class RollingHorizonSolver:
 
 
         return setups, quantity
-
-
 
 
 
