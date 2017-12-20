@@ -340,7 +340,7 @@ class Evaluator:
                 step *=   (Evaluated[k][seed] - mean)
             covariance +=   Probabilities[0][seed] * 1/K *step
 
-        term =  stats.norm.ppf(1 - 0.05) * math.sqrt((variancepondere + (covariance * (M - 1))) / (K * M))
+        term =  stats.norm.ppf(1 - 0.05) * math.sqrt(max( (variancepondere + (covariance * (M - 1))) / (K * M)), 0.0)
         LB = mean - term
         UB = mean + term
         d = datetime.now()
