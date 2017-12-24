@@ -218,12 +218,21 @@ if __name__ == "__main__":
                                     CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = 1)
                                     CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = 2)
                                     CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = 3)
+                                    CreateRHJob(instance, model, nrscenar, seed, timehorizon=4)
+                                    CreateRHJob(instance, model, nrscenar, seed, timehorizon=5)
+                                    CreateRHJob(instance, model, nrscenar, seed, timehorizon=6)
                                     fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
                                         instance, model, nrscenar, seed, NrScenarioEvaluation, 1) )
                                     fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
                                         instance, model, nrscenar, seed, NrScenarioEvaluation, 2) )
                                     fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
                                         instance, model, nrscenar, seed, NrScenarioEvaluation, 3) )
+                             fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
+                                 instance, model, nrscenar, seed, NrScenarioEvaluation, 4))
+                             fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
+                                 instance, model, nrscenar, seed, NrScenarioEvaluation, 5))
+                             fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
+                                 instance, model, nrscenar, seed, NrScenarioEvaluation, 6))
 
     for instance in InstanceSet:
         print "job_evpi_%s " % (instance )
