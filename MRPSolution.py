@@ -394,7 +394,7 @@ class MRPSolution:
 
 
     #This function print detailed statistics about the obtained solution (avoid using it as it consume memory)
-    def PrintDetailExcelStatistic(self, filepostscript, offsetseed, nrevaluation, solutionseed, testidentifier):
+    def PrintDetailExcelStatistic(self, filepostscript, offsetseed, nrevaluation, solutionseed, testidentifier, evaluationmethod):
 
         scenarioset = range(len(self.Scenarioset))
 
@@ -436,16 +436,16 @@ class MRPSolution:
 
         perscenariodf.to_excel(writer, "Info Per scenario")
 
-        general = testidentifier + [self.InSampleAverageDemand, offsetseed, nrevaluation, solutionseed]
+        general = testidentifier + [self.InSampleAverageDemand, offsetseed, nrevaluation, solutionseed, evaluationmethod]
         columnstab = ["Instance", "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed",
-                      "EVPI", "Average demand", "offsetseed", "nrevaluation", "solutionseed"]
+                      "EVPI", "Average demand", "offsetseed", "nrevaluation", "solutionseed", "evaluationmethod"]
         generaldf = pd.DataFrame(general, index=columnstab)
         generaldf.to_excel(writer, "General")
         writer.save()
 
 
     #This function print the statistic in an Excel file
-    def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed, evaluationduration, insample):
+    def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed, evaluationduration, insample, evaluationmethod):
 
         inventorycoststochasticperiod = -1
         setupcoststochasticperiod = -1
@@ -464,7 +464,7 @@ class MRPSolution:
                                           index=self.MRPInstance.TimeBucketSet)
 
             if Constants.PrintDetailsExcelFiles:
-                self.PrintDetailExcelStatistic( filepostscript, offsetseed, nrevaluation, solutionseed, testidentifier )
+                self.PrintDetailExcelStatistic( filepostscript, offsetseed, nrevaluation, solutionseed, testidentifier, evaluationmethod )
 
             #Compute the average inventory level at each level of the supply chain
             AverageStockAtLevel = [ ( sum( sum ( avginventorydf.loc[t,self.MRPInstance.ProductName[p]]
@@ -659,8 +659,6 @@ class MRPSolution:
         result = [max( sum( self.MRPInstance.ProcessingTime[q][k] * suggestedquantities[q] for q in self.MRPInstance.ProductSet ) - self.MRPInstance.Capacity[k]
                          , 0.0 )
                   for k in self.MRPInstance.ResourceSet]
-
-
 
         return result
 

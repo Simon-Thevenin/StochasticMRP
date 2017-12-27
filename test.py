@@ -176,7 +176,7 @@ def ComputeInSampleStatistis():
     for solution in solutions:
         if not Constants.PrintOnlyFirstStageDecision:
             solution.ComputeStatistics()
-        insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample", -1, 0, ScenarioSeed, -1, True )
+        insamplekpisstate = solution.PrintStatistics(TestIdentifier, "InSample", -1, 0, ScenarioSeed, -1, True, PolicyGeneration )
         lengthinsamplekpi = len(insamplekpisstate)
         InSampleKPIStat = [0] * lengthinsamplekpi
         for i in range(lengthinsamplekpi):
@@ -189,7 +189,7 @@ def Evaluate():
     ComputeInSampleStatistis()
     global OutOfSampleTestResult
     solutions = GetPreviouslyFoundSolution()
-    evaluator = Evaluator( Instance, solutions, [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy, model=Model, timehorizon= TimeHorizon )
+    evaluator = Evaluator( Instance, solutions, [], PolicyGeneration, ScenarioGeneration, treestructure=GetTreeStructure(), nearestneighborstrategy= NearestNeighborStrategy, model=Model, timehorizon= TimeHorizon, startseedresolve=ScenarioSeed )
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier )
     PrintFinalResult()
 
@@ -395,7 +395,7 @@ def EvaluateSingleSol(  ):
                           nearestneighborstrategy=NearestNeighborStrategy, evaluateaverage=(Model == Constants.Average or Model == Constants.AverageSS), usesafetystock = (Model == Constants.AverageSS),
                           evpiseed=SeedArray[0],
                           model = MIPModel,
-                          timehorizon=TimeHorizon, yeuristicyfix = yeuristicyfix )
+                          timehorizon=TimeHorizon, yeuristicyfix = yeuristicyfix, startseedresolve=ScenarioSeed  )
 
     OutOfSampleTestResult = evaluator.EvaluateYQFixSolution( TestIdentifier, EvaluatorIdentifier, saveevaluatetab= True, filename = GetEvaluationFileName(), evpi=EVPI  )
 
@@ -405,7 +405,7 @@ def EvaluateSingleSol(  ):
 def GatherEvaluation():
     global ScenarioSeed
     currentseedvalue = ScenarioSeed
-    evaluator = Evaluator(Instance, [], [], "", ScenarioGeneration, treestructure=GetTreeStructure(), model = Model)
+    evaluator = Evaluator(Instance, [], [], "", ScenarioGeneration, treestructure=GetTreeStructure(), model = Model, startseedresolve=ScenarioSeed )
     EvaluationTab = []
     ProbabilitiesTab =[]
     KPIStats = []

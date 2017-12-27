@@ -131,6 +131,7 @@ class RollingHorizonSolver:
             timedemandknownuntil = timetodecide - 1
 
             startinginventory = self.GetEndingInventoryAt(timetodecide ,   scenario)
+
             mip = None
             wronginventory = False
             for  p in self.GlobalInstance.ProductSet:
@@ -152,27 +153,37 @@ class RollingHorizonSolver:
                 solution = self.HeuristicSolvers[decisionstage].SolveWithSimpleRule( self.Model)
 
             else:
-                mipwarmstart = self.RollingHorizonMIPWarmStarts[decisionstage]
-                mipwarmstart.UpdateStartingInventory(startinginventory)
-                #mipwarmstart.Cplex.write("lpfile.lp")
-                solutionwarmstart = mipwarmstart.Solve( False )
+                if self.Owner.YeuristicYfix:
+                    mipwarmstart = self.RollingHorizonMIPWarmStarts[decisionstage]
+                    mipwarmstart.UpdateStartingInventory(startinginventory)
+                    mipwarmstart.ModifyBigMForScenario( startinginventory)
+                    #mipwarmstart.Cplex.write("lpfile.lp")
+                    solutionwarmstart = mipwarmstart.Solve( False )
+
+                    array = [mipwarmstart.GetIndexProductionVariable(p, t, 0) for p in instance.ProductSet for t in
+                             instance.TimeBucketSet]
+                    values = mipwarmstart.Cplex.solution.get_values(array)
+                    mip = self.RollingHorizonMIPs[decisionstage]
+                    mip.GivenSetup = [[values[p * (len(instance.TimeBucketSet)) + t]
+                                       for p in instance.ProductSet] for t in instance.TimeBucketSet]
 
                 mip = self.RollingHorizonMIPs[decisionstage]
                 # Update the starting inventory, and the known Y values
                 mip.UpdateStartingInventory(startinginventory)
-                #mip.Cplex.write("lpfile.lp")
-                array = [mipwarmstart.GetIndexProductionVariable(p, t, 0) for p in instance.ProductSet for t in instance.TimeBucketSet ]
-                values= mipwarmstart.Cplex.solution.get_values(array)
 
-                mip.GivenSetup = [ [ values[p * (len(instance.TimeBucketSet) ) + t  ]
-                                     for p in instance.ProductSet] for t in instance.TimeBucketSet]
 
-                if self.Model == Constants.ModelYFix:
-                    mip.WarmStartGivenSetupConstraints
+
+
                 if self.Owner.YeuristicYfix:
                     mip.UpdateSetup(mip.GivenSetup)
                     mip.ModifyMIPForSetup(mip.GivenSetup)
+                else:
+                    if self.Model == Constants.ModelYFix:
+                        mip.WarmStartGivenSetupConstraints()
+                    mip.ModifyBigMForScenario(startinginventory)
                 # Solve the MIP
+                #mip.Cplex.write("lpfile.lp")
+
                 solution = mip.Solve( False )
 
             # Save the relevant values

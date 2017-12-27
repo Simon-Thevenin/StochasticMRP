@@ -1395,20 +1395,34 @@ class MIPSolver(object):
                     constrainttuples.append((constrnr, righthandside))
 
         self.Cplex.linear_constraints.set_rhs(constrainttuples)
-        constrainttuples =[]
         if self.EVPI:
             #Recompute the value of M
-            for p in self.Instance.ProductSet:
-                for w in self.ScenarioSet:
-                    for t in self.Instance.TimeBucketSet:
+            totaldemandatt = [ 0 for p in self.Instance.ProductSet]
+            self.ModifyBigMForScenario( totaldemandatt)
 
 
+    def ModifyBigMForScenario(self, totaldemandatt ):
+        constrainttuples =[]
+        n = self.GetNrQuantityVariable()
+        AlreadyAdded = [[False] * n for w in range(self.GetNrProductionVariable())]
 
-                        column = self.GetIndexProductionVariable(p,t,w)
-                        coeff = self.GetBigMValue( self.Instance, self.Scenarios, p)
+        # Recompute the value of M
+        for p in self.Instance.ProductSet:
+            for w in self.ScenarioSet:
+                for t in self.Instance.TimeBucketSet:
+                    indexQ = self.GetIndexQuantityVariable(p, t, w)
+                    indexP = self.GetIndexProductionVariable(p, t, w) - self.GetStartProductionVariable()
+                    if not AlreadyAdded[indexP][indexQ]:
+                        AlreadyAdded[indexP][indexQ] = True
+                        column = self.GetIndexProductionVariable(p, t, w)
+                        coeff = self.GetBigMValue(self.Instance, self.Scenarios, p, totaldemandatt)
                         constrnr = self.BigMConstraintNR[w][p][t]
                         constrainttuples.append((constrnr, column, coeff))
-            self.Cplex.linear_constraints.set_coefficients(constrainttuples)
+        #print constrainttuples
+        #self.Cplex.write("mrp.lp")
+        self.Cplex.linear_constraints.set_coefficients(constrainttuples)
+
+
 
     #This function modify the MIP tosolve the scenario tree given in argument.
     #It is assumed that both the initial scenario tree and the new one have a single scenario

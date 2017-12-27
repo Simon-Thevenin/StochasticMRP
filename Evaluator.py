@@ -19,13 +19,13 @@ import pickle
 
 class Evaluator:
 
-    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False, usesafetystock = False, evpiseed = -1, model = "YQFix", timehorizon = 1, yeuristicyfix = False ):
+    def __init__( self, instance, solutions=None, sddps=None, policy = "", evpi =False, scenariogenerationresolve = "", treestructure =[], nearestneighborstrategy = "", optimizationmethod = "MIP", evaluateaverage = False, usesafetystock = False, evpiseed = -1, model = "YQFix", timehorizon = 1, yeuristicyfix = False, startseedresolve = 0 ):
         self.Instance = instance
         self.Solutions = solutions
         self.SDDPs = sddps
         self.NrSolutions = max( len( self.Solutions ), len(  self.SDDPs ) )
         self.Policy = policy
-        self.StartSeedResolve = 84752390
+        self.StartSeedResolve = startseedresolve
 
         self.ScenarioGenerationResolvePolicy = scenariogenerationresolve
         self.EVPI = evpi
@@ -178,7 +178,7 @@ class Evaluator:
             print "Duration od evaluation: %r, outofsampl cost:%r total proba:%r" % (duration, average, totalproba)  # %r"%( duration, Evaluated )
         self.EvaluationDuration = duration
 
-        KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed, duration, False )
+        KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed, duration, False, self.Policy )
         firstsolution = False
 
         #Save the evaluation result in a file (This is used when the evaluation is parallelized)
@@ -435,7 +435,7 @@ class Evaluator:
                                    for t in range(self.Instance.NrTimeBucket)] \
                                 + [0]
 
-                self.StartSeedResolve = self.StartSeedResolve + 1
+                #self.StartSeedResolve = self.StartSeedResolve + 1
                 scenariotree = ScenarioTree(self.Instance, treestructure, self.StartSeedResolve,
                                             averagescenariotree = self.EvaluateAverage,
                                             givenfirstperiod=demanduptotimet,
