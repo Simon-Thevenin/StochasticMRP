@@ -122,11 +122,11 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "rollinghorizon2":
 
-        modelset = [ "YQFix"]  #"AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",
+        modelset = [ "YQFix", "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal"]
 
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
-        nrcenarioyfqix = [ "500"]
+        nrcenarioyfqix = [ "200"]
         Generationset = ["RQMC"]
         NrScenarioEvaluation = "100"
         instancetosolvename = "./Instances/InstancesToSolveRH.csv"
