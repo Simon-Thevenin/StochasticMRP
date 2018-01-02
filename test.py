@@ -936,9 +936,9 @@ def GenerateInstancesRH():
     # Instance.SaveCompleteInstanceInExelFile()
     # instancecreated = instancecreated + [Instance.InstanceName]
     # # #
-    # Instance.ReadFromFile("G0044431", "SlowMoving", 4, 0, e="n", rk=0, leadtimestructure=0, lostsale=40, longtimehoizon=True, capacity=10)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
+    Instance.ReadFromFile("G0044431", "SlowMoving", 4, 0, e="n", rk=0, leadtimestructure=0, lostsale=40, longtimehoizon=True, capacity=10)
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
     # # # #
     # Instance.ReadFromFile("K0011313", "SlowMoving", 2, 0, e="n", rk=0, leadtimestructure=1, lostsale=20,  longtimehoizon=True)
     # Instance.SaveCompleteInstanceInExelFile()
@@ -980,9 +980,9 @@ def GenerateInstancesRH():
     # Instance.SaveCompleteInstanceInExelFile()
     # instancecreated = instancecreated + [Instance.InstanceName]
     # # # #
-    # Instance.ReadFromFile("K5017552", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20, longtimehoizon = True, capacity=10)
-    # Instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [Instance.InstanceName]
+    Instance.ReadFromFile("K5017552", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=1, lostsale=20, longtimehoizon = True, capacity = 10 )
+    Instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [Instance.InstanceName]
     # # # #
     # Instance.ReadFromFile("G5047313", "NonStationary", 4, 25, e="l", rk=50, leadtimestructure=1, lostsale=40, longtimehoizon = True)
     # Instance.SaveCompleteInstanceInExelFile()

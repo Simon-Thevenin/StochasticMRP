@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "rollinghorizon":
 
-        modelset = [ "HeuristicYFix", "YQFix"]
+        modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal", "HeuristicYFix", "YQFix"]
 
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
-        nrcenarioyfqix = [ "200"]
+        nrcenarioyfqix = [ "100"]
         Generationset = ["RQMC"]
         NrScenarioEvaluation = "100"
         instancetosolvename = "./Instances/InstancesToSolveRH.csv"
@@ -215,24 +215,15 @@ if __name__ == "__main__":
                                             fileeval.write("qsub ./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
                                                 instance, model, nrscenar, generation, method, Policy, seed))
 
-                                    CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = 1)
-                                    CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = 2)
-                                    CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = 3)
-                                    CreateRHJob(instance, model, nrscenar, seed, timehorizon=4)
-                                    CreateRHJob(instance, model, nrscenar, seed, timehorizon=5)
-                                    CreateRHJob(instance, model, nrscenar, seed, timehorizon=6)
-                                    fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
-                                        instance, model, nrscenar, seed, NrScenarioEvaluation, 1) )
-                                    fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
-                                        instance, model, nrscenar, seed, NrScenarioEvaluation, 2) )
-                                    fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
-                                        instance, model, nrscenar, seed, NrScenarioEvaluation, 3) )
-                                    fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
-                                         instance, model, nrscenar, seed, NrScenarioEvaluation, 4))
-                                    fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
-                                         instance, model, nrscenar, seed, NrScenarioEvaluation, 5))
-                                    fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
-                                         instance, model, nrscenar, seed, NrScenarioEvaluation, 6))
+
+                                    timehorizonmax = 10
+                                    if model == "HeuristicYFix":
+                                        timehorizonmax = 4
+                                    for th in range( 1, timehorizonmax) :
+                                        CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = th)
+                                        fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
+                                            instance, model, nrscenar, seed, NrScenarioEvaluation, th) )
+
 
     for instance in InstanceSet:
         print "job_evpi_%s " % (instance )

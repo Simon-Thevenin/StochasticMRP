@@ -344,7 +344,10 @@ class DecentralizedMRP(object):
                 self.Solution.Production[0][t+period][p] = 0
                 self.Planned[t][p] = True
 
-        return quantity[bestperiod]
+        result = 0
+        if bestperiod >= 0:
+            result = quantity[bestperiod]
+        return result
 
 
 
