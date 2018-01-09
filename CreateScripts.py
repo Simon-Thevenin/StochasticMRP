@@ -99,13 +99,12 @@ if __name__ == "__main__":
 
 
     if sys.argv[1] == "perfectinfo":
-        modelset = [ "YQFix", "YFix"]
-        modelset = [ "HeuristicYFix"]
+        modelset = [ "YQFix", "YFix", "HeuristicYFix"]
 
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
         nrcenarioyfqix = [ "500"]
-        Generationset = ["all", "MC", "RQMC"]
+        Generationset = ["all",  "RQMC"]
         instancetosolvename = "./Instances/InstancesToSolveBinomial.csv"
     #nrcenarioheuristicyfix = ["6400b"]
 
