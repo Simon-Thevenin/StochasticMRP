@@ -574,6 +574,8 @@ def SetTestIdentifierValue():
 def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve :
         policyset = ["Re-solve"]# "NNSAC", "NNDAC", "Re-solve"]
+        policyset = ["S"]  # "NNSAC", "NNDAC", "Re-solve"]
+
         if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or  Constants.IsRule(Model):
                 policyset = ["Fix", "Re-solve"]
 

@@ -499,12 +499,6 @@ class Evaluator:
 
             solution = self.MIPResolveTime[time].Solve( createsolution = False)
 
-
-
-            #if time == 4:
-            #    solution = self.MIPResolveTime[time].Solve()
-            #    solution.PrintToExcel("ResolutionTems4")
-
             if Constants.Debug:
                 print "End solving"
 

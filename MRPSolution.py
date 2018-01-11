@@ -263,7 +263,6 @@ class MRPSolution:
 
         return prodquantitydf, inventorydf, productiondf, bbackorderdf
 
-
     def ListFromDataFrame(self, prodquantitydf, inventorydf, productiondf, bbackorderdf):
         scenarioset = range(len(self.Scenarioset))
         timebucketset = self.GetConsideredTimeBucket()
@@ -271,9 +270,6 @@ class MRPSolution:
         self.InventoryLevel = [ [ [inventorydf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in timebucketset] for s in scenarioset ]
         self.Production = [ [ [productiondf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]
         self.BackOrder = [ [ [bbackorderdf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductWithExternalDemand]  for t in timebucketset] for s in scenarioset ]
-
-
-
 
     #constructor
     def __init__( self, instance = None, solquantity= None, solproduction= None, solinventory= None, solbackorder= None, scenarioset= None, scenriotree= None, partialsolution = False ):
@@ -650,6 +646,8 @@ class MRPSolution:
     def ComputeProductViolation( self, suggestedquantities, previousstocklevel ):
         result = [max( sum( self.MRPInstance.Requirements[q][p] * suggestedquantities[q] for q in self.MRPInstance.ProductSet ) - previousstocklevel[p]
                          , 0.0 )
+                  if not self.MRPInstance.HasExternalDemand[p]
+                  else 0.0
                   for p in self.MRPInstance.ProductSet]
 
 
@@ -717,8 +715,8 @@ class MRPSolution:
                 quantitytoremove =  (1.0*maxviolation) * ratiodemande[p]
                 suggestedquantities[ p ] = max( suggestedquantities[ p ]  - quantitytoremove, 0 )
 
-            #if Constants.Debug:
-            #    print " new quantities: %r " %( suggestedquantities )
+            if Constants.Debug:
+                print " new quantities: %r " %( suggestedquantities )
 
             productviolations    = self.ComputeProductViolation(suggestedquantities, previousstocklevel)
             productmaxvioalation = np.argmax(productviolations)
@@ -782,8 +780,10 @@ class MRPSolution:
 
     def GetQuantityToOrderS(self, time, previousdemands, previousquantity=[]):
 
-        previousdemands2 = previousdemands+[[0 for p in  self.MRPInstance.ProductSet]]
-        projectedbackorder, projectedstocklevel, currrentstocklevel = self.GetCurrentStatus(previousdemands2, previousquantity, time)
+        previousdemands2 = previousdemands+[[0.0 for p in  self.MRPInstance.ProductSet]]+[[0 for p in  self.MRPInstance.ProductSet]]
+        projectedbackorder, projectedstocklevelatstart, currrentstocklevel = self.GetCurrentStatus(previousdemands2, previousquantity, time)
+
+        previousquantity2 =  [[ previousquantity[t][p] for p in self.MRPInstance.ProductSet] for t in self.MRPInstance.TimeBucketSet]
 
         quantity = [ 0  for p in self.MRPInstance.ProductSet]
 
@@ -793,31 +793,25 @@ class MRPSolution:
             prodinlevel = [p for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p]== l]
             for p in prodinlevel:
                 if self.Production[0][time][p] >= 0.99:
-                          quantity[p] = max( self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
-                                                       - sum( previousquantity[t][p]
-                                                              - previousdemands[t][p]
-                                                              - sum(previousquantity[t][q] * self.MRPInstance.Requirements[q][p] for q in self.MRPInstance.ProductSet ) #external demand
-                                                              for t in range( time ) ) \
-                                                        + sum(quantity[q] * self.MRPInstance.Requirements[q][p]
-                                                               for q in self.MRPInstance.ProductSet)
-                                             , 0)  # external demand of the current period
-                          #print "ATTTENTION REMOVE tAHT if IT DOESNOT WORK %r %r"%(self.InventoryLevel, self.MRPInstance.TotalRequirement)
-                          # quantity[p] =  max( self.SValue[time][p]
-                          #                     -  sum( projectedstocklevel[q] * self.MRPInstance.TotalRequirement[q][p]
-                          #                              for q in self.MRPInstance.ProductSet if self.MRPInstance.HasExternalDemand[q])
-                          #                    , 0) # self.Instance.StartingInventories[p]
+                          #quantity[p] = max( self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
+                          #                             - sum( previousquantity[t][p]
+                          #                                    - previousdemands[t][p]
+                          #                                    - sum(previousquantity[t][q] * self.MRPInstance.Requirements[q][p] for q in self.MRPInstance.ProductSet ) #external demand
+                          #                                    for t in range( time ) ) \
+                          #                              + sum(quantity[q] * self.MRPInstance.Requirements[q][p]
+                          #                                     for q in self.MRPInstance.ProductSet)
+                          #                   , 0)  # external demand of the current period
 
+                          projectedbackorder, projectedstocklevel, currrentstocklevel = self.GetCurrentStatus(
+                              previousdemands2, previousquantity2, time)
+                          quantity[p] = max(self.SValue[time][p] - projectedstocklevel[time], 0)
+                          previousquantity2[time][p] = quantity[p]
 
-                          # maxl =  max(levelset)
-       # prodinlevel = [p for p in self.MRPInstance.ProductSet if not self.MRPInstance.Level[p] == maxl]
-       # for p in prodinlevel:
-       #     if self.Production[0][time][p] >= 0.99:
-       #         quantity[p] = 10000
 
 
         #if Constants.Debug:
         #    print "Chosen quantities for time %r : %r" % (time, quantity)
-        self.RepairQuantityToOrder(quantity, projectedstocklevel)
+        self.RepairQuantityToOrder(quantity, projectedstocklevelatstart)
         #if Constants.Debug:
         #    print "Quantities after repair for time %r : %r" % (time, quantity)
 

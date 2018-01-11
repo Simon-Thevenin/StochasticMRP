@@ -96,7 +96,12 @@ if __name__ == "__main__":
         instancetosolvename = "./Instances/InstancesToSolve.csv"
 #        instancetosolvename = "./Instances/InstancesToSolveUncapacitated.csv"
 
+    if sys.argv[1] == "Policy":
+        modelset = [ "YFix" ]
+        #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
+        nrcenarioyfix = ["6400b"]
 
+        instancetosolvename = "./Instances/InstancesToSolve.csv"
 
     if sys.argv[1] == "perfectinfo":
         modelset = [ "YQFix", "YFix", "HeuristicYFix"]
