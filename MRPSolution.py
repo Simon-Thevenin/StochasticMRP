@@ -575,7 +575,7 @@ class MRPSolution:
         return kpistat
 
     # This function return the current level of stock and back order based on the quantoty ordered and demands of previous perriod
-    def GetCurrentStatus(self, prevdemand, prevquanity, time):
+    def GetCurrentStatus(self, prevdemand, prevquanity, time, projinventorymusbepositive = True):
         projectedinventory = [ 0 for  p in self.MRPInstance.ProductSet ]
         projectedbackorder = [ 0 for p in self.MRPInstance.ProductWithExternalDemand ]
         currentbackorder = [ 0 for  p in self.MRPInstance.ProductWithExternalDemand ]
@@ -585,19 +585,19 @@ class MRPSolution:
         projinventory = [ ( self.MRPInstance.StartingInventories[p]
                                   + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] + 1 , 0 ) ) )
                                   - sum( prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time +1 ) for q in self.MRPInstance.ProductSet)
-                                  - sum( prevdemand[t][p] for t in range( time + 1) ) )
+                                  - sum( prevdemand[t][p] for t in range( time +1) ) )
                                     for p in self.MRPInstance.ProductSet ]
 
         currentinventory = [ ( self.MRPInstance.StartingInventories[p]
                                   + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] + 1 , 0 ) ) )
-                                  - sum( prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time +1 ) for q in self.MRPInstance.ProductSet)
+                                  - sum( prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time  ) for q in self.MRPInstance.ProductSet)
                                   - sum( prevdemand[t][p] for t in range( time ) ) )
                                     for p in self.MRPInstance.ProductSet ]
 
         for p in self.MRPInstance.ProductSet:
              if projinventory[p] > - 0.0001 : projectedinventory[p] = projinventory[p]
              else:
-                 if not self.MRPInstance.HasExternalDemand[p] and not self.NotCompleteSolution:
+                 if not self.MRPInstance.HasExternalDemand[p] and not self.NotCompleteSolution and projinventorymusbepositive:
                      print "inventory: %r " % (projinventory)
                      raise NameError(" A product without external demand cannot have backorder")
                      projectedbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
@@ -700,9 +700,11 @@ class MRPSolution:
         while( maxviolation > 0.000001 ) :
             if Constants.Debug:
                 print " the max violation %r is from %r " %( maxviolation, productmaxvioalation )
+                print " quantities: %r " % (suggestedquantities)
 
             if isproductviolation:
-                producyqithrequirement = [ p for p in self.MRPInstance.ProductSet if self.MRPInstance.Requirements[p][productmaxvioalation] > 0]
+                producyqithrequirement = [ p for p in self.MRPInstance.ProductSet
+                                           if self.MRPInstance.Requirements[p][productmaxvioalation] > 0]
                 totaldemand = sum( self.MRPInstance.Requirements[q][productmaxvioalation] * suggestedquantities[q] for q in self.MRPInstance.ProductSet )
                 ratiodemande = [ self.MRPInstance.Requirements[q][productmaxvioalation] * suggestedquantities[q] / totaldemand for q in self.MRPInstance.ProductSet ]
             else:
@@ -726,6 +728,7 @@ class MRPSolution:
             resourcemaxvioalation = np.argmax(resourceviolations)
             maxresourceviolation = resourceviolations[resourcemaxvioalation]
             maxviolation = max(maxresourceviolation, maxproductviolation)
+
             isproductviolation = maxviolation == maxproductviolation
 
         for p in self.MRPInstance.ProductSet:
@@ -802,16 +805,18 @@ class MRPSolution:
                           #                                     for q in self.MRPInstance.ProductSet)
                           #                   , 0)  # external demand of the current period
 
-                          projectedbackorder, projectedstocklevel, currrentstocklevel = self.GetCurrentStatus(
-                              previousdemands2, previousquantity2, time)
-                          quantity[p] = max(self.SValue[time][p] - projectedstocklevel[time], 0)
+                          projectedbackorder, projectedstocklevel, currrentstocklevel2 = self.GetCurrentStatus(
+                              previousdemands2, previousquantity2, time, projinventorymusbepositive= False)
+
+                          quantity[p] = max(self.SValue[time][p] - currrentstocklevel2[p], 0)
+                          self.RepairQuantityToOrder(quantity, currrentstocklevel)
                           previousquantity2[time][p] = quantity[p]
 
 
 
         #if Constants.Debug:
         #    print "Chosen quantities for time %r : %r" % (time, quantity)
-        self.RepairQuantityToOrder(quantity, projectedstocklevelatstart)
+
         #if Constants.Debug:
         #    print "Quantities after repair for time %r : %r" % (time, quantity)
 
