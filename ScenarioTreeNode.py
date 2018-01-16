@@ -5,6 +5,7 @@ from Constants import Constants
 from Tool import Tool
 from RQMCGenerator import RQMCGenerator
 import scipy as scipy
+
 #from matplotlib import pyplot as PLT
 
 class ScenarioTreeNode:
@@ -485,27 +486,31 @@ class ScenarioTreeNode:
     #return the quantity to which the stock is brought
     def GetS(self, p):
 
-        result = 0
-        node = self
-        # plus initial inventory
-        result += self.Instance.StartingInventories[p]
+        # result = 0
+        # node = self
+        # # plus initial inventory
+        # result += self.Instance.StartingInventories[p]
+        #
+        # while node is not None and node.Time >= 0:
+        #
+        #     result += node.QuantityToOrderNextTime[p]
+        #       # minus internal  demand
+        #     result -= sum( node.QuantityToOrderNextTime[q] * self.Instance.Requirements[q][p] for q in self.Instance.ProductSet )
+        #     #minus external demand
+        #     if node.Time > 0:
+        #         result -= node.Demand[p]
+        #     node = node.Parent
 
-        while node is not None and node.Time >= 0:
 
-            result += node.QuantityToOrderNextTime[p]
-              # minus internal  demand
-            result -= sum( node.QuantityToOrderNextTime[q] * self.Instance.Requirements[q][p] for q in self.Instance.ProductSet )
-            #minus external demand
-            if node.Time > 0:
-                result -= node.Demand[p]
-            node = node.Parent
+        if self.Time == 0:
+            inventory = [  self.Instance.StartingInventories[q]
+                           for q in self.Instance.ProductSet ]
+        else:
+            inventory = [self.Parent.InventoryLevelTime[q] if self.Instance.HasExternalDemand[q]
+                         else self.Parent.InventoryLevelNextTime[q]
+                         for q in self.Instance.ProductSet]
 
-        #if node.Time >= 0:
-        #    print "ATTTENTION REMOVE tAHT if IT DOESNOT WORK %r %r" % ( node.InventoryLevelTime, self.Instance.TotalRequirement)
 
-         #   result = node.QuantityToOrderNextTime[p]
-
-          #  result += sum( node.InventoryLevelTime[q] * self.Instance.TotalRequirement[q][p]
-           #                for q in self.Instance.ProductSet if self.Instance.HasExternalDemand[q]) #self.Instance.StartingInventories[p]
-
+        echelonstock = Tool.ComputeInventoryEchelon( self.Instance, p , inventory)
+        result =   max( self.QuantityToOrderNextTime[p] - echelonstock, 0)
         return result

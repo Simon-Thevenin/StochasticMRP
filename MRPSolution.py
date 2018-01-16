@@ -806,11 +806,13 @@ class MRPSolution:
                           #                   , 0)  # external demand of the current period
 
                           projectedbackorder, projectedstocklevel, currrentstocklevel2 = self.GetCurrentStatus(
-                              previousdemands2, previousquantity2, time, projinventorymusbepositive= False)
+                              previousdemands2, previousquantity2, time , projinventorymusbepositive= False)
 
-                          quantity[p] = max(self.SValue[time][p] - currrentstocklevel2[p], 0)
+                          echelonstock = Tool.ComputeInventoryEchelon(self.MRPInstance, p, currrentstocklevel2)
+                          quantity[p] = max(self.SValue[time ][p] - echelonstock, 0)
                           self.RepairQuantityToOrder(quantity, currrentstocklevel)
                           previousquantity2[time][p] = quantity[p]
+
 
 
 
@@ -822,6 +824,8 @@ class MRPSolution:
 
         error = 0
         return quantity, error
+
+
 
     #This function merge solution2 into self. Assume that solution2 has a single scenario
     def Merge( self, solution2 ):

@@ -71,3 +71,18 @@ class Tool:
                               for w in range(dimension3) ]
 
         return result;
+
+    # Compute the average (dependent) demand
+    @staticmethod
+    def ComputeInventoryEchelon(instance, prod, currrentstocklevel):
+
+        echelonstock  = [ currrentstocklevel[p] for p in instance.ProductSet ]
+        levelset = sorted(set(instance.Level), reverse=False)
+
+        for l in levelset:
+            prodinlevel = [p for p in instance.ProductSet if instance.Level[p] == l]
+            for p in prodinlevel:
+                echelonstock[p] = sum( echelonstock[q] * instance.Requirements[q][p] for q in instance.ProductSet) \
+                                   + echelonstock[p]
+
+        return echelonstock[prod]
