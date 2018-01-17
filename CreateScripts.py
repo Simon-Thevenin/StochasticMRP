@@ -100,7 +100,7 @@ if __name__ == "__main__":
         modelset = [ "YFix" ]
         #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
         nrcenarioyfix = ["6400b"]
-
+        Generationset = ["RQMC"]
         instancetosolvename = "./Instances/InstancesToSolve.csv"
 
     if sys.argv[1] == "perfectinfo":
