@@ -486,31 +486,28 @@ class ScenarioTreeNode:
     #return the quantity to which the stock is brought
     def GetS(self, p):
 
-        # result = 0
-        # node = self
+        node = self.Parent
         # # plus initial inventory
-        # result += self.Instance.StartingInventories[p]
+        inventory = [self.Instance.StartingInventories[q] - self.Demand[q]
+                    for q in self.Instance.ProductSet]
         #
-        # while node is not None and node.Time >= 0:
+        while node is not None and node.Time >= 0:
         #
-        #     result += node.QuantityToOrderNextTime[p]
-        #       # minus internal  demand
-        #     result -= sum( node.QuantityToOrderNextTime[q] * self.Instance.Requirements[q][p] for q in self.Instance.ProductSet )
-        #     #minus external demand
-        #     if node.Time > 0:
-        #         result -= node.Demand[p]
-        #     node = node.Parent
+            for q in self.Instance.ProductSet:
+              inventory[q] += node.QuantityToOrderNextTime[q]
+            #       # minus internal  demand
+              inventory[q]  -= sum( node.QuantityToOrderNextTime[q2] * self.Instance.Requirements[q2][q] for q2 in self.Instance.ProductSet )
+            #     #minus external demand
+              if node.Time > 0:
+                  inventory[q] -= node.Demand[q]
+            node = node.Parent
 
-
-        if self.Time == 0:
-            inventory = [  self.Instance.StartingInventories[q]
-                           for q in self.Instance.ProductSet ]
-        else:
-            inventory = [self.Parent.InventoryLevelTime[q] if self.Instance.HasExternalDemand[q]
-                         else self.Parent.InventoryLevelNextTime[q]
-                         for q in self.Instance.ProductSet]
 
 
         echelonstock = Tool.ComputeInventoryEchelon( self.Instance, p , inventory)
-        result =   max( self.QuantityToOrderNextTime[p] - echelonstock, 0)
+
+        result =  self.QuantityToOrderNextTime[p] + echelonstock
+        if Constants.Debug:
+            print "t= %r Compute S, inv level %r echelon %r quantity %r" % (self.Time, inventory, echelonstock, self.QuantityToOrderNextTime[p] )
+
         return result

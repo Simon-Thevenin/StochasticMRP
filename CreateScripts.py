@@ -92,7 +92,6 @@ if __name__ == "__main__":
         nrcenarioyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b"]
         nrcenarioheuristicyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b",
                                   "102400b", "153600"]
-
         instancetosolvename = "./Instances/InstancesToSolve.csv"
 #        instancetosolvename = "./Instances/InstancesToSolveUncapacitated.csv"
 

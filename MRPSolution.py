@@ -589,7 +589,7 @@ class MRPSolution:
                                     for p in self.MRPInstance.ProductSet ]
 
         currentinventory = [ ( self.MRPInstance.StartingInventories[p]
-                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] + 1 , 0 ) ) )
+                                  + sum( prevquanity[t][p] for t in range( time ) ) #range( max( time - self.MRPInstance.Leadtimes[p] + 1 , 0 ) ) )
                                   - sum( prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time  ) for q in self.MRPInstance.ProductSet)
                                   - sum( prevdemand[t][p] for t in range( time ) ) )
                                     for p in self.MRPInstance.ProductSet ]
@@ -795,7 +795,7 @@ class MRPSolution:
         for l in levelset:
             prodinlevel = [p for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p]== l]
             for p in prodinlevel:
-                if self.Production[0][time][p] >= 0.99:
+                if self.Production[0][time][p] >= 0.9:
                           #quantity[p] = max( self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
                           #                             - sum( previousquantity[t][p]
                           #                                    - previousdemands[t][p]
@@ -807,9 +807,9 @@ class MRPSolution:
 
                           projectedbackorder, projectedstocklevel, currrentstocklevel2 = self.GetCurrentStatus(
                               previousdemands2, previousquantity2, time , projinventorymusbepositive= False)
-
                           echelonstock = Tool.ComputeInventoryEchelon(self.MRPInstance, p, currrentstocklevel2)
                           quantity[p] = max(self.SValue[time ][p] - echelonstock, 0)
+
                           self.RepairQuantityToOrder(quantity, currrentstocklevel)
                           previousquantity2[time][p] = quantity[p]
 
@@ -840,6 +840,7 @@ class MRPSolution:
         S = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
         probatime = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
+
         for w in range( len(self.Scenarioset) ):
             s =self.Scenarioset[w]
             for n in s.Nodes:
@@ -851,8 +852,7 @@ class MRPSolution:
                             S[t][p] = S[t][p] + n.GetS( p) * s.Probability
                             probatime[t][p] = probatime[t][p] + s.Probability
 
-
-        self.SValue = [ [ S[t][p]/ probatime[t][p] if probatime[t][p] > 0 else 0.0
+        self.SValue = [ [ S[t][p] / probatime[t][p] if probatime[t][p] > 0 else 0.0
                           for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
         if Constants.Debug:

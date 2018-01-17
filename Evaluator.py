@@ -237,6 +237,7 @@ class Evaluator:
                     if self.Policy == Constants.Resolve:
                          givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,  givensetup)
 
+
         return givensetup, givenquantty
 
     #This method run a forward pass of the SDDP algorithm on the considered set of scenarios
