@@ -847,13 +847,16 @@ class MRPSolution:
                     t= n.Time
                     for p in self.MRPInstance.ProductSet:
                         if   t< self.MRPInstance.NrTimeBucket and  (self.Production[ w][ t ][ p ] >=0.9 ):
-                            #if n.GetS( p) > S[t][p]:
-                            #    S[t][p] = n.GetS( p)
-                            S[t][p] = S[t][p] + n.GetS( p) * s.Probability
+                            if n.GetS( p) > S[t][p]:
+                                S[t][p] = n.GetS( p)
+                            #S[t][p] = S[t][p] + n.GetS( p) * s.Probability
                             probatime[t][p] = probatime[t][p] + s.Probability
 
-        self.SValue = [ [ S[t][p] / probatime[t][p] if probatime[t][p] > 0 else 0.0
-                          for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
+       # self.SValue = [ [ S[t][p] / probatime[t][p] if probatime[t][p] > 0 else 0.0
+       #                   for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
+
+        self.SValue = [[S[t][p]  if probatime[t][p] > 0 else 0.0
+                        for p in self.MRPInstance.ProductSet] for t in self.MRPInstance.TimeBucketSet]
 
         if Constants.Debug:
             print "The value of S is: %r" % (self.SValue)
