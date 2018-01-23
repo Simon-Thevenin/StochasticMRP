@@ -207,7 +207,7 @@ def GetTreeStructure( ):
         if Model == Constants.Average or Model == Constants.AverageSS:
             treestructure = [1, 1] + [1] * (nrtimebucketconsidered - 1) + [0]
 
-        if Model == Constants.ModelYQFix:
+        if Model == Constants.ModelYQFix or Model == Constants.ModelSFix:
             treestructure = [1, int(NrScenario)] + [1] * (nrtimebucketconsidered- 1) + [0]
 
         if Model == Constants.ModelYFix or Model ==Constants.ModelHeuristicYFix:

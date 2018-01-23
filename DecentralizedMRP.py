@@ -163,11 +163,6 @@ class DecentralizedMRP(object):
         return safetystock
 
 
-
-
-
-
-
     def FixGivenSolution(self, givensetup, givenquantities, demanduptotimet ):
 
         self.FixedSetup = ( len(givensetup) > 0 )
@@ -180,6 +175,7 @@ class DecentralizedMRP(object):
                         self.Planned[t][p] = True
                         self.Solution.ProductionQuantity[0][t][p] = givenquantities[t][p]
                         self.Solution.Scenarioset[0].Demands[t][p] = demanduptotimet[t][p]
+
 
     #This method solve the instance given in argument wth the rule given in argument
     #The problem is decomposed by product, starting from end item to highest level component.
@@ -229,6 +225,7 @@ class DecentralizedMRP(object):
             self.Solution.Print()
 
         return self.Solution
+
 
     # This method apply lot for lot to solve the instance
     def GetIdealQuantityToOrder(self,  p, t, rule):
@@ -330,6 +327,7 @@ class DecentralizedMRP(object):
         if self.Solution.Production[0][t][p] == 1 and t + self.Instance.Leadtimes[p]<self.Instance.NrTimeBucket:
             maxperiod = self.Instance.NrTimeBucket - (t + self.Instance.Leadtimes[p]) +1
             quantity = [0] * maxperiod
+
             for nrperiod in range(1,maxperiod):
                 #Compute the cost associated with ordering until t
                 cost = (self.Instance.SetupCosts[p] + sum(tau * demand[t + tau+ self.Instance.Leadtimes[p]]  for tau in range( nrperiod )) ) /nrperiod
@@ -339,6 +337,8 @@ class DecentralizedMRP(object):
                 if cost < bestcost :
                     bestperiod = nrperiod
                     bestcost = cost
+                else :
+                    break
         if quantity[bestperiod] > 0:
             for period in range(1, bestperiod):
                 self.Solution.Production[0][t+period][p] = 0

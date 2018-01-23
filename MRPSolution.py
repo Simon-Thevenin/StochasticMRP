@@ -38,14 +38,16 @@ class MRPSolution:
                       "CplexNrVariables", "IsPartialSolution"]
         generaldf = pd.DataFrame(general, index=columnstab)
         return generaldf
+
     # This function print the solution different pickle files
     def PrintToPickle(self, description):
-            prodquantitydf, inventorydf, productiondf, bbackorderdf = self.DataFrameFromList()
+            prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf = self.DataFrameFromList()
 
             prodquantitydf.to_pickle( self.GetSolutionPickleFileNameStart(description, 'ProductionQuantity') )
             productiondf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'Production') )
             inventorydf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'InventoryLevel') )
             bbackorderdf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'BackOrder') )
+            svaluedf.to_pickle( self.GetSolutionPickleFileNameStart( description,  'SValue' ) )
 
             generaldf = self.GetGeneralInfoDf()
             generaldf.to_pickle( self.GetSolutionPickleFileNameStart(description, "Generic") )
@@ -58,7 +60,7 @@ class MRPSolution:
 
     #This function print the solution in an Excel file in the folde "Solutions"
     def PrintToExcel(self, description):
-        prodquantitydf, inventorydf, productiondf, bbackorderdf = self.DataFrameFromList()
+        prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf = self.DataFrameFromList()
         writer = pd.ExcelWriter( self.GetSolutionFileName( description ), engine='openpyxl')
         #givenquantty = [[self.ProductionQuantity.ix[p, t].get_value(0) for p in self.MRPInstance.ProductSet]
         #                for t in self.MRPInstance.TimeBucketSet]
@@ -68,6 +70,7 @@ class MRPSolution:
         productiondf.to_excel(writer, 'Production')
         inventorydf.to_excel(writer, 'InventoryLevel')
         bbackorderdf.to_excel(writer, 'BackOrder')
+        svaluedf.to_excel(writer, 'SValue')
 
         generaldf = self.GetGeneralInfoDf()
         generaldf.to_excel(writer, "Generic")
@@ -87,7 +90,9 @@ class MRPSolution:
         inventorydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "InventoryLevel" )
         bbackorderdf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "BackOrder" )
 
+
         wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
+        svaluedf = Tool.ReadDataFrame(wb2, 'SValue')
         instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
         scenariotreeinfo = Tool.ReadDataFrame(wb2, "ScenarioTree")
 
@@ -95,7 +100,7 @@ class MRPSolution:
         productiondf.index = index
         inventorydf.index = index
         bbackorderdf.index = [ index[p] for p in indexbackorder]
-        return prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo
+        return prodquantitydf, productiondf, inventorydf, bbackorderdf, svaluedf, instanceinfo, scenariotreeinfo
 
     def ReadPickleFiles(self, description):
         # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
@@ -103,26 +108,27 @@ class MRPSolution:
         productiondf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'Production' ) )
         inventorydf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'InventoryLevel' ) )
         bbackorderdf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'BackOrder' ) )
+        svaluedf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'SValue' ) )
 
         instanceinfo = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, "Generic") )
         scenariotreeinfo = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, "ScenarioTree"))
 
-        return prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo
+        return prodquantitydf, productiondf, inventorydf, bbackorderdf, svaluedf, instanceinfo, scenariotreeinfo
 
 
     #This function read the instance from the excel file
     def ReadFromFile(self, description):
-
 
         if Constants.PrintSolutionFileToExcel:
             wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
             instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
             self.MRPInstance = MRPInstance()
             self.MRPInstance.ReadInstanceFromExelFile(instanceinfo.get_value('Name', 0) )
-            prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadExcelFiles( description , index=self.MRPInstance.ProductName, indexbackorder=self.MRPInstance.ProductWithExternalDemand)
-
+            prodquantitydf, productiondf, inventorydf, bbackorderdf, svaluedf,  instanceinfo, scenariotreeinfo = self.ReadExcelFiles( description , index=self.MRPInstance.ProductName, indexbackorder=self.MRPInstance.ProductWithExternalDemand)
         else:
-            prodquantitydf, productiondf, inventorydf, bbackorderdf, instanceinfo, scenariotreeinfo = self.ReadPickleFiles( description )
+            prodquantitydf, productiondf, inventorydf, bbackorderdf, svaluedf, instanceinfo, scenariotreeinfo = self.ReadPickleFiles( description )
+
+
 
         self.MRPInstance = MRPInstance()
         if Constants.Debug:
@@ -142,7 +148,7 @@ class MRPSolution:
                                            seed = scenariotreeseed,
                                            averagescenariotree =  avgscenariotree,
                                            scenariogenerationmethod =  scenariogenerationm,
-                                           model = model)
+                                           model = model )
 
         self.IsPartialSolution = instanceinfo.get_value('IsPartialSolution', 0)
         self.CplexCost = instanceinfo.get_value( 'CplexCost', 0 )
@@ -156,7 +162,7 @@ class MRPSolution:
         if  self.IsPartialSolution:
             self.Scenarioset = [ self.Scenarioset [ 0 ] ]
         self.SenarioNrset = range(len(self.Scenarioset))
-        self.ListFromDataFrame(prodquantitydf, inventorydf, productiondf, bbackorderdf)
+        self.ListFromDataFrame(prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf)
         if not self.IsPartialSolution:
             self.ComputeCost()
 
@@ -169,11 +175,12 @@ class MRPSolution:
 
     #This function prints a solution
     def Print(self):
-        prodquantitydf, inventorydf, productiondf, bbackorderdf = self.DataFrameFromList()
+        prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf = self.DataFrameFromList()
         print "production ( cost: %r): \n %r" % ( self.SetupCost , productiondf )
         print "production quantities: \n %r" % prodquantitydf
         print "inventory levels at the end of the periods: ( cost: %r ) \n %r" % ( self.InventoryCost, inventorydf )
         print "backorder quantities:  ( cost: %r ) \n %r" % ( self.BackOrderCost, bbackorderdf )
+        print "S values: \n %r" % svaluedf
 
     #This funciton conpute the different costs (inventory, backorder, setups) associated with the solution.
     def ComputeCost(self):
@@ -245,6 +252,7 @@ class MRPSolution:
         solinventory = [[self.InventoryLevel[s][t][p]  for t in timebucketset for s in scenarioset ] for p in self.MRPInstance.ProductSet ]
         solproduction = [[self.Production[s][t][p]  for t in self.MRPInstance.TimeBucketSet for s in scenarioset ] for p in self.MRPInstance.ProductSet ]
         solbackorder = [[self.BackOrder[s][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ]  for t in timebucketset for s in scenarioset ] for p in self.MRPInstance.ProductWithExternalDemand ]
+        svalue = [  [self.SValue[t][p] for t in timebucketset ]  for p in self.MRPInstance.ProductSet ]
 
         iterables = [timebucketset, range(len(self.Scenarioset))]
         multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
@@ -260,16 +268,21 @@ class MRPSolution:
         nameproductwithextternaldemand = [self.MRPInstance.ProductName[p] for p in self.MRPInstance.ProductWithExternalDemand]
         bbackorderdf = pd.DataFrame(solbackorder, index=nameproductwithextternaldemand, columns=multiindex)
         bbackorderdf.index.name = "Product"
+        svaluedf = pd.DataFrame(svalue, index=self.MRPInstance.ProductName, columns=timebucketset)
 
-        return prodquantitydf, inventorydf, productiondf, bbackorderdf
 
-    def ListFromDataFrame(self, prodquantitydf, inventorydf, productiondf, bbackorderdf):
+        return prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf
+
+    def ListFromDataFrame(self, prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf):
         scenarioset = range(len(self.Scenarioset))
         timebucketset = self.GetConsideredTimeBucket()
         self.ProductionQuantity = [ [ [ prodquantitydf.loc[  str(self.MRPInstance.ProductName[ p ]), (t,s)]  for p in self.MRPInstance.ProductSet ]  for t in timebucketset ]for s in scenarioset ]
         self.InventoryLevel = [ [ [inventorydf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in timebucketset] for s in scenarioset ]
         self.Production = [ [ [productiondf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]
         self.BackOrder = [ [ [bbackorderdf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductWithExternalDemand]  for t in timebucketset] for s in scenarioset ]
+        self.SValue = [ [ svaluedf.loc[ self.MRPInstance.ProductName[p], t]
+                            for p in self.MRPInstance.ProductSet ]
+                            for t in timebucketset ]
 
     #constructor
     def __init__( self, instance = None, solquantity= None, solproduction= None, solinventory= None, solbackorder= None, scenarioset= None, scenriotree= None, partialsolution = False ):

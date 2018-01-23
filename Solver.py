@@ -31,7 +31,10 @@ class Solver:
     #This method call the right method
     def Solve(self):
         solution = None
-        if self.Model  == Constants.ModelYQFix or self.Model == Constants.Average or self.Model == Constants.AverageSS:
+        if self.Model  == Constants.ModelYQFix \
+                or self.Model == Constants.Average \
+                or self.Model == Constants.AverageSS \
+                or self.Model == Constants.ModelSFix:
             solution = self.SolveYQFix()
 
         if self.Model  == Constants.ModelYFix:
@@ -47,10 +50,15 @@ class Solver:
 
     #This function creates the CPLEX model and solves it.
     def MRP( self, treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False, yfixheuristic = False, warmstart = False ):
+
+        scenariotreemodel = self.Model
+        if self.Model == Constants.ModelSFix:
+            scenariotreemodel = Constants.ModelYQFix
+
         scenariotree = ScenarioTree( self.Instance, treestructur, self.ScenarioSeed,
                                          averagescenariotree=averagescenario,
                                          scenariogenerationmethod = self.ScenarioGeneration,
-                                         model= self.Model)
+                                         model= scenariotreemodel)
 
         MIPModel = self.Model
         if self.Model == Constants.Average:

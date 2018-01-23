@@ -87,7 +87,7 @@ if __name__ == "__main__":
     scenarsetall = ["4096"]
     if sys.argv[1] == "preliminary":
         modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix",  "YFix", "HeuristicYFix" ]
-        #modelset = ["L4L", "EOQ", "POQ", "SilverMeal"]
+        modelset = ["SFix"]
         nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
         nrcenarioyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b"]
         nrcenarioheuristicyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b",
