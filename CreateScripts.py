@@ -180,6 +180,7 @@ if __name__ == "__main__":
                  policyset = [ "Fix"]
                  methodset = ["MIP"]
                  avg = False
+
                  if model == "YFix":
                      scenarsetsampling= nrcenarioyfix
                      generationset = Generationset
@@ -188,7 +189,7 @@ if __name__ == "__main__":
                      scenarsetsampling = nrcenarioheuristicyfix
                      generationset = Generationset
                      policyset = policyyfix
-                 if model == "YQFix":
+                 if model == "YQFix"  or model == "SFix":
                      scenarsetsampling = nrcenarioyfqix
                      policyset = policyyqfix
                      generationset = Generationset
