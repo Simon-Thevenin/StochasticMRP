@@ -1,6 +1,7 @@
 from Constants import Constants
 from ScenarioTreeNode import ScenarioTreeNode
 from MRPSolution import MRPSolution
+from ModelGrave import ModelGrave
 #from Solver import Solver
 
 import math
@@ -111,57 +112,53 @@ class DecentralizedMRP(object):
                 t += 1
                 projectedbackorder, projectedinventory = self.GetProjetedInventory(t + self.Instance.Leadtimes[p])
 
-
-
-
         return t
 
-    def ComputeSafetyStock(self):
+    def GetServiceLevel(self, p):
+        return  float(self.Instance.BackorderCosts[p] ) / float((self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] ) )
 
-        # self.LevelSet = sorted(set(self.Instance.Level), reverse=False)
-        # incrementalinventorycost = [ [ self.Instance.InventoryCosts[p]
-        #                                for p in self.Instance.ProductWithExternalDemand ]
-        #                                     for t in self.Instance.TimeBucketSet ]
-        #
-        # cumulativerequirement = [[ self.Instance.Requirements[p][q]
-        #                             for q in self.Instance.ProductSet]
-        #                          for p in self.Instance.ProductWithExternalDemand]
-        #
-        # for l in self.LevelSet:
-        #     if l>2:
-        #         prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
-        #         for q in prodinlevel:
-        #             for p in self.Instance.ProductWithExternalDemand:
-        #                 cumulativerequirement[p][q] = sum( self.Instance.Requirements[q2][q] * cumulativerequirement[p][q2]
-        #                                                    for q2 in self.Instance.ProductSet )
-        # for l in self.LevelSet:
-        #    for p in self.Instance.ProductWithExternalDemand:
-        #          if self.FixUntil + l < self.Instance.NrTimeBucket:
-        #             incrementalinventorycost[self.FixUntil + l][p] = self.Instance.InventoryCosts[p]  \
-        #                                              - sum (cumulativerequirement[p][q] * self.Instance.InventoryCosts[q]
-        #                                                     for q in self.Instance.ProductSet if self.Instance.Level[q] == l)
+    def GetMaxDemanWithRespectToServiceLevel(self, p, t):
+        ratio = self.GetServiceLevel(p)
+
+        result = ScenarioTreeNode.TransformInverse(   [[ratio]],
+                                                      1,
+                                                      1,
+                                                      self.Instance.Distribution,
+                                                      [self.Instance.ForecastedAverageDemand[t][p]],
+                                                      [self.Instance.ForcastedStandardDeviation[t][p]])[0][0]
+
+        return result
+
+
+    def ComputeSafetyStock(self):
 
         safetystock = [ [ 0.0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
         for p in self.Instance.ProductWithExternalDemand:
             for t in range(self.FixUntil+1, self.Instance.NrTimeBucket):
-
-                ratio = float(self.Instance.BackorderCosts[p] ) / float((self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] ) )
-                #ratio = float(self.Instance.BackorderCosts[p]) / float(
-                #    (self.Instance.BackorderCosts[p] + incrementalinventorycost[t][p]))
-
-                #value = norm.ppf( ratio, self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p] )
-                x = ScenarioTreeNode.TransformInverse([[ratio]],
-                                                  1,
-                                                  1,
-                                                  self.Instance.Distribution,
-                                                  [self.Instance.ForecastedAverageDemand[t][p]],
-                                                  [self.Instance.ForcastedStandardDeviation[t][p]])[0][0]
-
-
-                safetystock[t][p] = x - self.Instance.ForecastedAverageDemand[t][p]
+                safetystock[t][p] = self.GetMaxDemanWithRespectToServiceLevel(p, t) - self.Instance.ForecastedAverageDemand[t][p]
 
         return safetystock
 
+
+    def GetSafetyStockGrave(self, S, SI, p, t):
+        result = sum(self.GetMaxDemanWithRespectToServiceLevel(p, tau)
+                    - self.Instance.ForecastedAverageDemand[tau][p]
+                    for tau in range(t - SI - self.Instance.Leadtimes[p], t - S+1))
+
+        return result
+
+    def GetCostGrave(self, S, SI, p, t):
+        result = self.Instance.InventoryCosts[p] \
+                 *  self.GetSafetyStockGrave( S, SI, p, t)
+        return result
+
+
+
+    def ComputeSafetyStockGrave(self):
+        modelgrave = ModelGrave( self.Instance, self )
+        S, SI = modelgrave.ComputeSSI()
+        safetystock= [[self.GetSafetyStockGrave( S[p], SI[p], p, t) for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+        return safetystock
 
     def FixGivenSolution(self, givensetup, givenquantities, demanduptotimet ):
 
@@ -250,6 +247,8 @@ class DecentralizedMRP(object):
         return result
 
 
+
+
     def GetProjetedInventory(self, time):
         prevquanity = [[self.Solution.ProductionQuantity[0][t1][p1] for p1 in self.Instance.ProductSet] for t1 in
                        self.Instance.TimeBucketSet]
@@ -318,10 +317,6 @@ class DecentralizedMRP(object):
         bestcost = Constants.Infinity
         bestperiod = -1
         demand = self.ComputeDependentDemandBasedOnProjectedInventory(p)
-
-
-
-
 
         quantity = [0]
         if self.Solution.Production[0][t][p] == 1 and t + self.Instance.Leadtimes[p]<self.Instance.NrTimeBucket:

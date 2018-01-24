@@ -204,7 +204,7 @@ def GetTreeStructure( ):
         nrtimebucketconsidered = Instance.NrTimeBucket
         if PolicyGeneration == Constants.RollingHorizon:
             nrtimebucketconsidered = Instance.MaxLeadTime + TimeHorizon
-        if Model == Constants.Average or Model == Constants.AverageSS:
+        if Model == Constants.Average or Model == Constants.AverageSS or Model == Constants.AverageSSGrave:
             treestructure = [1, 1] + [1] * (nrtimebucketconsidered - 1) + [0]
 
         if Model == Constants.ModelYQFix or Model == Constants.ModelSFix:
@@ -381,7 +381,7 @@ def EvaluateSingleSol(  ):
 
     yeuristicyfix = False
     MIPModel = Model
-    if Model == Constants.Average or Model == Constants.AverageSS:
+    if Model == Constants.Average or Model == Constants.AverageSS  or Model == Constants.AverageSSGrave:
         MIPModel = Constants.ModelYQFix
     if Model == Constants.ModelHeuristicYFix:
         MIPModel = Constants.ModelYFix
@@ -392,7 +392,10 @@ def EvaluateSingleSol(  ):
 
     evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, evpi=EVPI,
                           scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(),
-                          nearestneighborstrategy=NearestNeighborStrategy, evaluateaverage=(Model == Constants.Average or Model == Constants.AverageSS), usesafetystock = (Model == Constants.AverageSS),
+                          nearestneighborstrategy=NearestNeighborStrategy,
+                           evaluateaverage=(Model == Constants.Average or Model == Constants.AverageSS or Model == Constants.AverageSSGrave),
+                           usesafetystock = (Model == Constants.AverageSS),
+                           usesafetystockGrave =(Model == Constants.AverageSSGrave),
                           evpiseed=SeedArray[0],
                           model = MIPModel,
                           timehorizon=TimeHorizon, yeuristicyfix = yeuristicyfix, startseedresolve=ScenarioSeed  )
@@ -574,11 +577,13 @@ def SetTestIdentifierValue():
 def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve :
         policyset = ["Re-solve"]# "NNSAC", "NNDAC", "Re-solve"]
-        policyset = ["S"]  # "NNSAC", "NNDAC", "Re-solve"]
+          # "NNSAC", "NNDAC", "Re-solve"]
 
-        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or  Constants.IsRule(Model):
+        if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or Model == Constants.AverageSSGrave or  Constants.IsRule(Model):
                 policyset = ["Fix", "Re-solve"]
 
+        if Model == Constants.ModelSFix:
+            policyset = ["S"]
         if Instance.NrTimeBucket >= 10:
             policyset = ["Fix"]
         perfectsenarioset = [0]

@@ -24,6 +24,7 @@ class Solver:
         self.GivenSetup = []
         self.MIPSetting = mipsetting
         self.UseSS = False
+        self.UseSSGrave = False
         self.TestDescription = testdescription
         self.EvaluateSolution = evaluatesol
         self.TreeStructure = treestructure
@@ -34,6 +35,7 @@ class Solver:
         if self.Model  == Constants.ModelYQFix \
                 or self.Model == Constants.Average \
                 or self.Model == Constants.AverageSS \
+                or self.Model == Constants.AverageSSGrave\
                 or self.Model == Constants.ModelSFix:
             solution = self.SolveYQFix()
 
@@ -72,10 +74,10 @@ class Solver:
                                     mipsetting = self.MIPSetting,
                                     warmstart = warmstart,
                                     usesafetystock= self.UseSS,
+                                    usesafetystockgrave=  self.UseSSGrave,
                                     logfile= self.TestDescription)
         if Constants.Debug:
             self.Instance.PrintInstance()
-
         if Constants.PrintScenarios:
             mipsolver.PrintScenarioToFile(  )
 
@@ -117,13 +119,15 @@ class Solver:
 
         average = False
         nrscenario = int(self.NrScenario)
-        if self.Model == Constants.Average or self.Model == Constants.AverageSS:
+        if self.Model == Constants.Average or self.Model == Constants.AverageSS or self.Model == Constants.AverageSSGrave:
             average = True
             nrscenario = 1
 
             if self.Model == Constants.AverageSS:
                  self.UseSS = True
-                 self.Model = Constants.Average
+            if self.Model == Constants.AverageSSGrave:
+                 self.UseSSGrave = True
+            self.Model = Constants.Average
 
         treestructure = [1, nrscenario] +  [1] * ( self.Instance.NrTimeBucket - 1 ) +[ 0 ]
         solution, mipsolver = self.MRP( treestructure, average, recordsolveinfo=True )

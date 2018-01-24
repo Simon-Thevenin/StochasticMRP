@@ -21,6 +21,7 @@ class Constants:
     Model_Fix = "_Fix"
     Average = "Average"
     AverageSS = "AverageSS"
+    AverageSSGrave = "AverageSSGrave"
     MonteCarlo = "MC"
     RQMC = "RQMC"
     All = "all"

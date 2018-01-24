@@ -29,6 +29,7 @@ class MIPSolver(object):
                  mipsetting = "",
                  warmstart = False,
                  usesafetystock = False,
+                 usesafetystockgrave = False,
                  rollinghorizon = False,
                  logfile = ""):
 
@@ -73,6 +74,7 @@ class MIPSolver(object):
         self.DemandKnownUntil = demandknownuntil
         self.YFixHeuristic= yfixheuristic
         self.UseSafetyStock = usesafetystock
+        self.UseSafetyStockGrave = usesafetystockgrave
         self.ComputeIndices()
         self.Scenarios =  scenariotree.GetAllScenarios( True )
 
@@ -271,6 +273,10 @@ class MIPSolver(object):
     def GetIndexKnownDemand(self, p):
         return self.GetStartKnownDemand() + self.Instance.ProductWithExternalDemandIndex[p]
 
+    #This function return the index of the variable known demand. They are ordered by product (only for products wiht external demands)
+    def GetSoftPenaltyVariable(self, p):
+        return self.GetStartPenaltyVariabel() + p
+
     #This function return the index of the variable initial inventory (which should not be used with knowndemand)
     def GetIndexInitialInventoryInRollingHorizon(self, p):
         if self.DemandKnownUntil >= 0:
@@ -279,10 +285,15 @@ class MIPSolver(object):
 
     def GetStartKnownDemand(self):
         if not self.UseImplicitNonAnticipativity: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
-        if self.Model == Constants.ModelYQFix: return self.StartBackorderVariableWithoutNonAnticipativity + self.NrBackorderVariableWithoutNonAnticipativity
+        if self.Model == Constants.ModelYQFix and not self.UseSafetyStockGrave: return self.StartBackorderVariableWithoutNonAnticipativity + self.NrBackorderVariableWithoutNonAnticipativity
+        if self.Model == Constants.ModelYQFix and  self.UseSafetyStockGrave: return self.GetStartPenaltyVariabel() + self.Instance.NrProduct
         if self.Model == Constants.ModelYFix: return self.StartBackorderVariableYFix + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.Model_Fix: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.ModelSFix: return self.StartSVariable + self.NrSVariable
+
+    def GetStartPenaltyVariabel(self):
+        if self.Model == Constants.ModelYQFix and  self.UseSafetyStockGrave:
+            return self.StartBackorderVariableWithoutNonAnticipativity + self.NrBackorderVariableWithoutNonAnticipativity
 
     #return the index at which the backorder variables starts
     def GetStartBackorderVariable( self ):
@@ -492,6 +503,13 @@ class MIPSolver(object):
                                       lb = [0.0] * nrsvariable,
                                       ub = [self.M] * nrsvariable )
 
+        if self.UseSafetyStockGrave:
+            nrsvariable = len(self.Instance.ProductSet)
+            penalty =[ self.Instance.InventoryCosts[p] * 1.5 for p in self.Instance.ProductSet ]
+            self.Cplex.variables.add( obj = penalty ,
+                                      lb=[0.0] * nrsvariable,
+                                      ub=[self.M] * nrsvariable)
+
         #Add a variable which represents the known demand:
         if self.DemandKnownUntil >= 0:
             nrknowndemand = len( self.Instance.ProductWithExternalDemand )
@@ -634,11 +652,13 @@ class MIPSolver(object):
     # Demand and materials requirement: set the value of the invetory level and backorder quantity according to
     #  the quantities produced and the demand
     def CreateFlowConstraints( self ):
+
+        decentralized = DecentralizedMRP(self.Instance)
         if self.UseSafetyStock:
-           decentralized = DecentralizedMRP( self.Instance )
-           safetystock  = decentralized.ComputeSafetyStock()
+            safetystock  = decentralized.ComputeSafetyStock()
 
-
+        if self.UseSafetyStockGrave:
+            safetystock  = decentralized.ComputeSafetyStockGrave()
 
         self.FlowConstraintNR = [[[ "" for t in self.Instance.TimeBucketSet]  for p in self.Instance.ProductSet] for w in self.ScenarioSet]
         AlreadyAdded = [ False for w in range(self.GetNrInventoryVariable())  ]
@@ -651,6 +671,7 @@ class MIPSolver(object):
                 quantityvarceoff = []
                 dependentdemandvar = []
                 dependentdemandvarcoeff = []
+
                 for t in self.Instance.TimeBucketSet:
                     indexinventoryvar = self.GetIndexInventoryVariable(p, t, w) - self.GetStartInventoryVariable()
                     backordervar = []
@@ -976,9 +997,6 @@ class MIPSolver(object):
               for p in self.Instance.ProductSet:
                     for t in self.Instance.TimeBucketSet:
 
-
-
-
                            varsecheloninv =[]
                            coeffecheloninv = []
                            if t>0:
@@ -1009,7 +1027,7 @@ class MIPSolver(object):
                                                     senses=["L"],
                                                     rhs=righthandside)
 
-                           coeff = coeffecheloninv + [1.0,  -1.0, -1.0* BigM[p]]
+                           coeff = coeffecheloninv + [1.0,  -1.0, -1.0 * BigM[p]]
                            righthandside = [ -1.0 * BigM[ p ] ]
 
                            self.Cplex.linear_constraints.add(
@@ -1020,8 +1038,7 @@ class MIPSolver(object):
     # For debug purpose, transfor the multi stage in two stage by adding the required constraints
 
     def CreateTwostageFromMultistageConstraints(self):
-        AlreadyAdded = [[False for v in range(self.GetNrQuantityVariable())] for w in
-                                                   range(self.GetNrQuantityVariable())]
+        AlreadyAdded = [[False for v in range(self.GetNrQuantityVariable())] for w in range(self.GetNrQuantityVariable())]
         for w1 in self.ScenarioSet:
             for w2 in self.ScenarioSet:
                     for p in self.Instance.ProductSet:
@@ -1040,6 +1057,25 @@ class MIPSolver(object):
                                    self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                                       senses=["E"],
                                                                       rhs=righthandside )
+
+    def AddConstraintSafetyStock( self ):
+        decentralized = DecentralizedMRP(self.Instance)
+        safetystock = decentralized.ComputeSafetyStockGrave()
+        AlreadyAdded = [ False for v in range(self.GetNrInventoryVariable()) ]
+        for w in self.ScenarioSet:
+            for p in self.Instance.ProductSet:
+                 for t in self.Instance.TimeBucketSet:
+                     IndexInventory1 = self.GetIndexInventoryVariable(p, t, w)
+                     positionvar = self.GetStartInventoryVariable() - IndexInventory1
+                     if not AlreadyAdded[positionvar]:
+                          AlreadyAdded[positionvar] = True
+                          vars = [IndexInventory1 , self.GetSoftPenaltyVariable(p)]
+                          coeff = [1.0, 1.0]
+
+                          self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                             senses=["G"],
+                                                             rhs=[ safetystock[t][p] ] )
+
 
     # Define the constraint of the model
     def CreateConstraints( self ):
@@ -1068,6 +1104,9 @@ class MIPSolver(object):
 
         if self.Model == Constants.ModelSFix:
             self.AddLinkingConstraintsSQ()
+
+        if self.UseSafetyStockGrave:
+            self.AddConstraintSafetyStock()
 
         #if self.UseSafetyStock:
         #    self.CreateSafetyStockConstraints()
