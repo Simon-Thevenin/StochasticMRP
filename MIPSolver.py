@@ -285,8 +285,7 @@ class MIPSolver(object):
 
     def GetStartKnownDemand(self):
         if not self.UseImplicitNonAnticipativity: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
-        if self.Model == Constants.ModelYQFix and not self.UseSafetyStockGrave: return self.StartBackorderVariableWithoutNonAnticipativity + self.NrBackorderVariableWithoutNonAnticipativity
-        if self.Model == Constants.ModelYQFix and  self.UseSafetyStockGrave: return self.GetStartPenaltyVariabel() + self.Instance.NrProduct
+        if self.Model == Constants.ModelYQFix : return self.StartBackorderVariableWithoutNonAnticipativity + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.ModelYFix: return self.StartBackorderVariableYFix + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.Model_Fix: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.ModelSFix: return self.StartSVariable + self.NrSVariable
@@ -503,12 +502,12 @@ class MIPSolver(object):
                                       lb = [0.0] * nrsvariable,
                                       ub = [self.M] * nrsvariable )
 
-        if self.UseSafetyStockGrave:
-            nrsvariable = len(self.Instance.ProductSet)
-            penalty =[ self.Instance.InventoryCosts[p] * 1.5 for p in self.Instance.ProductSet ]
-            self.Cplex.variables.add( obj = penalty ,
-                                      lb=[0.0] * nrsvariable,
-                                      ub=[self.M] * nrsvariable)
+        #if self.UseSafetyStockGrave:
+        #    nrsvariable = len(self.Instance.ProductSet)
+        #    penalty =[ self.Instance.InventoryCosts[p] * 1.5 for p in self.Instance.ProductSet ]
+        #    self.Cplex.variables.add( obj = penalty ,
+        #                              lb=[0.0] * nrsvariable,
+        #                              ub=[self.M] * nrsvariable)
 
         #Add a variable which represents the known demand:
         if self.DemandKnownUntil >= 0:
@@ -1061,20 +1060,52 @@ class MIPSolver(object):
     def AddConstraintSafetyStock( self ):
         decentralized = DecentralizedMRP(self.Instance)
         safetystock = decentralized.ComputeSafetyStockGrave()
+        maxquantityat = self.MaximumArchievableSafetyStock()
         AlreadyAdded = [ False for v in range(self.GetNrInventoryVariable()) ]
         for w in self.ScenarioSet:
             for p in self.Instance.ProductSet:
                  for t in self.Instance.TimeBucketSet:
                      IndexInventory1 = self.GetIndexInventoryVariable(p, t, w)
                      positionvar = self.GetStartInventoryVariable() - IndexInventory1
-                     if not AlreadyAdded[positionvar]:
+                     if not AlreadyAdded[positionvar] and maxquantityat[t][p] >  safetystock[t][p]:
                           AlreadyAdded[positionvar] = True
-                          vars = [IndexInventory1 , self.GetSoftPenaltyVariable(p)]
-                          coeff = [1.0, 1.0]
+                          vars = [IndexInventory1 ]
+                          coeff = [1.0]
 
                           self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                              senses=["G"],
                                                              rhs=[ safetystock[t][p] ] )
+
+
+    def MaximumArchievableSafetyStock( self ):
+
+        maximumquanityatt =  [ [ 0   for p in self.Instance.ProductSet ]   for t in self.Instance.TimeBucketSet]
+
+
+
+        levelset = sorted(set(self.Instance.Level), reverse=False)
+
+        for l in levelset:
+            prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
+            for p in prodinlevel:
+
+
+                for t in self.Instance.TimeBucketSet:
+                    if t == 0:
+                        maximumquanityatt[t][p] = self.Instance.StartingInventories[p]
+                    else:
+                        RequiredProduct = [ q for q in self.Instance.ProductSet if self.Instance.Requirements[q][p] > 0 ]
+                        if len(RequiredProduct) > 0:
+                            minquantity = min( maximumquanityatt[ t - self.Instance.Leadtimes[ p ] ][ q ] for q in RequiredProduct )
+                        else:
+                            minquantity = Constants.Infinity
+
+                        if maximumquanityatt[t-1][p] < Constants.Infinity and  minquantity < Constants.Infinity:
+                            maximumquanityatt[t][p] = maximumquanityatt[t-1][p] + minquantity
+                        else:
+                            maximumquanityatt[t][p] = Constants.Infinity
+
+        return maximumquanityatt
 
 
     # Define the constraint of the model

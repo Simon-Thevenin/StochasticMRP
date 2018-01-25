@@ -10,9 +10,12 @@ class ModelGrave(object):
         self.Instance = instance
         self.Owner = owner
         self.nrvaluesS = 6
-        self.NrVariable = self.Instance.NrProduct * self.nrvaluesS  * self.nrvaluesS
+        self.NrVariable = len(self.Instance.TimeBucketSet) * self.Instance.NrProduct * self.nrvaluesS  * self.nrvaluesS
         self.Cplex = cplex.Cplex()
-        self.XSSI = [ [ [ p + s * self.Instance.NrProduct  + si * self.nrvaluesS  * self.Instance.NrProduct
+        self.XSSI = [ [ [ [ t + p * len(self.Instance.TimeBucketSet)
+                            + s * self.Instance.NrProduct * len(self.Instance.TimeBucketSet)
+                            + si * self.nrvaluesS  * self.Instance.NrProduct * len(self.Instance.TimeBucketSet)
+                          for t in self.Instance.TimeBucketSet ]
                      for p in range( self.Instance.NrProduct ) ]
                    for s in range( self.nrvaluesS ) ]
                  for si in range( self.nrvaluesS ) ]
@@ -26,47 +29,51 @@ class ModelGrave(object):
         return s, si
 
     def CreateVariable( self ):
-        costXSSI = [   sum ( self.Owner.GetCostGrave(s, si, p, t) for t in self.Instance.TimeBucketSet )
+        costXSSI = [    self.Owner.GetCostGrave(s, si, p, t)
                          for si in range(self.nrvaluesS)
                          for s in range(self.nrvaluesS)
-                         for p in range(self.Instance.NrProduct) ]
+                         for p in range(self.Instance.NrProduct)
+                        for t in self.Instance.TimeBucketSet]
 
-        NameXSSI = [ "Namepssi_%s_%s_%s"%(p, s, si)
+        NameXSSI = [ "Namepssi_%s_%s_%s%s"%(p, s, si, t)
                      for si in range(self.nrvaluesS)
                      for s in range(self.nrvaluesS)
-                     for p in range(self.Instance.NrProduct) ]
+                     for p in range(self.Instance.NrProduct)
+                     for t in self.Instance.TimeBucketSet]
 
 
         self.Cplex.variables.add(costXSSI,
-                                 types=['B'] * self.NrVariable )
+                                 types=['B'] * self.NrVariable,
+                                 names = NameXSSI )
     def CreateConstraints(self):
 
+        for t in self.Instance.TimeBucketSet:
+            for p in range(self.Instance.NrProduct):
+                 vars = [ self.XSSI[si][s][p][t] for s in range(self.nrvaluesS)  for si in range(self.nrvaluesS) ]
+                 coeff = [1]* len(vars)
 
-        for p in range(self.Instance.NrProduct):
-             vars = [ self.XSSI[si][s][p] for s in range(self.nrvaluesS)  for si in range(self.nrvaluesS) ]
-             coeff = [1]* len(vars)
+                 self.Cplex.linear_constraints.add( lin_expr=[ cplex.SparsePair(vars, coeff) ],
+                                                    senses=[ "E" ],
+                                                    rhs=[ 1 ] )
 
-             self.Cplex.linear_constraints.add( lin_expr=[ cplex.SparsePair(vars, coeff) ],
-                                                senses=[ "E" ],
-                                                rhs=[ 1 ] )
+        for t in self.Instance.TimeBucketSet:
+            for p in range(self.Instance.NrProduct):
+                for s in range(self.nrvaluesS):
+                    for si in range(self.nrvaluesS):
+                         if( ( self.Instance.HasExternalDemand[p] and s > 0 )
+                             or ( s - si > self.Instance.Leadtimes[p] )
+                             or ( si < s ) ):
+                            vars = [self.XSSI[si][s][p][t]]
+                            coeff = [1]
 
-        for p in range(self.Instance.NrProduct):
-            for s in range(self.nrvaluesS):
-                for si in range(self.nrvaluesS):
-                     if( ( self.Instance.HasExternalDemand[p] and s > 0 )
-                         or ( s - si > self.Instance.Leadtimes[p] )
-                         or ( si > s ) ):
-                        vars = [self.XSSI[si][s][p]]
-                        coeff = [1]
-
-                        self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
-                                                          senses=["E"],
-                                                          rhs=[0])
+                            self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                              senses=["E"],
+                                                              rhs=[0])
 
     def Solve(self):
         self.Cplex.objective.set_sense(self.Cplex.objective.sense.minimize)
         #if Constants.Debug:
-        #    self.Cplex.write("mrp.lp")
+        #self.Cplex.write("mrpoo.lp")
 
         # name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
         # file = open("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename, 'w')
@@ -96,21 +103,24 @@ class ModelGrave(object):
 
         values = sol.get_values(xssi)
 
-        xssivalues = [[[ values [ p + s * self.Instance.NrProduct + si * self.nrvaluesS * self.Instance.NrProduct]
+        xssivalues = [[[[  values[ t + p * len(self.Instance.TimeBucketSet)
+                                     + s * self.Instance.NrProduct * len(self.Instance.TimeBucketSet)
+                                     + si * self.nrvaluesS * self.Instance.NrProduct * len(self.Instance.TimeBucketSet)]
+                       for t in self.Instance.TimeBucketSet]
                        for p in range(self.Instance.NrProduct)]
                       for s in range(self.nrvaluesS)]
                      for si in range(self.nrvaluesS)]
 
 
 
-        S = [ -1 for p in range(self.Instance.NrProduct)]
-        SI = [ -1 for p in range(self.Instance.NrProduct)]
-
-        for p in range(self.Instance.NrProduct):
-            for s in range(self.nrvaluesS):
-                for si in range(self.nrvaluesS):
-                    if xssivalues[si][s][p] > 0.9:
-                        SI[p]= si
-                        S[p] = s
+        S = [  [ -1 for p in range(self.Instance.NrProduct)] for t in self.Instance.TimeBucketSet ]
+        SI = [ [ -1 for p in range(self.Instance.NrProduct)] for t in self.Instance.TimeBucketSet ]
+        for t in self.Instance.TimeBucketSet:
+            for p in range(self.Instance.NrProduct):
+                for s in range(self.nrvaluesS):
+                    for si in range(self.nrvaluesS):
+                        if xssivalues[si][s][p][t] == 1:
+                            SI[t][p]= si
+                            S[t][p] = s
 
         return S, SI

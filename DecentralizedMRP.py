@@ -157,7 +157,7 @@ class DecentralizedMRP(object):
     def ComputeSafetyStockGrave(self):
         modelgrave = ModelGrave( self.Instance, self )
         S, SI = modelgrave.ComputeSSI()
-        safetystock= [[self.GetSafetyStockGrave( S[p], SI[p], p, t) for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+        safetystock= [[self.GetSafetyStockGrave( S[t][p], SI[t][p], p, t) for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         return safetystock
 
     def FixGivenSolution(self, givensetup, givenquantities, demanduptotimet ):

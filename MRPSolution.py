@@ -9,6 +9,7 @@ from MRPInstance import MRPInstance
 import openpyxl as opxl
 from ast import literal_eval
 import numpy as np
+from matplotlib import pyplot as plt
 
 class MRPSolution:
 
@@ -854,16 +855,54 @@ class MRPSolution:
         probatime = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
 
+        # tuple =[]
+        # considerednode = []
         for w in range( len(self.Scenarioset) ):
             s =self.Scenarioset[w]
             for n in s.Nodes:
                     t= n.Time
+                    print t
                     for p in self.MRPInstance.ProductSet:
                         if   t< self.MRPInstance.NrTimeBucket and  (self.Production[ w][ t ][ p ] >=0.9 ):
                             if n.GetS( p) > S[t][p]:
                                 S[t][p] = n.GetS( p)
                             #S[t][p] = S[t][p] + n.GetS( p) * s.Probability
                             probatime[t][p] = probatime[t][p] + s.Probability
+
+                            # if t == 3 and p == 8 and not n in considerednode:
+                            #     considerednode.append(n)
+                            #     node = n.Parent
+                            #     # # plus initial inventory
+                            #     inventory = [n.Instance.StartingInventories[q] - n.Demand[q] if n.Time > 0
+                            #                  else n.Instance.StartingInventories[q]
+                            #                  for q in n.Instance.ProductSet]
+                            #     #
+                            #     while node is not None and node.Time >= 0:
+                            #         #
+                            #         for q in n.Instance.ProductSet:
+                            #             inventory[q] += node.QuantityToOrderNextTime[q]
+                            #             #       # minus internal  demand
+                            #             inventory[q] -= sum(
+                            #                 node.QuantityToOrderNextTime[q2] * n.Instance.Requirements[q2][q] for q2
+                            #                 in n.Instance.ProductSet)
+                            #             #     #minus external demand
+                            #             if node.Time > 0:
+                            #                 inventory[q] -= node.Demand[q]
+                            #         node = node.Parent
+                            #
+                            #     echelonstock = Tool.ComputeInventoryEchelon(n.Instance, p, inventory)
+                            #
+                            #     quantity = n.InventoryLevelTime[p] + n.InventoryLevelNextTime[p]
+                            #     tuple.append( (echelonstock, quantity) )
+        # print "will print the df"
+        #
+        # df = pd.DataFrame(tuple, columns=["echelon stock", "quantity"])
+        # print df
+        # gorpued1 = df.groupby("echelon stock").agg({ "quantity":[sum, min, max]} )
+        # gorpued2 = df.groupby("echelon stock").mean()
+        #
+        # print gorpued1
+        # print gorpued2
 
        # self.SValue = [ [ S[t][p] / probatime[t][p] if probatime[t][p] > 0 else 0.0
        #                   for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
@@ -873,6 +912,20 @@ class MRPSolution:
 
         if Constants.Debug:
             print "The value of S is: %r" % (self.SValue)
+
+            # for p in self.Instance.ProductSet:
+            #     for t in range( nrtimebucketswithuncertainty + firstuknown ) :
+            #        pts = [self.DemandYQFixRQMC[ s][t][p] for s in range( nrscenarion ) ]
+            #        print "The transformed point at dim %d at time %d : %r  " % (p,t, pts)
+            #        with open('Histpoints%dt%d.csv' % (p, t), 'w+') as f:
+            #            # v_hist = np.ravel(v)  # 'flatten' v
+            #            fig = PLT.figure()
+            #            ax1 = fig.add_subplot(111)
+            #            n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
+            #            PLT.show()
+
+
+
 
 
     #return the scenario tree of the average demand
