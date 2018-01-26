@@ -9,7 +9,7 @@ from MRPInstance import MRPInstance
 import openpyxl as opxl
 from ast import literal_eval
 import numpy as np
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 class MRPSolution:
 

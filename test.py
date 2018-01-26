@@ -207,7 +207,7 @@ def GetTreeStructure( ):
         if Model == Constants.Average or Model == Constants.AverageSS or Model == Constants.AverageSSGrave:
             treestructure = [1, 1] + [1] * (nrtimebucketconsidered - 1) + [0]
 
-        if Model == Constants.ModelYQFix or Model == Constants.ModelSFix:
+        if Model == Constants.ModelYQFix or Model == Constants.ModelSFix  or Model == Constants.ModelYSFix:
             treestructure = [1, int(NrScenario)] + [1] * (nrtimebucketconsidered- 1) + [0]
 
         if Model == Constants.ModelYFix or Model ==Constants.ModelHeuristicYFix:
@@ -584,6 +584,10 @@ def RunEvaluation(  ):
 
         if Model == Constants.ModelSFix:
             policyset = ["S"]
+
+        if Model == Constants.ModelYSFix:
+            policyset = ["YS"]
+
         if Instance.NrTimeBucket >= 10:
             policyset = ["Fix"]
         perfectsenarioset = [0]

@@ -36,7 +36,8 @@ class Solver:
                 or self.Model == Constants.Average \
                 or self.Model == Constants.AverageSS \
                 or self.Model == Constants.AverageSSGrave\
-                or self.Model == Constants.ModelSFix:
+                or self.Model == Constants.ModelSFix\
+                or self.Model == Constants.ModelYSFix:
             solution = self.SolveYQFix()
 
         if self.Model  == Constants.ModelYFix:
@@ -54,7 +55,7 @@ class Solver:
     def MRP( self, treestructur = [ 1, 8, 8, 4, 2, 1, 0 ], averagescenario = False, recordsolveinfo = False, yfixheuristic = False, warmstart = False ):
 
         scenariotreemodel = self.Model
-        if self.Model == Constants.ModelSFix:
+        if self.Model == Constants.ModelSFix or self.Model == Constants.ModelYSFix:
             scenariotreemodel = Constants.ModelYQFix
 
         scenariotree = ScenarioTree( self.Instance, treestructur, self.ScenarioSeed,

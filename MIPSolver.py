@@ -979,6 +979,7 @@ class MIPSolver(object):
                         range(self.GetNrQuantityVariable())]
 
         BigM = [MIPSolver.GetBigMValue(self.Instance, self.Scenarios, p) for p in self.Instance.ProductSet]
+        BigM2 = [MIPSolver.GetBigMDemValue(self.Instance, self.Scenarios, p) for p in self.Instance.ProductSet]
 
         extendedrequirement = [ [ 1 if p==q else self.Instance.Requirements[q][p]   for p in self.Instance.ProductSet ]   for q in self.Instance.ProductSet]
         levelset = sorted(set(self.Instance.Level), reverse=False)
@@ -1013,12 +1014,17 @@ class MIPSolver(object):
 
 
 
-                           coeff = coeffecheloninv + [1.0,  -1.0, BigM[p]]
+                           M = BigM2[p]#sum( BigM[q] * extendedrequirement[q][p] for q in self.Instance.ProductWithExternalDemand  )
+                           #req = [extendedrequirement[q][p] for q in self.Instance.ProductSet]
+                           #print " %s : %s"%(p, req)
+                           #print "%s vs %s vs %s"%( M, BigM[p], BigM2[p] )
+
+                           coeff = coeffecheloninv + [1.0,  -1.0, M]
                            vars = varsecheloninv +\
                                    [self.GetIndexQuantityVariable(p, t, w),
                                        self.GetIndexSVariable(p, t),
                                        self.GetIndexProductionVariable(p, t, w)]
-                           righthandside = [BigM[p]]
+                           righthandside = [M]
                            #
                            # # PrintConstraint( vars, coeff, righthandside )
                            self.Cplex.linear_constraints.add(
@@ -1026,8 +1032,8 @@ class MIPSolver(object):
                                                     senses=["L"],
                                                     rhs=righthandside)
 
-                           coeff = coeffecheloninv + [1.0,  -1.0, -1.0 * BigM[p]]
-                           righthandside = [ -1.0 * BigM[ p ] ]
+                           coeff = coeffecheloninv + [1.0,  -1.0, -1.0 * M]
+                           righthandside = [ -1.0 * M ]
 
                            self.Cplex.linear_constraints.add(
                                 lin_expr=[cplex.SparsePair(vars, coeff)],
