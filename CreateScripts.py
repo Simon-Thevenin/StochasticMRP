@@ -189,7 +189,7 @@ if __name__ == "__main__":
                      scenarsetsampling = nrcenarioheuristicyfix
                      generationset = Generationset
                      policyset = policyyfix
-                 if model == "YQFix"  or model == "SFix":
+                 if model == "YQFix"  or model == "SFix" or model == "YSFix":
                      scenarsetsampling = nrcenarioyfqix
                      policyset = policyyqfix
                      generationset = Generationset
