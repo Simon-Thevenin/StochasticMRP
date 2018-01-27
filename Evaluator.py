@@ -235,6 +235,9 @@ class Evaluator:
                     if self.Policy == Constants.InferS:
                         givenquantty[ti], error = sol.GetQuantityToOrderS( ti,demanduptotimet, givenquantty )
 
+                    if self.Policy == Constants.InferYS:
+                        givenquantty[ti], error = sol.GetQuantityToOrderS(ti, demanduptotimet, givenquantty, useYS=True)
+
                     if self.Policy == Constants.Resolve:
                          givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,  givensetup)
 
