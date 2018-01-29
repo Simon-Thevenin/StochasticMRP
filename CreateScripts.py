@@ -85,9 +85,10 @@ if __name__ == "__main__":
     policyyfix = ["Re-solve"]
     Generationset = ["RQMC", "MC"]
     scenarsetall = ["4096"]
+    Nrseed = 1
     if sys.argv[1] == "preliminary":
-        modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix",  "YFix", "HeuristicYFix" ]
-        modelset = ["YSFix"]
+        Nrseed = 5
+        modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix",  "YFix", "HeuristicYFix", "SFix" ]
         nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
         nrcenarioyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b"]
         nrcenarioheuristicyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b",
@@ -141,7 +142,7 @@ if __name__ == "__main__":
     #Generationset = ["all", "MC", "RQMC"]
 
     methodset = ["MIP"]
-    Nrseed = 1
+
 
     csvfile = open(instancetosolvename, 'rb')
     data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
