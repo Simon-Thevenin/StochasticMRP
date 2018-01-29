@@ -241,14 +241,15 @@ if __name__ == "__main__":
 
 
     for instance in InstanceSet:
-        print "job_evpi_%s " % (instance )
-        qsub_filename = "./Jobs/job_evpi_%s" % (instance )
-        qsub_file = open(qsub_filename, 'w')
-        allscenario = 0
-        if 'Binomial' in instance:
-            allscenario = 1
-            NrScenarioEvaluation = 4096
-        qsub_file.write("""
+        for seed in range(Nrseed):
+            print "job_evpi_%s " % (instance )
+            qsub_filename = "./Jobs/job_evpi_%s" % (instance )
+            qsub_file = open(qsub_filename, 'w')
+            allscenario = 0
+            if 'Binomial' in instance:
+                allscenario = 1
+                NrScenarioEvaluation = 4096
+            qsub_file.write("""
 #!/bin/bash -l
 #
 #$ -cwd
