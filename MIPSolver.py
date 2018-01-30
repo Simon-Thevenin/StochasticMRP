@@ -870,7 +870,6 @@ class MIPSolver(object):
 
         nextvar= 0
         for productset in [ self.Instance.ProductWithExternalDemand, self.Instance.ProductWithoutExternalDemand ]:
-            print productset
             vars = [self.GetIndexTotalCost() + nextvar]
             nextvar = nextvar +1
             coeff = [1]
@@ -920,7 +919,6 @@ class MIPSolver(object):
 
 
             righthandside = [0]
-            print coeff
             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["E"],
                                                            rhs=righthandside)

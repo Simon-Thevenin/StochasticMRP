@@ -875,7 +875,6 @@ class MRPSolution:
             s =self.Scenarioset[w]
             for n in s.Nodes:
                     t= n.Time
-                    print t
                     for p in self.MRPInstance.ProductSet:
                         if   t< self.MRPInstance.NrTimeBucket and  (self.Production[ w][ t ][ p ] >=0.9 ):
                             if n.GetS( p) > S[t][p]:
@@ -972,4 +971,5 @@ class MRPSolution:
                               solinventory=stock)
 
         result.NotCompleteSolution = True
+        result.SValue =[ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ]
         return result
