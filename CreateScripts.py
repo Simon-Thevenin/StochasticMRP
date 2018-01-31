@@ -231,7 +231,7 @@ if __name__ == "__main__":
                                                 instance, model, nrscenar, generation, method, Policy, seed))
 
 
-                                    timehorizonmax = 10
+                                    timehorizonmax = 5
                                     if model == "HeuristicYFix":
                                         timehorizonmax = 4
                                     for th in range( 1, timehorizonmax) :
