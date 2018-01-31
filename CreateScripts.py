@@ -233,7 +233,7 @@ if __name__ == "__main__":
 
                                     timehorizonmax = 5
                                     if model == "HeuristicYFix":
-                                        timehorizonmax = 4
+                                        timehorizonmax = 3
                                     for th in range( 1, timehorizonmax) :
                                         CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = th)
                                         fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
