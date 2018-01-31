@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "rollinghorizon":
 
-        modelset = [  "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal", "HeuristicYFix", "YQFix"]
+        modelset = [  "AverageSS", "Average", "AverageSSGrave",  "L4L", "EOQ", "POQ", "SilverMeal", "HeuristicYFix", "YQFix", "SFix"]
 
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "rollinghorizon2":
 
-        modelset = [ "YQFix", "AverageSS", "Average",  "L4L", "EOQ", "POQ", "SilverMeal"]
+        modelset = [ "YQFix", "AverageSS", "AverageSSGrave", "Average",  "L4L", "EOQ", "POQ", "SilverMeal", "SFix"]
 
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
