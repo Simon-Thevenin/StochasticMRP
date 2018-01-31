@@ -972,4 +972,6 @@ class MRPSolution:
 
         result.NotCompleteSolution = True
         result.SValue =[ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ]
+
+        result.FixedQuantity= [ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ]
         return result
