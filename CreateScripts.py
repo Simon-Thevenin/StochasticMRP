@@ -230,11 +230,13 @@ if __name__ == "__main__":
                                             fileeval.write("qsub ./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
                                                 instance, model, nrscenar, generation, method, Policy, seed))
 
+                                    timehorizonrange = [4, 6, 8]
 
-                                    timehorizonmax = 5
                                     if model == "HeuristicYFix":
-                                        timehorizonmax = 3
-                                    for th in range( 1, timehorizonmax) :
+                                        timehorizonrange = [4, 6]
+                                    if model == "L4L" or model == "EOQ" or model == "POQ" or model == "SilverMeal":
+                                        timehorizonrange = [ 9 ]
+                                    for th in timehorizonrange :
                                         CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = th)
                                         fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (
                                             instance, model, nrscenar, seed, NrScenarioEvaluation, th) )
