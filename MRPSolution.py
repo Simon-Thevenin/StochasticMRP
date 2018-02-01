@@ -612,12 +612,17 @@ class MRPSolution:
                                   - sum( prevdemand[t][p] for t in range( time +1) ) )
                                     for p in self.MRPInstance.ProductSet ]
 
-        currentinventory = [ ( self.MRPInstance.StartingInventories[p]
+        currentechlonnventory = [ ( self.MRPInstance.StartingInventories[p]
                                   + sum( prevquanity[t][p] for t in range( time ) ) #range( max( time - self.MRPInstance.Leadtimes[p] + 1 , 0 ) ) )
                                   - sum( prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time  ) for q in self.MRPInstance.ProductSet)
                                   - sum( prevdemand[t][p] for t in range( time ) ) )
                                     for p in self.MRPInstance.ProductSet ]
 
+        currentinventory = [ ( self.MRPInstance.StartingInventories[p]
+                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] + 1 , 0 ) ) )
+                                  - sum( prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time  ) for q in self.MRPInstance.ProductSet)
+                                  - sum( prevdemand[t][p] for t in range( time ) ) )
+                                    for p in self.MRPInstance.ProductSet ]
         for p in self.MRPInstance.ProductSet:
              if projinventory[p] > - 0.0001 : projectedinventory[p] = projinventory[p]
              else:
@@ -627,7 +632,7 @@ class MRPSolution:
                      projectedbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
 
 
-        return projectedbackorder, projinventory, currentinventory
+        return projectedbackorder, projinventory, currentechlonnventory, currentinventory
 
 
     def GetFeasibleNodesAtTime( self, time, currentlevelofinventory ):
@@ -764,7 +769,7 @@ class MRPSolution:
                 #This function return the quantity to order a time t, given the first t-1 demands
     def GetQuantityToOrder( self, strategy, time, previousdemands, previousquantity = [], previousnode = None ):
         error = 0
-        projectedbackorder, projectedstocklevel, currrentstocklevel = self.GetCurrentStatus( previousdemands, previousquantity, time )
+        projectedbackorder, projectedstocklevel, currrentechelonstocklevel, currentinventory = self.GetCurrentStatus( previousdemands, previousquantity, time )
         considerednodes = self.GetConsideredNodes(strategy, time, projectedstocklevel, previousnode = previousnode )
 
 
@@ -808,7 +813,7 @@ class MRPSolution:
     def GetQuantityToOrderS(self, time, previousdemands, previousquantity=[], useYS = False):
 
         previousdemands2 = previousdemands+[[0.0 for p in  self.MRPInstance.ProductSet]]+[[0 for p in  self.MRPInstance.ProductSet]]
-        projectedbackorder, projectedstocklevelatstart, currrentstocklevel = self.GetCurrentStatus(previousdemands2, previousquantity, time)
+        projectedbackorder, projectedstocklevelatstart, currrentechelonstocklevel, currentinventory = self.GetCurrentStatus(previousdemands2, previousquantity, time)
 
         previousquantity2 =  [[ previousquantity[t][p] for p in self.MRPInstance.ProductSet] for t in self.MRPInstance.TimeBucketSet]
 
@@ -829,9 +834,9 @@ class MRPSolution:
                           #                                     for q in self.MRPInstance.ProductSet)
                           #                   , 0)  # external demand of the current period
 
-                          projectedbackorder, projectedstocklevel, currrentstocklevel2 = self.GetCurrentStatus(
+                          projectedbackorder, projectedstocklevel, currrentechelonstocklevel, currrentstocklevel2 = self.GetCurrentStatus(
                               previousdemands2, previousquantity2, time , projinventorymusbepositive= False)
-                          echelonstock = Tool.ComputeInventoryEchelon(self.MRPInstance, p, currrentstocklevel2)
+                          echelonstock = Tool.ComputeInventoryEchelon(self.MRPInstance, p, currrentechelonstocklevel)
 
                           if useYS:
                               q1 = self.SValue[time][p] - echelonstock
@@ -840,7 +845,7 @@ class MRPSolution:
                           else:
                               quantity[p] = max(self.SValue[time ][p] - echelonstock, 0)
 
-                          self.RepairQuantityToOrder(quantity, currrentstocklevel)
+                          self.RepairQuantityToOrder(quantity, currentinventory)
                           previousquantity2[time][p] = quantity[p]
 
         #if Constants.Debug:

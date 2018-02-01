@@ -342,12 +342,13 @@ class Evaluator:
         for seed in range(M):
             step = 1
             for k in range(K):
-                step *=   (Evaluated[k][seed] - mean)
+                step *=   (math.pow(Evaluated[k][seed] - mean, 2))
             covariance +=   Probabilities[0][seed] * 1/K *step
 
+        #print "The values are: %d, %d, %d"%( mean, variancepondere, covariance )
         term =  stats.norm.ppf(1 - 0.05) * math.sqrt(max( ( (variancepondere + (covariance * (M - 1))) / (K * M)), 0.0) )
-        LB = mean - term
-        UB = mean + term
+        LB = K
+        UB = -1
         d = datetime.now()
         date = d.strftime('%m_%d_%Y_%H_%M_%S')
 

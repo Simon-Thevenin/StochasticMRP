@@ -255,7 +255,7 @@ class DecentralizedMRP(object):
         prevdemand = [ [ self.Solution.Scenarioset[0].Demands[t1][p1] + self.SafetyStock[t1][p1]
                        for p1 in self.Instance.ProductSet ]
                       for t1 in self.Instance.TimeBucketSet ]
-        projectedbackorder, projectedinventory, currrentstocklevel = self.Solution.GetCurrentStatus(prevdemand, prevquanity, time)
+        projectedbackorder, projectedinventory, echelonstock, currrentstocklevel = self.Solution.GetCurrentStatus(prevdemand, prevquanity, time)
         return projectedbackorder, projectedinventory
 
     #return the quantity to order at time t for product p in instance with Lot for Lot rule

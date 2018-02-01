@@ -182,10 +182,10 @@ class RollingHorizonSolver:
                         mip.WarmStartGivenSetupConstraints()
                     mip.ModifyBigMForScenario(startinginventory)
                 # Solve the MIP
-                #mip.Cplex.write("lpfile.lp")
-
+                mip.Cplex.write("lpfile%s.lp"%decisionstage)
+                #print "solve the problem:"
                 solution = mip.Solve( False )
-
+                #print solution.Production
             # Save the relevant values
             self.CopyFirstStageDecision( solution,  timetodecide, instance, mip )
 
@@ -220,7 +220,7 @@ class RollingHorizonSolver:
         prevdemand = [ [ scenario.Demands[t1][p1]
                          for p1 in self.GlobalInstance.ProductSet ]
                        for t1 in self.GlobalInstance.TimeBucketSet ]
-        projectedbackorder, projininventory, Endininventory = self.Solution.GetCurrentStatus(prevdemand,
+        projectedbackorder, projininventory, echeoninv, Endininventory = self.Solution.GetCurrentStatus(prevdemand,
                                                                                                 prevquanity,
                                                                                                 t)
         #Remove starting inventory to not count it twice

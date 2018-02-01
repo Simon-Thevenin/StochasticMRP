@@ -1,4 +1,5 @@
 from Constants import Constants
+from random import randint
 import math
 
 class InstanceReader:
@@ -34,17 +35,18 @@ class InstanceReader:
 
         productwith0leadtime = []
 
-        if leadtimestructure == 1 or leadtimestructure == 5:
+        if leadtimestructure == 1 :
             productwith0leadtime = productwith0leadtime + [ p for p in self.Instance.ProductSet if self.Instance.Level[p] == 1 ]
 
-        if leadtimestructure == 2 or  leadtimestructure == 4 or leadtimestructure == 5:
-            productwith0leadtime = productwith0leadtime + [p for p in self.Instance.ProductSet if self.Instance.Level[p] == 2]
+            for p in productwith0leadtime:
+                    self.Instance.Leadtimes[p] = 0
 
-        if leadtimestructure == 3 or  leadtimestructure == 4 or leadtimestructure == 5:
-            productwith0leadtime = productwith0leadtime + [p for p in self.Instance.ProductSet if self.Instance.Level[p] == 3]
+        if leadtimestructure == 2:
+            maxleadtime = 10
+            while ( maxleadtime > 5) :
+                self.Instance.Leadtimes = [ randint(0, 3) for p in self.Instance.ProductSet]
+                maxleadtime = self.Instance.ComputeMaxLeadTime()
 
-        for p in productwith0leadtime:
-                self.Instance.Leadtimes[p] = 0
 
 
     # Compute the requireement from the supply chain. This set of instances assume the requirement of each arc is 1.
