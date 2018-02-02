@@ -539,17 +539,12 @@ class MIPSolver(object):
                                       ub = [self.M] * nrsvariable )
 
         # Add the variables repreenting the big S level.
-        if self.Model == Constants.ModelSFix or self.Model == Constants.ModelYSFix:
-            nrsvariable = len(self.Instance.ProductSet) * self.Instance.NrTimeBucket
-            self.Cplex.variables.add(obj=[0.0] * nrsvariable,
-                                         lb=[0.0] * nrsvariable,
-                                         ub=[self.M] * nrsvariable)
+        #if self.Model == Constants.ModelSFix or self.Model == Constants.ModelYSFix:
+        #    nrsvariable = len(self.Instance.ProductSet) * self.Instance.NrTimeBucket
+        #    self.Cplex.variables.add(obj=[0.0] * nrsvariable,
+        #                                 lb=[0.0] * nrsvariable,
+        #                                 ub=[self.M] * nrsvariable)
 
-        # Add the variables repreenting the regulare order quantity.
-        if self.Model == Constants.ModelYSFix:
-             nrsvariable = len(self.Instance.ProductSet) * self.Instance.NrTimeBucket * self.NrScenario
-             self.Cplex.variables.add(obj=[0.0] * nrsvariable,
-                                      types=['B'] * nrsvariable)
 
         # Add the variables repreenting the regulare order quantity.
         if self.Model == Constants.ModelYSFix:
@@ -557,6 +552,11 @@ class MIPSolver(object):
              self.Cplex.variables.add(obj=[0.0] * nrsvariable,
                                              lb=[0.0] * nrsvariable,
                                              ub=[self.M] * nrsvariable)
+        # Add the variables repreenting the regulare order quantity.
+        if self.Model == Constants.ModelYSFix:
+             nrsvariable = len(self.Instance.ProductSet) * self.Instance.NrTimeBucket * self.NrScenario
+             self.Cplex.variables.add(obj=[0.0] * nrsvariable,
+                                      types=['B'] * nrsvariable)
 
         #if self.UseSafetyStockGrave:
         #    nrsvariable = len(self.Instance.ProductSet)
@@ -1070,6 +1070,7 @@ class MIPSolver(object):
         return extendedrequirement
 
     def AddLinkingConstraintsYSQ(self):
+        AlreadyAdded = [False   for w in range(self.GetNrQuantityVariable())]
 
         BigM2 = [MIPSolver.GetBigMDemValue(self.Instance, self.Scenarios, p) for p in self.Instance.ProductSet]
 
@@ -1079,78 +1080,87 @@ class MIPSolver(object):
             for p in self.Instance.ProductSet:
                 for t in self.Instance.TimeBucketSet:
 
-                    varsecheloninv = []
-                    coeffecheloninv = []
-                    if t > 0:
-                        for q in self.Instance.ProductSet:
-                            varsecheloninv.append(self.GetIndexInventoryVariable(q, t - 1, w))
-                            coeffecheloninv.append(1.0 * extendedrequirement[q][p])
-                            for tau in range(t - self.Instance.Leadtimes[q], t):
-                                varsecheloninv.append(self.GetIndexQuantityVariable(q, tau, w))
+                    IndexQuantity = self.GetIndexQuantityVariable(p, t, w)
+                    if  not AlreadyAdded[IndexQuantity]:
+                        AlreadyAdded[IndexQuantity]= True
+
+                        varsecheloninv = []
+                        coeffecheloninv = []
+                        if t > 0:
+                            for q in self.Instance.ProductSet:
+                                varsecheloninv.append(self.GetIndexInventoryVariable(q, t - 1, w))
                                 coeffecheloninv.append(1.0 * extendedrequirement[q][p])
+                                for tau in range(t - self.Instance.Leadtimes[q], t):
+                                    varsecheloninv.append(self.GetIndexQuantityVariable(q, tau, w))
+                                    coeffecheloninv.append(1.0 * extendedrequirement[q][p])
 
-                            if self.Instance.HasExternalDemand[q]:
-                                varsecheloninv.append(self.GetIndexBackorderVariable(q, t - 1, w))
-                                coeffecheloninv.append(-1.0 * extendedrequirement[q][p])
+                                if self.Instance.HasExternalDemand[q]:
+                                    varsecheloninv.append(self.GetIndexBackorderVariable(q, t - 1, w))
+                                    coeffecheloninv.append(-1.0 * extendedrequirement[q][p])
 
-                    M = BigM2[ p]
+                        M = BigM2[ p]
 
-                    coeff = coeffecheloninv + [1.0, -1.0]
-                    vars = varsecheloninv + \
-                           [self.GetIndexQuantityVariable(p, t, w),
-                            self.GetIndexSVariable(p, t)]
-                    righthandside = [0.0]
-                    #
-                    # # PrintConstraint( vars, coeff, righthandside )
-                    self.Cplex.linear_constraints.add(
-                        lin_expr=[cplex.SparsePair(vars, coeff)],
-                        senses=["L"],
-                        rhs=righthandside)
+                        coeff = coeffecheloninv + [1.0, -1.0]
+                        vars = varsecheloninv + \
+                               [self.GetIndexQuantityVariable(p, t, w),
+                                self.GetIndexSVariable(p, t)]
+                        righthandside = [0.0]
+                        #
+                        # # PrintConstraint( vars, coeff, righthandside )
+                        self.Cplex.linear_constraints.add(
+                            lin_expr=[cplex.SparsePair(vars, coeff)],
+                            senses=["L"],
+                            rhs=righthandside)
 
 
-                    #####################################################################################
-                    coeff = coeffecheloninv + [1.0, -1.0, 1.0 * M]
-                    vars = varsecheloninv + \
-                           [self.GetIndexQuantityVariable(p, t, w),
-                            self.GetIndexSVariable(p, t),
-                            self.GetIndexHasLeftover(p, t,w)]
+                        #####################################################################################
+                        coeff = coeffecheloninv + [1.0, -1.0, -1.0 * M]
+                        vars = varsecheloninv + \
+                               [self.GetIndexQuantityVariable(p, t, w),
+                                self.GetIndexSVariable(p, t),
+                                self.GetIndexHasLeftover(p, t,w)]
 
-                    righthandside = [0.0]
+                        righthandside = [-1.0 * M]
 
-                    self.Cplex.linear_constraints.add(
-                        lin_expr=[cplex.SparsePair(vars, coeff)],
-                        senses=["G"],
-                        rhs=righthandside)
+                        self.Cplex.linear_constraints.add(
+                            lin_expr=[cplex.SparsePair(vars, coeff)],
+                            senses=["G"],
+                            rhs=righthandside)
 
     def AddConstraintsComputeQuantityBasedOnFix(self):
+        AlreadyAdded = [False for w in range(self.GetNrQuantityVariable())]
+
         BigM2 = [MIPSolver.GetBigMDemValue(self.Instance, self.Scenarios, p) for p in self.Instance.ProductSet]
         for w in self.ScenarioSet:
             for p in self.Instance.ProductSet:
                 for t in self.Instance.TimeBucketSet:
-                    coeff =  [-1.0, 1.0]
-                    vars = [ self.GetIndexQuantityVariable(p, t, w),
-                            self.GetIndexFixedQuantity(p, t) ]
+                    IndexQuantity = self.GetIndexQuantityVariable(p, t, w)
+                    if not AlreadyAdded[IndexQuantity]:
+                        AlreadyAdded[IndexQuantity] = True
+                        coeff =  [-1.0, 1.0]
+                        vars = [ self.GetIndexQuantityVariable(p, t, w),
+                                self.GetIndexFixedQuantity(p, t) ]
 
-                    righthandside = [0.0]
+                        righthandside = [0.0]
 
-                    self.Cplex.linear_constraints.add(
-                        lin_expr=[cplex.SparsePair(vars, coeff)],
-                        senses=["G"],
-                        rhs=righthandside)
+                        self.Cplex.linear_constraints.add(
+                            lin_expr=[cplex.SparsePair(vars, coeff)],
+                            senses=["G"],
+                            rhs=righthandside)
 
-                    M = BigM2[p]
+                        M = BigM2[p]
 
-                    coeff = [-1.0, 1.0, M]
-                    vars = [self.GetIndexQuantityVariable(p, t, w),
-                            self.GetIndexFixedQuantity(p, t),
-                            self.GetIndexHasLeftover(p, t, w)]
-                    righthandside = [M]
-                    #
-                    # # PrintConstraint( vars, coeff, righthandside )
-                    self.Cplex.linear_constraints.add(
-                        lin_expr=[cplex.SparsePair(vars, coeff)],
-                        senses=["L"],
-                        rhs=righthandside)
+                        coeff = [-1.0, 1.0, -1.0*M]
+                        vars = [self.GetIndexQuantityVariable(p, t, w),
+                                self.GetIndexFixedQuantity(p, t),
+                                self.GetIndexHasLeftover(p, t, w)]
+                        righthandside = [0.0]
+                        #
+                        # # PrintConstraint( vars, coeff, righthandside )
+                        self.Cplex.linear_constraints.add(
+                            lin_expr=[cplex.SparsePair(vars, coeff)],
+                            senses=["L"],
+                            rhs=righthandside)
 
     def AddConstraintsComputeLeftOver(self):
 
@@ -1179,12 +1189,12 @@ class MIPSolver(object):
 
                     M = BigM2[p]
 
-                    coeff = coeffecheloninv + [1.0, -1.0, 1.0 * M]
+                    coeff = coeffecheloninv + [1.0, -1.0, -1.0 * M]
                     vars = varsecheloninv + \
                            [self.GetIndexFixedQuantity(p, t),
                             self.GetIndexSVariable(p,t),
                             self.GetIndexHasLeftover(p, t, w)]
-                    righthandside = [M]
+                    righthandside = [0.0]
                     #
                     # # PrintConstraint( vars, coeff, righthandside )
                     self.Cplex.linear_constraints.add(
@@ -1206,12 +1216,12 @@ class MIPSolver(object):
                                      varsecheloninv.append(self.GetIndexBackorderVariable(q, t - 1, w))
                                      coeffecheloninv.append( 1.0 * extendedrequirement[q][p])
 
-                    coeff = coeffecheloninv + [-1.0, +1.0, -1.0*M ]
+                    coeff = coeffecheloninv + [-1.0, +1.0, 1.0*M ]
                     vars = varsecheloninv + \
                            [self.GetIndexFixedQuantity(p, t),
                             self.GetIndexSVariable(p, t),
                             self.GetIndexHasLeftover(p, t, w)]
-                    righthandside = [0]
+                    righthandside = [M]
                     #
                     # # PrintConstraint( vars, coeff, righthandside )
                     self.Cplex.linear_constraints.add(
@@ -1225,7 +1235,7 @@ class MIPSolver(object):
 
         BigM = [MIPSolver.GetBigMValue(self.Instance, self.Scenarios, p) for p in self.Instance.ProductSet]
         BigM2 = [MIPSolver.GetBigMDemValue(self.Instance, self.Scenarios, p) for p in self.Instance.ProductSet]
-
+        M = sum(BigM2[p] for p in self.Instance.ProductSet)
         extendedrequirement = self.GetEchelonRequirement()
 
         for w in self.ScenarioSet:
@@ -1249,7 +1259,7 @@ class MIPSolver(object):
 
 
 
-                           M = BigM2[p]#sum( BigM[q] * extendedrequirement[q][p] for q in self.Instance.ProductWithExternalDemand  )
+                           #M = BigM2[p]#sum( BigM[q] * extendedrequirement[q][p] for q in self.Instance.ProductWithExternalDemand  )
                            #req = [extendedrequirement[q][p] for q in self.Instance.ProductSet]
                            #print " %s : %s"%(p, req)
                            #print "%s vs %s vs %s"%( M, BigM[p], BigM2[p] )
@@ -1274,6 +1284,18 @@ class MIPSolver(object):
                                 lin_expr=[cplex.SparsePair(vars, coeff)],
                                 senses=["G"],
                                 rhs=righthandside)
+
+        for p in self.Instance.ProductSet:
+               for t in self.Instance.TimeBucketSet:
+
+                      coeff =   [1.0, -1.0* M]
+                      vars =   [ self.GetIndexSVariable(p, t),
+                                 self.GetIndexProductionVariable(p, t, 0)]
+                      righthandside = [0.0]
+        #
+                      #self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                      #                                  senses=["L"],
+                      #                                  rhs=righthandside)
 
     # For debug purpose, transfor the multi stage in two stage by adding the required constraints
 
@@ -1720,7 +1742,7 @@ class MIPSolver(object):
             self.DemandScenarioTree.FillQuantityToOrder(sol)
 
         Solution = MRPSolution(self.Instance, solquantity, solproduction, solinventory, solbackorder, scenarios,
-                               self.DemandScenarioTree, partialsolution=partialsol)
+                               self.DemandScenarioTree, partialsolution = partialsol)
 
         if self.Model == Constants.ModelSFix or self.Model == Constants.ModelYSFix:
             array = [self.GetIndexSVariable(p, t) for p in self.Instance.ProductSet for t in timebucketset]
@@ -1791,7 +1813,6 @@ class MIPSolver(object):
         else :
             mdem = sum( instance.Requirements[q][p] * MIPSolver.GetBigMDemValue( instance, scenarioset, q ) for q in instance.RequieredProduct[p] )
 
-
         return mdem
 
     #This function return the value of the big M variable
@@ -1802,7 +1823,6 @@ class MIPSolver(object):
         #compute m based on the capacity of the resource
         mres = min( instance.Capacity[k] / instance.ProcessingTime[p][k]  if instance.ProcessingTime[p][k] > 0  else Constants.Infinity for k in range( instance.NrResource ) )
         m = min( [ mdem, mres ] )
-
         return m
 
     def ModifyMipForScenarioTree(self, scenariotree):

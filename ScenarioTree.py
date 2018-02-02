@@ -119,7 +119,13 @@ class ScenarioTree:
              #         PLT.show()
 
              rmcpoint = ScenarioTreeNode.TransformInverse( rqmcpoint01, nrscenarion, dimension, self.Instance.Distribution, avgvector, stdvector )
-
+             print rmcpoint
+             print self.Instance.ProductWithExternalDemandIndex
+             print self.Instance.HasExternalDemand
+             print nrscenarion
+             print self.Instance.TimeBucketSet
+             print nrtimebucketswithuncertainty
+             print firststochastic
 
              self.DemandYQFixRQMC = [ [ [ rmcpoint[ self.Instance.ProductWithExternalDemandIndex[p] * nrtimebucketswithuncertainty + (t-firststochastic ) ][s]
                                           if  self.Instance.HasExternalDemand[p] and t >= firststochastic

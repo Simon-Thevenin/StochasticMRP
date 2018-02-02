@@ -87,9 +87,9 @@ if __name__ == "__main__":
     scenarsetall = ["4096"]
     Nrseed = 1
     if sys.argv[1] == "preliminary":
-        Nrseed = 5
         modelset = [  "AverageSS", "AverageSSGrave", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix",  "YFix", "HeuristicYFix", "SFix" ]
-        modelset = ["SFix"]
+        modelset = ["SFix", "YSFix"]
+        nrcenarioysfix= [ "10", "25", "50", "100"]
         nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
         nrcenarioyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b"]
         nrcenarioheuristicyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b",
@@ -204,6 +204,11 @@ if __name__ == "__main__":
                      scenarsetsampling = nrcenarioyfqix
                      policyset = policyyqfix
                      generationset = Generationset
+                 if model == "YSFix":
+                     scenarsetsampling = nrcenarioysfix
+                     policyset = policyyqfix
+                     generationset = Generationset
+
                  if model == "Average" or model == "AverageSS"  or model == "AverageSSGrave" or model =="L4L" or  model == "EOQ" or  model == "POQ" or  model =="SilverMeal":
                      scenarsetsampling = ["1"]
                      avg = True

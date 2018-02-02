@@ -1159,7 +1159,7 @@ if __name__ == "__main__":
     instancename = ""
     try:
         args = parseArguments()
-
+        #Instance.DefineAsSuperSmallIntance()
         Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
         #GenerateInstancesPreliminary()

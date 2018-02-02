@@ -84,14 +84,14 @@ class MRPInstance:
         self.Distribution = "Normal"
         self.ProductName = [ "P1", "P2" ]
         self.NrProduct = 2
-        self.NrTimeBucket = 9
-        self.NrTimeBucketWithoutUncertaintyAfter = 3
-        self.NrTimeBucketWithoutUncertaintyBefore = 3
+        self.NrTimeBucket = 5
+        self.NrTimeBucketWithoutUncertaintyAfter = 0
+        self.NrTimeBucketWithoutUncertaintyBefore = 0
         self.NrResource = 2
         self.Gamma = 0.9
         self.Requirements = [ [ 0, 1 ],
                               [ 0, 0 ] ]
-        self.Capacity = [ 15, 50 ]
+        self.Capacity = [ 50, 50 ]
         self.Leadtimes = [ 1, 1 ]
         self.ProcessingTime = [ [ 1, 0 ],
                                 [ 0, 1 ] ]
@@ -110,15 +110,12 @@ class MRPInstance:
         self.ForecastError = [ 0.5, 0 ]
         self.RateOfKnownDemand = 0.0
         self.YearlyStandardDevDemands = [5, 0]
-        self.ForcastedStandardDeviation = [ [0, 0],
-                                            [0, 0],
-                                            [0, 0],
+        self.ForcastedStandardDeviation = [ [5, 0],
                                             [5, 0],
                                             [5, 0],
                                             [5, 0],
-                                            [0, 0],
-                                            [0, 0],
-                                            [0, 0] ]
+                                            [5, 0],
+                                            [5, 0] ]
 
         self.StartingInventories = [ 10.0, 10.0 ]
         self.InventoryCosts = [ 10.0, 5.0 ]

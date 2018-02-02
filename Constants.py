@@ -38,16 +38,16 @@ class Constants:
     SilverMeal  = "SilverMeal"
     RollingHorizon = "RH"
 
-    Debug = False
-    PrintSolutionFileToExcel = False
+    Debug = True
+    PrintSolutionFileToExcel = True
     PrintDebugLPFiles = False
-    LauchEvalAfterSolve = True
+    LauchEvalAfterSolve = False
     # When PrintOnlyFirstStageDecision is True, only the implemented decision are saved in an Excel File. This is necessary when a large number of scenario is consider, as the size of the Excel file would be to Large.
     # Turn PrintOnlyFirstStageDecision to False for debug purpose (allows to see the detail solution). Also statistics about the "in sample" solution are computed.
     PrintOnlyFirstStageDecision = True
     PrintDetailsExcelFiles = False
     # To avoid memory comsumption it is better to print the files in /tmp However if the files are printed in tmp they are deleted after 4 days
-    PrintSolutionFileInTMP = True
+    PrintSolutionFileInTMP = False
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
     Infinity = 9999999999999.9
