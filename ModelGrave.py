@@ -61,14 +61,31 @@ class ModelGrave(object):
                 for s in range(self.nrvaluesS):
                     for si in range(self.nrvaluesS):
                          if( ( self.Instance.HasExternalDemand[p] and s > 0 )
-                             or ( s - si > self.Instance.Leadtimes[p] )
-                             or ( si < s ) ):
+                             or ( s - si > self.Instance.Leadtimes[p] )):
                             vars = [self.XSSI[si][s][p][t]]
                             coeff = [1]
 
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                               senses=["E"],
                                                               rhs=[0])
+
+
+        for t in self.Instance.TimeBucketSet:
+            for p in range(self.Instance.NrProduct):
+                for q in range(self.Instance.NrProduct):
+                    for sp in range(self.nrvaluesS):
+                        for sip in range(self.nrvaluesS):
+                            for sq in range(self.nrvaluesS):
+                                for siq in range(self.nrvaluesS):
+                                     if( sp<=siq
+                                         and self.Instance.Requirements[q][p] ):
+                                        vars = [self.XSSI[sip][sp][p][t], self.XSSI[siq][sq][q][t] ]
+                                        coeff = [1,1]
+
+                                        self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                                          senses=["L"],
+                                                                          rhs=[1])
+
 
     def Solve(self):
         self.Cplex.objective.set_sense(self.Cplex.objective.sense.minimize)
