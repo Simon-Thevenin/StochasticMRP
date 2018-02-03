@@ -512,3 +512,21 @@ class ScenarioTreeNode:
             print "t= %r Compute S, inv level %r echelon %r quantity %r" % (self.Time, inventory, echelonstock, self.QuantityToOrderNextTime[p] )
 
         return result
+
+    def HasLeftOverComponent(self, p):
+        hasrequirement = sum(self.Instance.Requirements[p][q2] for q2 in self.Instance.ProductSet  )
+        m=0
+        if hasrequirement:
+            m = min( self.InventoryLevelNextTime[q2]
+                     for q2 in self.Instance.ProductSet
+                     if  self.Instance.Requirements[p][q2]>0  )
+        return hasrequirement == 0 or m > 0
+
+    def HasSpareCapacity(self, p):
+        resource = [ r for r in range(self.Instance.NrResource) if self.Instance.ProcessingTime[p][r]>0]
+        mincapacity = Constants.Infinity
+        for r in resource:
+            leftovercapacity = self.Instance.Capacity[r] - sum(self.QuantityToOrderNextTime[q] * self.Instance.ProcessingTime[q][r] for q in self.Instance.ProductSet  )
+
+            mincapacity = min( leftovercapacity, mincapacity )
+        return mincapacity > 0

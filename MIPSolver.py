@@ -1229,6 +1229,31 @@ class MIPSolver(object):
                         senses=["L"],
                         rhs=righthandside)
 
+                #Add valid inequality:
+        # for w1 in self.ScenarioSet:
+        #     for w2 in self.ScenarioSet:
+        #         for p in self.Instance.ProductSet:
+        #             for t in self.Instance.TimeBucketSet:
+        #                 #compute the demand:
+        #                 demandw1=0
+        #                 demandw2=0
+        #                 for q in self.Instance.ProductSet:
+        #                     if self.Instance.HasExternalDemand[q]:
+        #                             varsecheloninv.append(self.GetIndexBackorderVariable(q, t - 1, w))
+        #                             demandw1 += sum(self.Scenarios[w1].Demands[tau][q] for tau in range(t)) * extendedrequirement[q][p]
+        #                             demandw2 += sum(self.Scenarios[w2].Demands[tau][q] for tau in range(t)) * extendedrequirement[q][p]
+        #
+        #                 if demandw1 > demandw2:
+        #                     coeff =  [-1.0, +1.0]
+        #                     vars = [ self.GetIndexHasLeftover(p, t, w1), self.GetIndexHasLeftover(p, t, w2)  ]
+        #                     righthandside = [0.0]
+        #                     #
+        #                     # # PrintConstraint( vars, coeff, righthandside )
+        #                     self.Cplex.linear_constraints.add(
+        #                         lin_expr=[cplex.SparsePair(vars, coeff)],
+        #                         senses=["G"],
+        #                         rhs=righthandside)
+
     def AddLinkingConstraintsSQ(self):
         AlreadyAdded = [[False for v in range(self.GetNrQuantityVariable())] for w in
                         range(self.GetNrQuantityVariable())]
@@ -1735,14 +1760,13 @@ class MIPSolver(object):
         solbackorder = Tool.Transform3d(solbackorder, len(self.Instance.ProductWithExternalDemand), len(timebucketset),
                                         len(scenarioset))
 
-
-
-
         if self.Model <> Constants.ModelYQFix:
             self.DemandScenarioTree.FillQuantityToOrder(sol)
 
+
         Solution = MRPSolution(self.Instance, solquantity, solproduction, solinventory, solbackorder, scenarios,
                                self.DemandScenarioTree, partialsolution = partialsol)
+
 
         if self.Model == Constants.ModelSFix or self.Model == Constants.ModelYSFix:
             array = [self.GetIndexSVariable(p, t) for p in self.Instance.ProductSet for t in timebucketset]
@@ -1751,7 +1775,7 @@ class MIPSolver(object):
         else:
             Solution.SValue = [[-1 for p in self.Instance.ProductSet] for t in timebucketset]
 
-        if self.Model == self.Model == Constants.ModelYSFix:
+        if self.Model == Constants.ModelYSFix:
             array = [self.GetIndexFixedQuantity(p, t) for p in self.Instance.ProductSet for t in timebucketset]
             solFixedQValue = sol.get_values(array)
             Solution.FixedQuantity = [[solFixedQValue[p * self.Instance.NrTimeBucket + t] for p in self.Instance.ProductSet] for t  in timebucketset]

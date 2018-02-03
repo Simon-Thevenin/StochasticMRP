@@ -173,7 +173,7 @@ class MRPSolution:
             self.ComputeCost()
 
             if model <> Constants.ModelYQFix:
-                self.ScenarioTree.FillQuantityToOrderFromMRPSolution(self, self.Scenarioset)
+                self.ScenarioTree.FillQuantityToOrderFromMRPSolution(self)
             # for s in range( len(self.Scenarioset) ):
             #     print "Scenario with demand:%r" % self.Scenarioset[s].Demands
             #     print "quantity %r" % [ [ self.ProductionQuantity.loc[self.MRPInstance.ProductName[p], (time, s)] for p in
@@ -871,19 +871,27 @@ class MRPSolution:
 
     def ComputeAverageS( self ):
         S = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
+        SWithLeftover = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
         probatime = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
 
         # tuple =[]
         # considerednode = []
+        nrconsideredsol = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
         for w in range( len(self.Scenarioset) ):
             s =self.Scenarioset[w]
             for n in s.Nodes:
                     t= n.Time
                     for p in self.MRPInstance.ProductSet:
                         if   t< self.MRPInstance.NrTimeBucket and  (self.Production[ w][ t ][ p ] >=0.9 ):
+                            if n.HasLeftOverComponent( p)and n.HasSpareCapacity( p):
+                                nrconsideredsol[t][p] += 1
+                                SWithLeftover[t][p] += n.GetS(p)
+                                #if n.GetS(p) > SWithLeftover[t][p]:
+                                #    SWithLeftover[t][p] = n.GetS(p)
                             if n.GetS( p) > S[t][p]:
                                 S[t][p] = n.GetS( p)
+
                             #S[t][p] = S[t][p] + n.GetS( p) * s.Probability
                             probatime[t][p] = probatime[t][p] + s.Probability
 
@@ -922,10 +930,10 @@ class MRPSolution:
         # print gorpued1
         # print gorpued2
 
-       # self.SValue = [ [ S[t][p] / probatime[t][p] if probatime[t][p] > 0 else 0.0
-       #                   for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
+        SValueBasedOnMAx = [ [ S[t][p]  if probatime[t][p] > 0 else 0.0
+                         for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
-        self.SValue = [[S[t][p]  if probatime[t][p] > 0 else 0.0
+        self.SValue = [[SWithLeftover[t][p]/nrconsideredsol[t][p]  if nrconsideredsol[t][p] > 0 else SValueBasedOnMAx[t][p] #/nrconsideredsol[t][p]
                         for p in self.MRPInstance.ProductSet] for t in self.MRPInstance.TimeBucketSet]
 
         if Constants.Debug:

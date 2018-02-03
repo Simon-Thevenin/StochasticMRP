@@ -225,7 +225,7 @@ class ScenarioTree:
 
 
     #This function set the quantity to order at each node of the tree as found in the solution given in argument
-    def FillQuantityToOrderFromMRPSolution(self, sol, scenarios):
+    def FillQuantityToOrderFromMRPSolution(self, sol):
         scenarionr = -1
         for n in self.Nodes:
             if n.Time >= 0 and  n.Time < self.Instance.NrTimeBucket :

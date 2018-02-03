@@ -88,10 +88,12 @@ if __name__ == "__main__":
     Nrseed = 1
     if sys.argv[1] == "preliminary":
         modelset = [  "AverageSS", "AverageSSGrave", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix",  "YFix", "HeuristicYFix", "SFix" ]
-        modelset = ["AverageSSGrave"]
+        modelset = ["YFix"]
         nrcenarioysfix= [ "10", "25", "50", "100"]
         nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
+        nrcenarioyqfix = ["10", "25", "50", "100"]
         nrcenarioyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b"]
+        nrcenarioyfix =["6400"]
         nrcenarioheuristicyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b",
                                   "102400b", "153600"]
         instancetosolvename = "./Instances/InstancesToSolve.csv"
