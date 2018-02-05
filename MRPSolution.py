@@ -933,7 +933,7 @@ class MRPSolution:
         SValueBasedOnMAx = [ [ S[t][p]  if probatime[t][p] > 0 else 0.0
                          for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
-        self.SValue = [[SWithLeftover[t][p]/nrconsideredsol[t][p]  if nrconsideredsol[t][p] > 0 else SValueBasedOnMAx[t][p] #/nrconsideredsol[t][p]
+        self.SValue = [[SWithLeftover[t][p]/nrconsideredsol[t][p]  if False and nrconsideredsol[t][p] > 0 else SValueBasedOnMAx[t][p] #/nrconsideredsol[t][p]
                         for p in self.MRPInstance.ProductSet] for t in self.MRPInstance.TimeBucketSet]
 
         if Constants.Debug:
