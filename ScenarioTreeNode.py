@@ -278,7 +278,8 @@ class ScenarioTreeNode:
         if method == Constants.RQMC:
             newnrpoints = nrpoints
             nextdemands = [[]]
-            while len( nextdemands[0] ) < nrpoints and newnrpoints <= 100:
+            nrnonzero = 0
+            while len( nextdemands[0] ) < nrpoints and newnrpoints <= 1000:
                 if Constants.Debug and len(nextdemands[0])>0:
                     print "try with %r points because only %r  points were generated, required: %r" %(newnrpoints, len( nextdemands[0]), nrpoints )
                 points = [[0.0 for pt in range(newnrpoints)] for p in range(dimensionpoint)]

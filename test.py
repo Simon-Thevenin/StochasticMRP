@@ -92,6 +92,8 @@ OutOfSampleTestResult = []
 InSampleKPIStat= []# 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ]
 EvaluateInfo = []
 
+LastFoundSolution = None
+
 def PrintTestResult():
     Parameter =  [ UseNonAnticipativity, Model, ComputeAverageSolution, ScenarioSeed ]
     data = TestIdentifier + SolveInformation +  Parameter
@@ -142,11 +144,11 @@ def PrintSolutionToFile( solution  ):
 
 
 def Solve():
-
+    global LastFoundSolution
     solver = Solver (Instance, TestIdentifier, mipsetting=MIPSetting, testdescription= GetTestDescription(), evaluatesol = EvaluateSolution, treestructure=GetTreeStructure())
 
     solution = solver.Solve()
-
+    LastFoundSolution =solution
     PrintTestResult()
     PrintSolutionToFile(solution)
     RunEvaluation()
@@ -281,6 +283,14 @@ def GetTreeStructure( ):
                 if nrtimebucketstochastic == 5:
                     stochasticparttreestructure = [8, 8, 5, 5, 4]
 
+            if NrScenario == "500":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [500, 1, 1]
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [500, 1, 1, 1]
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [500, 1, 1, 1, 1]
+
             if NrScenario == "800":
                 if nrtimebucketstochastic == 3:
                     stochasticparttreestructure = [25, 8, 4]
@@ -379,19 +389,31 @@ def EvaluateSingleSol(  ):
    # solutions = GetPreviouslyFoundSolution()
     filedescription = GetTestDescription()
 
-    solution = MRPSolution()
 
-    if not EVPI and not PolicyGeneration == Constants.RollingHorizon: #In evpi mode, a solution is computed for each scenario
-        solution.ReadFromFile(filedescription)
+
 
     yeuristicyfix = False
+
     MIPModel = Model
-    if Model == Constants.Average or Model == Constants.AverageSS  or Model == Constants.AverageSSGrave:
+    if Model == Constants.Average or Model == Constants.AverageSS or Model == Constants.AverageSSGrave:
         MIPModel = Constants.ModelYQFix
     if Model == Constants.ModelHeuristicYFix:
         MIPModel = Constants.ModelYFix
         Model = Constants.ModelYFix
 
+    solution = MRPSolution()
+    if not EVPI and not PolicyGeneration == Constants.RollingHorizon: #In evpi mode, a solution is computed for each scenario
+        if Constants.RunEvaluationInSeparatedJob:
+            solution.ReadFromFile(filedescription)
+        else :
+            solution = LastFoundSolution
+
+
+            if not solution.IsPartialSolution:
+                solution.ComputeCost()
+
+                if Model <> Constants.ModelYQFix:
+                    solution.ScenarioTree.FillQuantityToOrderFromMRPSolution(solution)
 
         yeuristicyfix = True
 
