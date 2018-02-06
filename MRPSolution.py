@@ -885,8 +885,8 @@ class MRPSolution:
                     for p in self.MRPInstance.ProductSet:
                         if   t< self.MRPInstance.NrTimeBucket and  (self.Production[ w][ t ][ p ] >=0.9 ):
                             if n.HasLeftOverComponent( p)and n.HasSpareCapacity( p):
-                                nrconsideredsol[t][p] += 1
-                                SWithLeftover[t][p] += n.GetS(p)
+                                nrconsideredsol[t][p] += s.Probability
+                                SWithLeftover[t][p] += n.GetS(p) * s.Probability
                                 #if n.GetS(p) > SWithLeftover[t][p]:
                                 #    SWithLeftover[t][p] = n.GetS(p)
                             if n.GetS( p) > S[t][p]:
