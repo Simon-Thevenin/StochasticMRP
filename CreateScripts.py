@@ -93,7 +93,7 @@ if __name__ == "__main__":
         nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
         nrcenarioyqfix = ["10", "25", "50", "100"]
         nrcenarioyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b"]
-        nrcenarioyfix =["500","12800", "25600", "6400a", "6400c", "51200b"]
+        nrcenarioyfix =[ "3200c", "6400a",  "12800c", "25600c", "51200c"]
         nrcenarioheuristicyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b",
                                   "102400b", "153600"]
         instancetosolvename = "./Instances/InstancesToSolve.csv"
