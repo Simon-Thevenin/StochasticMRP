@@ -172,6 +172,7 @@ def GetPreviouslyFoundSolution():
 
 def ComputeInSampleStatistis():
     global InSampleKPIStat
+
     solutions = GetPreviouslyFoundSolution()
     lengthinsamplekpi = -1
 
@@ -504,7 +505,7 @@ def GatherEvaluation():
 
         global OutOfSampleTestResult
         OutOfSampleTestResult =      evaluator.ComputeStatistic(EvaluationTab, ProbabilitiesTab, NrEvaluation, TestIdentifier,EvaluatorIdentifier, KPIStat, -1)
-        if Method == Constants.MIP and not EVPI:
+        if False and Method == Constants.MIP and not EVPI:
             ComputeInSampleStatistis()
         PrintFinalResult()
     ScenarioSeed = currentseedvalue
