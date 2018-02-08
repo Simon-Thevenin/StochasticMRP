@@ -362,6 +362,16 @@ class MRPSolution:
         self.CplexNrConstraints = -1
         self.CplexNrVariables = -1
 
+    def DeleteNonFirstStageDecision(self):
+        timebucketset = range(self.MRPInstance.NrTimeBucketWithoutUncertaintyBefore + 1)
+        self.IsPartialSolution = True
+        self.Scenarioset = [None]
+        self.SenarioNrset = [0]
+        self.ProductionQuantity = [[[ self.ProductionQuantity[w][t][p] for p in  self.MRPInstance.ProductSet ]  for t in timebucketset]  for w in self.SenarioNrset ]
+        self.InventoryLevel = [[[ self.InventoryLevel[w][t][p] for p in  self.MRPInstance.ProductSet ]  for t in timebucketset]  for w in self.SenarioNrset ]
+        self.Production = [[[ self.Production[w][t][p] for p in  self.MRPInstance.ProductSet ]  for t in self.MRPInstance.TimeBucketSet]  for w in self.SenarioNrset ]
+        self.BackOrder = [[[ self.BackOrder[w][t][p] for p in  self.MRPInstance.ProductWithExternalDemand ]  for t in timebucketset]  for w in self.SenarioNrset ]
+
 
     #This function compute some statistic on the current solution
     def ComputeStatistics( self ):

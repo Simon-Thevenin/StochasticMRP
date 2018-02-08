@@ -1722,11 +1722,7 @@ class MIPSolver(object):
         scenarios = self.Scenarios
         timebucketset = self.Instance.TimeBucketSet
         partialsol = Constants.PrintOnlyFirstStageDecision and (self.Model == Constants.ModelYFix or self.Model == Constants.ModelHeuristicYFix) and not self.EvaluateSolution
-        if partialsol:
-            scenarioset = [0]
-            timebucketset = range( self.Instance.NrTimeBucketWithoutUncertaintyBefore +1 )
-            scenarios = [self.Scenarios[0]]
-            partialsol = True
+
 
         objvalue = sol.get_objective_value()
         array = [self.GetIndexQuantityVariable(p, t, w) for p in self.Instance.ProductSet for t in timebucketset for w
@@ -1760,18 +1756,22 @@ class MIPSolver(object):
         solbackorder = Tool.Transform3d(solbackorder, len(self.Instance.ProductWithExternalDemand), len(timebucketset),
                                         len(scenarioset))
 
-        if self.Model <> Constants.ModelYQFix:
-            self.DemandScenarioTree.FillQuantityToOrder(sol)
+
 
 
         Solution = MRPSolution(self.Instance, solquantity, solproduction, solinventory, solbackorder, scenarios,
                                self.DemandScenarioTree, partialsolution = partialsol)
 
+        if self.Model <> Constants.ModelYQFix:
+            self.DemandScenarioTree.FillQuantityToOrder(sol)
+            self.DemandScenarioTree.FillQuantityToOrderFromMRPSolution(Solution)
 
         if self.Model == Constants.ModelSFix or self.Model == Constants.ModelYSFix:
             array = [self.GetIndexSVariable(p, t) for p in self.Instance.ProductSet for t in timebucketset]
             solSValue = sol.get_values(array)
             Solution.SValue = [[ solSValue[ p * self.Instance.NrTimeBucket + t ] for p in self.Instance.ProductSet ] for t in timebucketset]
+        elif self.Model == Constants.ModelYFix or self.Model == Constants.ModelHeuristicYFix:
+            Solution.ComputeAverageS()
         else:
             Solution.SValue = [[-1 for p in self.Instance.ProductSet] for t in timebucketset]
 
@@ -1789,6 +1789,10 @@ class MIPSolver(object):
         if not self.EvaluateSolution and not self.YFixHeuristic:
             Solution.CplexGap = sol.MIP.get_mip_relative_gap()
         Solution.CplexTime = solvetime
+
+        if partialsol:
+            Solution.DeleteNonFirstStageDecision()
+
         return Solution
 
     #This function compute the cost per scenario

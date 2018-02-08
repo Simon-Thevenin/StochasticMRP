@@ -284,6 +284,23 @@ def GetTreeStructure( ):
                 if nrtimebucketstochastic == 5:
                     stochasticparttreestructure = [8, 8, 5, 5, 4]
 
+            if NrScenario == "6400d":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [16, 20, 20]
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [8, 8, 10, 10]
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [4, 5, 5, 8, 8]
+
+            if NrScenario == "6400e":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [8, 20, 40]
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [4, 8, 10, 20]
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [2, 5, 5, 8, 16]
+
+
             if NrScenario == "500":
                 if nrtimebucketstochastic == 3:
                     stochasticparttreestructure = [500, 1, 1]
@@ -505,7 +522,7 @@ def GatherEvaluation():
 
         global OutOfSampleTestResult
         OutOfSampleTestResult =      evaluator.ComputeStatistic(EvaluationTab, ProbabilitiesTab, NrEvaluation, TestIdentifier,EvaluatorIdentifier, KPIStat, -1)
-        if False and Method == Constants.MIP and not EVPI:
+        if Method == Constants.MIP and not EVPI:
             ComputeInSampleStatistis()
         PrintFinalResult()
     ScenarioSeed = currentseedvalue
@@ -639,8 +656,8 @@ def SetTestIdentifierValue():
 #This function runs the evaluation for the just completed test :
 def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve :
-        policyset = ["Re-solve"]
-        policyset = ["S"]# "NNSAC", "NNDAC", "Re-solve"]
+        #policyset = ["Re-solve"]
+        policyset = ["S", "Re-solve"]# "NNSAC", "NNDAC", "Re-solve"]
           # "NNSAC", "NNDAC", "Re-solve"]
 
         if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or Model == Constants.AverageSSGrave or  Constants.IsRule(Model):
