@@ -93,7 +93,9 @@ if __name__ == "__main__":
         nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
         nrcenarioyqfix = ["10", "25", "50", "100"]
         nrcenarioyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b"]
-        nrcenarioyfix =[  "6400d", "6400e"  ]
+        nrcenarioyfix =[   "12800e", "25600e"  ]
+
+
         Generationset = ["RQMC"]
         nrcenarioheuristicyfix = ["800", "1600", "3200", "6400a", "6400b", "6400c", "12800", "25600", "51200b",
                                   "102400b", "153600"]
@@ -105,7 +107,7 @@ if __name__ == "__main__":
         modelset = [  "YQFix",  "YFix", "HeuristicYFix" ]
         Generationset = ["RQMC"]
         nrcenarioyfqix = [ "500"]
-        nrcenarioyfix = ["6400b",  "25600c"]
+        nrcenarioyfix = ["6400b",  "6400c"]
         nrcenarioheuristicyfix = ["6400b",  "25600c"]
         instancetosolvename = "./Instances/InstancesToSolve.csv"
 
