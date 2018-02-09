@@ -182,7 +182,7 @@ class RollingHorizonSolver:
                         mip.WarmStartGivenSetupConstraints()
                     mip.ModifyBigMForScenario(startinginventory)
                 # Solve the MIP
-                mip.Cplex.write("lpfile%s.lp"%decisionstage)
+                # mip.Cplex.write("lpfile%s.lp"%decisionstage)
                 #print "solve the problem:"
                 solution = mip.Solve( False )
                 #print solution.Production
