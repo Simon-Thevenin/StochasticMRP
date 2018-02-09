@@ -471,6 +471,7 @@ def EvaluateSingleSol(  ):
     if Model == Constants.ModelHeuristicYFix:
         MIPModel = Constants.ModelYFix
         Model = Constants.ModelYFix
+        yeuristicyfix = True
 
     solution = MRPSolution()
     if not EVPI and not PolicyGeneration == Constants.RollingHorizon: #In evpi mode, a solution is computed for each scenario
@@ -486,7 +487,7 @@ def EvaluateSingleSol(  ):
                 if Model <> Constants.ModelYQFix:
                     solution.ScenarioTree.FillQuantityToOrderFromMRPSolution(solution)
 
-        yeuristicyfix = True
+
 
     evaluator = Evaluator( Instance, [solution], [], PolicyGeneration, evpi=EVPI,
                           scenariogenerationresolve=ScenarioGeneration, treestructure=GetTreeStructure(),
@@ -1260,6 +1261,7 @@ if __name__ == "__main__":
     try:
         args = parseArguments()
         #Instance.DefineAsSuperSmallIntance()
+        #GenerateInstancesRHLargeLeadTime()
         Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
         #GenerateInstancesPreliminary()

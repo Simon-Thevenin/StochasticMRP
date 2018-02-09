@@ -712,6 +712,7 @@ class MIPSolver(object):
                       if not AlreadyAdded[indexinarray]:
                           vars = vars + [indexvariable]
                           AlreadyAdded[indexinarray] = True
+                          print self.GivenSetup
                           righthandside = righthandside + [round(self.GivenSetup[t][p], 0)]
          self.Cplex.MIP_starts.add(cplex.SparsePair(vars, righthandside), self.Cplex.MIP_starts.effort_level.solve_fixed )
 
