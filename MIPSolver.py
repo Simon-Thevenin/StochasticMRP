@@ -1601,7 +1601,8 @@ class MIPSolver(object):
                     nrvariable = int(line[5])
                     nrconstraints = int(line[3])
                     if Constants.Debug:
-                        print "there are %r variable and %r constraint"%(nrvariable, nrconstraints)
+                        print "there are %r variables and %r constraints"%(nrvariable, nrconstraints)
+
         return nrvariable, nrconstraints
 
     #This function set the parameter of CPLEX, run Cplex, and return a solution

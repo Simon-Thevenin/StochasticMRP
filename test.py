@@ -156,7 +156,8 @@ def Solve():
 
 def GetPreviouslyFoundSolution():
     result = []
-    for s in SeedArray:
+    seeds = [ScenarioSeed]
+    for s in seeds:
         try:
             TestIdentifier[5] = s
             filedescription = GetTestDescription()
@@ -511,7 +512,7 @@ def GatherEvaluation():
     KPIStats = []
     nrfile = 0
     #Creat the evaluation table
-    for seed in SeedArray:
+    for seed in [ScenarioSeed]:#SeedArray:
         try:
             ScenarioSeed = seed
             filename =  GetEvaluationFileName()

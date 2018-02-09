@@ -108,7 +108,7 @@ if __name__ == "__main__":
         Generationset = ["RQMC"]
         nrcenarioyfqix = [ "500"]
         nrcenarioyfix = ["6400b",  "6400c"]
-        nrcenarioheuristicyfix = ["6400b",  "25600c"]
+        nrcenarioheuristicyfix = ["6400b"]
         instancetosolvename = "./Instances/InstancesToSolve.csv"
 
     if sys.argv[1] == "Policy":
