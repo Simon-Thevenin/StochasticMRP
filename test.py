@@ -675,6 +675,12 @@ def RunEvaluation(  ):
     if Constants.LauchEvalAfterSolve :
         #policyset = ["Re-solve"]
         policyset = ["S", "Re-solve"]# "NNSAC", "NNDAC", "Re-solve"]
+
+        if NrScenario == "6400b":
+            policyset = [ "Re-solve"]
+
+        if NrScenario == "6400c":
+            policyset = ["S"]
           # "NNSAC", "NNDAC", "Re-solve"]
 
         if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or Model == Constants.AverageSSGrave or  Constants.IsRule(Model):
