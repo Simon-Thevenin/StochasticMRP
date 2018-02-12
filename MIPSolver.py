@@ -1380,7 +1380,7 @@ class MIPSolver(object):
 
 
                 for t in self.Instance.TimeBucketSet:
-                    if t == 0:
+                    if t < self.Instance.Leadtimes[ p ] :
                         maximumquanityatt[t][p] = self.Instance.StartingInventories[p]
                     else:
                         RequiredProduct = [ q for q in self.Instance.ProductSet if self.Instance.Requirements[q][p] > 0 ]
