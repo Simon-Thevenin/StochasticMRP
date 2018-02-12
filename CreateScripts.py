@@ -102,6 +102,17 @@ if __name__ == "__main__":
         instancetosolvename = "./Instances/InstancesToSolve.csv"
 #        instancetosolvename = "./Instances/InstancesToSolveUncapacitated.csv"
 
+    if sys.argv[1] == "sensitivity":
+        modelset = ["AverageSS", "AverageSSGrave", "Average", "L4L", "EOQ", "POQ", "SilverMeal", "YQFix", "YFix",
+                    "HeuristicYFix"]
+
+        nrcenarioyfqix = [ "500"]
+        nrcenarioyfix = ["6400b", "6400c"]
+
+        Generationset = ["RQMC"]
+        nrcenarioheuristicyfix = ["6400b", "6400c"]
+        instancetosolvename = "./Instances/InstancesToSolveSensitivity.csv"
+
     if sys.argv[1] == "multipleseed":
         Nrseed = 5
         modelset = [  "YQFix",  "YFix", "HeuristicYFix" ]
@@ -240,12 +251,13 @@ if __name__ == "__main__":
                                             fileeval.write("qsub ./Jobs/job_evaluate_%s_%s_%s_%s_%s_%s_%s \n" % (
                                                 instance, model, nrscenar, generation, method, Policy, seed))
 
-                                    timehorizonrange = [4, 6, 8]
+                                    timehorizonrange = [1, 3, 5]
 
                                     if model == "HeuristicYFix":
-                                        timehorizonrange = [4, 6]
+                                        timehorizonrange = [1, 3]
                                     if model == "L4L" or model == "EOQ" or model == "POQ" or model == "SilverMeal":
-                                        timehorizonrange = [ 9 ]
+                                        timehorizonrange = [ 5 ]
+
                                     for th in timehorizonrange :
                                         CreateRHJob(instance, model, nrscenar,  seed,  timehorizon = th)
                                         fileeval.write("qsub ./Jobs/job_evaluaterh_%s_%s_%s_%s_%s_%s \n" % (

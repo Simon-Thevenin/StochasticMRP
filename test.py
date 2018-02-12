@@ -1242,17 +1242,19 @@ def GenerateInstancesSensitivity():
                             for ll in [0,1]:
                                 nameinstance = "K0011"+ Capacity + TB0+ "1"
 
-                                Instance.ReadFromFile(nameinstance, "Binomial", b, 0, e=echelonconst, rk=0, leadtimestructure=ll, lostsale=b*10, longtimehoizon = False)
-                                Instance.SaveCompleteInstanceInExelFile()
-                                instancecreated = instancecreated + [Instance.InstanceName]
 
-                                if Capacity == "1":
-                                    Instance.ReadFromFile(nameinstance, "Binomial", b, 0, e=echelonconst, rk=0,
+                                if Capacity == "-1":
+                                    nameinstance = "K00111" +  TB0 + "1"
+                                    Instance.ReadFromFile(nameinstance, distribution, b, 0, e=echelonconst, rk=0,
                                                           leadtimestructure=ll, lostsale=b * 10, longtimehoizon=False, capacity=10)
+                                else:
+                                    Instance.ReadFromFile(nameinstance, distribution, b, 0, e=echelonconst, rk=0,
+                                                          leadtimestructure=ll, lostsale=b * 10, longtimehoizon=False)
+
                                     Instance.SaveCompleteInstanceInExelFile()
                                     instancecreated = instancecreated + [Instance.InstanceName]
 
-    csvfile = open("./Instances/InstancesToSolveBinomial.csv", 'wb')
+    csvfile = open("./Instances/InstancesToSolveSensitivity.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
     data_rwriter.writerow(instancecreated)
 
@@ -1262,6 +1264,7 @@ if __name__ == "__main__":
         args = parseArguments()
         #Instance.DefineAsSuperSmallIntance()
         #GenerateInstancesRHLargeLeadTime()
+        GenerateInstancesSensitivity()
         Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
         #GenerateInstancesPreliminary()
