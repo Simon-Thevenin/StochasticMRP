@@ -1264,7 +1264,7 @@ if __name__ == "__main__":
         args = parseArguments()
         #Instance.DefineAsSuperSmallIntance()
         #GenerateInstancesRHLargeLeadTime()
-        GenerateInstancesSensitivity()
+        #GenerateInstancesSensitivity()
         Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
         #GenerateInstancesPreliminary()
