@@ -38,7 +38,7 @@ class Constants:
     SilverMeal  = "SilverMeal"
     RollingHorizon = "RH"
 
-    Debug = True
+    Debug = False
     PrintSolutionFileToExcel = False
     PrintDebugLPFiles = False
     LauchEvalAfterSolve = True
