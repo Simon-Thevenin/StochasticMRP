@@ -719,7 +719,6 @@ def RunEvaluation(  ):
                         NrEvaluation = NrEvaluationParameter
                     SetTestIdentifierValue()
 
-                    print policy
                     EvaluateSingleSol()
 
 # #This function runs the evaluation jobs when the method is solved for the 5 seed:

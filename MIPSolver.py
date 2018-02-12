@@ -494,7 +494,8 @@ class MIPSolver(object):
                     for p in self.Instance.ProductSet:
                         #round the setup when not evaluating to avoid cases where Q can take non 0 values / when evaluating, the previous rounding error ust remain valid but bigM should not change
                         setup = self.GivenSetup[t][p]
-                        if not self.EvaluateSolution and self.YFixHeuristic:
+
+                        if (not self.EvaluateSolution) and self.YFixHeuristic:
                             setup = round( self.GivenSetup[t][p], 2)
                         upperbound[self.GetIndexQuantityVariable(p,t,w)] =  max((setup) * self.M,0.0)
 
@@ -1612,7 +1613,7 @@ class MIPSolver(object):
         # Our aim is to minimize cost.
 
         self.Cplex.objective.set_sense(self.Cplex.objective.sense.minimize)
-        if Constants.Debug:
+        if  Constants.Debug:
             self.Cplex.write("mrp.lp")
 
         #name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
@@ -1626,6 +1627,8 @@ class MIPSolver(object):
         self.Cplex.parameters.timelimit.set( Constants.AlgorithmTimeLimit )
         self.Cplex.parameters.mip.limits.treememory.set( 700000000.0 )
         self.Cplex.parameters.threads.set(1)
+        self.Cplex.parameters.mip.tolerances.integrality.set(0.0)
+        self.Cplex.parameters.simplex.tolerances.feasibility.set(0.000000001)
         self.TuneCplexParamter()
 
 
@@ -1736,23 +1739,19 @@ class MIPSolver(object):
 
 
         # here self.Instance.TimeBucketSet is used because the setups are decided for the complete time horizon in YFix
-        array = [self.GetIndexProductionVariable(p, t, w) for p in self.Instance.ProductSet for t in
-                 self.Instance.TimeBucketSet for w in scenarioset]
+        array = [self.GetIndexProductionVariable(p, t, w) for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in scenarioset]
         solproduction = sol.get_values(array)
 
 
-        solproduction = Tool.Transform3d(solproduction, self.Instance.NrProduct, len(self.Instance.TimeBucketSet),
-                                         len(scenarioset))
+        solproduction = Tool.Transform3d(solproduction, self.Instance.NrProduct, len(self.Instance.TimeBucketSet), len(scenarioset))
 
 
-        array = [self.GetIndexInventoryVariable(p, t, w) for p in self.Instance.ProductSet for t in timebucketset for w
-                 in scenarioset]
+        array = [self.GetIndexInventoryVariable(p, t, w) for p in self.Instance.ProductSet for t in timebucketset for w in scenarioset]
         solinventory = sol.get_values(array)
 
         solinventory = Tool.Transform3d(solinventory, self.Instance.NrProduct, len(timebucketset), len(scenarioset))
 
-        array = [self.GetIndexBackorderVariable(p, t, w)
-                 for p in self.Instance.ProductWithExternalDemand for t in timebucketset for w in scenarioset]
+        array = [self.GetIndexBackorderVariable(p, t, w) for p in self.Instance.ProductWithExternalDemand for t in timebucketset for w in scenarioset]
         solbackorder = sol.get_values(array)
 
         solbackorder = Tool.Transform3d(solbackorder, len(self.Instance.ProductWithExternalDemand), len(timebucketset),
@@ -1763,6 +1762,8 @@ class MIPSolver(object):
 
         Solution = MRPSolution(self.Instance, solquantity, solproduction, solinventory, solbackorder, scenarios,
                                self.DemandScenarioTree, partialsolution = partialsol)
+
+
 
         if self.Model <> Constants.ModelYQFix:
             self.DemandScenarioTree.FillQuantityToOrder(sol)
