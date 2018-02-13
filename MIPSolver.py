@@ -228,8 +228,8 @@ class MIPSolver(object):
 
 
     # This function returns the name of the backorder variable for product p and time t
-    def GetNameStartingInventory(self, p):
-        return "starting_inventory_%d"%(p)
+    def GetNameStartingInventory(self, p, t):
+        return "starting_inventory_%d_%d"%(p,t)
 
     # This function returns the name of the backorder variable for product p and time t
     def GetNameSVariable(self, p, t):
@@ -295,15 +295,14 @@ class MIPSolver(object):
     def GetIndexKnownDemand(self, p):
         return self.GetStartKnownDemand() + self.Instance.ProductWithExternalDemandIndex[p]
 
-    #This function return the index of the variable known demand. They are ordered by product (only for products wiht external demands)
-    def GetSoftPenaltyVariable(self, p):
-        return self.GetStartPenaltyVariabel() + p
+
 
     #This function return the index of the variable initial inventory (which should not be used with knowndemand)
-    def GetIndexInitialInventoryInRollingHorizon(self, p):
+    def GetIndexInitialInventoryInRollingHorizon(self, p, t):
         if self.DemandKnownUntil >= 0:
             raise NameError( "The intial inventory cannot be used with known demande" )
-        return self.GetStartKnownDemand() + p #
+
+        return self.GetStartKnownDemand() + ( min( max(self.Instance.MaimumLeadTime -1, 1) , t) * self.Instance.NrProduct + p )
 
     def GetStartFixedQuantityVariable(self):
         if self.Model == Constants.ModelYSFix:
@@ -323,10 +322,6 @@ class MIPSolver(object):
         if self.Model == Constants.ModelYFix: return self.StartBackorderVariableYFix + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.Model_Fix: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.ModelSFix or self.Model == Constants.ModelYSFix: return self.StartSVariable + self.NrSVariable
-
-    def GetStartPenaltyVariabel(self):
-        if self.Model == Constants.ModelYQFix and  self.UseSafetyStockGrave:
-            return self.StartBackorderVariableWithoutNonAnticipativity + self.NrBackorderVariableWithoutNonAnticipativity
 
     #return the index at which the backorder variables starts
     def GetStartBackorderVariable( self ):
@@ -577,9 +572,10 @@ class MIPSolver(object):
                                          ub=value)
         if self.RollingHorizon:
             #starting inventory used in rolling horizon framework.
-            self.Cplex.variables.add(obj=[0.0] * len( self.Instance.ProductSet ),
-                                     lb=[0.0] * len( self.Instance.ProductSet ),
-                                     ub=[0.0] * len( self.Instance.ProductSet ) )
+            self.Cplex.variables.add(obj=[0.0] * (len( self.Instance.ProductSet ) * max(self.Instance.MaimumLeadTime, 1)),
+                                     lb=[0.0] * (len( self.Instance.ProductSet )* max(self.Instance.MaimumLeadTime, 1)),
+                                     ub=[0.0] * (len( self.Instance.ProductSet )* max(self.Instance.MaimumLeadTime, 1) ) )
+
 
         # self.Cplex.variables.add(obj=[1.0],
         #                           lb=[0.0],
@@ -618,8 +614,9 @@ class MIPSolver(object):
                     if self.Model == Constants.ModelYSFix:
                         qfixvar.append( ( (int)( self.GetIndexFixedQuantity( p, t ) ), self.GetNameFixedQuantity( p, t )))
 
-                if self.RollingHorizon:
-                    initialinventoryvar.append( ( (int)(self.GetIndexInitialInventoryInRollingHorizon( p )), self.GetNameStartingInventory( p )))
+                for t in range( max(self.Instance.MaimumLeadTime, 1) ):
+                    if self.RollingHorizon:
+                        initialinventoryvar.append( ( (int)(self.GetIndexInitialInventoryInRollingHorizon( p, t )), self.GetNameStartingInventory( p, t )))
             quantityvars = list( set( quantityvars ) )
             productionvars = list( set( productionvars ) )
             inventoryvars = list( set( inventoryvars ) )
@@ -630,6 +627,7 @@ class MIPSolver(object):
             initialinventoryvar =list( set( initialinventoryvar ) )
 
             varnames = quantityvars + inventoryvars + productionvars + backordervars + svariablevar + qfixvar+ hasleftoverVar+ initialinventoryvar
+
             self.Cplex.variables.set_names(varnames)
 
 
@@ -713,7 +711,6 @@ class MIPSolver(object):
                       if not AlreadyAdded[indexinarray]:
                           vars = vars + [indexvariable]
                           AlreadyAdded[indexinarray] = True
-                          print self.GivenSetup
                           righthandside = righthandside + [round(self.GivenSetup[t][p], 0)]
          self.Cplex.MIP_starts.add(cplex.SparsePair(vars, righthandside), self.Cplex.MIP_starts.effort_level.solve_fixed )
 
@@ -778,7 +775,7 @@ class MIPSolver(object):
                     startinginventoryinrollinghorizon = []
                     startinginventoryinrollinghorizoncoeff = []
                     if self.RollingHorizon:
-                        startinginventoryinrollinghorizon = [self.GetIndexInitialInventoryInRollingHorizon(p)]
+                        startinginventoryinrollinghorizon = [self.GetIndexInitialInventoryInRollingHorizon(p, t)]
                         startinginventoryinrollinghorizoncoeff = [1]
 
                     vars = inventoryvar + backordervar + quantityvar + dependentdemandvar + knondemand + startinginventoryinrollinghorizon
@@ -795,7 +792,7 @@ class MIPSolver(object):
                                 self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                                        senses=["E"],
                                                                        rhs=righthandside,
-                                                                       names = ["Flowa%da%da%d"%(p,t,w)])
+                                                                       names = ["Flowa%da%da%d"%(p,t,w)] )
                     self.FlowConstraintNR[w][p][t] = "Flowa%da%da%d"%(p,t,w)
 
                     # This function creates the  indicator constraint to se the production variable to 1 when a positive quantity is produce
@@ -1958,7 +1955,9 @@ class MIPSolver(object):
 
     def UpdateStartingInventory(self, startinginventories):
 
-        startinginventotytuples = [ ( self.GetIndexInitialInventoryInRollingHorizon(p), startinginventories[p] )  for p in self.Instance.ProductSet]
+        startinginventotytuples = [ ( self.GetIndexInitialInventoryInRollingHorizon(p, t), startinginventories[t][p] )
+                                    for p in self.Instance.ProductSet
+                                    for t in range ( max(self.Instance.MaimumLeadTime, 1) )]
         self.Cplex.variables.set_lower_bounds(startinginventotytuples)
         self.Cplex.variables.set_upper_bounds(startinginventotytuples)
 

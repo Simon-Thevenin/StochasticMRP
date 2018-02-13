@@ -135,7 +135,8 @@ class MRPInstance:
         self.ComputeHasExternalDemand()
         self.ComputeUseForFabrication()
         self.ComputeMaximumArchievableSafetyStock()
-
+        self.MaimumLeadTime =  max( self.Leadtimes[p]  for p in self.ProductSet  )
+        self.Delivery =  [ [ 0.0 for q in self.ProductSet ]   for t in self.TimeBucketSet ]
 
 
         #Constructor
@@ -170,6 +171,7 @@ class MRPInstance:
         self.SetupCosts = []
         self.BackorderCosts = []
         self.HasExternalDemand = []
+        self.Delivery= []
         #The set of product which are required for production of each product.
         self.RequieredProduct = []
         self.VariableCost = []
@@ -179,6 +181,7 @@ class MRPInstance:
         self.NrLevel = -1
         self.Level = [] # The level of each product in the bom
         self.MaxLeadTimeProduct = [] #The maximum leadtime to the component for each product
+        self.MaimumLeadTime=-1  # the maximum leadtime over all product
        # self.DemandScenarioTree = ScenarioTree( instance = self )
 
 

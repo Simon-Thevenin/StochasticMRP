@@ -135,13 +135,13 @@ class RollingHorizonSolver:
 
             timedemandknownuntil = timetodecide - 1
 
-            startinginventory = self.GetEndingInventoryAt(timetodecide ,   scenario)
+            startinginventory = self.GetStartInventoryPlusQuantityOnOrder(timetodecide ,   scenario)
 
             mip = None
             wronginventory = False
             for  p in self.GlobalInstance.ProductSet:
                 if ( not self.GlobalInstance.HasExternalDemand[p] ) \
-                        and ( lastInventory[p]  < startinginventory[p] - 0.01 or lastInventory[p]  > startinginventory[p] +0.01  ) \
+                        and ( lastInventory[p]  < startinginventory[0][p] - 0.01 or lastInventory[p]  > startinginventory[0][p] +0.01  ) \
                         and not Constants.PrintOnlyFirstStageDecision:
                      wronginventory =  True
 
@@ -153,7 +153,13 @@ class RollingHorizonSolver:
             if Constants.IsRule( self.Model ):
                 #update the starting Inventory in the instance
                 for p in instance.ProductSet:
-                    instance.StartingInventories[p] = startinginventory[p]
+                    instance.StartingInventories[p] = startinginventory[0][p]
+                    for t in range (instance.NrTimeBucket ):
+                        if  t==0 or t  >= self.GlobalInstance.Leadtimes[p] -1  :
+                            instance.Delivery[t][p] = 0
+                        else:
+
+                            instance.Delivery[t][p] = startinginventory[t][p] - startinginventory[t-1][p]
 
                 solution = self.HeuristicSolvers[decisionstage].SolveWithSimpleRule( self.Model)
 
@@ -161,7 +167,7 @@ class RollingHorizonSolver:
                 if self.Owner.YeuristicYfix:
                     mipwarmstart = self.RollingHorizonMIPWarmStarts[decisionstage]
                     mipwarmstart.UpdateStartingInventory(startinginventory)
-                    mipwarmstart.ModifyBigMForScenario( startinginventory)
+                    mipwarmstart.ModifyBigMForScenario( startinginventory[0])
                     #mipwarmstart.Cplex.write("lpfile.lp")
                     solutionwarmstart = mipwarmstart.Solve( False )
 
@@ -174,6 +180,7 @@ class RollingHorizonSolver:
 
                 mip = self.RollingHorizonMIPs[decisionstage]
                 # Update the starting inventory, and the known Y values
+
                 mip.UpdateStartingInventory(startinginventory)
 
 
@@ -185,9 +192,9 @@ class RollingHorizonSolver:
                 else:
                     if self.Model == Constants.ModelYFix:
                         mip.WarmStartGivenSetupConstraints()
-                    mip.ModifyBigMForScenario(startinginventory)
+                    mip.ModifyBigMForScenario(startinginventory[0])
                 # Solve the MIP
-                # mip.Cplex.write("lpfile%s.lp"%decisionstage)
+                #mip.Cplex.write("lpfile%s.lp"%decisionstage)
                 #print "solve the problem:"
                 solution = mip.Solve( False )
                 #print solution.Production
@@ -215,9 +222,24 @@ class RollingHorizonSolver:
 
         return setups, quantity
 
+    def GetStartInventoryPlusQuantityOnOrder(self, timetodecide ,   scenario):
 
+        result = [ [ 0 for p in self.GlobalInstance.ProductSet ] for t in range(max(self.GlobalInstance.MaimumLeadTime, 1)) ]
 
-    #This function return the ending inventory at time t
+        startinventory = self.GetEndingInventoryAt(timetodecide ,   scenario)
+
+        for p in self.GlobalInstance.ProductSet:
+            sumdelivery = 0
+            for t in range(    max(self.GlobalInstance.MaimumLeadTime, 1) ):
+                if t > 0  and t < self.GlobalInstance.Leadtimes[p]:
+                    productiontime = timetodecide + t - self.GlobalInstance.Leadtimes[p]
+                    sumdelivery += self.Solution.ProductionQuantity[0][productiontime][p]
+                result[t][p] = startinventory[p] \
+                                   +  sumdelivery
+
+        return result
+
+        #This function return the ending inventory at time t
     def GetEndingInventoryAt(self, t,  scenario):
         prevquanity = [ [ self.Solution.ProductionQuantity[0][t1][p1]
                           for p1 in self.GlobalInstance.ProductSet ]

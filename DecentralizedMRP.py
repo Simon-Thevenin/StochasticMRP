@@ -260,6 +260,12 @@ class DecentralizedMRP(object):
                        for p1 in self.Instance.ProductSet ]
                       for t1 in self.Instance.TimeBucketSet ]
         projectedbackorder, projectedinventory, echelonstock, currrentstocklevel = self.Solution.GetCurrentStatus(prevdemand, prevquanity, time)
+
+        deliveries = [ sum( self.Instance.Delivery[t1][p1] for t1 in range(time +1) ) for p1 in self.Instance.ProductSet]
+
+        projectedbackorder = [ projectedbackorder[p1] - deliveries[p1] for p1 in self.Instance.ProductWithExternalDemand]
+        projectedinventory = [ projectedinventory[p1] + deliveries[p1] for p1 in self.Instance.ProductSet]
+
         return projectedbackorder, projectedinventory
 
     #return the quantity to order at time t for product p in instance with Lot for Lot rule

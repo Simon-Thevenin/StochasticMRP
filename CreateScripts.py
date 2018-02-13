@@ -238,7 +238,7 @@ if __name__ == "__main__":
                              scenarset = scenarsetsampling
                          for nrscenar in scenarset:
                              for seed in range(Nrseed):
-                                   for mipsetting in[ "Default"]:
+                                 for mipsetting in[ "Default"]:
 
                                     Createsolvejob(instance, model, nrscenar, generation, seed, method, mipsetting)
                                     filesolve.write("qsub ./Jobs/job_solve_%s_%s_%s_%s_%s_%s_%s \n" % (
