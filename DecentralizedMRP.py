@@ -119,7 +119,6 @@ class DecentralizedMRP(object):
 
     def GetMaxDemanWithRespectToServiceLevel(self, p, t):
         ratio = self.GetServiceLevel(p)
-
         result = ScenarioTreeNode.TransformInverse(   [[ratio]],
                                                       1,
                                                       1,
@@ -141,13 +140,18 @@ class DecentralizedMRP(object):
 
 
     def GetSafetyStockGrave(self, S, SI, p, t):
+
+
         result = sum(self.GetMaxDemanWithRespectToServiceLevel(p, tau)
                     - self.Instance.ForecastedAverageDemand[tau][p]
-                    for tau in range(t - SI - self.Instance.Leadtimes[p], t - S+1))
+                    for tau in range(max(t - SI - self.Instance.Leadtimes[p], 0), max(t - S+1, 0 ) ))
 
         return result
 
     def GetCostGrave(self, S, SI, p, t):
+
+
+
         result = self.Instance.InventoryCosts[p] \
                  *  self.GetSafetyStockGrave( S, SI, p, t)
         return result

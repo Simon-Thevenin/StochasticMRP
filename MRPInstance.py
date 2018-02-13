@@ -4,7 +4,7 @@ import openpyxl as opxl
 import cPickle as pickle
 from GraveInstanceReader import GraveInstanceReader
 from TemplemeierInstanceReader import TemplemeierInstanceReader
-
+from Constants import Constants
 
 
 class MRPInstance:
@@ -134,7 +134,7 @@ class MRPInstance:
                                                                     for p in self.ProductSet ]
         self.ComputeHasExternalDemand()
         self.ComputeUseForFabrication()
-
+        self.ComputeMaximumArchievableSafetyStock()
 
 
 
@@ -184,6 +184,8 @@ class MRPInstance:
 
         #If this is true, a single scenario with average demand is generated
         self.BranchingStrategy = 3
+
+        self.MaximumQuanityatT = [ [ ] ]
 
     #Compute the lead time from a product to its component with the largest sum of lead time
     def ComputeMaxLeadTime( self ):
@@ -375,3 +377,30 @@ class MRPInstance:
         self.ComputeMaxLeadTime()
         self.ComputeIndices()
         self.ComputeInstanceData()
+
+    def ComputeMaximumArchievableSafetyStock( self ):
+
+        self.MaximumQuanityatT =  [ [ 0   for p in self.ProductSet ]   for t in self.TimeBucketSet]
+
+        levelset = sorted(set(self.Level), reverse=True)
+
+        for l in levelset:
+            prodinlevel = [p for p in self.ProductSet if self.Level[p] == l]
+            for p in prodinlevel:
+
+
+                for t in self.TimeBucketSet:
+                    if t < self.Leadtimes[ p ] :
+                        self.MaximumQuanityatT[t][p] = self.StartingInventories[p]
+                    else:
+                        RequiredProduct = [ q for q in self.ProductSet if self.Requirements[p][q]  > 0 ]
+                        if len(RequiredProduct) > 0:
+                            minquantity = min(  self.MaximumQuanityatT[ t - self.Leadtimes[ p ]  ][ q ] for q in RequiredProduct )
+                        else:
+                            minquantity = Constants.Infinity
+
+                        if  self.MaximumQuanityatT[t-1][p] < Constants.Infinity and  minquantity < Constants.Infinity:
+                            self.MaximumQuanityatT[t][p] =  self.MaximumQuanityatT[t-1][p] + minquantity
+                        else:
+                            self.MaximumQuanityatT[t][p] = Constants.Infinity
+

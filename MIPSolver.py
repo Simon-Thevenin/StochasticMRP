@@ -1350,14 +1350,13 @@ class MIPSolver(object):
     def AddConstraintSafetyStock( self ):
         decentralized = DecentralizedMRP(self.Instance)
         safetystock = decentralized.ComputeSafetyStockGrave()
-        maxquantityat = self.MaximumArchievableSafetyStock()
         AlreadyAdded = [ False for v in range(self.GetNrInventoryVariable()) ]
         for w in self.ScenarioSet:
             for p in self.Instance.ProductSet:
                  for t in self.Instance.TimeBucketSet:
                      IndexInventory1 = self.GetIndexInventoryVariable(p, t, w)
                      positionvar = self.GetStartInventoryVariable() - IndexInventory1
-                     if not AlreadyAdded[positionvar] and maxquantityat[t][p] >  safetystock[t][p] :
+                     if not AlreadyAdded[positionvar] and self.Instance.MaximumQuanityatT[t][p] >  safetystock[t][p] :
                           AlreadyAdded[positionvar] = True
                           vars = [IndexInventory1 ]
                           coeff = [1.0]
@@ -1366,36 +1365,6 @@ class MIPSolver(object):
                                                              senses=["G"],
                                                              rhs=[ safetystock[t][p] ] )
 
-
-    def MaximumArchievableSafetyStock( self ):
-
-        maximumquanityatt =  [ [ 0   for p in self.Instance.ProductSet ]   for t in self.Instance.TimeBucketSet]
-
-
-
-        levelset = sorted(set(self.Instance.Level), reverse=False)
-
-        for l in levelset:
-            prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
-            for p in prodinlevel:
-
-
-                for t in self.Instance.TimeBucketSet:
-                    if t < self.Instance.Leadtimes[ p ] :
-                        maximumquanityatt[t][p] = self.Instance.StartingInventories[p]
-                    else:
-                        RequiredProduct = [ q for q in self.Instance.ProductSet if self.Instance.Requirements[p][q] > 0 ]
-                        if len(RequiredProduct) > 0:
-                            minquantity = min( maximumquanityatt[ t - self.Instance.Leadtimes[ p ]  ][ q ] for q in RequiredProduct )
-                        else:
-                            minquantity = Constants.Infinity
-
-                        if maximumquanityatt[t-1][p] < Constants.Infinity and  minquantity < Constants.Infinity:
-                            maximumquanityatt[t][p] = maximumquanityatt[t-1][p] + minquantity
-                        else:
-                            maximumquanityatt[t][p] = Constants.Infinity
-
-        return maximumquanityatt
 
 
     # Define the constraint of the model

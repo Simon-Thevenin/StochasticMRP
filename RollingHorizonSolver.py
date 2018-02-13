@@ -78,6 +78,7 @@ class RollingHorizonSolver:
                                   rollinghorizon = True,
                                   logfile = logfilename,
                                   yfixheuristic = self.Owner.YeuristicYfix,
+                                  usesafetystockgrave =  self.Owner.UseSafetyStockGrave,
                                   givensetups = givensetups)
             mipsolver.BuildModel()
             result.append( mipsolver )
@@ -108,6 +109,10 @@ class RollingHorizonSolver:
                                                         for t in range(result[i].NrTimeBucket) ]
                 result[i].NrTimeBucketWithoutUncertaintyBefore = max(0,
                                                                      self.GlobalInstance.NrTimeBucketWithoutUncertaintyBefore - startwindow)
+
+                result[i].MaximumQuanityatT = [self.GlobalInstance.MaximumQuanityatT[startwindow + t]
+                                                     for t in range(result[i].NrTimeBucket)]
+
                 result[i].ComputeIndices()
 
                 previousnrperiodwithoutuncertaintybefore = nrperiodwithoutuncertaintybefore
