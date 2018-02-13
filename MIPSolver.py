@@ -1357,7 +1357,7 @@ class MIPSolver(object):
                  for t in self.Instance.TimeBucketSet:
                      IndexInventory1 = self.GetIndexInventoryVariable(p, t, w)
                      positionvar = self.GetStartInventoryVariable() - IndexInventory1
-                     if not AlreadyAdded[positionvar] and maxquantityat[t][p] >  safetystock[t][p]:
+                     if not AlreadyAdded[positionvar] and maxquantityat[t][p] >  safetystock[t][p] :
                           AlreadyAdded[positionvar] = True
                           vars = [IndexInventory1 ]
                           coeff = [1.0]
@@ -1384,9 +1384,9 @@ class MIPSolver(object):
                     if t < self.Instance.Leadtimes[ p ] :
                         maximumquanityatt[t][p] = self.Instance.StartingInventories[p]
                     else:
-                        RequiredProduct = [ q for q in self.Instance.ProductSet if self.Instance.Requirements[q][p] > 0 ]
+                        RequiredProduct = [ q for q in self.Instance.ProductSet if self.Instance.Requirements[p][q] > 0 ]
                         if len(RequiredProduct) > 0:
-                            minquantity = min( maximumquanityatt[ t - self.Instance.Leadtimes[ p ] ][ q ] for q in RequiredProduct )
+                            minquantity = min( maximumquanityatt[ t - self.Instance.Leadtimes[ p ]  ][ q ] for q in RequiredProduct )
                         else:
                             minquantity = Constants.Infinity
 
