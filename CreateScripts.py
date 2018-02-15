@@ -88,7 +88,7 @@ if __name__ == "__main__":
     Nrseed = 1
     if sys.argv[1] == "preliminary":
         modelset = [  "AverageSS", "AverageSSGrave", "Average",  "L4L", "EOQ", "POQ", "SilverMeal",  "YQFix",  "YFix", "HeuristicYFix", "SFix" ]
-        modelset = ["YFix"]
+        modelset = ["AverageSSGrave"]
         nrcenarioysfix= [ "10", "25", "50", "100"]
         nrcenarioyfqix = [ "10", "25", "50", "100", "200", "500", "1000"]
         nrcenarioyqfix = ["10", "25", "50", "100"]
