@@ -105,13 +105,13 @@ if __name__ == "__main__":
     if sys.argv[1] == "sensitivity":
         modelset = ["AverageSS", "AverageSSGrave", "Average", "L4L", "EOQ", "POQ", "SilverMeal", "YQFix", "YFix",
                     "HeuristicYFix"]
-
+        #modelset = ["YQFix"]
         nrcenarioyfqix = [ "500"]
         nrcenarioyfix = ["6400b", "6400c"]
 
         Generationset = ["RQMC"]
         nrcenarioheuristicyfix = ["6400b"]
-        instancetosolvename = "./Instances/InstancesToSolveSensitivity.csv"
+        instancetosolvename = "./Instances/InstancesToSolveSensitivity2.csv"
 
     if sys.argv[1] == "multipleseed":
         Nrseed = 5
