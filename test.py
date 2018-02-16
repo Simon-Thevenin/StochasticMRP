@@ -690,7 +690,7 @@ def RunEvaluation(  ):
         if NrScenario == "6400b":
             policyset = [ "Re-solve"]
 
-        if NrScenario == "6400c":
+        if NrScenario == "6400c" and Model == Constants.ModelYFix:
             policyset = ["S"]
           # "NNSAC", "NNDAC", "Re-solve"]
 
@@ -1239,28 +1239,36 @@ def GenerateInstancesAllScenario():
 def GenerateInstancesSensitivity():
 
     instancecreated = []
-    for bom in ["K00", "G00"]:
+    for bom in ["K001", "G004"]:
         for TB0 in ["1",  "3"]:
             for  Capacity in  ["-1", "1", "3"]:
                 for echelonconst in ["n", "l"]:
                     for distribution in [ "NonStationary", "Lumpy", "SlowMoving" ]:
-                        if distribution == "Nonstationary":
-                            rateofknown =[]
+                        if distribution == "NonStationary":
+                            rateofknownset =[25, 50, 75]
+                            CoeffVariation = ["1", "4", "7"]
+                            fe =25
+                        else:
+                            rateofknownset = [0]
+                            CoeffVariation = ["1"]
+                            fe = 0
                         for b in [2, 4]:
                             for ll in [0,1]:
-                                nameinstance = "K0011"+ Capacity + TB0+ "1"
+                                for Variation in CoeffVariation:
+                                    for rateofknown in rateofknownset:
+                                        nameinstance = bom+ Variation + Capacity + TB0+ "1"
 
 
-                                if Capacity == "-1":
-                                    nameinstance = "K00111" +  TB0 + "1"
-                                    Instance.ReadFromFile(nameinstance, distribution, b, 0, e=echelonconst, rk=0,
-                                                          leadtimestructure=ll, lostsale=b * 10, longtimehoizon=False, capacity=10)
-                                else:
-                                    Instance.ReadFromFile(nameinstance, distribution, b, 0, e=echelonconst, rk=0,
-                                                          leadtimestructure=ll, lostsale=b * 10, longtimehoizon=False)
+                                        if Capacity == "-1":
+                                            nameinstance = bom+ Variation +"1" +  TB0 + "1"
+                                            Instance.ReadFromFile(nameinstance, distribution, b, fe, e=echelonconst, rk=rateofknown,
+                                                                  leadtimestructure=ll, lostsale=b * 10, longtimehoizon=False, capacity=10)
+                                        else:
+                                            Instance.ReadFromFile(nameinstance, distribution, b, fe, e=echelonconst, rk=rateofknown,
+                                                                  leadtimestructure=ll, lostsale=b * 10, longtimehoizon=False)
 
-                                    Instance.SaveCompleteInstanceInExelFile()
-                                    instancecreated = instancecreated + [Instance.InstanceName]
+                                            Instance.SaveCompleteInstanceInExelFile()
+                                            instancecreated = instancecreated + [Instance.InstanceName]
 
     csvfile = open("./Instances/InstancesToSolveSensitivity.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)

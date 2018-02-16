@@ -176,8 +176,8 @@ class TemplemeierInstanceReader( InstanceReader ):
             else:
                 self.Instance.ForecastError = [forecasterror for p in self.Instance.ProductSet]
                 self.Instance.RateOfKnownDemand = [
-                    math.pow(rateknown, (t - self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1)) for t in
-                    self.Instance.TimeBucketSet]
+                    math.pow(rateknown, (t - self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1))
+                    for t in self.Instance.TimeBucketSet ]
                 self.Instance.ForecastedAverageDemand = [[0.0 for p in self.Instance.ProductSet]
                                                          for t in self.Instance.TimeBucketSet]
                 if longtimehorizon:
