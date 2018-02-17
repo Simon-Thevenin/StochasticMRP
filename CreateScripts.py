@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
         Generationset = ["RQMC"]
         nrcenarioheuristicyfix = ["6400b"]
-        instancetosolvename = "./Instances/InstancesToSolveSensitivity.csv"
+        instancetosolvename = "./Instances/InstancesToSolveSensitivity2.csv"
 
     if sys.argv[1] == "multipleseed":
         Nrseed = 5
