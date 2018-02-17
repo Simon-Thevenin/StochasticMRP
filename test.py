@@ -1241,7 +1241,7 @@ def GenerateInstancesSensitivity():
     instancecreated = []
     for bom in ["K001", "G004"]:
         for TB0 in ["1",  "3"]:
-            for  Capacity in  ["-1", "1", "3"]:
+            for  Capacity in  ["-1"]:#, "1", "3"]:
                 for echelonconst in ["n", "l"]:
                     for distribution in [ "NonStationary", "Lumpy", "SlowMoving" ]:
                         if distribution == "NonStationary":
@@ -1267,8 +1267,8 @@ def GenerateInstancesSensitivity():
                                             Instance.ReadFromFile(nameinstance, distribution, b, fe, e=echelonconst, rk=rateofknown,
                                                                   leadtimestructure=ll, lostsale=b * 10, longtimehoizon=False)
 
-                                            Instance.SaveCompleteInstanceInExelFile()
-                                            instancecreated = instancecreated + [Instance.InstanceName]
+                                        Instance.SaveCompleteInstanceInExelFile()
+                                        instancecreated = instancecreated + [Instance.InstanceName]
 
     csvfile = open("./Instances/InstancesToSolveSensitivity.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
