@@ -22,7 +22,7 @@ def Createsolvejob(instance, model, nrscenar, generation, seed, method, mipsetti
 #$ -q idra
 #$ -j y
 #$ -o /home/thesim/log/outputjob%s%s%s%s%s%s%s.txt
-ulimit -v 16000000
+ulimit -v 30000000
 mkdir -p /tmp/thesim
 mkdir -p /tmp/thesim/Evaluations
 mkdir -p /tmp/thesim/Solutions
@@ -43,7 +43,7 @@ def CreatePolicyJob(instance, model, nrscenar, generation, seed, Policy):
 #$ -q idra
 #$ -j y
 #$ -o /home/thesim/log/outputjobevaluate%s%s%s%s%s%s%s.txt
-ulimit -v 16000000
+ulimit -v 30000000
 mkdir -p /tmp/thesim
 mkdir -p /tmp/thesim/Evaluations
 mkdir -p /tmp/thesim/Solutions
@@ -64,7 +64,7 @@ def CreateRHJob(instance, model, nrscenar,  seed,  timehorizon ):
 #$ -q idra
 #$ -j y
 #$ -o /home/thesim/log/outputjobevaluate%s%s%s%s%s%s.txt
-ulimit -v 16000000
+ulimit -v 30000000
 mkdir -p /tmp/thesim
 mkdir -p /tmp/thesim/Evaluations
 mkdir -p /tmp/thesim/Solutions
@@ -280,7 +280,7 @@ if __name__ == "__main__":
 #$ -q idra
 #$ -j y
 #$ -o /home/thesim/log/outputjob%s.txt
-ulimit -v 16000000
+ulimit -v 30000000
 mkdir -p /tmp/thesim
 mkdir -p /tmp/thesim/Evaluations
 mkdir -p /tmp/thesim/Solutions
