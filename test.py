@@ -241,6 +241,16 @@ def GetTreeStructure( ):
                     stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 9:
                     stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 10:
+                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 11:
+                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 12:
+                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 13:
+                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 14:
+                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
             if NrScenario == "4096":
                 if nrtimebucketstochastic == 4:
@@ -728,7 +738,7 @@ def RunEvaluation(  ):
         if Model == Constants.ModelYSFix:
             policyset = ["YS"]
 
-        if Instance.NrTimeBucket >= 10:
+        if Instance.NrTimeBucket >= 10 and not Model == Constants.ModelHeuristicYFix:
             policyset = ["Fix"]
         perfectsenarioset = [0]
         if Instance.Distribution == Constants.Binomial:
