@@ -269,22 +269,27 @@ def GetTreeStructure( ):
                 if nrtimebucketstochastic == 4:
                     stochasticparttreestructure = [50, 8, 4, 4]
                 if nrtimebucketstochastic == 5:
-                    stochasticparttreestructure = [50, 8, 4, 4, 2]
+                    stochasticparttreestructure = [50, 8, 4, 4, 1]
                 if nrtimebucketstochastic == 6:
-                    stochasticparttreestructure = [50, 8, 4, 4, 2, 2]
+                    stochasticparttreestructure = [50, 8, 4, 4, 1, 1]
                 if nrtimebucketstochastic == 7:
-                    stochasticparttreestructure = [50, 8, 4, 4, 2, 2, 1]
+                    stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1]
                 if nrtimebucketstochastic == 8:
-                    stochasticparttreestructure = [50, 8, 4, 4, 2, 2, 1, 1]
+                    stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 9:
-                    stochasticparttreestructure = [50, 8, 4, 4, 2, 2, 1, 1, 1]
+                    stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 10:
-                    stochasticparttreestructure = [50, 8, 4, 4, 2, 2, 1, 1, 1, 1]
+                    stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 11:
-                    stochasticparttreestructure = [50, 8, 4, 4, 2, 2, 1, 1, 1, 1, 1]
+                    stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 12:
-                    stochasticparttreestructure = [50, 8, 4, 4, 2, 2, 1, 1, 1, 1, 1, 1]
-
+                    stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 13:
+                    stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 14:
+                    stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 15:
+                    stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
             if NrScenario == "6400c":
                 if nrtimebucketstochastic == 3:
@@ -292,7 +297,27 @@ def GetTreeStructure( ):
                 if nrtimebucketstochastic == 4:
                     stochasticparttreestructure = [10, 10, 8, 8]
                 if nrtimebucketstochastic == 5:
-                    stochasticparttreestructure = [8, 8, 5, 5, 4]
+                    stochasticparttreestructure = [10, 10, 8, 8, 1]
+                if nrtimebucketstochastic == 6:
+                    stochasticparttreestructure = [10, 10, 8, 8, 1, 1]
+                if nrtimebucketstochastic == 7:
+                    stochasticparttreestructure = [10, 10, 8, 8, 1, 1, 1]
+                if nrtimebucketstochastic == 8:
+                    stochasticparttreestructure = [10, 10, 8, 8, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 9:
+                    stochasticparttreestructure = [10, 10, 8, 8, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 10:
+                    stochasticparttreestructure = [10, 10, 8, 8, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 11:
+                    stochasticparttreestructure = [10, 10, 8, 8, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 12:
+                    stochasticparttreestructure = [10, 10, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 13:
+                    stochasticparttreestructure = [10, 10, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 14:
+                    stochasticparttreestructure = [10, 10, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                if nrtimebucketstochastic == 15:
+                    stochasticparttreestructure = [10, 10, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
             if NrScenario == "6400d":
                 if nrtimebucketstochastic == 3:
@@ -690,7 +715,7 @@ def RunEvaluation(  ):
         if NrScenario == "6400b":
             policyset = [ "Re-solve"]
 
-        if NrScenario == "6400c" and Model == Constants.ModelYFix:
+        if NrScenario == "6400c":
             policyset = ["S"]
           # "NNSAC", "NNDAC", "Re-solve"]
 
