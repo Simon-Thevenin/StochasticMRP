@@ -280,4 +280,7 @@ class RollingHorizonSolver:
                 # Copy the Setup decision for the first day:
                 for p in self.GlobalInstance.ProductSet:
                     self.Solution.Production[0][tau][p] = productionvalues[(tau - time) + len( periodstocopy) * p]
-                    self.Solution.ProductionQuantity[0][tau][p] = quantityvalues[(tau - time) + len( periodstocopy) * p]
+                    if   self.Solution.Production[0][tau][p] == 0:
+                        self.Solution.ProductionQuantity[0][tau][p] = 0
+                    else:
+                        self.Solution.ProductionQuantity[0][tau][p] = quantityvalues[(tau - time) + len( periodstocopy) * p]

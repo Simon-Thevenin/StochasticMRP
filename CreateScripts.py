@@ -141,14 +141,14 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "rollinghorizon":
 
-        modelset = [  "AverageSS", "Average", "AverageSSGrave",  "L4L", "EOQ", "POQ", "SilverMeal", "YQFix"]
+        modelset = [  "AverageSS", "Average", "AverageSSGrave",  "L4L", "EOQ", "POQ", "SilverMeal", "YQFix", "HeuristicYFix"]
         #modelset = [ "HeuristicYFix"]
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
         nrcenarioyfqix = [ "500"]
         Generationset = ["RQMC"]
         NrScenarioEvaluation = "100"
-        instancetosolvename = "./Instances/InstancesToSolveRH2.csv"
+        instancetosolvename = "./Instances/InstancesToSolveRH3.csv"
 
     if sys.argv[1] == "rollinghorizon2":
 
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         nrcenarioyfqix = [ "100"]
         Generationset = ["RQMC"]
         NrScenarioEvaluation = "100"
-        instancetosolvename = "./Instances/InstancesToSolveRH2.csv"
+        instancetosolvename = "./Instances/InstancesToSolveRH3.csv"
 
 
     #policyyqfix = [  "Fix", "Re-solve" ]
