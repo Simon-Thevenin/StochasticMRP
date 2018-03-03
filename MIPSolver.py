@@ -726,6 +726,7 @@ class MIPSolver(object):
         if self.UseSafetyStockGrave:
             safetystock  = decentralized.ComputeSafetyStockGrave()
 
+
         self.FlowConstraintNR = [[[ "" for t in self.Instance.TimeBucketSet]  for p in self.Instance.ProductSet] for w in self.ScenarioSet]
         AlreadyAdded = [ False for w in range(self.GetNrInventoryVariable())  ]
 

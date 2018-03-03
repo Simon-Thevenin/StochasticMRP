@@ -117,17 +117,28 @@ class DecentralizedMRP(object):
     def GetServiceLevel(self, p):
         return  float(self.Instance.BackorderCosts[p] ) / float((self.Instance.BackorderCosts[p] + self.Instance.InventoryCosts[p] ) )
 
-    def GetMaxDemanWithRespectToServiceLevel(self, p, t):
-        ratio = self.GetServiceLevel(p)
-        result = ScenarioTreeNode.TransformInverse(   [[ratio]],
-                                                      1,
-                                                      1,
-                                                      self.Instance.Distribution,
-                                                      [self.Instance.ForecastedAverageDemand[t][p]],
-                                                      [self.Instance.ForcastedStandardDeviation[t][p]])[0][0]
+    def GetServiceLevelFromLostSale(self, p):
+        return  float(self.Instance.LostSaleCost[p]) / float(
+            (self.Instance.LostSaleCost[p] + self.Instance.InventoryCosts[p]))
+
+    def GetMaxDemanWithRespectToServiceLevel(self, p, t, WithLosale=False):
+
+        if not self.Instance.HasExternalDemand[p]:
+            result = sum(self.GetMaxDemanWithRespectToServiceLevel(q, t) * self.Instance.Requirements[q][p]
+                            for q in self.Instance.ProductSet if self.Instance.Requirements[q][p] > 0 )
+        else:
+            if WithLosale and t >= self.Instance.NrTimeBucket - 1:
+                ratio = self.GetServiceLevelFromLostSale(p)
+            else :
+                ratio = self.GetServiceLevel(p)
+            result = ScenarioTreeNode.TransformInverse(   [[ratio]],
+                                                          1,
+                                                          1,
+                                                          self.Instance.Distribution,
+                                                          [self.Instance.ForecastedAverageDemand[t][p]],
+                                                          [self.Instance.ForcastedStandardDeviation[t][p]])[0][0]
 
         return result
-
 
     def ComputeSafetyStock(self):
 
@@ -141,16 +152,13 @@ class DecentralizedMRP(object):
 
     def GetSafetyStockGrave(self, S, SI, p, t):
 
-
-        result = sum(self.GetMaxDemanWithRespectToServiceLevel(p, tau)
+        result = sum(self.GetMaxDemanWithRespectToServiceLevel(p, tau, WithLosale=False)
                     - self.Instance.ForecastedAverageDemand[tau][p]
                     for tau in range(max(t - SI - self.Instance.Leadtimes[p], 0), max(t - S+1, 0 ) ))
 
         return result
 
     def GetCostGrave(self, S, SI, p, t):
-
-
 
         result = self.Instance.InventoryCosts[p] \
                  *  self.GetSafetyStockGrave( S, SI, p, t)
