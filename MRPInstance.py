@@ -212,7 +212,7 @@ class MRPInstance:
                 children = [q for q in self.ProductSet if self.Requirements[q][p] > 0]
                 if len(children) > 0:
                     timetoenditem[p] = max([timetoenditem[q] for q in children])
-                    timetoenditem[p] = max([self.Leadtimes[q] for q in children])
+                    timetoenditem[p] = max([self.Leadtimes[q] for q in children]) +1
 
         return timetoenditem
 

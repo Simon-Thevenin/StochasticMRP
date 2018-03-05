@@ -147,12 +147,13 @@ class DecentralizedMRP(object):
             for t in range(self.FixUntil+1, self.Instance.NrTimeBucket):
                 safetystock[t][p] = self.GetMaxDemanWithRespectToServiceLevel(p, t) - self.Instance.ForecastedAverageDemand[t][p]
 
+        #print "safetystock %s" % safetystock
         return safetystock
 
 
     def GetSafetyStockGrave(self, S, SI, p, t):
 
-        result = sum(self.GetMaxDemanWithRespectToServiceLevel(p, tau, WithLosale=True)
+        result = sum(self.GetMaxDemanWithRespectToServiceLevel(p, tau, WithLosale=False)
                     - self.Instance.ForecastedAverageDemand[tau][p]
                     for tau in range(max(t - SI - self.Instance.Leadtimes[p], 0), max(t - S+1, 0 ) ))
 
@@ -181,7 +182,7 @@ class DecentralizedMRP(object):
         #         if  self.Instance.NrTimeBucket - t  <= timetoenditem[p]:
         #             safetystock[t][p] = 0
 
-       # print "safetystock %s"%safetystock
+        #print "safetystock %s"%safetystock
         return safetystock
 
     def FixGivenSolution(self, givensetup, givenquantities, demanduptotimet ):

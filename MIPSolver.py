@@ -1356,8 +1356,10 @@ class MIPSolver(object):
                  for t in self.Instance.TimeBucketSet:
                      IndexInventory1 = self.GetIndexInventoryVariable(p, t, w)
                      positionvar = self.GetStartInventoryVariable() - IndexInventory1
-                     if not AlreadyAdded[positionvar] and self.Instance.MaximumQuanityatT[t][p] >  safetystock[t][p] \
-                             and   self.Instance.NrTimeBucket - t  < timetoenditem[p]:
+                     if (not AlreadyAdded[positionvar]) \
+                             and self.Instance.MaximumQuanityatT[t][p] >  safetystock[t][p] \
+                             and self.Instance.NrTimeBucket - t  > timetoenditem[p]:
+
                           AlreadyAdded[positionvar] = True
                           vars = [IndexInventory1 ]
                           coeff = [1.0]
