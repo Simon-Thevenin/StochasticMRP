@@ -37,13 +37,17 @@ class ModelGrave(object):
 
 
 
-
         NameXSSI = [ "Name_t_p_s_si_%s_%s_%s_%s"%(t, p, s, si)
                      for si in range(self.nrvaluesS)
                      for s in range(self.nrvaluesS)
                      for p in range(self.Instance.NrProduct)
                      for t in self.Instance.TimeBucketSet]
 
+        # for si in range(self.nrvaluesS):
+        #     for s in range(self.nrvaluesS):
+        #         for p in range(self.Instance.NrProduct):
+        #             for t in range(5, 6):
+        #                 print " t_%s P_%s s_%s si_%s: %s " % (t,p,s,si,  self.Owner.GetCostGrave(s, si, p, t))
 
         self.Cplex.variables.add(costXSSI,
                                  types=['B'] * self.NrVariable,

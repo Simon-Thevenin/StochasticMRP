@@ -203,6 +203,19 @@ class MRPInstance:
                 self.MaxLeadTimeProduct[p] =  self.MaxLeadTimeProduct[p] + self.Leadtimes[ p ]
         self.MaxLeadTime = max( self.MaxLeadTimeProduct[p] for p in self.ProductSet )
 
+    def GetTimeToEnd( self ):
+        timetoenditem = [0 for p in self.ProductSet]
+        levelset = sorted(set(self.Level), reverse=False)
+        for l in levelset:
+            prodinlevel = [p for p in self.ProductSet if self.Level[p] == l]
+            for p in prodinlevel:
+                children = [q for q in self.ProductSet if self.Requirements[q][p] > 0]
+                if len(children) > 0:
+                    timetoenditem[p] = max([timetoenditem[q] for q in children])
+                    timetoenditem[p] = max([self.Leadtimes[q] for q in children])
+
+        return timetoenditem
+
     #Fill the array UseForFabrication which is equal to 1 if component p is used to produce r (even not directely)
     def ComputeUseForFabrication( self ):
         self.TotalRequirement = [ [ 0 for p in self.ProductSet ] for q in self.ProductSet ]

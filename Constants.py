@@ -47,7 +47,7 @@ class Constants:
     PrintOnlyFirstStageDecision = True
     PrintDetailsExcelFiles = False
     # To avoid memory comsumption it is better to print the files in /tmp However if the files are printed in tmp they are deleted after 4 days
-    PrintSolutionFileInTMP = False
+    PrintSolutionFileInTMP = True
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
     Infinity = 9999999999999.9

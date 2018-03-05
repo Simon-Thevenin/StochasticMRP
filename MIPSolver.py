@@ -726,7 +726,7 @@ class MIPSolver(object):
         if self.UseSafetyStockGrave:
             safetystock  = decentralized.ComputeSafetyStockGrave()
 
-
+        #print "safet s %s"%safetystock
         self.FlowConstraintNR = [[[ "" for t in self.Instance.TimeBucketSet]  for p in self.Instance.ProductSet] for w in self.ScenarioSet]
         AlreadyAdded = [ False for w in range(self.GetNrInventoryVariable())  ]
 
@@ -1346,6 +1346,8 @@ class MIPSolver(object):
                                                                       rhs=righthandside )
 
     def AddConstraintSafetyStock( self ):
+
+        timetoenditem = self.Instance.GetTimeToEnd()
         decentralized = DecentralizedMRP(self.Instance)
         safetystock = decentralized.ComputeSafetyStockGrave()
         AlreadyAdded = [ False for v in range(self.GetNrInventoryVariable()) ]
@@ -1354,7 +1356,8 @@ class MIPSolver(object):
                  for t in self.Instance.TimeBucketSet:
                      IndexInventory1 = self.GetIndexInventoryVariable(p, t, w)
                      positionvar = self.GetStartInventoryVariable() - IndexInventory1
-                     if not AlreadyAdded[positionvar] and self.Instance.MaximumQuanityatT[t][p] >  safetystock[t][p] :
+                     if not AlreadyAdded[positionvar] and self.Instance.MaximumQuanityatT[t][p] >  safetystock[t][p] \
+                             and   self.Instance.NrTimeBucket - t  < timetoenditem[p]:
                           AlreadyAdded[positionvar] = True
                           vars = [IndexInventory1 ]
                           coeff = [1.0]
