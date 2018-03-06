@@ -127,7 +127,7 @@ class DecentralizedMRP(object):
             result = sum(self.GetMaxDemanWithRespectToServiceLevel(q, t) * self.Instance.Requirements[q][p]
                             for q in self.Instance.ProductSet if self.Instance.Requirements[q][p] > 0 )
         else:
-            if WithLosale and t >= self.Instance.NrTimeBucket - 1:
+            if WithLosale :#and t >= self.Instance.NrTimeBucket - 1:
                 ratio = self.GetServiceLevelFromLostSale(p)
             else :
                 ratio = self.GetServiceLevel(p)
