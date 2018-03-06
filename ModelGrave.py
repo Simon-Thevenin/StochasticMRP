@@ -72,13 +72,12 @@ class ModelGrave(object):
 #                                                  senses=["E"],
 #                                                  rhs=[1])
 
-
         for t in self.Instance.TimeBucketSet:
             for p in range(self.Instance.NrProduct):
                 for s in range(self.nrvaluesS):
                     for si in range(self.nrvaluesS):
                          if( ( self.Instance.HasExternalDemand[p] and s > 0 )
-                             or ( s - si > self.Instance.Leadtimes[p] ) ):
+                             or ( s - si > self.Instance.Leadtimes[p] )):
                             vars = [self.XSSI[si][s][p][t]]
                             coeff = [1]
 

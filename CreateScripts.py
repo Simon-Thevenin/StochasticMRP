@@ -105,7 +105,7 @@ if __name__ == "__main__":
     if sys.argv[1] == "sensitivity":
         modelset = ["AverageSS", "AverageSSGrave", "Average", "L4L", "EOQ", "POQ", "SilverMeal", "YQFix", "YFix",
                     "HeuristicYFix"]
-        modelset = ["AverageSSGrave"]
+        modelset = ["AverageSSGrave", "AverageSS"]
         nrcenarioyfqix = [ "500"]
         nrcenarioyfix = ["6400b", "6400c"]
 

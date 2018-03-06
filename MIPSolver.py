@@ -1738,18 +1738,17 @@ class MIPSolver(object):
 
 
 
-        if self.Model <> Constants.ModelYQFix:
-            self.DemandScenarioTree.FillQuantityToOrder(sol)
-            self.DemandScenarioTree.FillQuantityToOrderFromMRPSolution(Solution)
+        self.DemandScenarioTree.FillQuantityToOrder(sol)
+        self.DemandScenarioTree.FillQuantityToOrderFromMRPSolution(Solution)
 
         if self.Model == Constants.ModelSFix or self.Model == Constants.ModelYSFix:
             array = [self.GetIndexSVariable(p, t) for p in self.Instance.ProductSet for t in timebucketset]
             solSValue = sol.get_values(array)
             Solution.SValue = [[ solSValue[ p * self.Instance.NrTimeBucket + t ] for p in self.Instance.ProductSet ] for t in timebucketset]
-        elif self.Model == Constants.ModelYFix or self.Model == Constants.ModelHeuristicYFix:
+        else:# self.Model == Constants.ModelYFix or self.Model == Constants.ModelHeuristicYFix:
             Solution.ComputeAverageS()
-        else:
-            Solution.SValue = [[-1 for p in self.Instance.ProductSet] for t in timebucketset]
+        #else:
+        #    Solution.SValue = [[-1 for p in self.Instance.ProductSet] for t in timebucketset]
 
         if self.Model == Constants.ModelYSFix:
             array = [self.GetIndexFixedQuantity(p, t) for p in self.Instance.ProductSet for t in timebucketset]
