@@ -147,6 +147,7 @@ class DecentralizedMRP(object):
             for t in range(self.FixUntil+1, self.Instance.NrTimeBucket):
                 safetystock[t][p] = self.GetMaxDemanWithRespectToServiceLevel(p, t) - self.Instance.ForecastedAverageDemand[t][p]
 
+
         #print "safetystock %s" % safetystock
         return safetystock
 
