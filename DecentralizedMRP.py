@@ -151,11 +151,19 @@ class DecentralizedMRP(object):
         #print "safetystock %s" % safetystock
         return safetystock
 
+    def GetDependentAverageDemand(self, p, t):
+        if not self.Instance.HasExternalDemand[p]:
+            result = sum(self.GetDependentAverageDemand(q, t) * self.Instance.Requirements[q][p]
+                            for q in self.Instance.ProductSet if self.Instance.Requirements[q][p] > 0 )
+        else:
+            result = self.Instance.ForecastedAverageDemand[t][p]
+
+        return result
+
 
     def GetSafetyStockGrave(self, S, SI, p, t):
-
         result = sum(self.GetMaxDemanWithRespectToServiceLevel(p, tau, WithLosale=True)
-                    - self.Instance.ForecastedAverageDemand[tau][p]
+                    - self.GetDependentAverageDemand( p, tau )
                     for tau in range(max(t - SI - self.Instance.Leadtimes[p], 0), max(t - S+1, 0 ) ))
 
         return result
@@ -171,8 +179,8 @@ class DecentralizedMRP(object):
     def ComputeSafetyStockGrave(self):
         modelgrave = ModelGrave( self.Instance, self )
         S, SI = modelgrave.ComputeSSI()
-       # print "S:%s"%S
-       # print "SI:%s"%SI
+        #print "S:%s"%S
+        #print "SI:%s"%SI
         safetystock= [[self.GetSafetyStockGrave( S[t][p], SI[t][p], p, t) for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
 
         # timetoenditem = self.Instance.GetTimeToEnd()

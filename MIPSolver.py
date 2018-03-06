@@ -1348,6 +1348,7 @@ class MIPSolver(object):
     def AddConstraintSafetyStock( self ):
 
         timetoenditem = self.Instance.GetTimeToEnd()
+        #print "timetoenditem %s"%timetoenditem
         decentralized = DecentralizedMRP(self.Instance)
         safetystock = decentralized.ComputeSafetyStockGrave()
         AlreadyAdded = [ False for v in range(self.GetNrInventoryVariable()) ]
@@ -1360,13 +1361,13 @@ class MIPSolver(object):
                              and self.Instance.MaximumQuanityatT[t][p] >  safetystock[t][p] \
                              and self.Instance.NrTimeBucket - t  > timetoenditem[p]:
 
-                          AlreadyAdded[positionvar] = True
-                          vars = [IndexInventory1 ]
-                          coeff = [1.0]
+                              AlreadyAdded[positionvar] = True
+                              vars = [IndexInventory1 ]
+                              coeff = [1.0]
 
-                          self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
-                                                             senses=["G"],
-                                                             rhs=[ safetystock[t][p] ] )
+                              self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                                 senses=["G"],
+                                                                 rhs=[ safetystock[t][p] ] )
 
 
 
