@@ -153,7 +153,7 @@ class DecentralizedMRP(object):
 
     def GetSafetyStockGrave(self, S, SI, p, t):
 
-        result = sum(self.GetMaxDemanWithRespectToServiceLevel(p, tau, WithLosale=False)
+        result = sum(self.GetMaxDemanWithRespectToServiceLevel(p, tau, WithLosale=True)
                     - self.Instance.ForecastedAverageDemand[tau][p]
                     for tau in range(max(t - SI - self.Instance.Leadtimes[p], 0), max(t - S+1, 0 ) ))
 
