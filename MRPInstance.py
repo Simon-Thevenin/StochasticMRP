@@ -216,6 +216,23 @@ class MRPInstance:
 
         return timetoenditem
 
+
+    def GetDescendent( self, q ):
+
+        itemtoinvestigate = [q]
+        result = [q]
+        while len(itemtoinvestigate) > 0:
+            nextitemtoinvestigate = []
+
+            for p in itemtoinvestigate:
+                children = [q for q in self.ProductSet if self.Requirements[q][p] > 0]
+                nextitemtoinvestigate = nextitemtoinvestigate + children
+
+            itemtoinvestigate = nextitemtoinvestigate
+            result = result + nextitemtoinvestigate
+
+        return result
+
     #Fill the array UseForFabrication which is equal to 1 if component p is used to produce r (even not directely)
     def ComputeUseForFabrication( self ):
         self.TotalRequirement = [ [ 0 for p in self.ProductSet ] for q in self.ProductSet ]

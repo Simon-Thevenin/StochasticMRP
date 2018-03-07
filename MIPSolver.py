@@ -291,6 +291,11 @@ class MIPSolver(object):
     #    if self.Model == Constants.ModelYFix: return self.StartBackorderVariableYFix + self.NrBackorderVariableWithoutNonAnticipativity
     #    if self.Model == Constants.Model_Fix: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
 
+
+     # This function return the index of the variable known demand. They are ordered by product (only for products wiht external demands)
+    def GetIndexSafetystockPenalty(self, p, t):
+        return self.GetStartSafetystockPenalty() + t * self.Instance.NrProduct + p
+
     #This function return the index of the variable known demand. They are ordered by product (only for products wiht external demands)
     def GetIndexKnownDemand(self, p):
         return self.GetStartKnownDemand() + self.Instance.ProductWithExternalDemandIndex[p]
@@ -317,11 +322,19 @@ class MIPSolver(object):
             raise NameError("Fixed Quantity is only for model YSFix")
 
     def GetStartKnownDemand(self):
+        nrpenalti = 0
+        if self.UseSafetyStockGrave:
+            nrpenalti = self.Instance.NrProduct * self.Instance.NrTimeBucket
+        return self.GetStartSafetystockPenalty() + nrpenalti
+
+    def GetStartSafetystockPenalty( self ):
         if not self.UseImplicitNonAnticipativity: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.ModelYQFix : return self.StartBackorderVariableWithoutNonAnticipativity + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.ModelYFix: return self.StartBackorderVariableYFix + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.Model_Fix: return self.StartBackorderVariable + self.NrBackorderVariableWithoutNonAnticipativity
         if self.Model == Constants.ModelSFix or self.Model == Constants.ModelYSFix: return self.StartSVariable + self.NrSVariable
+
+
 
     #return the index at which the backorder variables starts
     def GetStartBackorderVariable( self ):
@@ -554,12 +567,19 @@ class MIPSolver(object):
              self.Cplex.variables.add(obj=[0.0] * nrsvariable,
                                       types=['B'] * nrsvariable)
 
-        #if self.UseSafetyStockGrave:
-        #    nrsvariable = len(self.Instance.ProductSet)
-        #    penalty =[ self.Instance.InventoryCosts[p] * 1.5 for p in self.Instance.ProductSet ]
-        #    self.Cplex.variables.add( obj = penalty ,
-        #                              lb=[0.0] * nrsvariable,
-        #                              ub=[self.M] * nrsvariable)
+        timetoenditem = self.Instance.GetTimeToEnd()
+        if self.UseSafetyStockGrave:
+            nrsvariable = len(self.Instance.ProductSet) * self.Instance.NrTimeBucket
+            penalty =[  max( self.Instance.BackorderCosts[q] for q in self.Instance.GetDescendent(p) )
+                        if ( t + timetoenditem[p] < self.Instance.NrTimeBucket - 1)
+                       else
+                       #4* self.Instance.InventoryCosts[p] *10
+                        max(self.Instance.LostSaleCost[q] for q in self.Instance.GetDescendent(p))
+                        #max(self.Instance.LostSaleCost[q] for q in self.Instance.ProductSet)
+                      for t in self.Instance.TimeBucketSet for p in self.Instance.ProductSet]
+            self.Cplex.variables.add( obj = penalty ,
+                                      lb=[0.0] * nrsvariable,
+                                      ub=[self.M] * nrsvariable)
 
         #Add a variable which represents the known demand:
         if self.DemandKnownUntil >= 0:
@@ -1362,8 +1382,8 @@ class MIPSolver(object):
                              and self.Instance.NrTimeBucket - t  > timetoenditem[p]:
 
                               AlreadyAdded[positionvar] = True
-                              vars = [IndexInventory1 ]
-                              coeff = [1.0]
+                              vars = [IndexInventory1, self.GetIndexSafetystockPenalty(p,t) ]
+                              coeff = [1.0,1.0]
 
                               self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                                  senses=["G"],
