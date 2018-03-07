@@ -733,7 +733,7 @@ def RunEvaluation(  ):
                 policyset = ["Fix", "Re-solve"]
 
         if  Model == Constants.AverageSSGrave or Model == Constants.AverageSS :
-            policyset = ["S"]
+            policyset = ["S","Fix", "Re-solve"]
 
         if Model == Constants.ModelSFix:
             policyset = ["S"]
@@ -1352,7 +1352,7 @@ def GenerateInstancesSensitivity():
     instancecreated = []
     for bom in ["K001", "G004"]:
         for TB0 in ["1",  "3"]:
-            for  Capacity in  ["-1"]:#, "1", "3"]:
+            for  Capacity in  ["-1", "1", "3"]:
                 for echelonconst in ["n", "l"]:
                     for distribution in [ "NonStationary", "Lumpy", "SlowMoving" ]:
                         if distribution == "NonStationary":
