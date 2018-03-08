@@ -570,11 +570,12 @@ class MIPSolver(object):
         timetoenditem = self.Instance.GetTimeToEnd()
         if self.UseSafetyStockGrave:
             nrsvariable = len(self.Instance.ProductSet) * self.Instance.NrTimeBucket
-            penalty =[  max( self.Instance.BackorderCosts[q] for q in self.Instance.GetDescendent(p) )
+            penalty =[  #0.8* min( self.Instance.BackorderCosts[q] for q in self.Instance.GetDescendent(p) if self.Instance.HasExternalDemand[q])
+                        1.5 * self.Instance.InventoryCosts[p]
                         if ( t + timetoenditem[p] < self.Instance.NrTimeBucket - 1)
-                       else
-                       #4* self.Instance.InventoryCosts[p] *10
-                        max(self.Instance.LostSaleCost[q] for q in self.Instance.GetDescendent(p))
+                        else
+                        5* self.Instance.InventoryCosts[p]
+                        #0.8 * min(self.Instance.LostSaleCost[q] for q in self.Instance.GetDescendent(p) if self.Instance.HasExternalDemand[q] )
                         #max(self.Instance.LostSaleCost[q] for q in self.Instance.ProductSet)
                       for t in self.Instance.TimeBucketSet for p in self.Instance.ProductSet]
             self.Cplex.variables.add( obj = penalty ,

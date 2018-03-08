@@ -733,7 +733,7 @@ def RunEvaluation(  ):
                 policyset = ["Fix", "Re-solve"]
 
         if  Model == Constants.AverageSSGrave or Model == Constants.AverageSS :
-            policyset = ["S","Fix", "Re-solve"]
+            policyset = ["Re-solve"] #["S","Fix", "Re-solve"]
 
         if Model == Constants.ModelSFix:
             policyset = ["S"]
