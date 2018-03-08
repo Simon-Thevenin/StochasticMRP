@@ -47,6 +47,7 @@ class Evaluator:
                                                               self.StartSeedResolve, self.ScenarioGenerationResolvePolicy,
                                                               timehorizon, usesafetystock, self  )
 
+        self.DecentralizedMRP = DecentralizedMRP(self.Instance, Constants.IsRuleWithGrave(self.Model))
 
     #This function evaluate the performance of a set of solutions obtain with the same method (different solutions due to randomness in the method)
     def EvaluateYQFixSolution( self, testidentifier, evaluateidentificator, saveevaluatetab = False, filename = "", evpi = False):
@@ -397,7 +398,7 @@ class Evaluator:
             quantitytofix = [[givenquantty[t][p] for p in self.Instance.ProductSet] for t in range(time)]
 
 
-            if self.Model in [ Constants.L4L, Constants.EOQ, Constants.POQ, Constants.SilverMeal]:
+            if Constants.IsRule(self.Model):
                 result = self.ResolveRule(quantitytofix,  givensetup, demanduptotimet , time)
             else:
                 result, error = self.ResolveMIP(quantitytofix , givensetup, demanduptotimet, time )
@@ -408,8 +409,8 @@ class Evaluator:
 
     def ResolveRule(self, quantitytofix,  givensetup, demanduptotimet, time):
 
-        decentralizedmrp = DecentralizedMRP(self.Instance)
-        solution = decentralizedmrp.SolveWithSimpleRule( self.Model, givensetup, quantitytofix, time-1, demanduptotimet)
+
+        solution = self.DecentralizedMRP.SolveWithSimpleRule( self.Model, givensetup, quantitytofix, time-1, demanduptotimet)
 
         result = [solution.ProductionQuantity[0][time][p] for p in self.Instance.ProductSet]
         return result

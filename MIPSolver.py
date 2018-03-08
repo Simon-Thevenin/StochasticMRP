@@ -740,7 +740,7 @@ class MIPSolver(object):
     #  the quantities produced and the demand
     def CreateFlowConstraints( self ):
 
-        decentralized = DecentralizedMRP(self.Instance)
+        decentralized = DecentralizedMRP(self.Instance, self.UseSafetyStockGrave)
         if self.UseSafetyStock:
             safetystock  = decentralized.ComputeSafetyStock()
 
@@ -1370,7 +1370,7 @@ class MIPSolver(object):
 
         timetoenditem = self.Instance.GetTimeToEnd()
         #print "timetoenditem %s"%timetoenditem
-        decentralized = DecentralizedMRP(self.Instance)
+        decentralized = DecentralizedMRP(self.Instance, self.UseSafetyStockGrave)
         safetystock = decentralized.ComputeSafetyStockGrave()
         AlreadyAdded = [ False for v in range(self.GetNrInventoryVariable()) ]
         for w in self.ScenarioSet:
@@ -1758,18 +1758,18 @@ class MIPSolver(object):
                                self.DemandScenarioTree, partialsolution = partialsol)
 
 
-
-        self.DemandScenarioTree.FillQuantityToOrder(sol)
-        self.DemandScenarioTree.FillQuantityToOrderFromMRPSolution(Solution)
+        if self.Model <> Constants.ModelYQFix:
+            self.DemandScenarioTree.FillQuantityToOrder(sol)
+            self.DemandScenarioTree.FillQuantityToOrderFromMRPSolution(Solution)
 
         if self.Model == Constants.ModelSFix or self.Model == Constants.ModelYSFix:
             array = [self.GetIndexSVariable(p, t) for p in self.Instance.ProductSet for t in timebucketset]
             solSValue = sol.get_values(array)
             Solution.SValue = [[ solSValue[ p * self.Instance.NrTimeBucket + t ] for p in self.Instance.ProductSet ] for t in timebucketset]
-        else:# self.Model == Constants.ModelYFix or self.Model == Constants.ModelHeuristicYFix:
+        if self.Model == Constants.ModelYFix or self.Model == Constants.ModelHeuristicYFix:
             Solution.ComputeAverageS()
-        #else:
-        #    Solution.SValue = [[-1 for p in self.Instance.ProductSet] for t in timebucketset]
+        else:
+            Solution.SValue = [[-1 for p in self.Instance.ProductSet] for t in timebucketset]
 
         if self.Model == Constants.ModelYSFix:
             array = [self.GetIndexFixedQuantity(p, t) for p in self.Instance.ProductSet for t in timebucketset]

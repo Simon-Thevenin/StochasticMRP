@@ -732,8 +732,6 @@ def RunEvaluation(  ):
         if Model == Constants.ModelYQFix or Model == Constants.Average or Model == Constants.AverageSS or Model == Constants.AverageSSGrave or  Constants.IsRule(Model):
                 policyset = ["Fix", "Re-solve"]
 
-        if  Model == Constants.AverageSSGrave or Model == Constants.AverageSS :
-            policyset = ["Re-solve"] #["S","Fix", "Re-solve"]
 
         if Model == Constants.ModelSFix:
             policyset = ["S"]

@@ -36,6 +36,12 @@ class Constants:
     EOQ  = "EOQ"
     POQ = "POQ"
     SilverMeal  = "SilverMeal"
+
+    L4LGrave = "L4LGrave"
+    EOQGrave  = "EOQGrave"
+    POQGrave = "POQGrave"
+    SilverMealGrave  = "SilverMealGrave"
+
     RollingHorizon = "RH"
 
     Debug = False
@@ -55,7 +61,15 @@ class Constants:
     AlgorithmOptimalityTolerence = 0.00001
     SDDPIterationLimit = 10000
 
+
     @staticmethod
     def IsRule( s ):
-       result =  s == Constants.L4L or s == Constants.EOQ or s == Constants.POQ or s == Constants.SilverMeal
+
+       result =  s in [ Constants.L4L, Constants.EOQ, Constants.POQ, Constants.SilverMeal]\
+                 or Constants.IsRuleWithGrave(s)
+       return result
+
+    @staticmethod
+    def IsRuleWithGrave( s ):
+       result =   s in [ Constants.L4LGrave, Constants.EOQGrave, Constants.POQGrave, Constants.SilverMealGrave]
        return result

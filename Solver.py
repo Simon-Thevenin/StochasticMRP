@@ -142,8 +142,11 @@ class Solver:
 
     #Solve the problem with rule based heurisitcs (L4L, EOQ, POQ, Silver-Meal)
     def SolveWithRule( self ):
-        decentralizedmrp = DecentralizedMRP( self.Instance)
+        start = time.time()
+        decentralizedmrp = DecentralizedMRP( self.Instance, Constants.IsRuleWithGrave( self.Model ) )
         solution = decentralizedmrp.SolveWithSimpleRule( self.Model )
+        end = time.time()
+        solution.TotalTime = end - start
         return solution
 
     # Run the method Heuristic YFix: First solve the 2-stage problem to fix the Y variables, then solve the multi-stages problem on large scenario tree.
