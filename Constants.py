@@ -25,6 +25,7 @@ class Constants:
     AverageSS = "AverageSS"
     AverageSSGrave = "AverageSSGrave"
     MonteCarlo = "MC"
+    QMC = "QMC"
     RQMC = "RQMC"
     All = "all"
     Solve = "Solve"
@@ -72,4 +73,9 @@ class Constants:
     @staticmethod
     def IsRuleWithGrave( s ):
        result =   s in [ Constants.L4LGrave, Constants.EOQGrave, Constants.POQGrave, Constants.SilverMealGrave]
+       return result
+
+    @staticmethod
+    def IsQMCMethos( s ):
+       result =   s in [ Constants.QMC, Constants.RQMC]
        return result

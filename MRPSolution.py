@@ -147,7 +147,7 @@ class MRPSolution:
         scenariotreeseed = int( scenariotreeinfo.get_value( 'Seed', 0 ) )
         branchingstructure  =  literal_eval( str( scenariotreeinfo.get_value( 'TreeStructure', 0 ) ) )
         model = instanceinfo.get_value( 'Model', 0 )
-        RQMCForYQfix = (model == Constants.ModelYQFix and scenariogenerationm == Constants.RQMC )
+        RQMCForYQfix = ( model == Constants.ModelYQFix and ( Constants.IsQMCMethos( scenariogenerationm) ) )
 
         self.ScenarioTree = ScenarioTree ( instance = self.MRPInstance,
                                            branchperlevel = branchingstructure,

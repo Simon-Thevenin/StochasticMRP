@@ -42,7 +42,7 @@ class ScenarioTreeNode:
             else:
                 # if self.Owner.GenerateasYQfix:
                 #    nextdemands = self.GetDemandAsYQFix( t-1, nrbranch )
-                if (self.Owner.ScenarioGenerationMethod == Constants.RQMC
+                if ( Constants.IsQMCMethos(self.Owner.ScenarioGenerationMethod )
                     and self.Owner.GenerateRQMCForYQFix
                     and t> self.Owner.FollowGivenUntil
                     and not time >= ( self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
@@ -275,7 +275,7 @@ class ScenarioTreeNode:
 
 
         # Generate the points using RQMC
-        if method == Constants.RQMC:
+        if method == Constants.RQMC or method == Constants.QMC:
             newnrpoints = nrpoints
             nextdemands = [[]]
             nrnonzero = 0
@@ -287,7 +287,7 @@ class ScenarioTreeNode:
                 idnonzero = [  p  for p in range( dimensionpoint ) if average[p] > 0 ]
                 avg = [ average[prod] for prod in idnonzero ]
                 stddev = [std[prod] for prod in idnonzero ]
-                pointsin01 = RQMCGenerator.RQMC01(newnrpoints, nrnonzero, withweight=False)
+                pointsin01 = RQMCGenerator.RQMC01(newnrpoints, nrnonzero, withweight=False, QMC = (method == Constants.QMC))
 
                 rqmcpoints = ScenarioTreeNode.TransformInverse( pointsin01, newnrpoints, nrnonzero, distribution, avg, stddev )
 

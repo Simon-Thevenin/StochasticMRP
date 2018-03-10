@@ -49,7 +49,7 @@ class ScenarioTree:
 
         self.DemandYQFixRQMC = []
         self.Model = model
-        self.GenerateRQMCForYQFix = (self.ScenarioGenerationMethod == Constants.RQMC and self.Model == Constants.ModelYQFix)
+        self.GenerateRQMCForYQFix =  ( Constants.IsQMCMethos(self.ScenarioGenerationMethod ) and self.Model == Constants.ModelYQFix)
 
         firstuknown = len(self.GivenFirstPeriod)
         firststochastic = max(self.Instance.NrTimeBucketWithoutUncertaintyBefore, firstuknown)
@@ -99,13 +99,13 @@ class ScenarioTree:
         #     self.ProbabilityToFollowMultipleSceario = [temporaryscenarios[s].Probability for s in range(nrscenario)]
 
 
-        if self.ScenarioGenerationMethod == Constants.RQMC and self.GenerateRQMCForYQFix:
+        if Constants.IsQMCMethos(self.ScenarioGenerationMethod ) and self.GenerateRQMCForYQFix:
              avgvector = [  self.Instance.ForecastedAverageDemand[t ][p] for p in self.Instance.ProductWithExternalDemand for t in timebucketswithuncertainty ]
              stdvector = [  self.Instance.ForcastedStandardDeviation[t ][p] for p in self.Instance.ProductWithExternalDemand for t in timebucketswithuncertainty ]
              dimension = len( self.Instance.ProductWithExternalDemand ) * (nrtimebucketswithuncertainty)
 
              nrscenarion = max( self.NrBranches[i] for i in range( len(self.NrBranches ) ) )
-             rqmcpoint01 = RQMCGenerator.RQMC01( nrscenarion , dimension, withweight=True  )
+             rqmcpoint01 = RQMCGenerator.RQMC01( nrscenarion , dimension, withweight=True,  QMC = ( self.ScenarioGenerationMethod == Constants.QMC))
              #rqmcpoint01, proba = ScenarioTreeNode.GeneratePoints(Constants.RQMC,nrscenarion,dimension, self.Instance.Distribution, avgvector, stdvector )
              # for d in range(dimension):
              #     pts = [rqmcpoint01[p][d] for p in range(nrscenarion)]

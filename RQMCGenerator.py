@@ -8,9 +8,11 @@ class RQMCGenerator:
 
 	#This method generate a set of points in [0,1] using RQMC. The points are generated with the library given on the website of P. Lecuyer
     @staticmethod
-    def RQMC01( nrpoints, dimensionpoint, withweight = True ):
+    def RQMC01( nrpoints, dimensionpoint, withweight = True, QMC = False ):
 
-        randomizer = [np.random.uniform( 0.0 , 100000000000000.0)  for i in range(dimensionpoint)]
+        randomizer = [0] * dimensionpoint
+        if not QMC:
+            randomizer = [np.random.uniform( 0.0 , 100000000000000.0)  for i in range(dimensionpoint)]
 
         weight = "product:1:1"
         if withweight:
