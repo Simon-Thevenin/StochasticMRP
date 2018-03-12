@@ -225,7 +225,8 @@ if __name__ == "__main__":
                      policyset = policyyqfix
                      generationset = Generationset
 
-                 if model == "Average" or model == "AverageSS"  or model == "AverageSSGrave" or model =="L4L" or  model == "EOQ" or  model == "POQ" or  model =="SilverMeal":
+                 if model == "Average" or model == "AverageSS"  or model == "AverageSSGrave" or model =="L4L" or  model == "EOQ" or  model == "POQ" or  model =="SilverMeal" \
+                         or model == "L4LGrave" or model == "EOQGrave" or model == "POQGrave" or model == "SilverMealGrave":
                      scenarsetsampling = ["1"]
                      avg = True
                      generationset = ["MC"]
