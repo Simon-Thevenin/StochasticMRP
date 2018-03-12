@@ -92,6 +92,7 @@ class RollingHorizonSolver:
             """ :type result: [ {MRPInstance} ]"""
             nrshift = self.GlobalInstance.NrTimeBucket  - self.GlobalInstance.NrTimeBucketWithoutUncertaintyBefore
 
+
             result = [None for i in range(nrshift)]
 
             startwindow = -1
@@ -103,6 +104,7 @@ class RollingHorizonSolver:
 
                 result[i] = copy.deepcopy(self.GlobalInstance)
                 result[i].NrTimeBucket = min(self.WindowSize + nrperiodwithoutuncertaintybefore, self.GlobalInstance.NrTimeBucket-startwindow)
+                actualend = startwindow + result[i].NrTimeBucket
                 result[i].ForecastedAverageDemand = [self.GlobalInstance.ForecastedAverageDemand[startwindow + t]
                                                      for t in range(result[i].NrTimeBucket)]
                 result[i].ForcastedStandardDeviation = [self.GlobalInstance.ForcastedStandardDeviation[startwindow + t]
@@ -114,6 +116,8 @@ class RollingHorizonSolver:
                                                      for t in range(result[i].NrTimeBucket)]
 
                 result[i].ComputeIndices()
+
+                result[i].ActualEndOfHorizon = actualend == self.GlobalInstance.NrTimeBucket
 
                 previousnrperiodwithoutuncertaintybefore = nrperiodwithoutuncertaintybefore
 
@@ -224,18 +228,19 @@ class RollingHorizonSolver:
 
     def GetStartInventoryPlusQuantityOnOrder(self, timetodecide ,   scenario):
 
-        result = [ [ 0 for p in self.GlobalInstance.ProductSet ] for t in range(max(self.GlobalInstance.MaimumLeadTime, 1)) ]
+        result = [ [ 0 for p in self.GlobalInstance.ProductSet ] for t in range(self.GlobalInstance.MaimumLeadTime) ]
 
         startinventory = self.GetEndingInventoryAt(timetodecide ,   scenario)
 
         for p in self.GlobalInstance.ProductSet:
             sumdelivery = 0
-            for t in range(    max(self.GlobalInstance.MaimumLeadTime, 1) ):
+            for t in range(  self.GlobalInstance.MaimumLeadTime ):
                 if t > 0  and t < self.GlobalInstance.Leadtimes[p]:
                     productiontime = timetodecide + t - self.GlobalInstance.Leadtimes[p]
                     sumdelivery += self.Solution.ProductionQuantity[0][productiontime][p]
-                result[t][p] = startinventory[p] \
-                                   +  sumdelivery
+                    result[t][p] =   sumdelivery
+                if t == 0:
+                    result[t][p] = startinventory[p]
 
         return result
 

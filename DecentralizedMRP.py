@@ -25,6 +25,15 @@ class DecentralizedMRP(object):
         #Compute preliminary values
         if self.UseSSGraveInRules:
             self.SafetyStock = self.ComputeSafetyStockGrave()
+
+            #Remove safety stock at the end of horizon
+            timetoenditem = self.Instance.GetTimeToEnd()
+            # print "timetoenditem %s"%timetoenditem
+            for p in self.Instance.ProductSet:
+                for t in self.Instance.TimeBucketSet:
+                    if self.Instance.MaximumQuanityatT[t][p] <= self.SafetyStock[t][p] \
+                                or ( self.Instance.NrTimeBucket - t <= timetoenditem[p] and self.Instance.ActualEndOfHorizon):
+                        self.SafetyStock[t][p]=0
         else:
             self.SafetyStock = self.ComputeSafetyStock()
     # Compute the average (dependent) demand
@@ -65,16 +74,11 @@ class DecentralizedMRP(object):
                 result[tau] for tau in range(self.FixUntil + 1, self.FixUntil + 2 + self.Instance.Leadtimes[product]))
 
 
-        #prevdemand = [[prevdemand[t][p] + safetystockbuilding[t][p] for p in self.Instance.ProductSet] for t in
-        #                  self.Instance.TimeBucketSet]
-
         #Do not consider negative demand
         for t in self.Instance.TimeBucketSet:
             result[t] = max( result[t], 0.0)
 
         return result
-
-
 
 
     def ComputeDependentDemand( self, product ):
@@ -169,8 +173,6 @@ class DecentralizedMRP(object):
             for t in range(self.FixUntil+1, self.Instance.NrTimeBucket):
                 safetystock[t][p] = self.GetMaxDemanWithRespectToServiceLevel(p, t) - self.Instance.ForecastedAverageDemand[t][p]
 
-
-        #print "safetystock %s" % safetystock
         return safetystock
 
     def GetDependentAverageDemand(self, p, t):

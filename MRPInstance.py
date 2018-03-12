@@ -190,6 +190,9 @@ class MRPInstance:
 
         self.MaximumQuanityatT = [ [ ] ]
 
+        #This variable is true if the end of horizon in the instance is the ctual end of horizon (False in a rolling horizon framework)
+        self.ActualEndOfHorizon = True
+
     #Compute the lead time from a product to its component with the largest sum of lead time
     def ComputeMaxLeadTime( self ):
         self.MaxLeadTimeProduct = [ 0 for p in self.ProductSet ]

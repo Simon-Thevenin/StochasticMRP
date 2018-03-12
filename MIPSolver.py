@@ -307,7 +307,7 @@ class MIPSolver(object):
         if self.DemandKnownUntil >= 0:
             raise NameError( "The intial inventory cannot be used with known demande" )
 
-        return self.GetStartKnownDemand() + ( min( max(self.Instance.MaimumLeadTime -1, 1) , t) * self.Instance.NrProduct + p )
+        return self.GetStartKnownDemand() + t * self.Instance.NrProduct + p
 
     def GetStartFixedQuantityVariable(self):
         if self.Model == Constants.ModelYSFix:
@@ -325,6 +325,7 @@ class MIPSolver(object):
         nrpenalti = 0
         if self.UseSafetyStockGrave:
             nrpenalti = self.Instance.NrProduct * self.Instance.NrTimeBucket
+
         return self.GetStartSafetystockPenalty() + nrpenalti
 
     def GetStartSafetystockPenalty( self ):
@@ -593,9 +594,9 @@ class MIPSolver(object):
                                          ub=value)
         if self.RollingHorizon:
             #starting inventory used in rolling horizon framework.
-            self.Cplex.variables.add(obj=[0.0] * (len( self.Instance.ProductSet ) * max(self.Instance.MaimumLeadTime, 1)),
-                                     lb=[0.0] * (len( self.Instance.ProductSet )* max(self.Instance.MaimumLeadTime, 1)),
-                                     ub=[0.0] * (len( self.Instance.ProductSet )* max(self.Instance.MaimumLeadTime, 1) ) )
+            self.Cplex.variables.add(obj=[0.0] * ((len( self.Instance.ProductSet )  * max( self.Instance.MaimumLeadTime, 1) )),
+                                     lb=[0.0] * ((len( self.Instance.ProductSet )  * max( self.Instance.MaimumLeadTime, 1))),
+                                     ub=[0.0] * ((len( self.Instance.ProductSet )  * max( self.Instance.MaimumLeadTime, 1)) ))
 
 
         # self.Cplex.variables.add(obj=[1.0],
@@ -646,7 +647,6 @@ class MIPSolver(object):
             qfixvar = list( set( qfixvar ) )
             hasleftoverVar = list( set( hasleftoverVar ) )
             initialinventoryvar =list( set( initialinventoryvar ) )
-
             varnames = quantityvars + inventoryvars + productionvars + backordervars + svariablevar + qfixvar+ hasleftoverVar+ initialinventoryvar
 
             self.Cplex.variables.set_names(varnames)
@@ -747,6 +747,7 @@ class MIPSolver(object):
         if self.UseSafetyStockGrave:
             safetystock  = decentralized.ComputeSafetyStockGrave()
 
+
         #print "safet s %s"%safetystock
         self.FlowConstraintNR = [[[ "" for t in self.Instance.TimeBucketSet]  for p in self.Instance.ProductSet] for w in self.ScenarioSet]
         AlreadyAdded = [ False for w in range(self.GetNrInventoryVariable())  ]
@@ -759,7 +760,8 @@ class MIPSolver(object):
                 quantityvarceoff = []
                 dependentdemandvar = []
                 dependentdemandvarcoeff = []
-
+                startinginventoryinrollinghorizon = []
+                startinginventoryinrollinghorizoncoeff = []
                 for t in self.Instance.TimeBucketSet:
                     indexinventoryvar = self.GetIndexInventoryVariable(p, t, w) - self.GetStartInventoryVariable()
                     backordervar = []
@@ -794,11 +796,11 @@ class MIPSolver(object):
                             knondemand = [self.GetIndexKnownDemand(p)]
                             knondemandcoeff = [-1]
 
-                    startinginventoryinrollinghorizon = []
-                    startinginventoryinrollinghorizoncoeff = []
-                    if self.RollingHorizon:
-                        startinginventoryinrollinghorizon = [self.GetIndexInitialInventoryInRollingHorizon(p, t)]
-                        startinginventoryinrollinghorizoncoeff = [1]
+
+                    if self.RollingHorizon and t < self.Instance.MaimumLeadTime:
+                        startinginventoryinrollinghorizon = startinginventoryinrollinghorizon + [self.GetIndexInitialInventoryInRollingHorizon(p, t)]
+                        startinginventoryinrollinghorizoncoeff = startinginventoryinrollinghorizoncoeff + [1]
+
 
                     vars = inventoryvar + backordervar + quantityvar + dependentdemandvar + knondemand + startinginventoryinrollinghorizon
                     coeff = [-1] * len(inventoryvar) \
@@ -1380,7 +1382,7 @@ class MIPSolver(object):
                      positionvar = self.GetStartInventoryVariable() - IndexInventory1
                      if (not AlreadyAdded[positionvar]) \
                              and self.Instance.MaximumQuanityatT[t][p] >  safetystock[t][p] \
-                             and self.Instance.NrTimeBucket - t  > timetoenditem[p]:
+                             and ( self.Instance.NrTimeBucket - t  > timetoenditem[p]  or not self.Instance.ActualEndOfHorizon) :
 
                               AlreadyAdded[positionvar] = True
                               vars = [IndexInventory1, self.GetIndexSafetystockPenalty(p,t) ]
@@ -1984,7 +1986,7 @@ class MIPSolver(object):
 
         startinginventotytuples = [ ( self.GetIndexInitialInventoryInRollingHorizon(p, t), startinginventories[t][p] )
                                     for p in self.Instance.ProductSet
-                                    for t in range ( max(self.Instance.MaimumLeadTime, 1) )]
+                                    for t in range ( self.Instance.MaimumLeadTime )]
         self.Cplex.variables.set_lower_bounds(startinginventotytuples)
         self.Cplex.variables.set_upper_bounds(startinginventotytuples)
 
