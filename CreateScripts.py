@@ -201,8 +201,7 @@ if __name__ == "__main__":
     """)
 
     for instance in InstanceSet :
-        if "c10" in instance:
-             for model in modelset:
+            for model in modelset:
 
                  policyset = [ "Fix"]
                  methodset = ["MIP"]
