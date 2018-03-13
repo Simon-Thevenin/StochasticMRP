@@ -31,7 +31,8 @@ class MIPSolver(object):
                  usesafetystock = False,
                  usesafetystockgrave = False,
                  rollinghorizon = False,
-                 logfile = ""):
+                 logfile = "",
+                 givenSGrave = []):
 
         # Define some attributes and functions which help to et the index of the variable.
         # the attributs nrquantiyvariables, nrinventoryvariable, nrproductionvariable, and nrbackordervariable gives the number
@@ -99,6 +100,7 @@ class MIPSolver(object):
         self.QuantityConstraintNR = []
         self.SetupConstraint= []
         self.RollingHorizon = rollinghorizon
+        self.GivenSSGrave = givenSGrave
 
     # Compute the start of index and the number of variables for the considered instance
     def ComputeIndices( self ):
@@ -1373,7 +1375,14 @@ class MIPSolver(object):
         timetoenditem = self.Instance.GetTimeToEnd()
         #print "timetoenditem %s"%timetoenditem
         decentralized = DecentralizedMRP(self.Instance, self.UseSafetyStockGrave)
-        safetystock = decentralized.ComputeSafetyStockGrave()
+
+
+        if len(self.GivenSSGrave) > 0 :
+            safetystock = self.GivenSSGrave#decentralized.ComputeSafetyStockGraveGivenSSI(self.GivenS, self.GivenSI)
+        else:
+            safetystock = decentralized.ComputeSafetyStockGrave()
+
+       # print "safetystock %s"%safetystock
         AlreadyAdded = [ False for v in range(self.GetNrInventoryVariable()) ]
         for w in self.ScenarioSet:
             for p in self.Instance.ProductSet:

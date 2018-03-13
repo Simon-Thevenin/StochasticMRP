@@ -173,6 +173,7 @@ class DecentralizedMRP(object):
             for t in range(self.FixUntil+1, self.Instance.NrTimeBucket):
                 safetystock[t][p] = self.GetMaxDemanWithRespectToServiceLevel(p, t) - self.Instance.ForecastedAverageDemand[t][p]
 
+      #  print "safetystock %s" % safetystock
         return safetystock
 
     def GetDependentAverageDemand(self, p, t):
@@ -198,24 +199,21 @@ class DecentralizedMRP(object):
                  *  self.GetSafetyStockGrave( S, SI, p, t)
         return result
 
+    def ComputeSafetyStockGraveGivenSSI(self, S, SI):
+        safetystock = [[self.GetSafetyStockGrave(S[t][p], SI[t][p], p, t) for p in self.Instance.ProductSet] for t in
+                       self.Instance.TimeBucketSet]
 
+
+
+        return safetystock
 
     def ComputeSafetyStockGrave(self):
         modelgrave = ModelGrave( self.Instance, self )
         S, SI = modelgrave.ComputeSSI()
-        #print "S:%s"%S
-        #print "SI:%s"%SI
-        safetystock= [[self.GetSafetyStockGrave( S[t][p], SI[t][p], p, t) for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
 
-        # timetoenditem = self.Instance.GetTimeToEnd()
-        #
-        # #remove ss for end of horizon
-        # for p in self.Instance.ProductSet:
-        #     for t in self.Instance.TimeBucketSet:
-        #         if  self.Instance.NrTimeBucket - t  <= timetoenditem[p]:
-        #             safetystock[t][p] = 0
+        safetystock= self.ComputeSafetyStockGraveGivenSSI(S, SI)  #[[self.GetSafetyStockGrave( S[t][p], SI[t][p], p, t) for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
 
-        #print "safetystock %s"%safetystock
+       # print "safetystock %s"%safetystock
         return safetystock
 
     def FixGivenSolution(self, givensetup, givenquantities, demanduptotimet ):

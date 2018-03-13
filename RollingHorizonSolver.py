@@ -4,6 +4,7 @@ import time
 from MIPSolver import MIPSolver
 from DecentralizedMRP import DecentralizedMRP
 import copy
+from ModelGrave import ModelGrave
 
 from MRPSolution import MRPSolution
 
@@ -47,6 +48,9 @@ class RollingHorizonSolver:
     def DefineMIPsRollingHorizonSimulation(self):
         result = []
 
+        #Compute S and SI for the global Instancce
+        decentralized = DecentralizedMRP(self.GlobalInstance, self.UseSafetyStock )
+        safe = decentralized.ComputeSafetyStockGrave()
 
         # For each subinstance, Create a tree, and generate a MIP
         for instance in self.SubInstance:
@@ -70,6 +74,9 @@ class RollingHorizonSolver:
             if self.Owner.YeuristicYfix:
                 givensetups = [ [ 1 for p in self.GlobalInstance.ProductSet ] for t in self.GlobalInstance.TimeBucketSet ]
 
+
+            instsafeGrave = [[safe[t][p] for p in self.GlobalInstance.ProductSet] for t in range (instance.ActualStart, instance.ActualStart + instance.NrTimeBucket)]
+
             mipsolver = MIPSolver(instance, self.Model, scenariotree,
                                   False,
                                   implicitnonanticipativity = True,
@@ -79,7 +86,9 @@ class RollingHorizonSolver:
                                   logfile = logfilename,
                                   yfixheuristic = self.Owner.YeuristicYfix,
                                   usesafetystockgrave =  self.Owner.UseSafetyStockGrave,
-                                  givensetups = givensetups)
+                                  givensetups = givensetups,
+                                  givenSGrave=instsafeGrave
+                                  )
             mipsolver.BuildModel()
             result.append( mipsolver )
 
@@ -118,6 +127,7 @@ class RollingHorizonSolver:
                 result[i].ComputeIndices()
 
                 result[i].ActualEndOfHorizon = actualend == self.GlobalInstance.NrTimeBucket
+                result[i].ActualStart = startwindow
 
                 previousnrperiodwithoutuncertaintybefore = nrperiodwithoutuncertaintybefore
 
