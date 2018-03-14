@@ -577,6 +577,8 @@ class MRPSolution:
             setupcoststochasticperiod,\
             lostsalecoststochasticperiod, \
             variablecost= self.GetCostInInterval( stochasticperiod )
+            nrsetups = self.GetNrSetup()
+            averagecoverage = self.GetAverageCoverage()
 
         kpistat = [ self.CplexCost,
                     self.CplexTime,
@@ -593,6 +595,8 @@ class MRPSolution:
                     inventorycoststochasticperiod,
                     setupcoststochasticperiod,
                     backordercoststochasticperiod,
+                    nrsetups,
+                    averagecoverage,
                     evaluationduration
                     ] \
                   + AverageStockAtLevel + [0]*(5- self.MRPInstance.NrLevel) + nrbackorerxperiod + [0]*(49 - self.MRPInstance.NrTimeBucket)+[nrlostsale]
@@ -607,6 +611,23 @@ class MRPSolution:
             myfile.close()
 
         return kpistat
+
+    def GetNrSetup(self):
+        result = sum(self.Production[w][t][p] for p in self.MRPInstance.ProductSet for t in self.MRPInstance.TimeBucketSet for w in range( len(self.Scenarioset) ))
+        result = result / len(self.Scenarioset)
+        return result
+
+    def GetAverageCoverage(self):
+
+        avgdemand = self.MRPInstance.ComputeAverageDemand()
+
+        result = sum (sum(   self.ProductionQuantity[w][t][p] / avgdemand[p]
+                             for w in range(len(self.Scenarioset))
+                          for t in self.MRPInstance.TimeBucketSet if  self.ProductionQuantity[w][t][p] )
+                      for p in self.MRPInstance.ProductSet )
+        nrsetup = self.GetNrSetup() * len(self.Scenarioset)
+        result= result / nrsetup
+        return result
 
     # This function return the current level of stock and back order based on the quantoty ordered and demands of previous perriod
     def GetCurrentStatus(self, prevdemand, prevquanity, time, projinventorymusbepositive = True):

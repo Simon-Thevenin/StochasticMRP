@@ -36,21 +36,7 @@ class DecentralizedMRP(object):
                         self.SafetyStock[t][p]=0
         else:
             self.SafetyStock = self.ComputeSafetyStock()
-    # Compute the average (dependent) demand
-    def ComputeAverageDemand(self):
 
-        depdemand = [sum(self.Instance.ForecastedAverageDemand[t][p] for t in self.Instance.TimeBucketSet)
-                     / (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyBefore)  for p in self.Instance.ProductSet]
-
-        levelset = sorted(set(self.Instance.Level), reverse=False)
-
-        for l in levelset:
-            prodinlevel = [p for p in self.Instance.ProductSet if self.Instance.Level[p] == l]
-            for p in prodinlevel:
-                depdemand[p] = sum(depdemand[q] * self.Instance.Requirements[q][p] for q in self.Instance.ProductSet) \
-                               + depdemand[p]
-
-        return depdemand
 
     def ComputeDependentDemandBasedOnProjectedInventory(self, product):
         result = [ 0 for t in self.Instance.TimeBucketSet ]
@@ -97,7 +83,7 @@ class DecentralizedMRP(object):
     #this function compute the Economic order quantity for each item
     def ComputeEOQ(self):
 
-        depdemand = self.ComputeAverageDemand()
+        depdemand = self.Instance.ComputeAverageDemand()
 
         #Use max, because some instance have products with 0 setup cost. EOQ should be greater than 0
         eoq = [  max( round( math.sqrt(2.0 * self.Instance.SetupCosts[p] * depdemand[p] / self.Instance.InventoryCosts[p]), 0), 1) for p in self.Instance.ProductSet]
@@ -107,7 +93,7 @@ class DecentralizedMRP(object):
     #This function compute the period with order according to POQ
     def ComputePOQ(self, product ):
 
-        depdemand = self.ComputeAverageDemand()
+        depdemand = self.Instance.ComputeAverageDemand()
 
         eoq = self.ComputeEOQ()
 

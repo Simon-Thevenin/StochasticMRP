@@ -440,3 +440,19 @@ class MRPInstance:
                         else:
                             self.MaximumQuanityatT[t][p] = Constants.Infinity
 
+    def ComputeAverageDemand(self):
+
+        depdemand = [sum(self.ForecastedAverageDemand[t][p] for t in self.TimeBucketSet)
+                     / (self.NrTimeBucket - self.NrTimeBucketWithoutUncertaintyBefore) for p in
+                     self.ProductSet]
+
+        levelset = sorted(set(self.Level), reverse=False)
+
+        for l in levelset:
+            prodinlevel = [p for p in self.ProductSet if self.Level[p] == l]
+            for p in prodinlevel:
+                depdemand[p] = sum(depdemand[q] * self.Requirements[q][p] for q in self.ProductSet) \
+                               + depdemand[p]
+
+        return depdemand
+
