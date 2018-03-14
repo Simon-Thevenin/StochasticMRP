@@ -42,10 +42,10 @@ class InstanceReader:
                     self.Instance.Leadtimes[p] = 0
 
         if leadtimestructure == 2:
-            maxleadtime = 10
-            while ( maxleadtime > 5) :
+            self.Instance.MaxLeadTime = 10
+            while ( self.Instance.MaxLeadTime > 5) :
                 self.Instance.Leadtimes = [ randint(0, 3) for p in self.Instance.ProductSet]
-                maxleadtime = self.Instance.ComputeMaxLeadTime()
+                self.Instance.ComputeMaxLeadTime()
 
 
 
