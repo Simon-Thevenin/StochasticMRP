@@ -33,7 +33,7 @@ class RollingHorizonSolver:
             savetreestructure = copy.deepcopy(self.Treestructure)
             savemodel = self.Model
             savedheuristicyfix = self.Owner.YeuristicYfix
-            self.Treestructure = [1] + [  500 ] + [1] *  ( self.WindowSize  + 1)
+            self.Treestructure = [1] + [ 5 ] + [1] *  ( self.WindowSize  + 1)
             self.Model = Constants.ModelYQFix
             self.Owner.YeuristicYfix = False
             self.RollingHorizonMIPWarmStarts = self.DefineMIPsRollingHorizonSimulation()
@@ -208,9 +208,10 @@ class RollingHorizonSolver:
                         mip.WarmStartGivenSetupConstraints()
                     mip.ModifyBigMForScenario(startinginventory[0])
                 # Solve the MIP
-                #mip.Cplex.write("lpfile%s.lp"%decisionstage)
+                mip.Cplex.write("lpfile%s.lp"%decisionstage)
                 #print "solve the problem:"
                 solution = mip.Solve( False )
+                #solution.PrintToExcel( "SolutionAtStage_%s"%decisionstage )
                 #print solution.Production
             # Save the relevant values
             self.CopyFirstStageDecision( solution,  timetodecide, instance, mip )
@@ -247,8 +248,8 @@ class RollingHorizonSolver:
             for t in range(  self.GlobalInstance.MaimumLeadTime ):
                 if t > 0  and t < self.GlobalInstance.Leadtimes[p]:
                     productiontime = timetodecide + t - self.GlobalInstance.Leadtimes[p]
-                    sumdelivery += self.Solution.ProductionQuantity[0][productiontime][p]
-                    result[t][p] =   sumdelivery
+                    #sumdelivery += self.Solution.ProductionQuantity[0][productiontime][p]
+                    result[t][p] = self.Solution.ProductionQuantity[0][productiontime][p]#  sumdelivery
                 if t == 0:
                     result[t][p] = startinventory[p]
 

@@ -577,8 +577,8 @@ class MRPSolution:
             setupcoststochasticperiod,\
             lostsalecoststochasticperiod, \
             variablecost= self.GetCostInInterval( stochasticperiod )
-            nrsetups = self.GetNrSetup()
-            averagecoverage = self.GetAverageCoverage()
+        nrsetups = self.GetNrSetup()
+        averagecoverage = self.GetAverageCoverage()
 
         kpistat = [ self.CplexCost,
                     self.CplexTime,

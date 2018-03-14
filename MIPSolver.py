@@ -394,6 +394,13 @@ class MIPSolver(object):
 
     # This function define the variables
     def CreateVariable( self ):
+
+        if self.UseSafetyStockGrave:
+            decentralized = DecentralizedMRP(self.Instance, self.UseSafetyStockGrave)
+
+            if len(self.GivenSSGrave) > 0:
+                self.GivenSSGrave  = decentralized.ComputeSafetyStockGrave()
+
         # Define the cost vector for each variable. As the numbber of variable changes when non anticipativity is used the cost are created differently
         if  not  self.UseImplicitNonAnticipativity:
 
@@ -847,7 +854,7 @@ class MIPSolver(object):
         AlreadyAdded = [ [ False ] * n  for w in range( self.GetNrProductionVariable() ) ]
         self.BigMConstraintNR = [[["" for t in self.Instance.TimeBucketSet] for p in self.Instance.ProductSet] for w in  self.ScenarioSet]
 
-        BigM = [MIPSolver.GetBigMValue(self.Instance, self.Scenarios, p)  for p in self.Instance.ProductSet ]
+        BigM = [MIPSolver.GetBigMValue(self.Instance, self.Scenarios, p, ssgrave=self.GivenSSGrave)  for p in self.Instance.ProductSet ]
 
         for t in self.Instance.TimeBucketSet:
             if t > self.FixSolutionUntil or not  self.EvaluateSolution:
@@ -1837,8 +1844,10 @@ class MIPSolver(object):
 
     #This function return the upperbound on hte quantities infered from the demand
     @staticmethod
-    def GetBigMDemValue( instance, scenarioset, p, totaldemandatt = None ):
+    def GetBigMDemValue( instance, scenarioset, p, totaldemandatt = None, ssgrave = [] ):
         #mdem = 10000000
+
+
         if instance.HasExternalDemand[ p ] :
             mdem = ( sum( max( s.Demands[t][p] for s in scenarioset ) for t in instance.TimeBucketSet ) )
 
@@ -1848,12 +1857,15 @@ class MIPSolver(object):
         else :
             mdem = sum( instance.Requirements[q][p] * MIPSolver.GetBigMDemValue( instance, scenarioset, q ) for q in instance.RequieredProduct[p] )
 
+        if len(ssgrave) >0:
+            mdem = mdem + sum(ssgrave[t][p] for t in instance.TimeBucketSet)
+
         return mdem
 
     #This function return the value of the big M variable
     @staticmethod
-    def GetBigMValue( instance, scenarioset, p, totaldemandatt=None):
-        mdem = MIPSolver.GetBigMDemValue(instance, scenarioset, p, totaldemandatt)
+    def GetBigMValue( instance, scenarioset, p, totaldemandatt=None, ssgrave = [] ):
+        mdem = MIPSolver.GetBigMDemValue(instance, scenarioset, p, totaldemandatt, ssgrave)
 
         #compute m based on the capacity of the resource
         mres = min( instance.Capacity[k] / instance.ProcessingTime[p][k]  if instance.ProcessingTime[p][k] > 0  else Constants.Infinity for k in range( instance.NrResource ) )
@@ -1898,7 +1910,7 @@ class MIPSolver(object):
                     if not AlreadyAdded[indexP][indexQ]:
                         AlreadyAdded[indexP][indexQ] = True
                         column = self.GetIndexProductionVariable(p, t, w)
-                        coeff = self.GetBigMValue(self.Instance, self.Scenarios, p, totaldemandatt)
+                        coeff = self.GetBigMValue(self.Instance, self.Scenarios, p, totaldemandatt, self.GivenSSGrave)
                         constrnr = self.BigMConstraintNR[w][p][t]
                         constrainttuples.append((constrnr, column, coeff))
         #print constrainttuples
