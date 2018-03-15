@@ -141,7 +141,7 @@ if __name__ == "__main__":
     if sys.argv[1] == "rollinghorizon":
 
         modelset = [  "AverageSS", "Average", "AverageSSGrave",  "YQFix", "HeuristicYFix"]
-        #modelset = [ "AverageSS"]
+        modelset = [ "HeuristicYFix"]
         nrcenarioyfix =[  "6400b" ]
         nrcenarioheuristicyfix = ["6400b"]
         nrcenarioyfqix = [ "500"]
