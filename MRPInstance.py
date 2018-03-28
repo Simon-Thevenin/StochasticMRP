@@ -1,18 +1,11 @@
 import pandas as pd
-import numpy as np
-import openpyxl as opxl
-
-import math
-from ScenarioTree import ScenarioTree
-from ScenarioTreeNode import ScenarioTreeNode
-from Scenario import Scenario
-import cPickle as pickle
-import os
-from random import randint
 from Tool import Tool
-import random
-import math
+import openpyxl as opxl
+import cPickle as pickle
+from GraveInstanceReader import GraveInstanceReader
+from TemplemeierInstanceReader import TemplemeierInstanceReader
 from Constants import Constants
+
 
 class MRPInstance:
 
@@ -45,7 +38,8 @@ class MRPInstance:
         self.ProductName = [ "P1", "P2", "P3", "P4", "P5" ]
         self.NrProduct = 5
         self.NrTimeBucket = 6
-        self.NrTimeBucketWithoutUncertainty = 3
+        self.NrTimeBucketWithoutUncertaintyAfter = 3
+        self.NrTimeBucketWithoutUncertaintyBefore = 3
         self.NrResource = 5
         self.Gamma = 0.9
         self.Requirements = [ [ 0, 1, 1, 0, 0 ],
@@ -77,6 +71,7 @@ class MRPInstance:
 
         self.StartingInventories = [10.0, 100.0, 100.0, 100.0, 100.0]
         self.InventoryCosts = [15.0, 4.0, 3.0, 2.0, 1.0]
+        self.VariableCost = [4.0, 3.0, 2.0, 1.0,0.0 ]
         self.SetupCosts = [10000.0, 1.0, 1.0, 1.0, 1.0]
         self.BackorderCosts = [100000.0, 0.0, 0.0, 0.0, 0.0]  # for now assume no external demand for components
         self.Capacity = [ 15, 15, 15, 15, 15 ]
@@ -89,19 +84,23 @@ class MRPInstance:
         self.Distribution = "Normal"
         self.ProductName = [ "P1", "P2" ]
         self.NrProduct = 2
-        self.NrTimeBucket = 6
-        self.NrTimeBucketWithoutUncertainty = 3
+        self.NrTimeBucket = 5
+        self.NrTimeBucketWithoutUncertaintyAfter = 0
+        self.NrTimeBucketWithoutUncertaintyBefore = 0
         self.NrResource = 2
         self.Gamma = 0.9
         self.Requirements = [ [ 0, 1 ],
                               [ 0, 0 ] ]
-        self.Capacity = [ 15, 50 ]
-        self.Leadtimes = [ 0, 1 ]
+        self.Capacity = [ 50, 50 ]
+        self.Leadtimes = [ 1, 1 ]
         self.ProcessingTime = [ [ 1, 0 ],
                                 [ 0, 1 ] ]
 
         self.YearlyAverageDemand = [ 10, 0 ]
         self.ForecastedAverageDemand =  [ [ 10, 0 ],
+                                          [ 10, 0 ],
+                                          [ 10, 0 ],
+                                          [ 10, 0 ],
                                           [ 10, 0 ],
                                           [ 10, 0 ],
                                           [10, 0],
@@ -111,15 +110,16 @@ class MRPInstance:
         self.ForecastError = [ 0.5, 0 ]
         self.RateOfKnownDemand = 0.0
         self.YearlyStandardDevDemands = [5, 0]
-        self.ForcastedStandardDeviation = [ [ 5, 0 ],
+        self.ForcastedStandardDeviation = [ [5, 0],
                                             [5, 0],
                                             [5, 0],
                                             [5, 0],
                                             [5, 0],
-                                            [ 5, 0 ] ]
+                                            [5, 0] ]
 
         self.StartingInventories = [ 10.0, 10.0 ]
         self.InventoryCosts = [ 10.0, 5.0 ]
+        self.VariableCost = [5.0, 0.0 ]
         self.SetupCosts = [ 5.0, 5.0 ]
         self.BackorderCosts = [ 100.0, 0.0 ]  # for now assume no external demand for components
         self.LostSaleCost = [1000.0, 0.0]
@@ -130,15 +130,22 @@ class MRPInstance:
         self.ComputeIndices()
         self.ComputeLevel()
         self.ComputeMaxLeadTime()
-        self.RequieredProduct = [ [ q for q in self.ProductSet  if self.Requirements[ q ][ p ] > 0.0 ]
+        self.RequieredProduct = [ [ q for q in self.ProductSet  if self.Requirements[ q ][ p] > 0.0 ]
                                                                     for p in self.ProductSet ]
         self.ComputeHasExternalDemand()
-    #Constructor
+        self.ComputeUseForFabrication()
+        self.ComputeMaximumArchievableSafetyStock()
+        self.MaimumLeadTime =  max( self.Leadtimes[p]  for p in self.ProductSet  )
+        self.Delivery =  [ [ 0.0 for q in self.ProductSet ]   for t in self.TimeBucketSet ]
+
+
+        #Constructor
     def __init__( self ):
         self.InstanceName = ""
         self.NrProduct = -1
         self.NrTimeBucket = -1
-        self.NrTimeBucketWithoutUncertainty = -1
+        self.NrTimeBucketWithoutUncertaintyAfter = -1
+        self.NrTimeBucketWithoutUncertaintyBefore = -1
         self.NrResource = -1
         self.LostSaleCost = []
         self.Gamma = 0
@@ -157,28 +164,34 @@ class MRPInstance:
         self.RateOfKnownDemand = -1
         self.ForcastedStandardDeviation = []
         self.Requirements = []
+        self.TotalRequirement = []
         self.Leadtimes = []
         self.StartingInventories = []
         self.InventoryCosts = []
         self.SetupCosts = []
         self.BackorderCosts = []
         self.HasExternalDemand = []
+        self.Delivery= []
         #The set of product which are required for production of each product.
         self.RequieredProduct = []
-
+        self.VariableCost = []
         self.ProductName = ""
         #Compute some statistic about the instance
         self.MaxLeadTime = -1
         self.NrLevel = -1
         self.Level = [] # The level of each product in the bom
         self.MaxLeadTimeProduct = [] #The maximum leadtime to the component for each product
+        self.MaimumLeadTime=-1  # the maximum leadtime over all product
        # self.DemandScenarioTree = ScenarioTree( instance = self )
 
 
         #If this is true, a single scenario with average demand is generated
-        self.Average = False
-        self.LoadScenarioFromFile = False
         self.BranchingStrategy = 3
+
+        self.MaximumQuanityatT = [ [ ] ]
+
+        #This variable is true if the end of horizon in the instance is the ctual end of horizon (False in a rolling horizon framework)
+        self.ActualEndOfHorizon = True
 
     #Compute the lead time from a product to its component with the largest sum of lead time
     def ComputeMaxLeadTime( self ):
@@ -192,6 +205,51 @@ class MRPInstance:
                     self.MaxLeadTimeProduct[ p ] = max( [ self.MaxLeadTimeProduct [ q ] for q in parents ] );
                 self.MaxLeadTimeProduct[p] =  self.MaxLeadTimeProduct[p] + self.Leadtimes[ p ]
         self.MaxLeadTime = max( self.MaxLeadTimeProduct[p] for p in self.ProductSet )
+
+    def GetTimeToEnd( self ):
+        timetoenditem = [0 for p in self.ProductSet]
+        levelset = sorted(set(self.Level), reverse=False)
+        for l in levelset:
+            prodinlevel = [p for p in self.ProductSet if self.Level[p] == l]
+            for p in prodinlevel:
+                children = [q for q in self.ProductSet if self.Requirements[q][p] > 0]
+                if len(children) > 0:
+                    timetoenditem[p] = max([timetoenditem[q] for q in children])
+                    timetoenditem[p] = max([self.Leadtimes[q] for q in children]) +1
+
+        return timetoenditem
+
+
+    def GetDescendent( self, q ):
+
+        itemtoinvestigate = [q]
+        result = [q]
+        while len(itemtoinvestigate) > 0:
+            nextitemtoinvestigate = []
+
+            for p in itemtoinvestigate:
+                children = [q for q in self.ProductSet if self.Requirements[q][p] > 0]
+                nextitemtoinvestigate = nextitemtoinvestigate + children
+
+            itemtoinvestigate = nextitemtoinvestigate
+            result = result + nextitemtoinvestigate
+
+        return result
+
+    #Fill the array UseForFabrication which is equal to 1 if component p is used to produce r (even not directely)
+    def ComputeUseForFabrication( self ):
+        self.TotalRequirement = [ [ 0 for p in self.ProductSet ] for q in self.ProductSet ]
+        maxlevl = max( self.Level )
+        levelset = sorted(set(self.Level), reverse=True)
+        for l in levelset:
+            prodinlevel = [p for p in self.ProductSet if self.Level[p] == l]
+            for p in prodinlevel:
+                for q in self.ProductSet:
+                    if l == maxlevl:
+                        self.TotalRequirement[q][p] = self.Requirements[q][p]
+                    else:
+                        for c in self.ProductSet:
+                                self.TotalRequirement[q][p] =  self.TotalRequirement[q][p] + self.Requirements[c][p] *  self.TotalRequirement[q][c]
 
     #This function compute at which level each node is in the supply chain
     def ComputeLevel( self ) :
@@ -214,8 +272,7 @@ class MRPInstance:
         self.NrLevel = max( self.Level[ p ] for p in self.ProductSet )
 
     def ComputeHasExternalDemand(self):
-        self.HasExternalDemand = [  self.YearlyAverageDemand[p] > 0
-                                    for p in self.ProductSet ]
+        self.HasExternalDemand = [  self.YearlyAverageDemand[p] > 0 for p in self.ProductSet ]
         self.ProductWithExternalDemand = [ p for p in self.ProductSet if  self.HasExternalDemand[p] ]
         self.ProductWithoutExternalDemand = [p for p in self.ProductSet if not self.HasExternalDemand[p]]
 
@@ -252,118 +309,14 @@ class MRPInstance:
 
 
     #This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
-    def ReadFromFile( self, instancename, distribution):
-        wb2 = opxl.load_workbook( "./Instances/MSOM-06-038-R2.xlsx" )
-        #The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
-        supplychaindf = Tool.ReadDataFrame( wb2, instancename + "_LL" )
-        datasheetdf = Tool.ReadDataFrame( wb2, instancename + "_SD" )
-        datasheetdf = datasheetdf.fillna(0)
-        #read the data
-        self.ProductName = list( datasheetdf.index.values )
-        self.InstanceName = instancename
-        #This set of instances assume no capacity
-        self.NrResource =  len( self.ProductName )
-        self.NrProduct = len( self.ProductName )
-        self.NrTimeBucket = 0
-        self.ComputeIndices()
-
-        self.Distribution = distribution
-
-        #Get the average demand, lead time
-        self.Leadtimes = [randint( 1, 1 ) for p in self.ProductSet]
-
-        #self.Leadtimes =  [  int ( math.ceil( datasheetdf.get_value( self.ProductName[ p ], 'stageTime' ) ) ) for p in self.ProductSet ]
-        print " CAUTION: LEAD TIME ARe MODIFIED"
-        #Compute the requireement from the supply chain. This set of instances assume the requirement of each arc is 1.
-        self.Requirements = [ [ 0 ] * self.NrProduct for _ in self.ProductSet ]
-        for i, row in supplychaindf.iterrows():
-            self.Requirements[ self.ProductName.index( row.get_value('destinationStage' ) ) ][ self.ProductName.index( i ) ] = 1
-        #Assume an inventory holding cost of 0.1 per day for now
-        holdingcost = 0.1 / 250
-        self.InventoryCosts = [ 0.0 ] * self.NrProduct
-        #The cost of the product is given by  added value per stage. The cost of the product at each stage must be computed
-        addedvalueatstage = [ datasheetdf.get_value( self.ProductName[ p ], 'stageCost' ) for p in self.ProductSet ]
-        level = [ datasheetdf.get_value( self.ProductName[ p ], 'relDepth' ) for p in self.ProductSet    ]
-        levelset = sorted( set( level ), reverse=True )
-        for l in levelset:
-            prodinlevel =  [ p for p in self.ProductSet  if level[p] == l ]
-            for p in prodinlevel:
-                addedvalueatstage[p] = sum(addedvalueatstage[ q ] * self.Requirements[p][q] for q in self.ProductSet ) + \
-                                            addedvalueatstage[ p ]
-                self.InventoryCosts[p] = holdingcost *  addedvalueatstage[ p ]
-
-
-        self.ComputeLevel()
-        self.ComputeMaxLeadTime( )
-        # Consider a time horizon of 20 days plus the total lead time
-        self.NrTimeBucket =  2 * self.MaxLeadTime
-        self.NrTimeBucketWithoutUncertainty = self.MaxLeadTime
-        self.ComputeIndices()
-
-
-        #Generate the sets of scenarios
-        self.YearlyAverageDemand = [ datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') for p in self.ProductSet ]
-        if distribution == Constants.SlowMoving:
-            self.YearlyAverageDemand = [ 1 if datasheetdf.get_value( self.ProductName[ p ], 'avgDemand') > 0 else 0 for p in self.ProductSet]
-
-        if distribution == Constants.Uniform:
-            self.YearlyAverageDemand = [0.5 if datasheetdf.get_value(self.ProductName[p], 'avgDemand') > 0 else 0 for p in
-                                  self.ProductSet]
-
-        self.YearlyStandardDevDemands = [ datasheetdf.get_value( self.ProductName[ p ], 'stdDevDemand') for p in self.ProductSet ]
-
-        stationarydistribution = ( self.Distribution == Constants.Normal ) or ( self.Distribution == Constants.SlowMoving ) or ( self.Distribution == Constants.Lumpy ) or ( self.Distribution == Constants.Uniform )
-
-        if stationarydistribution:
-            self.ForecastedAverageDemand = [ self.YearlyAverageDemand  for t in self.TimeBucketSet ]
-            self.ForcastedStandardDeviation = [ self.YearlyStandardDevDemands for t in self.TimeBucketSet ]
-            self.ForecastError =   [ self.YearlyStandardDevDemands[p] / self.YearlyAverageDemand[p] for t in self.TimeBucketSet ]
-            self.RateOfKnownDemand = 0.0
+    def ReadFromFile( self, instancename, distribution, b = 2, fe= 25, e="n", rk = 50, leadtimestructure =1, lostsale = 2, longtimehoizon = False, capacity = 0):
+        if instancename[0] == "0":
+            reader = GraveInstanceReader( self )
         else:
-            self.ForecastError = [ 0.25 for p in self.ProductSet ]
-            self.RateOfKnownDemand = [ math.pow( 0.9, t+1) for t in self.TimeBucketSet ]
-            self.ForecastedAverageDemand = [ [ np.floor( np.random.normal(self.YearlyAverageDemand[p], self.YearlyStandardDevDemands[p], 1).clip( min=0.0) ).tolist()[0]
-                                               if self.YearlyStandardDevDemands[p] > 0 else float(self.YearlyAverageDemand[p])
-                                               for p in self.ProductSet ] for t in self.TimeBucketSet ]
-
-            self.ForcastedStandardDeviation = [ [ (1-self.RateOfKnownDemand[t]) *  self.ForecastError[p] *  self.ForecastedAverageDemand[t][p]
-                                                 for p in self.ProductSet ] for t in self.TimeBucketSet ]
-
-        #demand = ScenarioTreeNode.CreateDemandNormalDistributiondemand( self, 1, average = False, slowmoving = slowmoving )
-        #self.FirstPeriodDemand = [ demand[p][0] for p in self.ProductSet ]
-
-        # The data below are generated a according to the method given in "multi-item capacited lot-sizing with demand uncertainty, P Brandimarte, IJPR, 2006"
+            reader = TemplemeierInstanceReader(self)
+        reader.ReadFromFile(instancename, distribution, b, fe, e, rk, leadtimestructure, lostsale, longtimehoizon, capacity )
 
 
-        dependentaveragedemand = [ self.YearlyAverageDemand[p] for p in self.ProductSet ]
-        levelset = sorted(set(level), reverse=False)
-        for l in levelset:
-            prodinlevel = [p for p in self.ProductSet if level[p] == l]
-            for p in prodinlevel:
-                dependentaveragedemand[p] = sum(dependentaveragedemand[q] * self.Requirements[q][p] for q in self.ProductSet) + \
-                                                dependentaveragedemand[p]
-        # Assume a starting inventory is the average demand during the lead time
-        self.StartingInventories = [   int( random.uniform( 0.75, 1.5 ) * dependentaveragedemand[ p ] * (self.Leadtimes[ p ] )  )   for p in self.ProductSet ]
-
-        #This set of instances assume no setup
-        self.SetupCosts =  [   ( ( ( dependentaveragedemand[ p ] / 2 ) * 0.25 *  self.InventoryCosts[p]  ) * random.uniform( 0.8, 1.2 ) )  for p in self.ProductSet ]
-
-        self.ProcessingTime = [ [ randint( 1, 5 )
-                                    if (p == k )   else 0.0
-                                    for p in self.ProductSet ]
-                                for k in range(self.NrResource) ]
-        capacityfactor = 1.8;
-        self.Capacity =  [ capacityfactor * sum ( dependentaveragedemand[ p ] * self.ProcessingTime[ p ][k] for p in self.ProductSet ) for k in range( self.NrResource ) ]
-
-        # Gamma is set to 0.9 which is a common value (find reference!!!)
-        self.Gamma = 0.9
-        #Back order is twice the  holding cost as in :
-        # Solving the capacitated lot - sizing problem with backorder consideration CH Cheng1 *, MS Madan2, Y Gupta3 and S So4
-        # See how to set this value
-        self.BackorderCosts = [ 10 * self.InventoryCosts[p]  for p in self.ProductSet ]
-        self.LostSaleCost = [ 100 * self.InventoryCosts[p]  for p in self.ProductSet ] # [ randint( 200, 300 ) for p in self.ProductSet ]
-        self.SaveCompleteInstanceInExelFile()
-        self.ComputeInstanceData()
 
 
     #Save the scenario tree in a file
@@ -379,10 +332,10 @@ class MRPInstance:
 
     #Save the Instance in an Excel  file
     def SaveCompleteInstanceInExelFile( self ):
-        writer = pd.ExcelWriter("./Instances/" + self.InstanceName + "_" + self.Distribution + ".xlsx",  engine='openpyxl' )
+        writer = pd.ExcelWriter("./Instances/" + self.InstanceName  + ".xlsx",  engine='openpyxl' ) #+ "b2_ei_"
 
-        general = [ self.InstanceName, self.NrProduct, self.NrTimeBucket, self.NrResource, self.Gamma, self.Distribution,  self.NrTimeBucketWithoutUncertainty  ]
-        columnstab = [ "Name", "NrProducts", "NrBuckets", "NrResources", "Gamma", "Distribution", "NrTimeBucketWithoutUncertainty" ]
+        general = [ self.InstanceName, self.NrProduct, self.NrTimeBucket, self.NrResource, self.Gamma, self.Distribution,  self.NrTimeBucketWithoutUncertaintyBefore, self.NrTimeBucketWithoutUncertaintyAfter  ]
+        columnstab = [ "Name", "NrProducts", "NrBuckets", "NrResources", "Gamma", "Distribution", "NrTimeBucketWithoutUncertaintyBefore", "NrTimeBucketWithoutUncertaintyAfter" ]
         generaldf = pd.DataFrame(general, index=columnstab )
         generaldf.to_excel( writer, "Generic" )
 
@@ -391,8 +344,10 @@ class MRPInstance:
 
         productdata = [ self.Leadtimes, self.StartingInventories, self.InventoryCosts,
                         self.SetupCosts, self.BackorderCosts, self.YearlyAverageDemand, self.YearlyStandardDevDemands,
-                        self.LostSaleCost ]
-        col = [ "Leadtimes", "StartingInventories", "InventoryCosts", "SetupCosts", "BackorderCosts", "AverageDemand", "StandardDevDemands", "LostSale" ]
+                        self.LostSaleCost, self.VariableCost ]
+        col = [ "Leadtimes", "StartingInventories", "InventoryCosts", "SetupCosts", "BackorderCosts", "AverageDemand", "StandardDevDemands", "LostSale", "VariableCosts" ]
+        print self.ProductName
+        print productdata
         productdatadf = pd.DataFrame( productdata, columns=self.ProductName, index=col).transpose();
         productdatadf.to_excel(writer, "Productdata")
 
@@ -412,15 +367,16 @@ class MRPInstance:
 
 
     #Save the Instance in an Excel  file
-    def ReadInstanceFromExelFile( self, instancename, distribution ):
-        wb2 = opxl.load_workbook("./Instances/" + instancename+ "_" + distribution + ".xlsx")
+    def ReadInstanceFromExelFile( self, instancename ):
+        wb2 = opxl.load_workbook("./Instances/" + instancename + ".xlsx")
 
         # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
         Genericdf = Tool.ReadDataFrame(wb2, "Generic")
         self.InstanceName = Genericdf.get_value( 'Name', 0 )
         self.NrProduct = Genericdf.get_value('NrProducts', 0)
         self.NrTimeBucket = Genericdf.get_value('NrBuckets', 0)
-        self.NrTimeBucketWithoutUncertainty = Genericdf.get_value('NrTimeBucketWithoutUncertainty', 0)
+        self.NrTimeBucketWithoutUncertaintyAfter = Genericdf.get_value('NrTimeBucketWithoutUncertaintyAfter', 0)
+        self.NrTimeBucketWithoutUncertaintyBefore = Genericdf.get_value('NrTimeBucketWithoutUncertaintyBefore', 0)
         self.NrResource = Genericdf.get_value('NrResources', 0)
         self.Gamma =  Genericdf.get_value('Gamma', 0)
         self.Distribution =  Genericdf.get_value('Distribution', 0)
@@ -434,6 +390,7 @@ class MRPInstance:
         self.BackorderCosts = Productdatadf['BackorderCosts'].tolist()
         self.StartingInventories = Productdatadf['StartingInventories'].tolist()
         self.SetupCosts = Productdatadf['SetupCosts'].tolist()
+        self.VariableCost = Productdatadf['VariableCosts'].tolist()
         self.LostSaleCost = Productdatadf['LostSale'].tolist()
         self.ComputeIndices()
         Requirementdf = Tool.ReadDataFrame( wb2, "Requirement" )
@@ -443,7 +400,7 @@ class MRPInstance:
         self.Capacity = [ Capacitydf.get_value( k, 0 ) for k in self.ResourceSet ]
 
         Processingdf = Tool.ReadDataFrame( wb2, "ProcessingTime" )
-        self.ProcessingTime = [[Processingdf.get_value(p, k) for p in self.ProductName] for k in self.ResourceSet]
+        self.ProcessingTime = [[Processingdf.get_value(p, k) for k in self.ResourceSet] for p in self.ProductName]
 
         forecastedavgdemanddf = Tool.ReadDataFrame(wb2, "ForecastedAverageDemand")
         self.ForecastedAverageDemand = [ [ forecastedavgdemanddf.get_value(t, p) for p in self.ProductName] for t in self.TimeBucketSet ]
@@ -456,3 +413,46 @@ class MRPInstance:
         self.ComputeMaxLeadTime()
         self.ComputeIndices()
         self.ComputeInstanceData()
+
+    def ComputeMaximumArchievableSafetyStock( self ):
+
+        self.MaximumQuanityatT =  [ [ 0   for p in self.ProductSet ]   for t in self.TimeBucketSet]
+
+        levelset = sorted(set(self.Level), reverse=True)
+
+        for l in levelset:
+            prodinlevel = [p for p in self.ProductSet if self.Level[p] == l]
+            for p in prodinlevel:
+
+
+                for t in self.TimeBucketSet:
+                    if t < self.Leadtimes[ p ] :
+                        self.MaximumQuanityatT[t][p] = self.StartingInventories[p]
+                    else:
+                        RequiredProduct = [ q for q in self.ProductSet if self.Requirements[p][q]  > 0 ]
+                        if len(RequiredProduct) > 0:
+                            minquantity = min(  self.MaximumQuanityatT[ t - self.Leadtimes[ p ]  ][ q ] for q in RequiredProduct )
+                        else:
+                            minquantity = Constants.Infinity
+
+                        if  self.MaximumQuanityatT[t-1][p] < Constants.Infinity and  minquantity < Constants.Infinity:
+                            self.MaximumQuanityatT[t][p] =  self.MaximumQuanityatT[t-1][p] + minquantity
+                        else:
+                            self.MaximumQuanityatT[t][p] = Constants.Infinity
+
+    def ComputeAverageDemand(self):
+
+        depdemand = [sum(self.ForecastedAverageDemand[t][p] for t in self.TimeBucketSet)
+                     / (self.NrTimeBucket - self.NrTimeBucketWithoutUncertaintyBefore) for p in
+                     self.ProductSet]
+
+        levelset = sorted(set(self.Level), reverse=False)
+
+        for l in levelset:
+            prodinlevel = [p for p in self.ProductSet if self.Level[p] == l]
+            for p in prodinlevel:
+                depdemand[p] = sum(depdemand[q] * self.Requirements[q][p] for q in self.ProductSet) \
+                               + depdemand[p]
+
+        return depdemand
+

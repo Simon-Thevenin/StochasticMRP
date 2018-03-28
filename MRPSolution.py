@@ -1,5 +1,4 @@
 import pandas as pd
-from Tool import Tool
 import csv
 from datetime import datetime
 import math
@@ -9,27 +8,74 @@ from Tool import Tool
 from MRPInstance import MRPInstance
 import openpyxl as opxl
 from ast import literal_eval
+import numpy as np
+#from matplotlib import pyplot as plt
 
 class MRPSolution:
 
     def GetSolutionFileName(self, description):
-        result ="./Solutions/"+  description + "_Solution.xlsx"
+        if Constants.PrintSolutionFileInTMP:
+            result = "/tmp/thesim/Solutions/" + description + "_Solution.xlsx"
+        else:
+            result ="./Solutions/"+  description + "_Solution.xlsx"
         return result
+
+    def GetSolutionPickleFileNameStart(self, description, dataframename):
+        if Constants.PrintSolutionFileInTMP:
+            result = "/tmp/thesim/Solutions/" + description + "_" + dataframename
+        else:
+            result ="./Solutions/"+  description + "_" + dataframename
+        return result
+
+    def GetGeneralInfoDf(self):
+        model = ""
+        if not self.ScenarioTree.Owner is None:
+            model = self.ScenarioTree.Owner.Model
+        else:
+            model = "Rule"
+        general = [self.MRPInstance.InstanceName, self.MRPInstance.Distribution, model,
+                   self.CplexCost, self.CplexTime, self.TotalTime, self.CplexGap, self.CplexNrConstraints, self.CplexNrVariables, self.IsPartialSolution]
+        columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "TotalTime", "CplexGap", "CplexNrConstraints",
+                      "CplexNrVariables", "IsPartialSolution"]
+        generaldf = pd.DataFrame(general, index=columnstab)
+        return generaldf
+
+    # This function print the solution different pickle files
+    def PrintToPickle(self, description):
+            prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf, fixedqvaluesdf = self.DataFrameFromList()
+
+            prodquantitydf.to_pickle( self.GetSolutionPickleFileNameStart(description, 'ProductionQuantity') )
+            productiondf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'Production') )
+            inventorydf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'InventoryLevel') )
+            bbackorderdf.to_pickle( self.GetSolutionPickleFileNameStart(description,  'BackOrder') )
+            svaluedf.to_pickle( self.GetSolutionPickleFileNameStart( description,  'SValue' ) )
+            fixedqvaluesdf.to_pickle( self.GetSolutionPickleFileNameStart( description,  'FixedQvalue' ) )
+
+            generaldf = self.GetGeneralInfoDf()
+            generaldf.to_pickle( self.GetSolutionPickleFileNameStart(description, "Generic") )
+
+            scenariotreeinfo = [self.MRPInstance.InstanceName, self.ScenarioTree.Seed, self.ScenarioTree.TreeStructure,
+                                self.ScenarioTree.AverageScenarioTree, self.ScenarioTree.ScenarioGenerationMethod]
+            columnstab = ["Name", "Seed", "TreeStructure", "AverageScenarioTree", "ScenarioGenerationMethod"]
+            scenariotreeinfo = pd.DataFrame(scenariotreeinfo, index=columnstab)
+            scenariotreeinfo.to_pickle( self.GetSolutionPickleFileNameStart(description,  "ScenarioTree") )
+
     #This function print the solution in an Excel file in the folde "Solutions"
     def PrintToExcel(self, description):
+        prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf, fixedqvaluesdf = self.DataFrameFromList()
         writer = pd.ExcelWriter( self.GetSolutionFileName( description ), engine='openpyxl')
         #givenquantty = [[self.ProductionQuantity.ix[p, t].get_value(0) for p in self.MRPInstance.ProductSet]
         #                for t in self.MRPInstance.TimeBucketSet]
         #toprint = pd.DataFrame( givenquantty )
 
-        self.ProductionQuantity.to_excel(writer, 'ProductionQuantity')
-        self.Production.to_excel(writer, 'Production')
-        self.InventoryLevel.to_excel(writer, 'InventoryLevel')
-        self.BackOrder.to_excel(writer, 'BackOrder')
+        prodquantitydf.to_excel(writer, 'ProductionQuantity')
+        productiondf.to_excel(writer, 'Production')
+        inventorydf.to_excel(writer, 'InventoryLevel')
+        bbackorderdf.to_excel(writer, 'BackOrder')
+        svaluedf.to_excel(writer, 'SValue')
+        fixedqvaluesdf.to_excel(writer, 'FixedQvalue')
 
-        general = [  self.MRPInstance.InstanceName, self.MRPInstance.Distribution, self.ScenarioTree.Owner.Model, self.CplexCost, self.CplexTime, self.CplexGap  ]
-        columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "CplexGap"]
-        generaldf = pd.DataFrame( general, index=columnstab )
+        generaldf = self.GetGeneralInfoDf()
         generaldf.to_excel(writer, "Generic")
 
         scenariotreeinfo = [self.MRPInstance.InstanceName, self.ScenarioTree.Seed, self.ScenarioTree.TreeStructure, self.ScenarioTree.AverageScenarioTree, self.ScenarioTree.ScenarioGenerationMethod]
@@ -40,42 +86,94 @@ class MRPSolution:
 
         writer.save()
 
-    #This function read the instance from the excel file
-    def ReadFromExcel(self, description):
-        wb2 = opxl.load_workbook( self.GetSolutionFileName( description ))
-
+    def ReadExcelFiles(self, description, index = "", indexbackorder = ""):
         # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
-        self.ProductionQuantity = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "ProductionQuantity")
-        self.Production = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "Production")
-        self.InventoryLevel = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "InventoryLevel")
-        self.BackOrder = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName( description ), "BackOrder")
+        prodquantitydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "ProductionQuantity" )
+        productiondf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "Production" )
+        inventorydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "InventoryLevel" )
+        bbackorderdf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "BackOrder" )
+
+
+        wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
+        svaluedf = Tool.ReadDataFrame(wb2, 'SValue')
+        fixedqvaluesdf = Tool.ReadDataFrame(wb2, 'FixedQvalue')
+
         instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
-        scenariotreeinfo =  Tool.ReadDataFrame(wb2, "ScenarioTree")
+        scenariotreeinfo = Tool.ReadDataFrame(wb2, "ScenarioTree")
+
+        prodquantitydf.index = index
+        productiondf.index = index
+        inventorydf.index = index
+        bbackorderdf.index = [ index[p] for p in indexbackorder]
+        return prodquantitydf, productiondf, inventorydf, bbackorderdf, svaluedf, fixedqvaluesdf, instanceinfo, scenariotreeinfo
+
+    def ReadPickleFiles(self, description):
+        # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
+        prodquantitydf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'ProductionQuantity' ) )
+        productiondf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'Production' ) )
+        inventorydf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'InventoryLevel' ) )
+        bbackorderdf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'BackOrder' ) )
+        svaluedf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'SValue' ) )
+        fixedqvaluesdf = pd.read_pickle( self.GetSolutionPickleFileNameStart( description, 'FixedQvalue' ) )
+
+        instanceinfo = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, "Generic") )
+        scenariotreeinfo = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, "ScenarioTree"))
+
+        return prodquantitydf, productiondf, inventorydf, bbackorderdf, svaluedf, fixedqvaluesdf, instanceinfo, scenariotreeinfo
+
+
+    #This function read the instance from the excel file
+    def ReadFromFile(self, description):
+
+        if Constants.PrintSolutionFileToExcel:
+            wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
+            instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
+            self.MRPInstance = MRPInstance()
+            self.MRPInstance.ReadInstanceFromExelFile(instanceinfo.get_value('Name', 0) )
+            prodquantitydf, productiondf, inventorydf, bbackorderdf, svaluedf, fixedqvaluesdf, instanceinfo, scenariotreeinfo = self.ReadExcelFiles( description , index=self.MRPInstance.ProductName, indexbackorder=self.MRPInstance.ProductWithExternalDemand)
+        else:
+            prodquantitydf, productiondf, inventorydf, bbackorderdf, svaluedf, fixedqvaluesdf, instanceinfo, scenariotreeinfo = self.ReadPickleFiles( description )
+
+
 
         self.MRPInstance = MRPInstance()
-        self.MRPInstance.ReadInstanceFromExelFile( instanceinfo.get_value( 'Name', 0 ), instanceinfo.get_value( 'Distribution', 0 ), )
+        if Constants.Debug:
+            print "Load instance:%r"% instanceinfo.get_value('Name', 0)
+        self.MRPInstance.ReadInstanceFromExelFile(instanceinfo.get_value('Name', 0) )
+
 
         scenariogenerationm = scenariotreeinfo.get_value('ScenarioGenerationMethod', 0)
+        avgscenariotree = scenariotreeinfo.get_value( 'AverageScenarioTree', 0 )
+        scenariotreeseed = int( scenariotreeinfo.get_value( 'Seed', 0 ) )
+        branchingstructure  =  literal_eval( str( scenariotreeinfo.get_value( 'TreeStructure', 0 ) ) )
         model = instanceinfo.get_value( 'Model', 0 )
-        RQMCForYQfix = (model == Constants.ModelYQFix and scenariogenerationm == Constants.RQMC )
+        RQMCForYQfix = ( model == Constants.ModelYQFix and ( Constants.IsQMCMethos( scenariogenerationm) ) )
 
         self.ScenarioTree = ScenarioTree ( instance = self.MRPInstance,
-                                           branchperlevel =  literal_eval(scenariotreeinfo.get_value( 'TreeStructure', 0 )),
-                                           seed = int( scenariotreeinfo.get_value( 'Seed', 0 ) ),
-                                           averagescenariotree =  scenariotreeinfo.get_value( 'AverageScenarioTree', 0 ),
-                                           scenariogenerationmethod =  scenariotreeinfo.get_value( 'ScenarioGenerationMethod', 0 ),
-                                           generateRQMCForYQfix = RQMCForYQfix )
+                                           branchperlevel = branchingstructure,
+                                           seed = scenariotreeseed,
+                                           averagescenariotree =  avgscenariotree,
+                                           scenariogenerationmethod =  scenariogenerationm,
+                                           model = model )
 
+        self.IsPartialSolution = instanceinfo.get_value('IsPartialSolution', 0)
         self.CplexCost = instanceinfo.get_value( 'CplexCost', 0 )
         self.CplexTime = instanceinfo.get_value( 'CplexTime', 0 )
+        self.TotalTime = instanceinfo.get_value( 'TotalTime', 0 )
         self.CplexGap = instanceinfo.get_value( 'CplexGap', 0 )
+        self.CplexNrConstraints = instanceinfo.get_value('CplexNrConstraints', 0)
+        self.CplexNrVariables = instanceinfo.get_value('CplexNrVariables', 0)
 
         self.Scenarioset = self.ScenarioTree.GetAllScenarios( False )
+        if  self.IsPartialSolution:
+            self.Scenarioset = [ self.Scenarioset [ 0 ] ]
+        self.SenarioNrset = range(len(self.Scenarioset))
+        self.ListFromDataFrame(prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf, fixedqvaluesdf)
+        if not self.IsPartialSolution:
+            self.ComputeCost()
 
-        self.ComputeCost()
-
-        if model <> Constants.ModelYQFix:
-            self.ScenarioTree.FillQuantityToOrderFromMRPSolution(self, self.Scenarioset)
+            if model <> Constants.ModelYQFix:
+                self.ScenarioTree.FillQuantityToOrderFromMRPSolution(self)
             # for s in range( len(self.Scenarioset) ):
             #     print "Scenario with demand:%r" % self.Scenarioset[s].Demands
             #     print "quantity %r" % [ [ self.ProductionQuantity.loc[self.MRPInstance.ProductName[p], (time, s)] for p in
@@ -83,92 +181,164 @@ class MRPSolution:
 
     #This function prints a solution
     def Print(self):
-        print "production ( cost: %r): \n %r" % ( self.SetupCost , self.Production );
-        print "production quantities: \n %r" % self.ProductionQuantity ;
-        print "inventory levels at the end of the periods: ( cost: %r ) \n %r" % ( self.InventoryCost, self.InventoryLevel );
-        print "backorder quantities:  ( cost: %r ) \n %r" % ( self.BackOrderCost, self.BackOrder );
+        prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf, fixedqvaluesdf = self.DataFrameFromList()
+        print "production ( cost: %r): \n %r" % ( self.SetupCost , productiondf )
+        print "production quantities: \n %r" % prodquantitydf
+        print "inventory levels at the end of the periods: ( cost: %r ) \n %r" % ( self.InventoryCost, inventorydf )
+        print "backorder quantities:  ( cost: %r ) \n %r" % ( self.BackOrderCost, bbackorderdf )
+        print "S values: \n %r" % svaluedf
+        print "Fixed Q values: \n %r" % fixedqvaluesdf
 
     #This funciton conpute the different costs (inventory, backorder, setups) associated with the solution.
     def ComputeCost(self):
-        #multiply by inventory cost per product -> get a vector with cost per time unit and scenario
-        inventorycostpertimeandscenar =  self.InventoryLevel.transpose().dot( self.MRPInstance.InventoryCosts )
-        setupcostpertimeandscenar = self.Production.transpose().dot( self.MRPInstance.SetupCosts )
-        backorderproductwithexternaldemand = [ self.MRPInstance.BackorderCosts[p]  for p in self.MRPInstance.ProductWithExternalDemand ]
-
-        #backordervariable = self.BackOrder.loc[ 0 : ( self.MRPInstance.NrTimeBucket -1 ) ]
-        backordercostpertimeandscenar = self.BackOrder.transpose().dot(backorderproductwithexternaldemand)
-        #backordercostpertimeandscenar = backordervariable.transpose().dot( backorderproductwithexternaldemand )
-
-        lostsalewithexternaldemand = [ self.MRPInstance.LostSaleCost[p] for p in
-                                              self.MRPInstance.ProductWithExternalDemand]
-
-        lostsalevariable = self.BackOrder.iloc[ :, self.BackOrder.columns.get_level_values(0) == ( self.MRPInstance.NrTimeBucket -1 ) ]
-        lostsalecosttimeandscenar = lostsalevariable.transpose().dot( lostsalewithexternaldemand )
-
-        #Reshap the vector to get matirces
-        inventorycostpertimeandscenar = inventorycostpertimeandscenar.values.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
-        setupcostpertimeandscenar = setupcostpertimeandscenar.values.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
-        backordercostpertimeandscenar = backordercostpertimeandscenar.values.reshape( self.MRPInstance.NrTimeBucket, len(  self.Scenarioset ) );
-        lostsalecosttimeandscenar = lostsalecosttimeandscenar.values.reshape( 1, len(  self.Scenarioset ));
+             self.TotalCost, self.InventoryCost, self.BackOrderCost,  self.SetupCost, self.LostsaleCost, self.VariableCost = self.GetCostInInterval(  self.MRPInstance.TimeBucketSet )
 
 
-        #multiply by the probability of each scenatio
-        proabailities = [ s.Probability for s in self.Scenarioset ]
-        inventorycostpertime = inventorycostpertimeandscenar.dot( proabailities )
-        setupcostpertime = setupcostpertimeandscenar.dot( proabailities )
-        backordercostpertime = backordercostpertimeandscenar.dot( proabailities )
-        lostsalecostpertime = lostsalecosttimeandscenar.dot( proabailities )
-        gammas = [ math.pow(self.MRPInstance.Gamma, t) for t in self.MRPInstance.TimeBucketSet ]
-        netpresentvalueinventorycostpertime = inventorycostpertime.transpose().dot( gammas )
-        netpresentvaluesetupcostpertime = setupcostpertime.transpose().dot( gammas )
-        gammadonotconsiderlastperiod = gammas
-        gammadonotconsiderlastperiod[ (  self.MRPInstance.NrTimeBucket -1 ) ] = 0
-        netpresentvaluebackordercostpertime = backordercostpertime.transpose().dot( gammadonotconsiderlastperiod )
-        lastgamma = [ math.pow( self.MRPInstance.Gamma, self.MRPInstance.NrTimeBucket -1 ) ]
-        netpresentvaluelostsalecostpertime = lostsalecostpertime.transpose().dot( lastgamma )
+    #This function return the costs encountered in a specific time interval
+    def GetCostInInterval(self, timerange):
 
-        self.InventoryCost = netpresentvalueinventorycostpertime
-        self.BackOrderCost = netpresentvaluebackordercostpertime
-        self.SetupCost = netpresentvaluesetupcostpertime
-        self.LostsaleCost = netpresentvaluelostsalecostpertime
-        self.TotalCost =  self.InventoryCost + self.BackOrderCost +  self.SetupCost + self.LostsaleCost
+        inventorycost = 0
+        backordercost = 0
+        setupcost = 0
+        lostsalecost = 0
+        variablecost = 0
+        gammas = [math.pow(self.MRPInstance.Gamma, t) for t in self.MRPInstance.TimeBucketSet]
+
+        for w in range(len(self.Scenarioset)):
+            for t in timerange:
+                for p in self.MRPInstance.ProductSet:
+                    inventorycost += self.InventoryLevel[w][t][p] \
+                                          * self.MRPInstance.InventoryCosts[p] \
+                                          * gammas[t] \
+                                          * self.Scenarioset[w].Probability
+
+                    setupcost += self.Production[w][t][p] \
+                                      * self.MRPInstance.SetupCosts[p] \
+                                      * gammas[t] \
+                                      * self.Scenarioset[w].Probability
+
+                    variablecost += self.ProductionQuantity[w][t][p] \
+                                          * self.MRPInstance.VariableCost[p] \
+                                          * gammas[t] \
+                                          * self.Scenarioset[w].Probability
 
 
+                    if self.MRPInstance.HasExternalDemand[p]:
+                        if t < self.MRPInstance.NrTimeBucket - 1:
+                            backordercost += self.BackOrder[w][t][
+                                                      self.MRPInstance.ProductWithExternalDemandIndex[p]] \
+                                                  * self.MRPInstance.BackorderCosts[p] \
+                                                  * gammas[t] \
+                                                  * self.Scenarioset[w].Probability
+                        else:
+                            lostsalecost += self.BackOrder[w][t][
+                                                     self.MRPInstance.ProductWithExternalDemandIndex[p]] \
+                                                 * self.MRPInstance.LostSaleCost[p] \
+                                                 * gammas[t] \
+                                                 * self.Scenarioset[w].Probability
+
+                totalcost = inventorycost + backordercost + setupcost + lostsalecost + variablecost
+        return totalcost, inventorycost, backordercost, setupcost, lostsalecost, variablecost
+
+    def GetConsideredTimeBucket(self):
+        result = self.MRPInstance.TimeBucketSet
+        if self.IsPartialSolution:
+            result = range(self.MRPInstance.NrTimeBucketWithoutUncertaintyBefore +1  )
+        return result
+
+    def GetConsideredScenarioset(self):
+        result = self.Scenarioset
+        if self.IsPartialSolution:
+            result = [ 0 ]
+        return result
+
+    def DataFrameFromList(self):
+        scenarioset = range(len(self.Scenarioset) )
+        timebucketset = self.GetConsideredTimeBucket()
+        solquantity = [ [ self.ProductionQuantity[s][t][p]   for t in timebucketset for s in scenarioset] for p in self.MRPInstance.ProductSet ]
+        solinventory = [[self.InventoryLevel[s][t][p]  for t in timebucketset for s in scenarioset ] for p in self.MRPInstance.ProductSet ]
+        solproduction = [[self.Production[s][t][p]  for t in self.MRPInstance.TimeBucketSet for s in scenarioset ] for p in self.MRPInstance.ProductSet ]
+        solbackorder = [[self.BackOrder[s][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ]  for t in timebucketset for s in scenarioset ] for p in self.MRPInstance.ProductWithExternalDemand ]
+        svalue = [  [self.SValue[t][p] for t in timebucketset ]  for p in self.MRPInstance.ProductSet ]
+        fixedqvalues = [  [self.FixedQuantity[t][p] for t in timebucketset ]  for p in self.MRPInstance.ProductSet ]
+
+        iterables = [timebucketset, range(len(self.Scenarioset))]
+        multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
+        prodquantitydf = pd.DataFrame(solquantity, index=self.MRPInstance.ProductName, columns=multiindex)
+        prodquantitydf.index.name = "Product"
+        inventorydf = pd.DataFrame(solinventory, index=self.MRPInstance.ProductName, columns=multiindex)
+        inventorydf.index.name = "Product"
+        #Production variables are decided at stage 1 for the complete horizon
+        iterablesproduction = [ range(len(self.MRPInstance.TimeBucketSet)) , range(len(self.Scenarioset) )]
+        multiindexproduction = pd.MultiIndex.from_product(iterablesproduction, names=['time', 'scenario'])
+        productiondf = pd.DataFrame(solproduction, index=self.MRPInstance.ProductName, columns=multiindexproduction)
+        productiondf.index.name = "Product"
+        nameproductwithextternaldemand = [self.MRPInstance.ProductName[p] for p in self.MRPInstance.ProductWithExternalDemand]
+        bbackorderdf = pd.DataFrame(solbackorder, index=nameproductwithextternaldemand, columns=multiindex)
+        bbackorderdf.index.name = "Product"
+        svaluedf = pd.DataFrame(svalue, index=self.MRPInstance.ProductName, columns=timebucketset)
+        fixedqvaluedf = pd.DataFrame(fixedqvalues, index=self.MRPInstance.ProductName, columns=timebucketset)
+
+        return prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf, fixedqvaluedf
+
+    def ListFromDataFrame(self, prodquantitydf, inventorydf, productiondf, bbackorderdf, svaluedf, fixedqvaluedf):
+        scenarioset = range(len(self.Scenarioset))
+        timebucketset = self.GetConsideredTimeBucket()
+        self.ProductionQuantity = [ [ [ prodquantitydf.loc[  str(self.MRPInstance.ProductName[ p ]), (t,s)]  for p in self.MRPInstance.ProductSet ]  for t in timebucketset ]for s in scenarioset ]
+        self.InventoryLevel = [ [ [inventorydf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in timebucketset] for s in scenarioset ]
+        self.Production = [ [ [productiondf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductSet]  for t in self.MRPInstance.TimeBucketSet] for s in scenarioset ]
+        self.BackOrder = [ [ [bbackorderdf.loc[  self.MRPInstance.ProductName[ p ], (t,s)] for p in self.MRPInstance.ProductWithExternalDemand]  for t in timebucketset] for s in scenarioset ]
+        self.SValue = [ [ svaluedf.loc[ self.MRPInstance.ProductName[p], t]
+                            for p in self.MRPInstance.ProductSet ]
+                            for t in timebucketset ]
+        self.FixedQuantity = [ [ fixedqvaluedf.loc[ self.MRPInstance.ProductName[p], t]
+                            for p in self.MRPInstance.ProductSet ]
+                            for t in timebucketset ]
 
     #constructor
-    def __init__( self, instance = None, solquantity= None, solproduction= None, solinventory= None, solbackorder= None, scenarioset= None, scenriotree= None ):
+    def __init__( self, instance = None, solquantity= None, solproduction= None, solinventory= None, solbackorder= None, scenarioset= None, scenriotree= None, partialsolution = False ):
         self.MRPInstance = instance
 
 
         #The set of scenario on which the solution is found
         self.Scenarioset = scenarioset
         self.ScenarioTree = scenriotree
+        if not  self.Scenarioset is None:
+            self.SenarioNrset = range(len(self.Scenarioset))
 
         #Create a multi index to store the scenarios and time
-        if  instance is not  None:
-            iterables = [ self.MRPInstance.TimeBucketSet,   range( len( self.Scenarioset ) )  ]
-            multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
-            self.ProductionQuantity = pd.DataFrame( solquantity, index = instance.ProductName, columns = multiindex  )
-            self.ProductionQuantity.index.name = "Product"
-            self.InventoryLevel = pd.DataFrame( solinventory, index = instance.ProductName, columns = multiindex )
-            self.InventoryLevel.index.name = "Product"
-            self.Production = pd.DataFrame( solproduction, index = instance.ProductName, columns = multiindex  )
-            self.Production.index.name = "Product"
-            nameproductwithextternaldemand = [ instance.ProductName[p] for p in instance.ProductWithExternalDemand ]
-            self.BackOrder = pd.DataFrame( solbackorder,  index = nameproductwithextternaldemand, columns = multiindex  )
-            self.BackOrder.index.name = "Product"
-        else:
-            self.ProductionQuantity = None
-            self.InventoryLevel = None
-            self.Production = None
-            self.BackOrder = None
-
+        # if  instance is not  None:
+        #     iterables = [ self.MRPInstance.TimeBucketSet,   range( len( self.Scenarioset ) )  ]
+        #     multiindex = pd.MultiIndex.from_product(iterables, names=['time', 'scenario'])
+        #     self.ProductionQuantity = pd.DataFrame( solquantity, index = instance.ProductName, columns = multiindex  )
+        #     self.ProductionQuantity.index.name = "Product"
+        #     self.InventoryLevel = pd.DataFrame( solinventory, index = instance.ProductName, columns = multiindex )
+        #     self.InventoryLevel.index.name = "Product"
+        #     self.Production = pd.DataFrame( solproduction, index = instance.ProductName, columns = multiindex  )
+        #     self.Production.index.name = "Product"
+        #     nameproductwithextternaldemand = [ instance.ProductName[p] for p in instance.ProductWithExternalDemand ]
+        #     self.BackOrder = pd.DataFrame( solbackorder,  index = nameproductwithextternaldemand, columns = multiindex  )
+        #     self.BackOrder.index.name = "Product"
+        # else:
+        #     self.ProductionQuantity = None
+        #     self.InventoryLevel = None
+        #     self.Production = None
+        #     self.BackOrder = None
+        self.ProductionQuantity = solquantity
+        self.InventoryLevel = solinventory
+        self.Production = solproduction
+        self.BackOrder = solbackorder
         self.InventoryCost = -1
         self.BackOrderCost = -1
+        self.LostsaleCost =-1
+        self.VariableCost = -1
+        self.InSamplePercentOnTime = -1
         self.SetupCost = -1
         self.TotalCost =-1
+        self.IsPartialSolution = partialsolution
+        self.NotCompleteSolution = False
 
-        if instance is not None:
+        if instance is not None and not self.IsPartialSolution:
             self.ComputeCost()
         #The attribute below compute some statistic on the solution
         self.InSampleAverageInventory = []
@@ -182,43 +352,50 @@ class MRPSolution:
         self.InSampleAverageBackOrder = -1
         self.InSampleAverageLostSale = -1
 
+        self.SValue = []
+        self.FixedQuantity= []
         # The objecie value as outputed by CPLEx,
         self.CplexCost =-1
         self.CplexGap = -1
         self.CplexTime = 0
+        self.TotalTime = 0
+        self.CplexNrConstraints = -1
+        self.CplexNrVariables = -1
+
+    def DeleteNonFirstStageDecision(self):
+        timebucketset = range(self.MRPInstance.NrTimeBucketWithoutUncertaintyBefore + 1)
+        self.IsPartialSolution = True
+        self.Scenarioset = [None]
+        self.SenarioNrset = [0]
+        self.ProductionQuantity = [[[ self.ProductionQuantity[w][t][p] for p in  self.MRPInstance.ProductSet ]  for t in timebucketset]  for w in self.SenarioNrset ]
+        self.InventoryLevel = [[[ self.InventoryLevel[w][t][p] for p in  self.MRPInstance.ProductSet ]  for t in timebucketset]  for w in self.SenarioNrset ]
+        self.Production = [[[ self.Production[w][t][p] for p in  self.MRPInstance.ProductSet ]  for t in self.MRPInstance.TimeBucketSet]  for w in self.SenarioNrset ]
+        self.BackOrder = [[[ self.BackOrder[w][t][p] for p in  self.MRPInstance.ProductWithExternalDemand ]  for t in timebucketset]  for w in self.SenarioNrset ]
+
 
     #This function compute some statistic on the current solution
     def ComputeStatistics( self ):
 
-        scenarioset = range( len( self.Scenarioset ) )
+        self.InSampleAverageInventory = [ [ sum( self.InventoryLevel[w][t][p] for w in self.SenarioNrset)/  len( self.SenarioNrset )
+                                           for p in  self.MRPInstance.ProductSet ]
+                                            for t in self.MRPInstance.TimeBucketSet]
 
-        self.InSampleAverageInventory = Tool.ComputeAverageOnIndex2( self.InventoryLevel,
-                                                                     self.MRPInstance.ProductSet,
-                                                                     self.MRPInstance.ProductName,
-                                                                     self.MRPInstance.TimeBucketSet,
-                                                                     scenarioset  )
+        self.InSampleAverageBackOrder =   [ [ sum( self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] for w in self.SenarioNrset)/  len( self.SenarioNrset )
+                                              for p in self.MRPInstance.ProductWithExternalDemand]
+                                                for t in self.MRPInstance.TimeBucketSet]
 
-        self.InSampleAverageBackOrder =  Tool.ComputeAverageOnIndex2( self.BackOrder,
-                                                                      self.MRPInstance.ProductWithExternalDemand,
-                                                                      self.MRPInstance.ProductName,
-                                                                      self.MRPInstance.TimeBucketSet,
-                                                                      scenarioset )
 
-        self.InSampleAverageQuantity =  Tool.ComputeAverageOnIndex2( self.ProductionQuantity,
-                                                                     self.MRPInstance.ProductSet,
-                                                                     self.MRPInstance.ProductName,
-                                                                     self.MRPInstance.TimeBucketSet,
-                                                                     scenarioset  )
+        self.InSampleAverageQuantity =  [ [ sum( self.ProductionQuantity[w][t][p] for w in self.SenarioNrset)/  len( self.SenarioNrset )
+                                            for p in self.MRPInstance.ProductSet]
+                                          for t in self.MRPInstance.TimeBucketSet]
 
-        self.InSampleAverageSetup =  Tool.ComputeAverageOnIndex2(     self.Production,
-                                                                     self.MRPInstance.ProductSet,
-                                                                     self.MRPInstance.ProductName,
-                                                                     self.MRPInstance.TimeBucketSet,
-                                                                     scenarioset  )
+        self.InSampleAverageSetup =  [ [ sum( self.Production[w][t][p] for w in self.SenarioNrset)/  len( self.SenarioNrset )
+                                         for p in self.MRPInstance.ProductSet]
+                                       for t in self.MRPInstance.TimeBucketSet]
 
-        self.InSampleAverageOnTime = [ [ ( sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder.loc[  self.MRPInstance.ProductName[ p ], (t,s)], 0 ] )
-                                           for s in scenarioset )
-                                             / len( scenarioset ) )
+        self.InSampleAverageOnTime = [ [ ( sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder[s][t][ self.MRPInstance.ProductWithExternalDemandIndex[p]  ], 0 ] )
+                                           for s in self.SenarioNrset )
+                                             / len( self.SenarioNrset ) )
                                               for p in self.MRPInstance.ProductWithExternalDemand ]
                                               for t in self.MRPInstance.TimeBucketSet ]
 
@@ -227,220 +404,618 @@ class MRPSolution:
                                                          for t in self.MRPInstance.TimeBucketSet   )
                                                     for s in self.Scenarioset ]
 
+        totaldemand = sum( self.InSampleTotalDemandPerScenario )
+
         backordertime = range( self.MRPInstance.NrTimeBucket - 1)
 
-        self.InSampleTotalOnTimePerScenario =  [  ( sum (  sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder.loc[  self.MRPInstance.ProductName[ p ], (t,s)], 0 ] )
+        self.InSampleTotalOnTimePerScenario =  [  ( sum (  sum( max( [ self.Scenarioset[s].Demands[t][p] - self.BackOrder[s][t][ self.MRPInstance.ProductWithExternalDemandIndex[p]  ], 0 ] )
                                                     for p in self.MRPInstance.ProductWithExternalDemand )
                                                    for t in self.MRPInstance.TimeBucketSet  )
                                                    )
-                                                for s in scenarioset]
-        self.InSampleTotalBackOrderPerScenario = Tool.ComputeSumOnIndex1Column( self.BackOrder,
-                                                                                      self.MRPInstance.ProductWithExternalDemand,
-                                                                                      self.MRPInstance.ProductName,
-                                                                                      backordertime,
-                                                                                      scenarioset )
-        self.InSampleTotalLostSalePerScenario =    Tool.ComputeSumOnIndex1Column( self.BackOrder,
-                                                                                      self.MRPInstance.ProductWithExternalDemand,
-                                                                                      self.MRPInstance.ProductName,
-                                                                                      [ self.MRPInstance.NrTimeBucket -1  ],
-                                                                                      scenarioset  )
-        nrscenario = len( self.Scenarioset )
-        self.InSampleAverageDemand = sum( self.InSampleTotalDemandPerScenario[s] for s in scenarioset ) / nrscenario
-        self.InSamplePercenBackOrder =  100 * ( sum( self.InSampleTotalBackOrderPerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
-        self.InSamplePercentLostSale = 100 * ( sum( self.InSampleTotalLostSalePerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
-        self.InSamplePercentOnTime = 100 * ( sum( self.InSampleTotalOnTimePerScenario[s] for s in scenarioset ) / nrscenario ) / self.InSampleAverageDemand
+                                                for s in self.SenarioNrset]
+        self.InSampleTotalBackOrderPerScenario = [  sum( self.BackOrder[w][t][ self.MRPInstance.ProductWithExternalDemandIndex[p] ]  for t in backordertime  for p in self.MRPInstance.ProductWithExternalDemand) for w in  self.SenarioNrset ]
 
-    #This function print hthe statistic in an Excel file
-    def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed):
+        self.InSampleTotalLostSalePerScenario =  [  sum( self.BackOrder[w][self.MRPInstance.NrTimeBucket -1][ self.MRPInstance.ProductWithExternalDemandIndex[p] ] for p in self.MRPInstance.ProductWithExternalDemand) for w in  self.SenarioNrset ]
+
+        nrscenario = len( self.Scenarioset )
+
+        self.InSampleAverageDemand = sum( self.InSampleTotalDemandPerScenario[s] for s in self.SenarioNrset ) / nrscenario
+        self.InSamplePercentOnTime = 100 * ( sum( self.InSampleTotalOnTimePerScenario[s] for s in self.SenarioNrset )  ) / totaldemand
+
+
+    #This function print detailed statistics about the obtained solution (avoid using it as it consume memory)
+    def PrintDetailExcelStatistic(self, filepostscript, offsetseed, nrevaluation, solutionseed, testidentifier, evaluationmethod):
 
         scenarioset = range(len(self.Scenarioset))
 
         d = datetime.now()
         date = d.strftime('%m_%d_%Y_%H_%M_%S')
-        writer = pd.ExcelWriter("./Solutions/" + self.MRPInstance.InstanceName + "_Statistics_"+filepostscript+"_"+date+".xlsx",
-                                engine='openpyxl')
+        writer = pd.ExcelWriter(
+            "./Solutions/" + self.MRPInstance.InstanceName + "_Statistics_" + filepostscript + "_" + date + ".xlsx",
+            engine='openpyxl')
 
         avginventorydf = pd.DataFrame(self.InSampleAverageInventory,
                                       columns=self.MRPInstance.ProductName,
                                       index=self.MRPInstance.TimeBucketSet)
 
-        avginventorydf.to_excel(writer, "AverageInventory" )
+        avginventorydf.to_excel(writer, "AverageInventory")
 
         avgbackorderdf = pd.DataFrame(self.InSampleAverageBackOrder,
-                                      columns= [ self.MRPInstance.ProductName[p] for p in self.MRPInstance.ProductWithExternalDemand] ,
+                                      columns=[self.MRPInstance.ProductName[p] for p in
+                                               self.MRPInstance.ProductWithExternalDemand],
                                       index=self.MRPInstance.TimeBucketSet)
 
-        avgbackorderdf.to_excel(writer, "AverageBackOrder" )
+        avgbackorderdf.to_excel(writer, "AverageBackOrder")
 
         avgQuantitydf = pd.DataFrame(self.InSampleAverageQuantity,
-                                      columns=self.MRPInstance.ProductName,
-                                      index=self.MRPInstance.TimeBucketSet)
+                                     columns=self.MRPInstance.ProductName,
+                                     index=self.MRPInstance.TimeBucketSet)
 
-        avgQuantitydf.to_excel(writer, "AverageQuantity" )
+        avgQuantitydf.to_excel(writer, "AverageQuantity")
 
         avgSetupdf = pd.DataFrame(self.InSampleAverageSetup,
-                                      columns=self.MRPInstance.ProductName,
-                                      index=self.MRPInstance.TimeBucketSet)
+                                  columns=self.MRPInstance.ProductName,
+                                  index=self.MRPInstance.TimeBucketSet)
 
-        avgSetupdf.to_excel(writer, "AverageSetup" )
+        avgSetupdf.to_excel(writer, "AverageSetup")
 
-        perscenariodf = pd.DataFrame([ self.InSampleTotalDemandPerScenario, self.InSampleTotalBackOrderPerScenario, self.InSampleTotalLostSalePerScenario ],
-                                     index=[ "Total Demand", "Total Backorder", "Total Lost Sales" ],
+        perscenariodf = pd.DataFrame([self.InSampleTotalDemandPerScenario, self.InSampleTotalBackOrderPerScenario,
+                                      self.InSampleTotalLostSalePerScenario],
+                                     index=["Total Demand", "Total Backorder", "Total Lost Sales"],
                                      columns=scenarioset)
 
-        perscenariodf.to_excel(writer, "Info Per scenario" )
+        perscenariodf.to_excel(writer, "Info Per scenario")
 
-
-        general = testidentifier+ [ self.InSampleAverageDemand, self.InSamplePercenBackOrder, self.InSamplePercentLostSale, offsetseed, nrevaluation, solutionseed ]
-        columnstab = [ "Instance", "Distribution",  "Model",  "ScenarioGeneration", "NrScenario", "ScenarioSeed" , "Average demand", "avg back order", "avg lostsale", "offsetseed", "nrevaluation", "solutionseed" ]
-        generaldf = pd.DataFrame(general, index=columnstab )
-        generaldf.to_excel( writer, "General" )
+        general = testidentifier + [self.InSampleAverageDemand, offsetseed, nrevaluation, solutionseed, evaluationmethod]
+        columnstab = ["Instance", "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed",
+                      "EVPI", "Average demand", "offsetseed", "nrevaluation", "solutionseed", "evaluationmethod"]
+        generaldf = pd.DataFrame(general, index=columnstab)
+        generaldf.to_excel(writer, "General")
         writer.save()
 
-        #Compute the average inventory level at each level of the supply chain
-        AverageStockAtLevel = [ ( sum( sum ( avginventorydf.loc[t,self.MRPInstance.ProductName[p]]
-                                    for t in self.MRPInstance.TimeBucketSet )
-                                        for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p] == l +1 ) )
-                                / ( sum( 1 for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p] == l +1 )
-                                    * self.MRPInstance.NrTimeBucket )
-                                for l in range( self.MRPInstance.NrLevel ) ]
 
-        self.ComputeCost()
+    #This function print the statistic in an Excel file
+    def PrintStatistics(self, testidentifier, filepostscript, offsetseed, nrevaluation, solutionseed, evaluationduration, insample, evaluationmethod):
+
+        inventorycoststochasticperiod = -1
+        setupcoststochasticperiod = -1
+        backordercoststochasticperiod =-1
+
+        # Initialize the average inventory level at each level of the supply chain
+        AverageStockAtLevel = [-1 for l in range(self.MRPInstance.NrLevel)]
+        nrbackorerxperiod = [ - 1 for t in self.MRPInstance.TimeBucketSet]
+
+        nrlostsale = -1
+        #To compute every statistic Constants.PrintOnlyFirstStageDecision should be False
+        if (not Constants.PrintOnlyFirstStageDecision) or (not insample):
+
+            avginventorydf = pd.DataFrame(self.InSampleAverageInventory,
+                                          columns=self.MRPInstance.ProductName,
+                                          index=self.MRPInstance.TimeBucketSet)
+
+            if Constants.PrintDetailsExcelFiles:
+                self.PrintDetailExcelStatistic( filepostscript, offsetseed, nrevaluation, solutionseed, testidentifier, evaluationmethod )
+
+            #Compute the average inventory level at each level of the supply chain
+            AverageStockAtLevel = [ ( sum( sum ( avginventorydf.loc[t,self.MRPInstance.ProductName[p]]
+                                        for t in self.MRPInstance.TimeBucketSet )
+                                            for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p] == l +1 ) )
+                                    / ( sum( 1 for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p] == l +1 )
+                                        * self.MRPInstance.NrTimeBucket )
+                                    for l in range( self.MRPInstance.NrLevel ) ]
+
+            demandofstagetstillbackorder = [[[[0 for p in self.MRPInstance.ProductWithExternalDemand] for nrperiodago in range(currentperiod+1)]  for currentperiod in self.MRPInstance.TimeBucketSet] for s in self.Scenarioset]
+
+            #Compute the back order per period, and also how long the demand has been backordered
+            #The portion $\tilde{B}_{p,t}^{n,\omega}$ of the demand due $n$ time periods ago, which is still back-ordered at time $t$ is computed as:
+            #\tilde{B}_{p,t}^{n,\omega} = Max(\tilde{B}_{p,t-1}^{n-1,\omega}, B_{p,t}^{\omega} - \tilde{B}_{p,t}^{n-1,\omega})
+            for s in  self.SenarioNrset:
+                for p in self.MRPInstance.ProductWithExternalDemand:
+                     for currentperiod in self.MRPInstance.TimeBucketSet:
+                         for nrperiodago in range(currentperiod+1):
+                             indexp = self.MRPInstance.ProductWithExternalDemandIndex[p]
+                             if nrperiodago == 0:
+                                 demandprevinprev = self.Scenarioset[s].Demands[currentperiod][p]
+                             elif currentperiod == 0:
+                                 demandprevinprev = 0
+                             else:
+                                 demandprevinprev = demandofstagetstillbackorder[s][currentperiod - 1][nrperiodago - 1][indexp]
+
+                             if nrperiodago == 0:
+                                 demandprevincurrent = 0
+                             else:
+                                 demandprevincurrent = demandofstagetstillbackorder[s][currentperiod][nrperiodago == 0 - 1][indexp]
+
+                             demandofstagetstillbackorder[s][currentperiod ][nrperiodago][indexp] = min( demandprevinprev,
+                                                                                                    max( self.BackOrder[s][currentperiod][indexp] - demandprevincurrent, 0 ) )
+
+
+            #The lostsales $\bar{L}_{p,t}^{\omega}$ among the demand due at time $t$ is $\tilde{B}_{p,T}^{n,\omega}$.
+            lostsaleamongdemandofstage = [[[ demandofstagetstillbackorder[s][self.MRPInstance.NrTimeBucket -1][nrperiodago ][self.MRPInstance.ProductWithExternalDemandIndex[p] ]
+                                             for p in self.MRPInstance.ProductWithExternalDemand]
+                                           for nrperiodago in range( self.MRPInstance.NrTimeBucket) ]
+                                          for s in self.SenarioNrset]
+
+            #The quantity $\bar{B}_{p,t}^{n,\omega}$  of demand of stage $t$ which is backordered during n periods can be computed by:
+            #\bar{B}_{p,t}^{n,\omega} =\bar{B}_{p,t + n}^{n,\omega} -\bar{B}_{p,t+ n+ 1}^{n+1,\omega}
+            portionbackoredduringtime = [[[[ demandofstagetstillbackorder[s][currentperiod + nrperiod][nrperiod][self.MRPInstance.ProductWithExternalDemandIndex[p] ] \
+                                           - demandofstagetstillbackorder[s][currentperiod + nrperiod +1][nrperiod +1][self.MRPInstance.ProductWithExternalDemandIndex[p] ]
+                                             if currentperiod + nrperiod + 1 < self.MRPInstance.NrTimeBucket
+                                             else demandofstagetstillbackorder[s][currentperiod + nrperiod][nrperiod][self.MRPInstance.ProductWithExternalDemandIndex[p] ]
+                                           for p in self.MRPInstance.ProductWithExternalDemand]
+                                          for nrperiod in range( self.MRPInstance.NrTimeBucket - currentperiod )]
+                                         for currentperiod in self.MRPInstance.TimeBucketSet]
+                                        for s in self.SenarioNrset]
+
+            #Avergae on the senario, product, period
+
+            totaldemand = sum( self.Scenarioset[s].Demands[t][p]
+                               for s in self.SenarioNrset
+                               for p in self.MRPInstance.ProductWithExternalDemand
+                               for t in self.MRPInstance.TimeBucketSet )
+
+            nrbackorerxperiod = [  100 * ( sum( portionbackoredduringtime[s][currentperiod][t][self.MRPInstance.ProductWithExternalDemandIndex[p] ]
+                                                for p in self.MRPInstance.ProductWithExternalDemand
+                                                     for currentperiod in range(self.MRPInstance.NrTimeBucket )
+                                                         for s in self.SenarioNrset
+                                                            if (t < self.MRPInstance.NrTimeBucket -1 - currentperiod )  )\
+                                                 / totaldemand )
+                                                 for t in self.MRPInstance.TimeBucketSet ]
+
+            nrlostsale = 100 * sum( lostsaleamongdemandofstage[s][currentperiod][self.MRPInstance.ProductWithExternalDemandIndex[p] ]
+                                        for p in self.MRPInstance.ProductWithExternalDemand
+                                          for currentperiod in self.MRPInstance.TimeBucketSet
+                                            for s in self.SenarioNrset) \
+                                / totaldemand
+
+            self.ComputeCost()
+            stochasticperiod = range(self.MRPInstance.NrTimeBucketWithoutUncertaintyBefore, self.MRPInstance.NrTimeBucket - self.MRPInstance.NrTimeBucketWithoutUncertaintyAfter )
+
+            totalcoststochasticperiod, \
+            inventorycoststochasticperiod, \
+            backordercoststochasticperiod, \
+            setupcoststochasticperiod,\
+            lostsalecoststochasticperiod, \
+            variablecost= self.GetCostInInterval( stochasticperiod )
+        nrsetups = self.GetNrSetup()
+        averagecoverage = self.GetAverageCoverage()
 
         kpistat = [ self.CplexCost,
                     self.CplexTime,
                     self.CplexGap,
+                    self.CplexNrConstraints,
+                    self.CplexNrVariables,
+                    self.TotalTime,
                     self.SetupCost,
                     self.InventoryCost,
                     self.InSamplePercentOnTime,
-                    self.InSamplePercenBackOrder,
-                    self.InSamplePercentLostSale
-                    ] + AverageStockAtLevel
+                    self.BackOrderCost,
+                    self.LostsaleCost,
+                    self.VariableCost,
+                    inventorycoststochasticperiod,
+                    setupcoststochasticperiod,
+                    backordercoststochasticperiod,
+                    nrsetups,
+                    averagecoverage,
+                    evaluationduration
+                    ] \
+                  + AverageStockAtLevel + [0]*(5- self.MRPInstance.NrLevel) + nrbackorerxperiod + [0]*(49 - self.MRPInstance.NrTimeBucket)+[nrlostsale]
 
         data = testidentifier + [  filepostscript, len( self.Scenarioset ) ] + kpistat
-        d = datetime.now()
-        date = d.strftime('%m_%d_%Y_%H_%M_%S')
-        myfile = open(r'./Test/Statistic/TestResult_%s_%r_%s.csv' % (
-            self.MRPInstance.InstanceName, filepostscript, date), 'wb')
-        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-        wr.writerow(data)
-        myfile.close()
+        if Constants.PrintDetailsExcelFiles:
+            d = datetime.now()
+            date = d.strftime('%m_%d_%Y_%H_%M_%S')
+            myfile = open(r'./Test/Statistic/TestResult_%s_%r_%s.csv' % (self.MRPInstance.InstanceName, filepostscript, date), 'w')
+            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+            wr.writerow(data)
+            myfile.close()
 
         return kpistat
 
-    #This function return the quantity to order a time t, given the first t-1 demands
-    def GetQuantityToOrder(self, demands, time):
-        # Get the scenario with the closest demand
-        smallestdistance = 999999999
-        bestscenario = None
-        #Traverse all scneario
-        for s in range( len( self.Scenarioset ) ):
-            #Compute the distance to the given demand vector
-            distance = 0
-            for t in range (time) :
-                for p in  self.MRPInstance.ProductSet:
-                     #If the distance is smaller than the best, the scenariio becomes the closest
-                    distance = distance + math.pow( self.Scenarioset[s].Demands[t][p] - demands[t][p], 2 )
-            if distance < smallestdistance :
-                smallestdistance = distance
-                bestscenario  = s
+    def GetNrSetup(self):
+        result = sum(self.Production[w][t][p] for p in self.MRPInstance.ProductSet for t in self.MRPInstance.TimeBucketSet for w in range( len(self.Scenarioset) ))
+        result = result / len(self.Scenarioset)
+        return result
 
-        #Return the decision taken in the closest scenrio
-        quantity = [ self.ProductionQuantity.loc[  self.MRPInstance.ProductName[ p ], ( time, bestscenario ) ] for p in self.MRPInstance.ProductSet ]
-        return quantity
+    def GetAverageCoverage(self):
 
-    #This function return the quantity to order a time t, given the first t-1 demands
-    def GetQuantityToOrderAC( self, demands, time, previousnode ):
+        avgdemand = self.MRPInstance.ComputeAverageDemand()
+
+        result = sum (sum(   self.ProductionQuantity[w][t][p] / avgdemand[p]
+                             for w in range(len(self.Scenarioset))
+                          for t in self.MRPInstance.TimeBucketSet if  self.ProductionQuantity[w][t][p] )
+                      for p in self.MRPInstance.ProductSet )
+        nrsetup = self.GetNrSetup() * len(self.Scenarioset)
+        result= result / nrsetup
+        return result
+
+    # This function return the current level of stock and back order based on the quantoty ordered and demands of previous perriod
+    def GetCurrentStatus(self, prevdemand, prevquanity, time, projinventorymusbepositive = True):
+        projectedinventory = [ 0 for  p in self.MRPInstance.ProductSet ]
+        projectedbackorder = [ 0 for p in self.MRPInstance.ProductWithExternalDemand ]
+        currentbackorder = [ 0 for  p in self.MRPInstance.ProductWithExternalDemand ]
+        currentinventory = [ 0 for p in self.MRPInstance.ProductSet ]
+
+        # sum of quantity and initial inventory minus demands
+        projinventory = [ ( self.MRPInstance.StartingInventories[p]
+                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] + 1 , 0 ) ) )
+                                  - sum( prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time +1 ) for q in self.MRPInstance.ProductSet)
+                                  - sum( prevdemand[t][p] for t in range( time +1) ) )
+                                    for p in self.MRPInstance.ProductSet ]
+
+        currentechlonnventory = [ ( self.MRPInstance.StartingInventories[p]
+                                  + sum( prevquanity[t][p] for t in range( time ) ) #range( max( time - self.MRPInstance.Leadtimes[p] + 1 , 0 ) ) )
+                                  - sum( prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time  ) for q in self.MRPInstance.ProductSet)
+                                  - sum( prevdemand[t][p] for t in range( time ) ) )
+                                    for p in self.MRPInstance.ProductSet ]
+
+        currentinventory = [ ( self.MRPInstance.StartingInventories[p]
+                                  + sum( prevquanity[t][p] for t in range( max( time - self.MRPInstance.Leadtimes[p] + 1 , 0 ) ) )
+                                  - sum( prevquanity[t][q] * self.MRPInstance.Requirements[q][p] for t in range(time  ) for q in self.MRPInstance.ProductSet)
+                                  - sum( prevdemand[t][p] for t in range( time ) ) )
+                                    for p in self.MRPInstance.ProductSet ]
+        for p in self.MRPInstance.ProductSet:
+             if projinventory[p] > - 0.0001 : projectedinventory[p] = projinventory[p]
+             else:
+                 if not self.MRPInstance.HasExternalDemand[p] and not self.NotCompleteSolution and projinventorymusbepositive:
+                     print "inventory: %r " % (projinventory)
+                     raise NameError(" A product without external demand cannot have backorder")
+                     projectedbackorder[ self.MRPInstance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
+
+
+        return projectedbackorder, projinventory, currentechlonnventory, currentinventory
+
+
+    def GetFeasibleNodesAtTime( self, time, currentlevelofinventory ):
+        result =[]
+
+        for n in self.ScenarioTree.Nodes:
+            if n.Time == time and n.IsQuantityFeasible( currentlevelofinventory ):
+                result.append(n)
+
+        if Constants.Debug:
+            nodesid = [ n.NodeNumber for n in result]
+            print "Feasible nodes : %r"%nodesid
+        return result
+
+    def GetNodesAtTime( self, time, currentlevelofinventory ):
+        result =[]
+
+        for n in self.ScenarioTree.Nodes:
+            if n.Time == time :
+                result.append(n)
+
+        if Constants.Debug:
+            nodesid = [ n.NodeNumber for n in result]
+            print "Nodes at time t : %r"%nodesid
+        return result
+
+
+    def GetConsideredNodes(self, strategy, time,  currentlevelofinventory, previousnode = None ):
+        result = []
+        if time >0 and ( strategy == Constants.NearestNeighborBasedOnStateAC or strategy == Constants.NearestNeighborBasedOnDemandAC ) :
+            result = previousnode.Branches
+        else:
+            result = self.GetNodesAtTime( time, currentlevelofinventory)
+
+        if Constants.Debug:
+            nodesid = [n.NodeNumber for n in result]
+            print "Cosidered nodes : %r" % nodesid
+        return result
+
+    def ComputeProductViolation( self, suggestedquantities, previousstocklevel ):
+        result = [max( sum( self.MRPInstance.Requirements[q][p] * suggestedquantities[q] for q in self.MRPInstance.ProductSet ) - previousstocklevel[p]
+                         , 0.0 )
+                  if not self.MRPInstance.HasExternalDemand[p]
+                  else 0.0
+                  for p in self.MRPInstance.ProductSet]
+
+
+        return result
+
+    def ComputeResourceViolation( self, suggestedquantities, previousstocklevel ):
+        result = [max( sum( self.MRPInstance.ProcessingTime[q][k] * suggestedquantities[q] for q in self.MRPInstance.ProductSet ) - self.MRPInstance.Capacity[k]
+                         , 0.0 )
+                  for k in self.MRPInstance.ResourceSet]
+
+        return result
+
+
+    def getProductionCostraintSlack(self,  suggestedquantities, previousstocklevel ):
+        result = [ max(previousstocklevel[p] - sum(self.MRPInstance.Requirements[q][p] * suggestedquantities[q] for q in self.MRPInstance.ProductSet),
+                       0.0) for p in self.MRPInstance.ProductSet]
+        return result
+
+    def getCapacityCostraintSlack(self,  suggestedquantities ):
+        result = [ max(self.MRPInstance.Capacity[k] - sum( self.MRPInstance.ProcessingTime[q][k] * suggestedquantities[q] for q in self.MRPInstance.ProductSet ),
+                       0.0)   for k in self.MRPInstance.ResourceSet]
+
+
+        return result
+
+    def ComputeAvailableFulliment( self, product,  productionslack, capacityslack ):
+        maxcomponent = min( productionslack[p]/ self.MRPInstance.Requirements[product][p]  if self.MRPInstance.Requirements[product][p] > 0 else Constants.Infinity
+                         for p  in self.MRPInstance.ProductSet  )
+
+        maxresource =  min( capacityslack[k]/self.MRPInstance.ProcessingTime[product][k]  if self.MRPInstance.ProcessingTime[product][k]> 0 else Constants.Infinity
+                          for k  in self.MRPInstance.ResourceSet )
+        result = min(maxcomponent, maxresource)
+        return result
+
+    #This function adjust the quantities, to respect the flow constraint
+    def RepairQuantityToOrder(self, suggestedquantities, previousstocklevel):
+
+        idealquuantities = [suggestedquantities[p] for p in self.MRPInstance.ProductSet]
+        #Compute the viiolation of the flow constraint for each component
+        productviolations = self.ComputeProductViolation( suggestedquantities, previousstocklevel )
+        productmaxvioalation = np.argmax( productviolations )
+        maxproductviolation =  productviolations[ productmaxvioalation ]
+
+        resourceviolations = self.ComputeResourceViolation( suggestedquantities, previousstocklevel )
+        resourcemaxvioalation = np.argmax( resourceviolations )
+        maxresourceviolation =  resourceviolations[ resourcemaxvioalation ]
+        maxviolation = max(maxresourceviolation, maxproductviolation )
+        isproductviolation = maxviolation == maxproductviolation
+        #While some flow constraints are violated, adjust the quantity to repect the most violated constraint
+        while( maxviolation > 0.000001 ) :
+            if Constants.Debug:
+                print " the max violation %r is from %r " %( maxviolation, productmaxvioalation )
+                print " quantities: %r " % (suggestedquantities)
+
+            if isproductviolation:
+                producyqithrequirement = [ p for p in self.MRPInstance.ProductSet
+                                           if self.MRPInstance.Requirements[p][productmaxvioalation] > 0]
+                totaldemand = sum( self.MRPInstance.Requirements[q][productmaxvioalation] * suggestedquantities[q] for q in self.MRPInstance.ProductSet )
+                ratiodemande = [ self.MRPInstance.Requirements[q][productmaxvioalation] * suggestedquantities[q] / totaldemand for q in self.MRPInstance.ProductSet ]
+            else:
+                producyqithrequirement = [p for p in self.MRPInstance.ProductSet if
+                                          self.MRPInstance.ProcessingTime[p][resourcemaxvioalation] > 0]
+                totaldemand = sum( self.MRPInstance.ProcessingTime[q][resourcemaxvioalation] * suggestedquantities[q] for q in self.MRPInstance.ProductSet)
+                ratiodemande = [ self.MRPInstance.ProcessingTime[q][resourcemaxvioalation] * suggestedquantities[q] / totaldemand for q in self.MRPInstance.ProductSet]
+
+            for p in producyqithrequirement:
+                quantitytoremove =  (1.0*maxviolation) * ratiodemande[p]
+                suggestedquantities[ p ] = max( suggestedquantities[ p ]  - quantitytoremove, 0 )
+
+            if Constants.Debug:
+                print " new quantities: %r " %( suggestedquantities )
+
+            productviolations    = self.ComputeProductViolation(suggestedquantities, previousstocklevel)
+            productmaxvioalation = np.argmax(productviolations)
+            maxproductviolation = productviolations[productmaxvioalation]
+
+            resourceviolations = self.ComputeResourceViolation(suggestedquantities, previousstocklevel)
+            resourcemaxvioalation = np.argmax(resourceviolations)
+            maxresourceviolation = resourceviolations[resourcemaxvioalation]
+            maxviolation = max(maxresourceviolation, maxproductviolation)
+
+            isproductviolation = maxviolation == maxproductviolation
+
+        for p in self.MRPInstance.ProductSet:
+            productionslack = self.getProductionCostraintSlack(suggestedquantities, previousstocklevel)
+            capacityslack = self.getCapacityCostraintSlack(suggestedquantities)
+            suggestedquantities[p] = suggestedquantities[p] + min( idealquuantities[p] - suggestedquantities[p],
+                                                                       self.ComputeAvailableFulliment(p, productionslack, capacityslack) )
+
+                #This function return the quantity to order a time t, given the first t-1 demands
+    def GetQuantityToOrder( self, strategy, time, previousdemands, previousquantity = [], previousnode = None ):
         error = 0
+        projectedbackorder, projectedstocklevel, currrentechelonstocklevel, currentinventory = self.GetCurrentStatus( previousdemands, previousquantity, time )
+        considerednodes = self.GetConsideredNodes(strategy, time, projectedstocklevel, previousnode = previousnode )
+
+
         # Get the scenario with the closest demand
         smallestdistance = Constants.Infinity
         bestnode = None
         #Traverse all scneario
-        if previousnode.Time >= 0:
-            for n in previousnode.Branches:
-                #Compute the distance to the given demand vector
-                distance = 0
-                for p in  self.MRPInstance.ProductSet:
-                         #If the distance is smaller than the best, the scenariio becomes the closest
-                        distance = distance + math.pow( n.Demand[p] - demands[time-1][p], 2 )
-                if distance < smallestdistance :
-                    smallestdistance = distance
-                    bestnode  = n
-        else:
-             bestnode = previousnode.Branches[0]
+        for n in considerednodes:
+            #Compute the distance to the given demand vector
+            distance = 0
+            if strategy == Constants.NearestNeighborBasedOnStateAC or strategy == Constants.NearestNeighborBasedOnState:
+                distance = n.GetDistanceBasedOnStatus( projectedstocklevel, projectedbackorder )
+            if strategy == Constants.NearestNeighborBasedOnDemand or strategy == Constants.NearestNeighborBasedOnDemandAC:
+                if time > 0:
+                    distance = n.GetDistanceBasedOnDemand( previousdemands[time -1] )
 
 
+            if distance < smallestdistance :
+                smallestdistance = distance
+                bestnode  = n
+        #print smallestdistance
         if bestnode == None:
             error = 1
             if Constants.Debug:
-                raise NameError(" Nearest neighbor returned Null ")
+                raise NameError(" Nearest neighbor returned Null %r - %r "%(distance , smallestdistance))
         else:
             #Return the decision taken in the closest scenrio
-            quantity = [ bestnode.QuantityToOrder[p] for p in self.MRPInstance.ProductSet ]
+            quantity = [ bestnode.QuantityToOrderNextTime[p] for p in self.MRPInstance.ProductSet ]
+            #print "distance %r quantity %r"%(smallestdistance,quantity)
+            if Constants.Debug:
+                print "Chosen quantities for time %r : %r" %( time, quantity)
+
+            #Make sure the chosen quantity is feasible:
+            self.RepairQuantityToOrder( quantity , projectedstocklevel )
+            if Constants.Debug:
+                print "Quantities after repair for time %r : %r" % (time, quantity)
             return quantity, bestnode, error
+
+            # This function return the quantity to order a time t, given the first t-1 demands
+
+    def GetQuantityToOrderS(self, time, previousdemands, previousquantity=[], useYS = False):
+
+        previousdemands2 = previousdemands+[[0.0 for p in  self.MRPInstance.ProductSet]]+[[0 for p in  self.MRPInstance.ProductSet]]
+        projectedbackorder, projectedstocklevelatstart, currrentechelonstocklevel, currentinventory = self.GetCurrentStatus(previousdemands2, previousquantity, time)
+
+        previousquantity2 =  [[ previousquantity[t][p] for p in self.MRPInstance.ProductSet] for t in self.MRPInstance.TimeBucketSet]
+
+        quantity = [ 0  for p in self.MRPInstance.ProductSet]
+
+        level = [ self.MRPInstance.Level[p] for p in self.MRPInstance.ProductSet]
+        levelset = sorted(set(level), reverse=False)
+        for l in levelset:
+            prodinlevel = [p for p in self.MRPInstance.ProductSet if self.MRPInstance.Level[p]== l]
+            for p in prodinlevel:
+                if self.Production[0][time][p] >= 0.9:
+                          #quantity[p] = max( self.SValue[time][p] - self.MRPInstance.StartingInventories[p] \
+                          #                             - sum( previousquantity[t][p]
+                          #                                    - previousdemands[t][p]
+                          #                                    - sum(previousquantity[t][q] * self.MRPInstance.Requirements[q][p] for q in self.MRPInstance.ProductSet ) #external demand
+                          #                                    for t in range( time ) ) \
+                          #                              + sum(quantity[q] * self.MRPInstance.Requirements[q][p]
+                          #                                     for q in self.MRPInstance.ProductSet)
+                          #                   , 0)  # external demand of the current period
+
+                          projectedbackorder, projectedstocklevel, currrentechelonstocklevel, currrentstocklevel2 = self.GetCurrentStatus(
+                              previousdemands2, previousquantity2, time , projinventorymusbepositive= False)
+                          echelonstock = Tool.ComputeInventoryEchelon(self.MRPInstance, p, currrentechelonstocklevel)
+
+                          if useYS:
+                              q1 = self.SValue[time][p] - echelonstock
+                              q2 = self.FixedQuantity[time][p]
+                              quantity[p] = max(min(q1, q2), 0)
+                          else:
+                              quantity[p] = max(self.SValue[time ][p] - echelonstock, 0)
+
+                          self.RepairQuantityToOrder(quantity, currentinventory)
+                          previousquantity2[time][p] = quantity[p]
+
+        #if Constants.Debug:
+        #    print "Chosen quantities for time %r : %r" % (time, quantity)
+
+        #if Constants.Debug:
+        #    print "Quantities after repair for time %r : %r" % (time, quantity)
+
+        error = 0
+        return quantity, error
+
+
+
 
     #This function merge solution2 into self. Assume that solution2 has a single scenario
     def Merge( self, solution2 ):
         self.Scenarioset.append( solution2.Scenarioset[0] )
+        self.SenarioNrset = range(len(self.Scenarioset))
+        self.ProductionQuantity = self.ProductionQuantity + solution2.ProductionQuantity
+        self.InventoryLevel = self.InventoryLevel + solution2.InventoryLevel
+        self.Production = self.Production + solution2.Production
+        self.BackOrder = self.BackOrder + solution2.BackOrder
 
-        newindex = pd.MultiIndex.from_product( [ self.MRPInstance.TimeBucketSet, [ len( self.Scenarioset ) -1 ] ], names = ['time', 'scenario'] )
-
-        #self.ProductionQuantity = pd.DataFrame(solquantity, index=instance.ProductName, columns=multiindex)
-        #self.InventoryLevel = pd.DataFrame(solinventory, index=instance.ProductName, columns=multiindex)
-        #self.Production = pd.DataFrame(solproduction, index=instance.ProductName, columns=multiindex)
-        #nameproductwithextternaldemand = [instance.ProductName[p] for p in instance.ProductWithExternalDemand]
-        #self.BackOrder = pd.DataFrame(solbackorder, index=nameproductwithextternaldemand, columns=multiindex)
-        solution2.ProductionQuantity.columns = newindex
-        self.ProductionQuantity = pd.merge(    self.ProductionQuantity.reset_index(),
-                                           solution2.ProductionQuantity.reset_index(),
-                                           on=['Product'],
-                                           how='outer'
-                                           ).set_index(["Product"])
-
-        self.ProductionQuantity.columns = pd.MultiIndex.from_product(
-            [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet], names=['scenario', 'time'])
+    def ComputeAverageS( self ):
+        S = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
+        SWithLeftover = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
+        probatime = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
 
 
-        solution2.InventoryLevel.columns = newindex
-        self.InventoryLevel = pd.merge(    self.InventoryLevel.reset_index(),
-                                           solution2.InventoryLevel.reset_index(),
-                                           on=['Product'],
-                                           how='outer'
-                                           ).set_index(["Product"])
+        # tuple =[]
+        # considerednode = []
+        nrconsideredsol = [ [0 for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
+        for w in range( len(self.Scenarioset) ):
+            s =self.Scenarioset[w]
+            for n in s.Nodes:
+                    t= n.Time
+                    for p in self.MRPInstance.ProductSet:
+                        if   t< self.MRPInstance.NrTimeBucket and  (self.Production[ w][ t ][ p ] >=0.9 ):
+                            if n.HasLeftOverComponent( p)and n.HasSpareCapacity( p):
+                                nrconsideredsol[t][p] += s.Probability
+                                SWithLeftover[t][p] += n.GetS(p) * s.Probability
+                                #if n.GetS(p) > SWithLeftover[t][p]:
+                                #    SWithLeftover[t][p] = n.GetS(p)
+                            if n.GetS( p) > S[t][p]:
+                                S[t][p] = n.GetS( p)
 
-        self.InventoryLevel.columns = pd.MultiIndex.from_product(
-            [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet], names=['scenario', 'time'])
-    #    self.InventoryLevel.columns =  self.InventoryLevel.columns.swaplevel()
-    #    self.InventoryLevel.sortlevel(0, axis=1, inplace=True)
+                            #S[t][p] = S[t][p] + n.GetS( p) * s.Probability
+                            probatime[t][p] = probatime[t][p] + s.Probability
 
-        solution2.Production.columns = newindex
-        self.Production = pd.merge(self.Production.reset_index(),
-                                           solution2.Production.reset_index(),
-                                           on=['Product'],
-                                           how='outer'
-                                           ).set_index(["Product"])
+                            # if t == 3 and p == 8 and not n in considerednode:
+                            #     considerednode.append(n)
+                            #     node = n.Parent
+                            #     # # plus initial inventory
+                            #     inventory = [n.Instance.StartingInventories[q] - n.Demand[q] if n.Time > 0
+                            #                  else n.Instance.StartingInventories[q]
+                            #                  for q in n.Instance.ProductSet]
+                            #     #
+                            #     while node is not None and node.Time >= 0:
+                            #         #
+                            #         for q in n.Instance.ProductSet:
+                            #             inventory[q] += node.QuantityToOrderNextTime[q]
+                            #             #       # minus internal  demand
+                            #             inventory[q] -= sum(
+                            #                 node.QuantityToOrderNextTime[q2] * n.Instance.Requirements[q2][q] for q2
+                            #                 in n.Instance.ProductSet)
+                            #             #     #minus external demand
+                            #             if node.Time > 0:
+                            #                 inventory[q] -= node.Demand[q]
+                            #         node = node.Parent
+                            #
+                            #     echelonstock = Tool.ComputeInventoryEchelon(n.Instance, p, inventory)
+                            #
+                            #     quantity = n.InventoryLevelTime[p] + n.InventoryLevelNextTime[p]
+                            #     tuple.append( (echelonstock, quantity) )
+        # print "will print the df"
+        #
+        # df = pd.DataFrame(tuple, columns=["echelon stock", "quantity"])
+        # print df
+        # gorpued1 = df.groupby("echelon stock").agg({ "quantity":[sum, min, max]} )
+        # gorpued2 = df.groupby("echelon stock").mean()
+        #
+        # print gorpued1
+        # print gorpued2
 
-        self.Production.columns = pd.MultiIndex.from_product(
-            [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet ], names=['scenario', 'time'])
+        SValueBasedOnMAx = [ [ S[t][p]  if probatime[t][p] > 0 else 0.0
+                         for p in self.MRPInstance.ProductSet ] for t in self.MRPInstance.TimeBucketSet ]
+
+        self.SValue = [[SWithLeftover[t][p]/nrconsideredsol[t][p]  if nrconsideredsol[t][p] > 0 else SValueBasedOnMAx[t][p] #/nrconsideredsol[t][p]
+                        for p in self.MRPInstance.ProductSet] for t in self.MRPInstance.TimeBucketSet]
+
+        if Constants.Debug:
+            print "The value of S is: %r" % (self.SValue)
+
+            # for p in self.Instance.ProductSet:
+            #     for t in range( nrtimebucketswithuncertainty + firstuknown ) :
+            #        pts = [self.DemandYQFixRQMC[ s][t][p] for s in range( nrscenarion ) ]
+            #        print "The transformed point at dim %d at time %d : %r  " % (p,t, pts)
+            #        with open('Histpoints%dt%d.csv' % (p, t), 'w+') as f:
+            #            # v_hist = np.ravel(v)  # 'flatten' v
+            #            fig = PLT.figure()
+            #            ax1 = fig.add_subplot(111)
+            #            n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
+            #            PLT.show()
 
 
-        solution2.BackOrder.columns = newindex
-        self.BackOrder = pd.merge(self.BackOrder.reset_index(),
-                                   solution2.BackOrder.reset_index(),
-                                   on=['Product'],
-                                   how='outer'
-                                   ).set_index(["Product"])
 
-        self.BackOrder.columns = pd.MultiIndex.from_product(
-            [ range(len(self.Scenarioset)), self.MRPInstance.TimeBucketSet ], names=['scenario', 'time'])
 
-    #After having merged two solution, this function reshape the dataframe to have them in 3 dimension
-    def ReshapeAfterMerge( self ):
-        self.InventoryLevel.columns =  self.InventoryLevel.columns.swaplevel()
-        self.InventoryLevel.sortlevel(0, axis=1, inplace=True)
-        self.BackOrder.columns = self.BackOrder.columns.swaplevel()
-        self.BackOrder.sortlevel(0, axis=1, inplace=True)
-        self.Production.columns = self.Production.columns.swaplevel()
-        self.Production.sortlevel(0, axis=1, inplace=True)
-        self.ProductionQuantity.columns =  self.ProductionQuantity.columns.swaplevel()
-        self.ProductionQuantity.sortlevel(0, axis=1, inplace=True)
+
+    #return the scenario tree of the average demand
+    @staticmethod
+    def GetAverageDemandScenarioTree(instance):
+        scenariotree = ScenarioTree( instance,
+                                     [1]*(instance.NrTimeBucket+1) + [0],
+                                     0,
+                                     averagescenariotree=True,
+                                     scenariogenerationmethod=Constants.MonteCarlo,
+                                     model = "YQFix" )
+
+        return scenariotree
+
+    #Create an empty solution (all decisions = 0) for the problem
+    @staticmethod
+    def GetEmptySolution( instance ):
+        scenariotree = MRPSolution.GetAverageDemandScenarioTree( instance )
+        scenarioset = scenariotree.GetAllScenarios(False)
+        production = [ [ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ] for w in scenarioset ]
+        quanitity = [ [ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ] for w in scenarioset ]
+        stock = [ [ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ] for w in scenarioset ]
+        backorder = [ [ [  0 for p in instance.ProductWithExternalDemand ] for t in instance.TimeBucketSet ] for w in scenarioset ]
+        result = MRPSolution( instance=instance,
+                              scenriotree=scenariotree,
+                              scenarioset=scenarioset,
+                              solquantity=quanitity,
+                              solproduction=production,
+                              solbackorder=backorder,
+                              solinventory=stock)
+
+        result.NotCompleteSolution = True
+        result.SValue =[ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ]
+
+        result.FixedQuantity= [ [  0 for p in instance.ProductSet ] for t in instance.TimeBucketSet ]
+        return result
