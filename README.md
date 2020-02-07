@@ -1,2 +1,1 @@
-# My project's README
-This github repository contains the code associated with the paper "Stochastic Optimization for Material Requirements Planning" currently under review.
+# This github repository contains the code associated with the paper "Stochastic Optimization for Material Requirements Planning" currently under review.
