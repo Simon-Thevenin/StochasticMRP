@@ -777,7 +777,7 @@ class MIPSolver(object):
 
                     if t == self.DemandKnownUntil -1:
                             #reset right hand side because the demand afterward is saved in a variable to accelerate the update of the MIP
-                            righthandside = [ -1 * self.Instance.StartingInventories[p]]
+                            righthandside = [ -1.0 * self.Instance.StartingInventories[p]]
                     else:
                             righthandside[0] = righthandside[0] + self.Scenarios[w].Demands[t][p]
 
@@ -790,12 +790,12 @@ class MIPSolver(object):
 
                     if t - self.Instance.Leadtimes[p] >= 0:
                             quantityvar = quantityvar + [ self.GetIndexQuantityVariable(p, t - self.Instance.Leadtimes[p], w)]
-                            quantityvarceoff = quantityvarceoff + [1]
+                            quantityvarceoff = quantityvarceoff + [1.0]
 
                     dependentdemandvar = dependentdemandvar + [ self.GetIndexQuantityVariable(q, t, w) for q in
                                                                     self.Instance.RequieredProduct[p] ]
 
-                    dependentdemandvarcoeff = dependentdemandvarcoeff + [-1 * self.Instance.Requirements[q][p] for q in
+                    dependentdemandvarcoeff = dependentdemandvarcoeff + [-1.0 * self.Instance.Requirements[q][p] for q in
                                                                              self.Instance.RequieredProduct[p] ]
                     inventoryvar = [ self.GetIndexInventoryVariable(p, t, w) ]
 
@@ -803,7 +803,7 @@ class MIPSolver(object):
                     knondemandcoeff = []
                     if self.DemandKnownUntil>=0 and t >= (self.DemandKnownUntil-1) and self.Instance.HasExternalDemand[p]:
                             knondemand = [self.GetIndexKnownDemand(p)]
-                            knondemandcoeff = [-1]
+                            knondemandcoeff = [-1.0]
 
 
                     if self.RollingHorizon and t < self.Instance.MaimumLeadTime:
@@ -812,8 +812,8 @@ class MIPSolver(object):
 
 
                     vars = inventoryvar + backordervar + quantityvar + dependentdemandvar + knondemand + startinginventoryinrollinghorizon
-                    coeff = [-1] * len(inventoryvar) \
-                                + [1] * len(backordervar) \
+                    coeff = [-1.0] * len(inventoryvar) \
+                                + [1.0] * len(backordervar) \
                                 + quantityvarceoff \
                                 + dependentdemandvarcoeff \
                                 + knondemandcoeff \
@@ -876,7 +876,7 @@ class MIPSolver(object):
 
                             vars = [indexQ, self.GetIndexProductionVariable(p, t, w) ]
                             AlreadyAdded[indexP][indexQ] = True
-                            coeff = [ -1.0, BigM[p] ]
+                            coeff = [ -1.0, float(BigM[p]) ]
                             righthandside = [ 0.0 ]
 
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
@@ -998,8 +998,8 @@ class MIPSolver(object):
                         if not AlreadyAdded[indexQ]:
                             AlreadyAdded[indexQ] = True
                             vars = [ self.GetIndexQuantityVariable(p, t, w) for p in self.Instance.ProductSet ]
-                            coeff = [ self.Instance.ProcessingTime[p][k] for p in self.Instance.ProductSet ]
-                            righthandside = [ self.Instance.Capacity[k] ]
+                            coeff = [ float(self.Instance.ProcessingTime[p][k]) for p in self.Instance.ProductSet ]
+                            righthandside = [ float(self.Instance.Capacity[k]) ]
                             self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
                                                                senses=["L"],
                                                                rhs=righthandside )
@@ -1630,10 +1630,11 @@ class MIPSolver(object):
 
         #name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
         #file = open("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename, 'w')
-        self.Cplex.set_log_stream("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename)
-        self.Cplex.set_results_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
-        self.Cplex.set_warning_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
-        self.Cplex.set_error_stream( "/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename )
+
+        self.Cplex.set_log_stream(Constants.logpath +"/%s.txt" % self.logfilename)
+        self.Cplex.set_results_stream( Constants.logpath+"/%s.txt" % self.logfilename )
+        self.Cplex.set_warning_stream( Constants.logpath+"/%s.txt" % self.logfilename )
+        self.Cplex.set_error_stream( Constants.logpath+"/%s.txt" % self.logfilename )
 
         # tune the paramters
         self.Cplex.parameters.timelimit.set( Constants.AlgorithmTimeLimit )
@@ -1657,7 +1658,8 @@ class MIPSolver(object):
         nrvariable= -1
         nrconstraints = -1
         if not self.EvaluateSolution and not self.EVPI:
-            nrvariable, nrconstraints = self.ReadNrVariableConstraint("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename)
+
+            nrvariable, nrconstraints = self.ReadNrVariableConstraint(Constants.logpath + "/%s.txt" % self.logfilename)
 
         buildtime = end_modeling - start_time;
         solvetime = time.time() - end_modeling;
@@ -1672,7 +1674,16 @@ class MIPSolver(object):
 
             if createsolution:
 
-                Solution = self.CreateMRPSolution(sol, solvetime, nrvariable, nrconstraints)
+                if Constants.OnlyForComputationTime and self.YFixHeuristic:
+                    Solution =  MRPSolution()
+                    Solution.CplexCost = sol.get_objective_value()
+                    Solution.CplexGap = 0
+                    Solution.CplexNrVariables = nrvariable
+                    Solution.CplexNrConstraints = nrconstraints
+                    if not self.EvaluateSolution and not self.YFixHeuristic:
+                        Solution.CplexGap = sol.MIP.get_mip_relative_gap()
+                else:
+                    Solution = self.CreateMRPSolution(sol, solvetime, nrvariable, nrconstraints)
                 #costperscenarios, averagecost, std_devcost = self.ComputeCostPerScenario()
 
                 if Constants.Debug:

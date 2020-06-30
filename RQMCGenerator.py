@@ -18,7 +18,7 @@ class RQMCGenerator:
         if withweight:
             weight = "product:0.1:0.1"
 		#reurn the array given by the library
-        cmd = './latbuilder --lattice-type "ordinary" --size "%d" --dimension "%d" --norm-type "2" --figure-of-merit "CU:P2" --construction "CBC" --weights "%s" --weights-power "1"' % (nrpoints, dimensionpoint, weight)
+        cmd = 'latbuilder --lattice-type "ordinary" --size "%d" --dimension "%d" --norm-type "2" --figure-of-merit "CU:P2" --construction "CBC" --weights "%s" --weights-power "1"' % (nrpoints, dimensionpoint, weight)
         result = subprocess.check_output(cmd,  shell=True)
         restable = result.split("lattice", 10000)
         restable2 = restable[len(restable) - 1].split("[", 10000)

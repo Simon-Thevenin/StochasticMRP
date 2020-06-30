@@ -310,7 +310,7 @@ class MRPInstance:
 
     #This funciton read the instance from the file ./Instances/MSOM-06-038-R2.xlsx
     def ReadFromFile( self, instancename, distribution, b = 2, fe= 25, e="n", rk = 50, leadtimestructure =1, lostsale = 2, longtimehoizon = False, capacity = 0):
-        if instancename[0] == "0":
+        if instancename[0] == "0" or instancename[0] == "1" or instancename[0] == "2" or instancename[0] == "3":
             reader = GraveInstanceReader( self )
         else:
             reader = TemplemeierInstanceReader(self)

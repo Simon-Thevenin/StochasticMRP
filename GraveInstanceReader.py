@@ -24,7 +24,8 @@ class GraveInstanceReader(InstanceReader):
         print self.Datasheetdf.index
         for  row in self.Datasheetdf.index:
             print row
-            self.Instance.ProductName.append(row)
+            if not row is None:
+                self.Instance.ProductName.append(row)
 
     #Create datasets from the sheets for instance from Grave 2008
     def OpenFiles(self, instancename):

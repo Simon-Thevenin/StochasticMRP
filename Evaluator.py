@@ -179,7 +179,6 @@ class Evaluator:
         if Constants.Debug:
             print "Duration od evaluation: %r, outofsampl cost:%r total proba:%r" % (duration, average, totalproba)  # %r"%( duration, Evaluated )
         self.EvaluationDuration = duration
-
         KPIStat = OutOfSampleSolution.PrintStatistics( testidentifier, "OutOfSample", indexscenario, nrscenario, seed, duration, False, self.Policy )
         firstsolution = False
 
@@ -187,13 +186,13 @@ class Evaluator:
         if saveevaluatetab:
                 with open(filename+"Evaluator.txt", "w+") as fp:
                     pickle.dump(Evaluated, fp)
-
+                fp.close()
                 with open(filename + "Probabilities.txt", "w+") as fp:
                     pickle.dump(Probabilities, fp)
-
+                fp.close()
                 with open(filename+"KPIStat.txt", "w+") as fp:
                     pickle.dump(KPIStat, fp)
-
+                fp.close()
         if Constants.PrintDetailsExcelFiles:
             namea = "_".join(str(elm) for elm in testidentifier)
             nameb = "_".join(str(elm) for elm in evaluateidentificator)

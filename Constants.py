@@ -46,15 +46,16 @@ class Constants:
     RollingHorizon = "RH"
 
     Debug = False
+    OnlyForComputationTime = True
     PrintSolutionFileToExcel = False
     PrintDebugLPFiles = False
-    LauchEvalAfterSolve = True
+    LauchEvalAfterSolve = False
     # When PrintOnlyFirstStageDecision is True, only the implemented decision are saved in an Excel File. This is necessary when a large number of scenario is consider, as the size of the Excel file would be to Large.
     # Turn PrintOnlyFirstStageDecision to False for debug purpose (allows to see the detail solution). Also statistics about the "in sample" solution are computed.
     PrintOnlyFirstStageDecision = True
     PrintDetailsExcelFiles = False
     # To avoid memory comsumption it is better to print the files in /tmp However if the files are printed in tmp they are deleted after 4 days
-    PrintSolutionFileInTMP = True
+    PrintSolutionFileInTMP = False
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
     Infinity = 9999999999999.9
@@ -62,7 +63,10 @@ class Constants:
     AlgorithmOptimalityTolerence = 0.00001
     SDDPIterationLimit = 10000
 
-
+    logpath = "/tmp/thesim/CPLEXLog";
+    logpath = "C:\Users\simon\PycharmProjects\stochasticmrp\CPLEXLog";
+    EvaluationFileName = "/tmp/thesim/Evaluations/"
+    EvaluationFileName = "C:\Users\simon\PycharmProjects\stochasticmrp\Evaluations/"
     @staticmethod
     def IsRule( s ):
 

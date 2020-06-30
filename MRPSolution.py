@@ -361,6 +361,7 @@ class MRPSolution:
         self.TotalTime = 0
         self.CplexNrConstraints = -1
         self.CplexNrVariables = -1
+        self.AdditonalInfo = []
 
     def DeleteNonFirstStageDecision(self):
         timebucketset = range(self.MRPInstance.NrTimeBucketWithoutUncertaintyBefore + 1)

@@ -1,6 +1,7 @@
 from Constants import Constants
 from ScenarioTree import ScenarioTree
 import time
+
 from MIPSolver import MIPSolver
 from DecentralizedMRP import DecentralizedMRP
 import copy
@@ -103,6 +104,7 @@ class Solver:
         #                n, bins, patches = ax1.hist(demands[t][p], bins=100,  facecolor='green')
         #                PLT.show()
 
+
         solution = mipsolver.Solve()
 
         if recordsolveinfo:
@@ -157,7 +159,12 @@ class Solver:
         self.Model = Constants.ModelYQFix
         chosengeneration = self.ScenarioGeneration
         self.ScenarioGeneration = Constants.RQMC
+
         solution, mipsolver = self.MRP(treestructure, False, recordsolveinfo=True)
+        SolveInformationStep1 = [solution.TotalTime, solution.CplexTime, solution.CplexGap, solution.CplexNrVariables,
+                            solution.CplexNrConstraints]
+
+
         self.GivenSetup = [[solution.Production[0][t][p] for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
 
         if Constants.Debug:
@@ -170,7 +177,7 @@ class Solver:
                                   averagescenario=False,
                                   recordsolveinfo=True,
                                   yfixheuristic=True)
-
+        solution.AdditonalInfo = SolveInformationStep1
         end = time.time()
         solution.TotalTime = end - start
         return solution

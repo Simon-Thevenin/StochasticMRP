@@ -96,7 +96,7 @@ LastFoundSolution = None
 
 def PrintTestResult():
     Parameter =  [ UseNonAnticipativity, Model, ComputeAverageSolution, ScenarioSeed ]
-    data = TestIdentifier + SolveInformation +  Parameter
+    data = TestIdentifier +  Parameter + SolveInformation
     d = datetime.now()
     date = d.strftime('%m_%d_%Y_%H_%M_%S')
     myfile = open(r'./Test/SolveInfo/TestResult_%s.csv' % (GetTestDescription()), 'wb')
@@ -104,6 +104,7 @@ def PrintTestResult():
     wr.writerow( data )
     myfile.close()
 
+@staticmethod
 def PrintFinalResult():
     data = TestIdentifier + EvaluatorIdentifier + InSampleKPIStat + OutOfSampleTestResult
     d = datetime.now()
@@ -145,14 +146,17 @@ def PrintSolutionToFile( solution  ):
 
 def Solve():
     global LastFoundSolution
+    global SolveInformation
     solver = Solver (Instance, TestIdentifier, mipsetting=MIPSetting, testdescription= GetTestDescription(), evaluatesol = EvaluateSolution, treestructure=GetTreeStructure())
 
     solution = solver.Solve()
-    LastFoundSolution =solution
+    SolveInformation = [solution.TotalTime, solution.CplexTime, solution.CplexGap, solution.CplexNrVariables, solution.CplexNrConstraints] + solution.AdditonalInfo
+    LastFoundSolution = solution
     PrintTestResult()
-    PrintSolutionToFile(solution)
-    RunEvaluation()
-    GatherEvaluation()
+    if not Constants.OnlyForComputationTime:
+        PrintSolutionToFile(solution)
+        RunEvaluation()
+        GatherEvaluation()
 
 def GetPreviouslyFoundSolution():
     result = []
@@ -198,8 +202,9 @@ def Evaluate():
     PrintFinalResult()
 
 def GetEvaluationFileName():
-    result = "/tmp/thesim/Evaluations/" + GetTestDescription() + GetEvaluateDescription()
+    result = Constants.EvaluationFileName + GetTestDescription() + GetEvaluateDescription()
     #result = "./Evaluations/" + GetTestDescription() + GetEvaluateDescription()
+
     return result
 
 #Define the tree  structur do be used
@@ -563,15 +568,15 @@ def GatherEvaluation():
             filename =  GetEvaluationFileName()
             TestIdentifier[5] = seed
             #print "open file %rEvaluator.txt"%filename
-            with open(filename + "Evaluator.txt", 'rb') as f:
+            with open(filename + "Evaluator.txt", 'r') as f:
                 list = pickle.load(f)
                 EvaluationTab.append( list )
 
-            with open(filename + "Probabilities.txt", 'rb') as f:
+            with open(filename + "Probabilities.txt", 'r') as f:
                 list = pickle.load(f)
                 ProbabilitiesTab.append(list)
 
-            with open(filename + "KPIStat.txt", "rb") as f:  # Pickling
+            with open(filename + "KPIStat.txt", "r") as f:  # Pickling
                 list = pickle.load(f)
                 KPIStats.append( list )
                 nrfile =nrfile +1
@@ -877,8 +882,13 @@ def GenerateInstances( ):
     instancenameslist = []
     for row in data_reader:
         instancenameslist.append(row)
-    instancenameslist = ["01", "02", "04"] #instancenameslist[0]
-    # for InstanceName in instancenameslist:
+    instancenameslist = ["01", "02", "03", "04", "05", "05", "07", "08", "09", "10", "11", "12", "13", "14", "15",
+                         "16","17","18","19","20",] #instancenameslist[0]
+    instancenameslist =["20"]
+    for InstanceName in instancenameslist:
+         Instance.ReadFromFile(InstanceName, "NonStationary", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40,
+                               longtimehoizon=True, capacity=2)
+         Instance.SaveCompleteInstanceInExelFile()
     #     #Distribution = "NonStationary"
     #     for Distribution in ["SlowMoving", "Normal", "Lumpy", "NonStationary"]:
     #      #     "NonStationary"]:
@@ -900,8 +910,7 @@ def GenerateInstances( ):
     #                     Instance.SaveCompleteInstanceInExelFile()
     #                     instancecreated = instancecreated + [Instance.InstanceName]
 
-    # Instance.ReadFromFile("01", "Normal", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40, longtimehoizon = True, capacity=2)
-    # Instance.SaveCompleteInstanceInExelFile()
+
     # instancecreated = instancecreated + [Instance.InstanceName]
     #
     # Instance.ReadFromFile("K0014313", "NonStationary", 2, 25, e="n", rk=50, leadtimestructure=0, lostsale=20, longtimehoizon = True)
@@ -1383,6 +1392,28 @@ def GenerateInstancesSensitivity():
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
     data_rwriter.writerow(instancecreated)
 
+
+def GenerateInstanceGraves():
+    instancenameslist = ["01", "02", "03", "04", "05", "06", "07",
+                         "08", "09", "10", "11", "12", "13", "14", "15",
+                         "16", "17", "18", "19", "20", "21","22", "23", "24",
+                         "25", "26", "27",
+                         "28", "29", "30", "31", "32", "33", "34", "35",
+                         "36", "37", "38", "39"]
+    #instancenameslist=["16"]
+    instancecreated = []
+    for InstanceName in instancenameslist:
+        Instance.ReadFromFile(InstanceName, "NonStationary", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40,
+                              longtimehoizon=False, capacity=2)
+        Instance.SaveCompleteInstanceInExelFile()
+
+        instancecreated = instancecreated + [Instance.InstanceName]
+
+    csvfile = open("./Instances/InstancesToSolveSensitivity.csv", 'wb')
+    data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
+    data_rwriter.writerow(instancecreated)
+
+
 if __name__ == "__main__":
     instancename = ""
     try:
@@ -1391,6 +1422,9 @@ if __name__ == "__main__":
         #GenerateInstancesRHLargeLeadTime()
         #GenerateAdditionalInstancesRHLargeLeadTime()
         #GenerateInstancesSensitivity()
+
+        GenerateInstanceGraves()
+
         Instance.ReadInstanceFromExelFile( InstanceName )
         #GenerateInstances()
         #GenerateInstancesPreliminary()
