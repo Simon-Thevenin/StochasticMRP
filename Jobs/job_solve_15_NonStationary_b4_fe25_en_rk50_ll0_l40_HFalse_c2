@@ -1,0 +1,39 @@
+#!/bin/bash
+# Nom du job
+#SBATCH -J 15_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2
+#
+# Partition visee
+#SBATCH --partition=SMP-medium
+#
+# Nombre de noeuds
+#SBATCH --nodes=1
+# Nombre de processus MPI par noeud
+#SBATCH --ntasks-per-node=1
+#SBATCH --mem 40000
+#
+# Temps de presence du job
+#SBATCH --time=40:00:00
+#
+# Adresse mel de l'utilisateur
+#
+# Envoi des mails
+#SBATCH --mail-type=abort,end
+#SBATCH --mail-user=simon.thevenin@imt-atlantique.fr
+#
+#SBATCH -o /home/LS2N/thevenin-s/log/job_mpi-15_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2.out
+
+module purge
+module load intel/2016.3.210
+module load intel/mkl/64/2016.3.210
+module load intel/mpi/2016.3.210
+module load python/2.7.12
+module load intel/mkl/64/2017.4.196
+module load compilateurs_interpreteurs/gcc/7.3.0
+
+export LD_PRELOAD=/lib64/psm2-compat/libpsm_infinipath.so.1
+
+# Faire le lien entre SLURM et Intel MPI
+export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
+
+python test.py Solve 15_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 HeuristicYFix  6400b RQMC -m MIP -n 0
+

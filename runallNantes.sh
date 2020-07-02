@@ -1,0 +1,42 @@
+
+    #!/bin/bash -l
+    #
+    qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
+qsub ./Jobs/job_39_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 
