@@ -50,7 +50,7 @@ export LD_PRELOAD=/lib64/psm2-compat/libpsm_infinipath.so.1
 # Faire le lien entre SLURM et Intel MPI
 export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
 
-python test.py Solve %s HeuristicYFix  6400b RQMC -m MIP -n 0
+srun python test.py Solve %s HeuristicYFix  6400b RQMC -m MIP -n 0
 
 """%(name,name,name))
 
@@ -143,8 +143,8 @@ if __name__ == "__main__":
 #!/bin/bash -l
 #
 """)
-        for instance in InstanceSet:
-            file.write("qsub ./Jobs/job_%s \n" % (iname))
+    for instance in InstanceSet:
+            file.write("sbatch ./Jobs/job_%s \n" % (iname))
 
     if False:
         csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
