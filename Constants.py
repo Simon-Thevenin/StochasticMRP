@@ -63,10 +63,12 @@ class Constants:
     AlgorithmOptimalityTolerence = 0.00001
     SDDPIterationLimit = 10000
 
-    logpath = "/tmp/thesim/CPLEXLog";
+
     logpath = "C:\Users\simon\PycharmProjects\stochasticmrp\CPLEXLog";
-    EvaluationFileName = "/tmp/thesim/Evaluations/"
     EvaluationFileName = "C:\Users\simon\PycharmProjects\stochasticmrp\Evaluations/"
+    logpath = "./CPLEXLog";
+    EvaluationFileName = "./Evaluations/"
+
     @staticmethod
     def IsRule( s ):
 
