@@ -35,5 +35,5 @@ export LD_PRELOAD=/lib64/psm2-compat/libpsm_infinipath.so.1
 # Faire le lien entre SLURM et Intel MPI
 export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
 
-python test.py Solve 17_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 HeuristicYFix  6400b RQMC -m MIP -n 0
+srun python test.py Solve 17_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2 HeuristicYFix  6400b RQMC -m MIP -n 0
 

@@ -137,14 +137,15 @@ if __name__ == "__main__":
         iname = instance+"_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2"
         CreatFileNantes(iname)
         # Create the sh file
-        filename = "runallNantes.sh"
-        file = open(filename, 'w')
-        file.write("""
+    filename = "runallNantes.sh"
+    file = open(filename, 'w')
+    file.write("""
 #!/bin/bash -l
 #
 """)
     for instance in InstanceSet:
-            file.write("sbatch ./Jobs/job_%s \n" % (iname))
+        iname = instance + "_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2"
+        file.write("sbatch ./Jobs/job_%s \n" % (iname))
 
     if False:
         csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
