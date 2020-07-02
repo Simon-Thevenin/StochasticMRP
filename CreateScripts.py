@@ -145,7 +145,7 @@ if __name__ == "__main__":
 """)
     for instance in InstanceSet:
         iname = instance + "_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2"
-        file.write("sbatch ./Jobs/job_%s \n" % (iname))
+        file.write("sbatch ./Jobs/job_solve_%s \n" % (iname))
 
     if False:
         csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
