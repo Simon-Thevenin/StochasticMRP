@@ -140,9 +140,9 @@ if __name__ == "__main__":
         filename = "runallNantes.sh"
         file = open(filename, 'w')
         file.write("""
-    #!/bin/bash -l
-    #
-    """)
+#!/bin/bash -l
+#
+""")
         for instance in InstanceSet:
             file.write("qsub ./Jobs/job_%s \n" % (iname))
 
