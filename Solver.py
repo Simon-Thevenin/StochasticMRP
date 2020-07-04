@@ -155,7 +155,7 @@ class Solver:
     def SolveYFixHeuristic( self ):
 
         start = time.time()
-        treestructure = [1, 500] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+        treestructure = [1, 100] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
         self.Model = Constants.ModelYQFix
         chosengeneration = self.ScenarioGeneration
         self.ScenarioGeneration = Constants.RQMC

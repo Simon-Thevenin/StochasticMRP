@@ -10,12 +10,12 @@ from Constants import Constants
 NrScenarioEvaluation = "5000"
 
 
-def CreatFileNantes( name):
-    qsub_filename = "./Jobs/job_solve_%s"%name
+def CreatFileNantes( name, nrscen):
+    qsub_filename = "./Jobs/job_solve_%s_%s"%(name, nrscen)
     qsub_file = open(qsub_filename, 'w')
     qsub_file.write("""#!/bin/bash
 # Nom du job
-#SBATCH -J %s
+#SBATCH -J %s_%s
 #
 # Partition visee
 #SBATCH --partition=SMP-medium
@@ -35,7 +35,7 @@ def CreatFileNantes( name):
 #SBATCH --mail-type=abort,end
 #SBATCH --mail-user=simon.thevenin@imt-atlantique.fr
 #
-#SBATCH -o /home/LS2N/thevenin-s/log/job_mpi-%s.out
+#SBATCH -o /home/LS2N/thevenin-s/log/job_mpi-%s-%s.out
 
 module purge
 module load intel/2016.3.210
@@ -50,9 +50,9 @@ export LD_PRELOAD=/lib64/psm2-compat/libpsm_infinipath.so.1
 # Faire le lien entre SLURM et Intel MPI
 export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
 
-srun python test.py Solve %s HeuristicYFix  6400b RQMC -m MIP -n 0
+srun python test.py Solve %s HeuristicYFix  %s RQMC -m MIP -n 0
 
-"""%(name,name,name))
+"""%(name, nrscen, name, nrscen, name, nrscen))
 
 
 def Createsolvejob(instance, model, nrscenar, generation, seed, method, mipsetting):
@@ -135,7 +135,8 @@ if __name__ == "__main__":
                    "36", "37", "38", "39"]
     for instance in InstanceSet:
         iname = instance+"_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2"
-        CreatFileNantes(iname)
+        CreatFileNantes(iname, "6400b")
+        CreatFileNantes(iname, "3200")
         # Create the sh file
     filename = "runallNantes.sh"
     file = open(filename, 'w')
@@ -145,8 +146,8 @@ if __name__ == "__main__":
 """)
     for instance in InstanceSet:
         iname = instance + "_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2"
-        file.write("sbatch ./Jobs/job_solve_%s \n" % (iname))
-
+        file.write("sbatch ./Jobs/job_solve_%s_%s \n" % (iname, "3200"))
+        file.write("sbatch ./Jobs/job_solve_%s_%s \n" % (iname, "6400b"))
     if False:
         csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
         data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
