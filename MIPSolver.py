@@ -1680,6 +1680,7 @@ class MIPSolver(object):
                     Solution.CplexGap = 0
                     Solution.CplexNrVariables = nrvariable
                     Solution.CplexNrConstraints = nrconstraints
+                    Solution.CplexTime = solvetime
                     if not self.EvaluateSolution and not self.YFixHeuristic:
                         Solution.CplexGap = sol.MIP.get_mip_relative_gap()
                 else:
