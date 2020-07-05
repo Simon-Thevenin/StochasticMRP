@@ -135,8 +135,8 @@ if __name__ == "__main__":
                    "36", "37", "38", "39"]
     for instance in InstanceSet:
         iname = instance+"_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2"
-        CreatFileNantes(iname, "6400b")
-        CreatFileNantes(iname, "3200")
+        CreatFileNantes(iname, "4")
+        #CreatFileNantes(iname, "3200")
         # Create the sh file
     filename = "runallNantes.sh"
     file = open(filename, 'w')
