@@ -150,7 +150,7 @@ def Solve():
     solver = Solver (Instance, TestIdentifier, mipsetting=MIPSetting, testdescription= GetTestDescription(), evaluatesol = EvaluateSolution, treestructure=GetTreeStructure())
 
     solution = solver.Solve()
-    SolveInformation = [solution.TotalTime, solution.CplexTime, solution.CplexGap, solution.CplexNrVariables, solution.CplexNrConstraints] + solution.AdditonalInfo
+    SolveInformation = [Instance.NrTimeBucket, Instance.NrProduct, solution.TotalTime, solution.CplexTime, solution.CplexGap, solution.CplexNrVariables, solution.CplexNrConstraints] + solution.AdditonalInfo
     LastFoundSolution = solution
     PrintTestResult()
     if not Constants.OnlyForComputationTime:
@@ -1420,7 +1420,7 @@ def GenerateInstanceGraves():
                          "25", "26", "27",
                          "28", "29", "30", "31", "32", "33", "34", "35",
                          "36", "37", "38", "39"]
-    #instancenameslist=["16"]
+    #instancenameslist=["06"]
     instancecreated = []
     for InstanceName in instancenameslist:
         Instance.ReadFromFile(InstanceName, "NonStationary", 4, 25, e="n", rk=50, leadtimestructure=0, lostsale=40,

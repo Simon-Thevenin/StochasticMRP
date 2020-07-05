@@ -136,7 +136,8 @@ if __name__ == "__main__":
     for instance in InstanceSet:
         iname = instance+"_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2"
         CreatFileNantes(iname, "4")
-        #CreatFileNantes(iname, "3200")
+        CreatFileNantes(iname, "3200")
+        CreatFileNantes(iname, "6400b")
         # Create the sh file
     filename = "runallNantes.sh"
     file = open(filename, 'w')
@@ -147,7 +148,8 @@ if __name__ == "__main__":
     for instance in InstanceSet:
         iname = instance + "_NonStationary_b4_fe25_en_rk50_ll0_l40_HFalse_c2"
         file.write("sbatch ./Jobs/job_solve_%s_%s \n" % (iname, "4"))
-        #file.write("sbatch ./Jobs/job_solve_%s_%s \n" % (iname, "6400b"))
+        file.write("sbatch ./Jobs/job_solve_%s_%s \n" % (iname, "3200"))
+        file.write("sbatch ./Jobs/job_solve_%s_%s \n" % (iname, "6400b"))
     if False:
         csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
         data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)

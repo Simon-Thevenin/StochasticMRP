@@ -60,6 +60,11 @@ class GraveInstanceReader(InstanceReader):
             self.Instance.NrTimeBucket = 20
         self.Instance.NrTimeBucketWithoutUncertaintyBefore = 0
         self.Instance.NrTimeBucketWithoutUncertaintyAfter = 0
+
+        self.Instance.NrTimeBucketWithoutUncertaintyBefore = self.Instance.MaxLeadTime
+        self.Instance.NrTimeBucketWithoutUncertaintyAfter = 0  # self.Instance.MaxLeadTime
+        self.Instance.NrTimeBucket = self.Instance.NrTimeBucketWithoutUncertaintyBefore + self.Instance.NrTimeBucketWithoutUncertaintyAfter + self.Instance.MaxLeadTime + 1
+
         self.Instance.ComputeIndices()
 
     def GenerateDistribution(self, forecasterror, rateknown, longtimehorizon = False):
@@ -144,6 +149,7 @@ class GraveInstanceReader(InstanceReader):
                                          else 0.0
                                          for p in self.Instance.ProductSet]
 
+
     def GenerateSetup(self, echelonstocktype):
         # Assume a starting inventory is the average demand during the lead time
         echeloninventorycost =  self.GetEchelonHoldingCost(echelonstocktype)
@@ -160,12 +166,12 @@ class GraveInstanceReader(InstanceReader):
 
     def GenerateCapacity(self, capacityfactor):
         self.Instance.NrResource = self.Instance.NrLevel
-        self.Instance.ProcessingTime = [[self.Datasheetdf.get_value(self.Instance.ProductName[p], 'stageTime')
+        self.Instance.ProcessingTime = [[1.0#self.Datasheetdf.get_value(self.Instance.ProductName[p], 'stageTime')
                                             if (self.Level[p] == k)   else 0.0
 
                                             for k in range(self.Instance.NrResource)]
                                            for p in self.Instance.ProductSet]
-
+        capacityfactor =10
         self.Instance.Capacity = [ capacityfactor * sum( self.DependentAverageDemand[p] * self.Instance.ProcessingTime[p][k]
                                                          for p in self.Instance.ProductSet)
                                    for k in range(self.Instance.NrResource)]
